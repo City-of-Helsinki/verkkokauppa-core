@@ -4,15 +4,15 @@ public class MockProduct {
     String id;
     String name;
     String description;
-    String price;
+    String namespace;
 
     public MockProduct() {}
 
-    public MockProduct(String id, String name, String description, String price) {
+    public MockProduct(String id, String name, String description, String namespace) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.price = price;
+        this.namespace = namespace;
     }
 
     public String getId() {
@@ -39,12 +39,12 @@ public class MockProduct {
         this.description = description;
     }
 
-    public String getPrice() {
-        return price;
+    public String getNamespace() {
+        return namespace;
     }
 
-    public void setPrice(String price) {
-        this.price = price;
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
 }

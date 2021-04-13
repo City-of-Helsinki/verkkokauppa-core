@@ -15,13 +15,13 @@ public class MockProductController {
     private Map<String, MockProduct> mockProductsTV = new HashMap<String, MockProduct>();
 
     {
-        mockProductsAP.put("1234", new MockProduct("1234", "asukaspysakointi tuote 1", "kuvaus", "100"));
-        mockProductsAP.put("12345", new MockProduct("12345", "asukaspysakointi tuote 2", "kuvaus", "200"));
-        mockProductsAP.put("123456", new MockProduct("123456", "asukaspysakointi tuote 3", "kuvaus", "300"));
+        mockProductsAP.put("1234", new MockProduct("1234", "asukaspysakointi tuote 1", "kuvaus", "asukaspysakointi"));
+        mockProductsAP.put("12345", new MockProduct("12345", "asukaspysakointi tuote 2", "kuvaus", "asukaspysakointi"));
+        mockProductsAP.put("123456", new MockProduct("123456", "asukaspysakointi tuote 3", "kuvaus", "asukaspysakointi"));
 
-        mockProductsTV.put("1234", new MockProduct("1234", "tilavaraus tuote 1", "kuvaus", "100"));
-        mockProductsTV.put("12345", new MockProduct("12345", "tilavaraus tuote 2", "kuvaus", "200"));
-        mockProductsTV.put("123456", new MockProduct("123456", "tilavaraus tuote 3", "kuvaus", "300"));
+        mockProductsTV.put("1234", new MockProduct("1234", "tilavaraus tuote 1", "kuvaus", "tilavaraus"));
+        mockProductsTV.put("12345", new MockProduct("12345", "tilavaraus tuote 2", "kuvaus", "tilavaraus"));
+        mockProductsTV.put("123456", new MockProduct("123456", "tilavaraus tuote 3", "kuvaus", "tilavaraus"));
     }
 
     @GetMapping("/mockproductmanagement/asukaspysakointi/get")
