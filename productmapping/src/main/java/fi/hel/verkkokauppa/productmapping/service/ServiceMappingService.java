@@ -52,12 +52,12 @@ public class ServiceMappingService {
     public List<ServiceMapping> initializeTestData() {
         List<ServiceMapping> entities = Arrays.asList(new ServiceMapping[]{
             createByParams("asukaspysakointi", "product", "http://localhost:8082/mockproductmanagement/asukaspysakointi/get?productId="),
-            createByParams("asukaspysakointi", "price", "http://localhost:8083/price/get?productId="),
+            createByParams("asukaspysakointi", "price", "http://localhost:8082/mockprice/asukaspysakointi/get?productId="),
             createByParams("asukaspysakointi", "rightofpurchase", "http://asukaspysakointibackendservice/api/rightofpurchase/get?productId="),
             createByParams("asukaspysakointi", "availability", "http://asukaspysakointibackendservice/api/availability/get?productId="),
 
             createByParams("tilavaraus", "product", "http://localhost:8082/mockproductmanagement/tilavaraus/get?productId="),
-            createByParams("tilavaraus", "price", "http://localhost:8083/price/get?productId="),
+            createByParams("tilavaraus", "price", "http://localhost:8082/mockprice/tilavaraus/get?productId="),
             createByParams("tilavaraus", "rightofpurchase", "http://tilavarausbackendservice/api/rightofpurchase/get?productId="),
             createByParams("tilavaraus", "availability", "http://tilavarausbackendservice/api/availability/get?productId="),
         });
