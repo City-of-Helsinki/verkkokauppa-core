@@ -31,20 +31,17 @@ public class ProductService {
 
     public Product findById(String productId) {
         // initialize http client
-        WebClient client = getProductWebClient();
+        WebClient client = getClient();
 
         // query product mapping from common product mapping service
         JSONObject productMapping = queryJsonService(client, env.getProperty("productmapping.url")+productId);
 
         String namespace = (String) productMapping.get("namespace");
         String namespaceEntityId = (String) productMapping.get("namespaceEntityId");
-        log.info("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
-        
-        // resolve original product backend from common service mapping service
-        JSONObject serviceMapping = queryJsonService(client, env.getProperty("servicemapping.product.url")+namespace);
+        log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
 
-        String serviceUrl = (String) serviceMapping.get("serviceUrl");
-        log.info("serviceUrl: " + serviceUrl);
+        // resolve original product backend from common service mapping service        
+        String serviceUrl = resolveServiceUrl(client, namespace, "product");
 
         // query product data from origin backend service
         JSONObject originalProduct = queryJsonService(client, serviceUrl+namespaceEntityId);
@@ -52,13 +49,22 @@ public class ProductService {
 
         // construct a common product with mapping and original content
         Product product = new Product(productId, productName, productMapping, originalProduct);
-        log.info("product: " + product);
+        log.debug("product: " + product);
 
         return product;
     }
 
+    private String resolveServiceUrl(WebClient client, String namespace, String serviceType) {
+        String serviceMappingUrl = env.getProperty("servicemapping.url")+"?t="+serviceType+"&n="+namespace;
+        JSONObject serviceMapping = queryJsonService(client, serviceMappingUrl);
 
-    private WebClient getProductWebClient() {
+        String serviceUrl = (String) serviceMapping.get("serviceUrl");
+        log.debug("serviceUrl: " + serviceUrl);
+
+        return serviceUrl;
+    }
+
+    private WebClient getClient() {
         // expect a response within a few seconds
         HttpClient httpClient = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)

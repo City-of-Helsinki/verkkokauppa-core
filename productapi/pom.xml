@@ -12,7 +12,7 @@
 	<artifactId>product</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>productapi</name>
-	<description>Kaupunkiyhteinen verkkokauppa, tuotetiedon backend api</description>
+	<description>Kaupunkiyhteinen verkkokauppa, tuotetiedon api</description>
 	<properties>
 		<java.version>11</java.version>
 	</properties>
