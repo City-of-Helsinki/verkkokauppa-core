@@ -5,7 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.ServiceMapping;
@@ -14,6 +17,11 @@ import fi.hel.verkkokauppa.productmapping.utils.UUIDGenerator;
 @Component
 public class ServiceMappingService {
     
+    private Logger log = LoggerFactory.getLogger(ServiceMappingService.class);
+
+    @Autowired
+    private Environment env;
+        
     @Autowired
     private ServiceMappingRepository serviceMappingRepository;
 
@@ -50,14 +58,16 @@ public class ServiceMappingService {
 
     // generate some mock data
     public List<ServiceMapping> initializeTestData() {
+        String mockbackendurl = env.getProperty("mockbackend.url");
+
         List<ServiceMapping> entities = Arrays.asList(new ServiceMapping[]{
-            createByParams("asukaspysakointi", "product", "http://localhost:8082/mockproductmanagement/asukaspysakointi/get?productId="),
-            createByParams("asukaspysakointi", "price", "http://localhost:8082/mockprice/asukaspysakointi/get?productId="),
+            createByParams("asukaspysakointi", "product", mockbackendurl+"/mockproductmanagement/asukaspysakointi/get?productId="),
+            createByParams("asukaspysakointi", "price", mockbackendurl+"/mockprice/asukaspysakointi/get?productId="),
             createByParams("asukaspysakointi", "rightofpurchase", "http://asukaspysakointibackendservice/api/rightofpurchase/get?productId="),
             createByParams("asukaspysakointi", "availability", "http://asukaspysakointibackendservice/api/availability/get?productId="),
 
-            createByParams("tilavaraus", "product", "http://localhost:8082/mockproductmanagement/tilavaraus/get?productId="),
-            createByParams("tilavaraus", "price", "http://localhost:8082/mockprice/tilavaraus/get?productId="),
+            createByParams("tilavaraus", "product", mockbackendurl+"/mockproductmanagement/tilavaraus/get?productId="),
+            createByParams("tilavaraus", "price", mockbackendurl+"/mockprice/tilavaraus/get?productId="),
             createByParams("tilavaraus", "rightofpurchase", "http://tilavarausbackendservice/api/rightofpurchase/get?productId="),
             createByParams("tilavaraus", "availability", "http://tilavarausbackendservice/api/availability/get?productId="),
         });
