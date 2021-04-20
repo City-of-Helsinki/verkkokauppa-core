@@ -4,14 +4,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.ProductMapping;
-import fi.hel.verkkokauppa.productmapping.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.utils.UUIDGenerator;
 
 @Component
 public class ProductMappingService {
+
+    private Logger log = LoggerFactory.getLogger(ProductMappingService.class);
     
     @Autowired
     private ProductMappingRepository productMappingRepository;
@@ -23,6 +27,7 @@ public class ProductMappingService {
         if (mapping.isPresent())
             return mapping.get();
 
+        log.debug("product mapping not found, productId: " + productId);
         return null;
     }
 

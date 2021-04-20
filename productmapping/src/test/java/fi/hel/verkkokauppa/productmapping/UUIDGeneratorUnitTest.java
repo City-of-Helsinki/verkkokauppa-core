@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.productmapping;
 
 import org.junit.jupiter.api.Test;
 
-import fi.hel.verkkokauppa.productmapping.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.utils.UUIDGenerator;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;

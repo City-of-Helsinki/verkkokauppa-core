@@ -12,7 +12,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.ServiceMapping;
-import fi.hel.verkkokauppa.productmapping.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.utils.UUIDGenerator;
 
 @Component
 public class ServiceMappingService {
