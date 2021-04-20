@@ -9,13 +9,15 @@ public class Cart {
     String cartId;
     String namespace;
     String user;
+    String createdAt;
 
     public Cart() {}
 
-    public Cart(String cartId, String namespace, String user) {
+    public Cart(String cartId, String namespace, String user, String createdAt) {
         this.cartId = cartId;
         this.namespace = namespace;
         this.user = user;
+        this.createdAt = createdAt;
     }
 
     public String getCartId() {
@@ -40,6 +42,14 @@ public class Cart {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
     
 }

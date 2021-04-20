@@ -16,9 +16,19 @@ public class CartController {
 
 
     @GetMapping("/cart/create")
-	public Cart createServiceMapping(@RequestParam(value = "namespace") String namespace, 
+	public Cart createCart(@RequestParam(value = "namespace") String namespace, 
             @RequestParam(value = "user") String user) {
 		return service.createByParams(namespace, user);
 	}
-    
+
+    @GetMapping("/cart/get")
+	public Cart getCart(@RequestParam(value = "cartId") String cartId) {
+		return service.findById(cartId);
+	}
+
+    @GetMapping("/cart/getByNames")
+	public Cart getCartByNames(@RequestParam(value = "namespace") String namespace, 
+            @RequestParam(value = "user") String user) {
+		return service.findByNames(namespace, user);
+	}
 }
