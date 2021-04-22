@@ -45,7 +45,7 @@ public class CartService {
         return null;
     }
 
-    public Cart findByNames(String namespace, String user) {
+    public Cart findByNamespaceAndUser(String namespace, String user) {
         List<Cart> matchingCarts = cartRepository.findByNamespaceAndUser(namespace, user);
 
         if (matchingCarts.size() > 0)

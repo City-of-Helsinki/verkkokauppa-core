@@ -11,6 +11,9 @@ public class Cart {
     String user;
     String createdAt;
 
+    // TODO original calculated cart price response
+
+
     public Cart() {}
 
     public Cart(String cartId, String namespace, String user, String createdAt) {
