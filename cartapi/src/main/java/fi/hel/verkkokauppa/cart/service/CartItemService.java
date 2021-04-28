@@ -20,14 +20,18 @@ public class CartItemService {
     private CartItemRepository cartItemRepository;
 
 
-    public CartItem addProductToCart(String cartId, String productId) {
+    public void addItem(String cartId, String productId) {
         String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
 
         CartItem cartItem = new CartItem(cartItemId, cartId, productId, 1, "pcs");
         cartItemRepository.save(cartItem);
         log.debug("created new cartItem, cartItemId: " + cartItemId);
+    }
 
-        return cartItem;
+    public void removeItem(String cartId, String productId) {
+        String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
+        cartItemRepository.deleteById(cartItemId);
+        log.debug("deleted cartItem, cartItemId: " + cartItemId);
     }
 
     public CartItem findById(String cartItemId) {

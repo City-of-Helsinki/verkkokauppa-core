@@ -1,15 +1,21 @@
 package fi.hel.verkkokauppa.cart.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.keyvalue.annotation.KeySpace;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@KeySpace("cartitems")
+@Document(indexName = "cartitems")
 public class CartItem {
     @Id
     String cartItemId;
+    @Field(type = FieldType.Keyword)
     String cartId;
+    @Field(type = FieldType.Keyword)
     String productId;
+    @Field(type = FieldType.Text)
     Integer quantity;
+    @Field(type = FieldType.Text)
     String unit;
 
     // TODO original product response (not persistent)

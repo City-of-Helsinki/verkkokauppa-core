@@ -1,18 +1,20 @@
 package fi.hel.verkkokauppa.cart.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.keyvalue.annotation.KeySpace;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@KeySpace("carts")
+@Document(indexName = "carts")
 public class Cart {
     @Id
     String cartId;
+    @Field(type = FieldType.Keyword)
     String namespace;
+    @Field(type = FieldType.Keyword)
     String user;
+    @Field(type = FieldType.Text)
     String createdAt;
-
-    // TODO original calculated cart price response
-
 
     public Cart() {}
 
