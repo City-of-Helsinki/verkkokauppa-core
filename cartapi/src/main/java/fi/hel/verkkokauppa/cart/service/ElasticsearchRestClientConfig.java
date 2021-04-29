@@ -1,9 +1,5 @@
 package fi.hel.verkkokauppa.cart.service;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -31,35 +27,29 @@ public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfigur
 
         ClientConfiguration clientConfiguration = null;
         try {
+            // Elasticsearch instance requires use of ssl, but has a self-signed certificate. 
+            // Blindly accept any certificate from any hostname without verifying CA.
             SSLContextBuilder sslBuilder = SSLContexts.custom()
                 .loadTrustMaterial(null, (x509Certificates, s) -> true);
             final SSLContext sslContext = sslBuilder.build();
 
+            final HostnameVerifier hostnameVerifier = new HostnameVerifier(){ 
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                };                
+            };
+
             clientConfiguration = ClientConfiguration.builder()
                 .connectedTo(env.getRequiredProperty("elasticsearch.service.url"))
-                // Elasticsearch instance requires use of ssl, but has a self-signed certificate. Blindly accept it without verifying CA.
-                .usingSsl(sslContext, new HostnameVerifier(){ 
-                    public boolean verify(String hostname, SSLSession session) {
-                        return true;
-                    };                
-                })
+                .usingSsl(sslContext, hostnameVerifier)
+                .withBasicAuth(env.getRequiredProperty("elasticsearch.service.user"), env.getRequiredProperty("elasticsearch.service.password"))
                 .build();
-        } catch (IllegalStateException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
+
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
-        RestHighLevelClient client = RestClients.create(clientConfiguration).rest();
-
-        return client;                         
+        return RestClients.create(clientConfiguration).rest();
     }
 }
