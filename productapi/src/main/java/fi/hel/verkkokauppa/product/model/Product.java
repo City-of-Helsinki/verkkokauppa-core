@@ -15,8 +15,10 @@ public class Product {
     String id;
     @Field(type = FieldType.Text)    
     String name;
+    @Field(type = FieldType.Object)    
     @JsonRawValue
     JSONObject mapping;
+    @Field(type = FieldType.Object)    
     @JsonRawValue
     JSONObject original;
 
