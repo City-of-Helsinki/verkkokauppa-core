@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 import org.json.JSONObject;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -15,10 +16,10 @@ public class Product {
     String id;
     @Field(type = FieldType.Text)    
     String name;
-    @Field(type = FieldType.Object)    
+    @Transient
     @JsonRawValue
     JSONObject mapping;
-    @Field(type = FieldType.Object)    
+    @Transient
     @JsonRawValue
     JSONObject original;
 
