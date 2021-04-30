@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.clients;
+package fi.hel.verkkokauppa.productmapping.service;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
