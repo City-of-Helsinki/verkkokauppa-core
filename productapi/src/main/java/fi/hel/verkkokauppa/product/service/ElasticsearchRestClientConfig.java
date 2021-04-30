@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.cart.service;
+package fi.hel.verkkokauppa.product.service;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -7,6 +7,8 @@ import javax.net.ssl.SSLSession;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +19,8 @@ import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfig
 
 @Configuration
 public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfiguration {
+            
+    private Logger log = LoggerFactory.getLogger(ElasticsearchRestClientConfig.class);
 
     @Autowired
     private Environment env;
@@ -46,8 +50,7 @@ public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfigur
                 .build();
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.error("elasticsearch rest client initialization failed", e);
         }
 
         return RestClients.create(clientConfiguration).rest();
