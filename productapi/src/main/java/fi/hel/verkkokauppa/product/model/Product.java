@@ -4,11 +4,21 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 
 import org.json.JSONObject;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+@Document(indexName = "products")
 public class Product {
+    @Id
     String id;
+    @Field(type = FieldType.Text)    
     String name;
+    @Field(type = FieldType.Text)
     @JsonRawValue
     JSONObject mapping;
+    @Field(type = FieldType.Text)
     @JsonRawValue
     JSONObject original;
 

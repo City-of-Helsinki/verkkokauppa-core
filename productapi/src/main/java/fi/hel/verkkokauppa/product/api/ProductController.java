@@ -21,4 +21,9 @@ public class ProductController {
 		return service.findById(productId);
 	}
 
+	@GetMapping("/product/getFromBackend")
+	public Product getFromBackend(@RequestParam(value = "productId") String productId) {
+		return service.getFromBackend(productId);
+	}
+
 }
