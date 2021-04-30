@@ -1,13 +1,17 @@
 package fi.hel.verkkokauppa.productmapping.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.keyvalue.annotation.KeySpace;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@KeySpace("products")
+@Document(indexName = "productmappings")
 public class ProductMapping {
     @Id
     String productId;
+    @Field(type = FieldType.Keyword)
     String namespace;
+    @Field(type = FieldType.Text)
     String namespaceEntityId;
 
     public ProductMapping() {
