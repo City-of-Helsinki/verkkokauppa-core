@@ -59,4 +59,11 @@ public class CartController {
 		return getCartWithItems(cartId);
 	}
 
+	@GetMapping("/cart/editItem")
+	public CartDto editItem(@RequestParam(value = "cartId") String cartId, 
+		@RequestParam(value = "productId") String productId, @RequestParam(value = "quantity") Integer quantity) {
+		cartItemService.editItemQuantity(cartId, productId, quantity);
+		return getCartWithItems(cartId);
+	}
+
 }

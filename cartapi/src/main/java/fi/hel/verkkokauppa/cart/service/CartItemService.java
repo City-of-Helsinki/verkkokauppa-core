@@ -34,6 +34,14 @@ public class CartItemService {
         log.debug("deleted cartItem, cartItemId: " + cartItemId);
     }
 
+    public void editItemQuantity(String cartId, String productId, Integer quantity) {
+        String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
+        CartItem cartItem = findById(cartItemId);
+        cartItem.setQuantity(quantity);
+        cartItemRepository.save(cartItem);
+        log.debug("edited cartItem quantity, cartItemId: " + cartItemId);
+    }
+
     public CartItem findById(String cartItemId) {
         Optional<CartItem> mapping = cartItemRepository.findById(cartItemId);
         
