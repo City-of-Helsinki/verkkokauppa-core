@@ -11,7 +11,6 @@ trigger:
     include:
       - master
 
-
 # By default, use self-hosted agents
 pool: Default
 
