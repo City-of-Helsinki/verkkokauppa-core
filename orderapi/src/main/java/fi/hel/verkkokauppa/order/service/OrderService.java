@@ -1,7 +1,5 @@
 package fi.hel.verkkokauppa.order.service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.utils.DateTimeUtil;
 import fi.hel.verkkokauppa.utils.UUIDGenerator;
 
 @Component
@@ -24,10 +23,8 @@ public class OrderService {
 
 
     public Order createByParams(String namespace, String user) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String createdAt = LocalDate.now().format(formatter);
-
         String whoseOrder = UUIDGenerator.generateType3UUIDString(namespace, user);
+        String createdAt = DateTimeUtil.getDateTime();
         String orderId = UUIDGenerator.generateType3UUIDString(whoseOrder, createdAt);
 
         Order order = new Order(orderId, namespace, user, createdAt);
