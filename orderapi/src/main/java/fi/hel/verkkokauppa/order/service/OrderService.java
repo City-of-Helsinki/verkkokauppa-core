@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.utils.DateTimeUtil;
 import fi.hel.verkkokauppa.utils.UUIDGenerator;
@@ -22,10 +23,15 @@ public class OrderService {
     private OrderRepository orderRepository;
 
 
-    public Order createByParams(String namespace, String user) {
+    public String generateOrderId(String namespace, String user, String timestamp) {
         String whoseOrder = UUIDGenerator.generateType3UUIDString(namespace, user);
+        String orderId = UUIDGenerator.generateType3UUIDString(whoseOrder, timestamp);
+        return orderId;
+    }
+
+    public Order createByParams(String namespace, String user) {
         String createdAt = DateTimeUtil.getDateTime();
-        String orderId = UUIDGenerator.generateType3UUIDString(whoseOrder, createdAt);
+        String orderId = generateOrderId(namespace, user, createdAt);
 
         Order order = new Order(orderId, namespace, user, createdAt);
         orderRepository.save(order);
@@ -54,20 +60,19 @@ public class OrderService {
         return null;
     }
 
-    public Order setCustomer(String orderId, String customerName, String customerEmail) {
+    public void setCustomer(String orderId, String customerName, String customerEmail) {
         Order order = findById(orderId);
         order.setCustomerName(customerName);
         order.setCustomerEmail(customerEmail);
         orderRepository.save(order);
-
-        return order;
+        log.debug("saved order customer details, orderId: " + orderId);
     }
 
-    public Order cancel(String orderId) {
+    public void cancel(String orderId) {
         Order order = findById(orderId);
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
-        return null;
+        log.debug("canceled order, orderId: " + orderId);
     }
     
 }

@@ -26,11 +26,25 @@ public class Order {
     public Order() {}
 
     public Order(String orderId, String namespace, String user, String createdAt) {
+        this.status = OrderStatus.CREATED;
+
         this.orderId = orderId;
         this.namespace = namespace;
         this.user = user;
         this.createdAt = createdAt;
+    }
+    
+    public Order(String orderId, String namespace, String user, String createdAt, String status, String customerName,
+            String customerEmail) {
         this.status = OrderStatus.CREATED;
+
+        this.orderId = orderId;
+        this.namespace = namespace;
+        this.user = user;
+        this.createdAt = createdAt;
+        this.status = status;
+        this.customerName = customerName;
+        this.customerEmail = customerEmail;
     }
 
     public String getOrderId() {
