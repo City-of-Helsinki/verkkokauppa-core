@@ -15,6 +15,7 @@
         <module>productapi</module>
         <module>priceapi</module>
         <module>cartapi</module>
+        <module>orderapi</module>
 
         <module>mockproductmanagement</module>
     </modules>
