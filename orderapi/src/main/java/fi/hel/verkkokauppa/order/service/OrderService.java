@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.utils.UUIDGenerator;
 
 @Component
@@ -53,6 +54,22 @@ public class OrderService {
             return matchingOrders.get(0);
 
         log.debug("order not found, namespace: " + namespace + " user: " + user);
+        return null;
+    }
+
+    public Order setCustomer(String orderId, String customerName, String customerEmail) {
+        Order order = findById(orderId);
+        order.setCustomerName(customerName);
+        order.setCustomerEmail(customerEmail);
+        orderRepository.save(order);
+
+        return order;
+    }
+
+    public Order cancel(String orderId) {
+        Order order = findById(orderId);
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
         return null;
     }
     

@@ -15,6 +15,13 @@ public class Order {
     String user;
     @Field(type = FieldType.Text)
     String createdAt;
+    @Field(type = FieldType.Text)
+    String status;
+
+    @Field(type = FieldType.Text)
+    String customerName;
+    @Field(type = FieldType.Text)
+    String customerEmail;
 
     public Order() {}
 
@@ -23,6 +30,7 @@ public class Order {
         this.namespace = namespace;
         this.user = user;
         this.createdAt = createdAt;
+        this.status = OrderStatus.CREATED;
     }
 
     public String getOrderId() {
@@ -55,6 +63,30 @@ public class Order {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerEmail() {
+        return customerEmail;
+    }
+
+    public void setCustomerEmail(String customerEmail) {
+        this.customerEmail = customerEmail;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
 }

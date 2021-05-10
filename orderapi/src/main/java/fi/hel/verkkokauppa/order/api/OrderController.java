@@ -26,4 +26,14 @@ public class OrderController {
 		return orderService.findById(orderId);
 	}
 
+    @GetMapping("/order/cancel")
+	public Order cancelOrder(@RequestParam(value = "orderId") String orderId) {
+		return orderService.cancel(orderId);
+	}
+
+    @GetMapping("/order/setCustomer")
+	public Order setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerName") String customerName, @RequestParam(value = "customerEmail") String customerEmail) {
+		return orderService.setCustomer(orderId, customerName, customerEmail);
+	}
+
 }
