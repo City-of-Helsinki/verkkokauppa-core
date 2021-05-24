@@ -48,14 +48,16 @@ public class CartController {
 	}
 
 	@GetMapping("/cart/addItem")
-	public CartDto addItem(@RequestParam(value = "cartId") String cartId, @RequestParam(value = "productId") String productId) {
-		cartItemService.addItem(cartId, productId);
+	public CartDto addItem(@RequestParam(value = "cartId") String cartId, @RequestParam(value = "productId") String productId, 
+			@RequestParam(value = "quantity", required = false, defaultValue = "1") Integer quantity) {
+		cartItemService.addItem(cartId, productId, quantity);
 		return getCartWithItems(cartId);
 	}
 
 	@GetMapping("/cart/removeItem")
-	public CartDto removeItem(@RequestParam(value = "cartId") String cartId, @RequestParam(value = "productId") String productId) {
-		cartItemService.removeItem(cartId, productId);
+	public CartDto removeItem(@RequestParam(value = "cartId") String cartId, @RequestParam(value = "productId") String productId, 
+			@RequestParam(value = "quantity", required = false, defaultValue = "1") Integer quantity) {
+		cartItemService.removeItem(cartId, productId, quantity);
 		return getCartWithItems(cartId);
 	}
 

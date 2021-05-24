@@ -20,18 +20,35 @@ public class CartItemService {
     private CartItemRepository cartItemRepository;
 
 
-    public void addItem(String cartId, String productId) {
+    public void addItem(String cartId, String productId, Integer quantity) {
         String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
 
-        CartItem cartItem = new CartItem(cartItemId, cartId, productId, 1, "pcs");
-        cartItemRepository.save(cartItem);
-        log.debug("created new cartItem, cartItemId: " + cartItemId);
+        CartItem cartItem = findById(cartItemId);
+        if (cartItem != null) {
+            Integer newQuantity = cartItem.getQuantity() + quantity;
+            cartItem.setQuantity(newQuantity);
+            cartItemRepository.save(cartItem);
+            log.debug("increased cartItem quantity, cartItemId: " + cartItemId);
+        } else {
+            cartItem = new CartItem(cartItemId, cartId, productId, quantity, "pcs");
+            cartItemRepository.save(cartItem);
+            log.debug("created new cartItem, cartItemId: " + cartItemId);
+        }
     }
 
-    public void removeItem(String cartId, String productId) {
+    public void removeItem(String cartId, String productId, Integer quantity) {
         String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
-        cartItemRepository.deleteById(cartItemId);
-        log.debug("deleted cartItem, cartItemId: " + cartItemId);
+
+        CartItem cartItem = findById(cartItemId);
+        Integer newQuantity = cartItem.getQuantity() - quantity;
+        if (newQuantity > 0) {
+            cartItem.setQuantity(newQuantity);
+            cartItemRepository.save(cartItem);    
+            log.debug("reduced cartItem quantity, cartItemId: " + cartItemId);                
+        } else {
+            cartItemRepository.deleteById(cartItemId);
+            log.debug("deleted cartItem, cartItemId: " + cartItemId);                
+        }
     }
 
     public void editItemQuantity(String cartId, String productId, Integer quantity) {
