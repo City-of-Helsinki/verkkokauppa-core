@@ -17,6 +17,8 @@ public class Order {
     String createdAt;
     @Field(type = FieldType.Text)
     String status;
+    @Field(type = FieldType.Text)
+    String type;
 
     @Field(type = FieldType.Text)
     String customerName;
@@ -27,6 +29,7 @@ public class Order {
 
     public Order(String orderId, String namespace, String user, String createdAt) {
         this.status = OrderStatus.CREATED;
+        this.type = OrderType.ORDER;
 
         this.orderId = orderId;
         this.namespace = namespace;
@@ -37,6 +40,7 @@ public class Order {
     public Order(String orderId, String namespace, String user, String createdAt, String status, String customerName,
             String customerEmail) {
         this.status = OrderStatus.CREATED;
+        this.type = OrderType.ORDER;
 
         this.orderId = orderId;
         this.namespace = namespace;
@@ -103,4 +107,12 @@ public class Order {
         this.status = status;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+    
 }
