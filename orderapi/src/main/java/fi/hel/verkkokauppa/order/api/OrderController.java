@@ -49,8 +49,9 @@ public class OrderController {
     }
 
     @PostMapping("/order/setCustomer")
-	public OrderDto setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerName") String customerName, @RequestParam(value = "customerEmail") String customerEmail) {
-		orderService.setCustomer(orderId, customerName, customerEmail);
+	public OrderDto setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName, 
+            @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail) {
+		orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail);
         return getOrderWithItems(orderId);
 	}
 
@@ -70,7 +71,7 @@ public class OrderController {
     public OrderDto createWithItems(@RequestBody OrderDto dto) {
         Order orderIn = dto.getOrder();
         Order order = orderService.createByParams(orderIn.getNamespace(), orderIn.getUser());
-        orderService.setCustomer(order.getOrderId(), orderIn.getCustomerName(), orderIn.getCustomerEmail());
+        orderService.setCustomer(order.getOrderId(), orderIn.getCustomerFirstName(), orderIn.getCustomerLastName(), orderIn.getCustomerEmail());
         setItems(order.getOrderId(), dto);
 
         return getOrderWithItems(order.getOrderId());

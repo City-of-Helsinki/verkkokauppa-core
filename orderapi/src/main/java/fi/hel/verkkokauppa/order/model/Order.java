@@ -21,7 +21,9 @@ public class Order {
     String type;
 
     @Field(type = FieldType.Text)
-    String customerName;
+    String customerFirstName;
+    @Field(type = FieldType.Text)
+    String customerLastName;
     @Field(type = FieldType.Text)
     String customerEmail;
 
@@ -37,7 +39,7 @@ public class Order {
         this.createdAt = createdAt;
     }
     
-    public Order(String orderId, String namespace, String user, String createdAt, String status, String customerName,
+    public Order(String orderId, String namespace, String user, String createdAt, String status, String customerFirstName, String customerLastName,
             String customerEmail) {
         this.status = OrderStatus.CREATED;
         this.type = OrderType.ORDER;
@@ -47,7 +49,8 @@ public class Order {
         this.user = user;
         this.createdAt = createdAt;
         this.status = status;
-        this.customerName = customerName;
+        this.customerFirstName = customerFirstName;
+        this.customerLastName = customerLastName;
         this.customerEmail = customerEmail;
     }
 
@@ -83,14 +86,6 @@ public class Order {
         this.createdAt = createdAt;
     }
 
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
-
     public String getCustomerEmail() {
         return customerEmail;
     }
@@ -113,6 +108,22 @@ public class Order {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getCustomerFirstName() {
+        return customerFirstName;
+    }
+
+    public void setCustomerFirstName(String customerFirstName) {
+        this.customerFirstName = customerFirstName;
+    }
+
+    public String getCustomerLastName() {
+        return customerLastName;
+    }
+
+    public void setCustomerLastName(String customerLastName) {
+        this.customerLastName = customerLastName;
     }
     
 }

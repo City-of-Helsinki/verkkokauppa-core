@@ -59,9 +59,10 @@ public class OrderService {
         return null;
     }
 
-    public void setCustomer(String orderId, String customerName, String customerEmail) {
+    public void setCustomer(String orderId, String customerFirstName, String customerLastName, String customerEmail) {
         Order order = findById(orderId);
-        order.setCustomerName(customerName);
+        order.setCustomerFirstName(customerFirstName);
+        order.setCustomerLastName(customerLastName);
         order.setCustomerEmail(customerEmail);
         orderRepository.save(order);
         log.debug("saved order customer details, orderId: " + orderId);
