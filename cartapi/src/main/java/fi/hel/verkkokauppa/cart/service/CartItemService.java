@@ -79,4 +79,10 @@ public class CartItemService {
         return null;
     }
 
+    public void removeAllByCartId(String cartId) {
+        List<CartItem> cartItems = findByCartId(cartId);
+        cartItems.forEach(item -> cartItemRepository.deleteById(item.getCartItemId()));
+        log.debug("cartItems removed, cartId: " + cartId);
+    }
+
 }

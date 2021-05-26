@@ -68,4 +68,14 @@ public class CartController {
 		return getCartWithItems(cartId);
 	}
 
+	@GetMapping("/cart/clear")
+	public Cart clearCart(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "user") String user) {
+		Cart cart = getCartByNames(namespace, user);
+		if (cart != null) {
+			cartItemService.removeAllByCartId(cart.getCartId());
+		}
+
+		return createCart(namespace, user);
+	}
+
 }
