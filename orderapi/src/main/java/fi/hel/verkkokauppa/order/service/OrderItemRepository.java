@@ -11,5 +11,4 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 public interface OrderItemRepository extends ElasticsearchRepository<OrderItem, String> {
 
     List<OrderItem> findByOrderId(String orderId);
-    
 }
