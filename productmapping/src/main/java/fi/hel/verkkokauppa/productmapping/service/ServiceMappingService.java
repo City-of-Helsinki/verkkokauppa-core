@@ -1,9 +1,7 @@
 package fi.hel.verkkokauppa.productmapping.service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,31 +25,20 @@ public class ServiceMappingService {
 
 
     public List<ServiceMapping> findBy(String namespace) {
-        Iterable<ServiceMapping> mappings = serviceMappingRepository.findAll();
-        List<ServiceMapping> result = new ArrayList<ServiceMapping>();
-        mappings.forEach(result::add);
-
-        List<ServiceMapping> filteredMappings = result.stream()
-            .filter(mapping -> mapping.getNamespace().equals(namespace)).collect(Collectors.toList());
-
-        return filteredMappings;
+        List<ServiceMapping> configurations = serviceMappingRepository.findByNamespace(namespace);
+        return configurations;
     }
 
     public ServiceMapping findBy(String namespace, String type) {
-        Iterable<ServiceMapping> mappings = serviceMappingRepository.findAll();
-        List<ServiceMapping> result = new ArrayList<ServiceMapping>();
-        mappings.forEach(result::add);
-
-        List<ServiceMapping> filteredMappings = result.stream()
-            .filter(mapping -> mapping.getNamespace().equals(namespace) && mapping.getType().equals(type)).collect(Collectors.toList());
-
-        return filteredMappings.size() > 0 ? filteredMappings.get(0) : null;
+        List<ServiceMapping> configurations = serviceMappingRepository.findByNamespaceAndType(namespace, type);
+        return configurations.size() > 0 ? configurations.get(0) : null;
     }
 
     public ServiceMapping createByParams(String namespace, String type, String serviceUrl) {
         String serviceId = UUIDGenerator.generateType3UUIDString(namespace, type);
         ServiceMapping serviceMapping = new ServiceMapping(serviceId, namespace, type, serviceUrl);
         serviceMappingRepository.save(serviceMapping);
+        log.debug("created service mapping for namespace: " + namespace + " with serviceId: " + serviceId);
 
         return serviceMapping;
     }
@@ -73,6 +60,7 @@ public class ServiceMappingService {
         });
 
         serviceMappingRepository.saveAll(entities);
+        log.debug("initialized service mappings mock data");
 
         return entities;
     }
