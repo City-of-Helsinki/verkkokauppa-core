@@ -2,7 +2,9 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
+import fi.hel.verkkokauppa.util.UUIDGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,9 +27,12 @@ public class OrderController {
 
 
     @GetMapping("/order/create")
-	public Order createOrder(@RequestParam(value = "namespace") String namespace, 
-            @RequestParam(value = "user") String user) {
-		return orderService.createByParams(namespace, user);
+	public ResponseEntity<Order> createOrder(@RequestParam(value = "namespace") String namespace,
+                                             @RequestParam(value = "user") String user) {
+        final Order order = orderService.createByParams(namespace, user);
+        ResponseEntity<Order> response = ResponseEntity.ok().body(order);
+
+		return response;
 	}
     
 	private OrderDto getOrderWithItems(@RequestParam(value = "orderId") String orderId) {
