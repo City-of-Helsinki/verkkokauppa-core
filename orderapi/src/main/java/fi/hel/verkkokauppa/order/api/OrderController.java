@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
-import fi.hel.verkkokauppa.util.UUIDGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
