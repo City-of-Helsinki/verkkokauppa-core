@@ -16,16 +16,15 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>utils</module>
-
+        <module>common</module>
         <module>productmapping</module>
         <module>productapi</module>
         <module>priceapi</module>
         <module>cartapi</module>
         <module>orderapi</module>
-
         <module>mockproductmanagement</module>
     </modules>
+
 
 </project>
 
