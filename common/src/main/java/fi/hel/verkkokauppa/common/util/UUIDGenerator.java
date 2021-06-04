@@ -7,10 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 public class UUIDGenerator {
-
     private static Logger logger = LoggerFactory.getLogger(UUIDGenerator.class);
-    public static UUID generateType3UUID(String namespace, String name) throws UnsupportedEncodingException {
 
+    public static UUID generateType3UUID(String namespace, String name) throws UnsupportedEncodingException {
         byte[] nameSpaceBytes = bytesFromUUID(namespace);
         byte[] nameBytes = name.getBytes("UTF-8");
         byte[] result = joinBytes(nameSpaceBytes, nameBytes);

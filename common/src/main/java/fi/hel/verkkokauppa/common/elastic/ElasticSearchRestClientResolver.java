@@ -30,7 +30,8 @@ public class ElasticSearchRestClientResolver {
     @Value("${elasticsearch.service.password}")
     private String password;
 
-    @Value("${elasticsearch.service.local.environment}")
+    // if not set defaults to false
+    @Value("${elasticsearch.service.local.environment:#{false}}")
     private Boolean isLocalEnvironment;
 
     public RestHighLevelClient get() {
