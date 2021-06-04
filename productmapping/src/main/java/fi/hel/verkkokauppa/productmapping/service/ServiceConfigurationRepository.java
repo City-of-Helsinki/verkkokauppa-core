@@ -10,6 +10,9 @@ import fi.hel.verkkokauppa.productmapping.model.ServiceConfiguration;
 @Repository
 public interface ServiceConfigurationRepository extends ElasticsearchRepository<ServiceConfiguration, String> {
 
+    List<ServiceConfiguration> findByNamespaceAndRestrictedNot(String namespace);
+    List<ServiceConfiguration> findByNamespaceAndConfigurationKeyAndRestrictedNot(String namespace, String configurationKey);
+
     List<ServiceConfiguration> findByNamespace(String namespace);
     List<ServiceConfiguration> findByNamespaceAndConfigurationKey(String namespace, String configurationKey);
 

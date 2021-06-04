@@ -16,16 +16,19 @@ public class ServiceConfiguration {
         String configurationKey;
         @Field(type = FieldType.Text)
         String configurationValue;
-    
+        @Field(type = FieldType.Boolean)
+        boolean restricted;
+
         public ServiceConfiguration() {
         }
 
         public ServiceConfiguration(String configurationId, String namespace, String configurationKey,
-                String configurationValue) {
+                String configurationValue, boolean restricted) {
             this.configurationId = configurationId;
             this.namespace = namespace;
             this.configurationKey = configurationKey;
             this.configurationValue = configurationValue;
+            this.restricted = restricted;
         }
 
         public String getConfigurationId() {
@@ -60,4 +63,12 @@ public class ServiceConfiguration {
             this.configurationValue = configurationValue;
         }
 
+        public Boolean getRestricted() {
+            return restricted;
+        }
+
+        public void setRestricted(Boolean restricted) {
+            this.restricted = restricted;
+        }
+        
 }
