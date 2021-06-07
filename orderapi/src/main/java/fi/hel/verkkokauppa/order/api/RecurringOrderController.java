@@ -22,24 +22,27 @@ import java.util.Set;
 public class RecurringOrderController {
 
 	private final CreateRecurringOrderCommand createRecurringOrderCommand;
-	private final UpdateRecurringOrderCommand updateRecurringOrderCommand;
+	//private final UpdateRecurringOrderCommand updateRecurringOrderCommand;
 	private final GetRecurringOrderQuery getRecurringOrderQuery;
 	private final SearchRecurringOrdersQuery searchRecurringOrdersQuery;
 	private final CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand;
+	private final CancelRecurringOrderCommand cancelRecurringOrderCommand;
 
 	@Autowired
 	public RecurringOrderController(
 			CreateRecurringOrderCommand createRecurringOrderCommand,
-			UpdateRecurringOrderCommand updateRecurringOrderCommand,
+			//UpdateRecurringOrderCommand updateRecurringOrderCommand,
 			GetRecurringOrderQuery getRecurringOrderQuery,
 			SearchRecurringOrdersQuery searchRecurringOrdersQuery,
-			CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand
+			CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand,
+			CancelRecurringOrderCommand cancelRecurringOrderCommand
 	) {
 		this.createRecurringOrderCommand = createRecurringOrderCommand;
 		this.createRecurringOrdersFromOrderCommand = createRecurringOrdersFromOrderCommand;
-		this.updateRecurringOrderCommand = updateRecurringOrderCommand;
+		//this.updateRecurringOrderCommand = updateRecurringOrderCommand;
 		this.getRecurringOrderQuery = getRecurringOrderQuery;
 		this.searchRecurringOrdersQuery = searchRecurringOrdersQuery;
+		this.cancelRecurringOrderCommand = cancelRecurringOrderCommand;
 	}
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -81,6 +84,16 @@ public class RecurringOrderController {
 
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(idList); // TODO: ok response?
+	}
+
+	@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> cancelRecurringOrder(@PathVariable("id") String id) {
+		try {
+			cancelRecurringOrderCommand.cancel(id);
+			return ResponseEntity.ok().build();
+		} catch(EntityNotFoundException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
 	}
 
 	// TODO?
