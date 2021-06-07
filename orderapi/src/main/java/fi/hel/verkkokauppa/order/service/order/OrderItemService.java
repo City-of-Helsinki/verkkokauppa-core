@@ -1,8 +1,9 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.order.service.order;
 
 import java.util.List;
 import java.util.Optional;
 
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

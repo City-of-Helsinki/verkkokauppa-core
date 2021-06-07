@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.order.repository.jpa;
 
 import java.util.List;
 

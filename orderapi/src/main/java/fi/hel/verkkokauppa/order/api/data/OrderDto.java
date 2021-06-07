@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api;
+package fi.hel.verkkokauppa.order.api.data;
 
 import java.util.List;
 

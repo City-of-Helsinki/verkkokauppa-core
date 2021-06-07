@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
+import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
-import fi.hel.verkkokauppa.order.service.OrderService;
-import fi.hel.verkkokauppa.order.service.OrderItemService;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 
 @RestController
 public class OrderController {

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.order.repository.jpa;
 
 import java.util.List;
 
@@ -11,5 +11,4 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 public interface OrderItemRepository extends ElasticsearchRepository<OrderItem, String> {
 
     List<OrderItem> findByOrderId(String orderId);
-    
 }
