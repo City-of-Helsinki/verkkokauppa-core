@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.order.service.order;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 
 @Component
 public class OrderItemService {

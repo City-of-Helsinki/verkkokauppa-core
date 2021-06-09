@@ -23,7 +23,6 @@
         <module>cartapi</module>
         <module>orderapi</module>
         <module>mockproductmanagement</module>
-        <module>recurringorderapi</module>
     </modules>
 
 

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.order.configuration;
 
 import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import org.elasticsearch.client.RestHighLevelClient;

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.ServiceConfiguration;
 import fi.hel.verkkokauppa.productmapping.model.ServiceConfigurationKeys;
-import fi.hel.verkkokauppa.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 
 @Component
 public class ServiceConfigurationService {
