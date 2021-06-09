@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.utils;
+package fi.hel.verkkokauppa.common.util;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
