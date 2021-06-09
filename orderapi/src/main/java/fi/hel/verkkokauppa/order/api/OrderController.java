@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.order.OrderDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +23,7 @@ public class OrderController {
 
     @Autowired
     private OrderItemService orderItemService;
-
-
+    
     @GetMapping("/order/create")
 	public Order createOrder(@RequestParam(value = "namespace") String namespace, 
             @RequestParam(value = "user") String user) {

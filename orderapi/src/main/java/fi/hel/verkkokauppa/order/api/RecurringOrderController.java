@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.order.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderCriteria;
 import fi.hel.verkkokauppa.order.constants.RecurringOrderUrlConstants;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;

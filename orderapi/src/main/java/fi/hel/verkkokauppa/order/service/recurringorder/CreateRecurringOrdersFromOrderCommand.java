@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.order.service.recurringorder;
 
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.order.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
