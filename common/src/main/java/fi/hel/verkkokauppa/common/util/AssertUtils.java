@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.utils;
+package fi.hel.verkkokauppa.common.util;
 
 import java.util.Arrays;
 import java.util.Collection;

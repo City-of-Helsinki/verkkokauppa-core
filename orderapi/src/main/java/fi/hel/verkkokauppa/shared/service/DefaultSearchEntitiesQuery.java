@@ -1,11 +1,11 @@
 package fi.hel.verkkokauppa.shared.service;
 
+import fi.hel.verkkokauppa.common.util.AssertUtils;
+import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.shared.mapper.ListMapper;
 import fi.hel.verkkokauppa.shared.model.Identifiable;
 import fi.hel.verkkokauppa.shared.model.impl.BaseIdentifiableDto;
 import fi.hel.verkkokauppa.shared.repository.jpa.BaseRepository;
-import fi.hel.verkkokauppa.utils.AssertUtils;
-import fi.hel.verkkokauppa.utils.IterableUtils;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
