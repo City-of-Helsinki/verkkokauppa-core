@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
-import fi.hel.verkkokauppa.order.api.data.order.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

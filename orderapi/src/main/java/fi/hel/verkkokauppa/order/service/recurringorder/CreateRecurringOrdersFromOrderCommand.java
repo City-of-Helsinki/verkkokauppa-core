@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.order.service.recurringorder;
 
-import fi.hel.verkkokauppa.order.api.data.order.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -61,6 +61,9 @@ public class CreateRecurringOrdersFromOrderCommand {
 
 		recurringOrderDto.setProduct(product);
 		recurringOrderDto.setQuantity(orderItem.getQuantity());
+		recurringOrderDto.setStartDate(orderItem.getStartDate());
+		recurringOrderDto.setPeriodFrequency(orderItem.getPeriodFrequency());
+		recurringOrderDto.setPeriodUnit(orderItem.getPeriodUnit());
 		recurringOrderDto.setPriceTotal(orderItem.getRowPriceTotal());
 		recurringOrderDto.setPriceVat(orderItem.getRowPriceVat());
 		recurringOrderDto.setPriceNet(orderItem.getRowPriceNet());

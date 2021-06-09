@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api.data.order;
+package fi.hel.verkkokauppa.order.api.data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,6 @@ public class OrderDto {
 
     private Order order;
     private List<OrderItem> items = new ArrayList<>();
-    private RecurrenceInfoDto recurrenceInfo;
 
     public OrderDto(Order order, List<OrderItem> items) {
         this.order = order;
