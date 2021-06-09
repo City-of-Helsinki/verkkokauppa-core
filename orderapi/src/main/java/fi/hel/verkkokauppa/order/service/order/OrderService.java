@@ -3,7 +3,8 @@ package fi.hel.verkkokauppa.order.service.order;
 import java.util.List;
 import java.util.Optional;
 
-import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.utils.DateTimeUtil;
-import fi.hel.verkkokauppa.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+
 
 @Component
 public class OrderService {
@@ -31,11 +32,9 @@ public class OrderService {
     public Order createByParams(String namespace, String user) {
         String createdAt = DateTimeUtil.getDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
-
         Order order = new Order(orderId, namespace, user, createdAt);
         orderRepository.save(order);
         log.debug("created new order, orderId: " + orderId);
-
         return order;
     }
 

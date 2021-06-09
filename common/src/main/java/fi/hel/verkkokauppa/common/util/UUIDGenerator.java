@@ -1,12 +1,15 @@
-package fi.hel.verkkokauppa.utils;
+package fi.hel.verkkokauppa.common.util;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 public class UUIDGenerator {
+    private static Logger logger = LoggerFactory.getLogger(UUIDGenerator.class);
 
     public static UUID generateType3UUID(String namespace, String name) throws UnsupportedEncodingException {
-
         byte[] nameSpaceBytes = bytesFromUUID(namespace);
         byte[] nameBytes = name.getBytes("UTF-8");
         byte[] result = joinBytes(nameSpaceBytes, nameBytes);
@@ -19,8 +22,7 @@ public class UUIDGenerator {
             UUID namespacedEntityUUID = UUIDGenerator.generateType3UUID(namespaceUUID, name);
             return namespacedEntityUUID.toString();
         } catch (UnsupportedEncodingException e) {
-            // TODO use logging framework
-            e.printStackTrace();
+            logger.error("type3 uuid string generation failed", e);
             return null;
         }
     }

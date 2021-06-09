@@ -4,6 +4,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
+import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -19,40 +20,16 @@ import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfig
 
 @Configuration
 public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfiguration {
-            
-    private Logger log = LoggerFactory.getLogger(ElasticsearchRestClientConfig.class);
 
-    @Autowired
-    private Environment env;
+    private ElasticSearchRestClientResolver elasticSearchRestClientResolver;
+
+    public ElasticsearchRestClientConfig(@Autowired ElasticSearchRestClientResolver elasticResolver) {
+        this.elasticSearchRestClientResolver = elasticResolver;
+    }
 
     @Override
     @Bean
     public RestHighLevelClient elasticsearchClient() {
-
-        ClientConfiguration clientConfiguration = null;
-        try {
-            // Elasticsearch instance requires use of ssl, but has a self-signed certificate. 
-            // Blindly accept any certificate from any hostname without verifying CA.
-            SSLContextBuilder sslBuilder = SSLContexts.custom()
-                .loadTrustMaterial(null, (x509Certificates, s) -> true);
-            final SSLContext sslContext = sslBuilder.build();
-
-            final HostnameVerifier hostnameVerifier = new HostnameVerifier(){ 
-                public boolean verify(String hostname, SSLSession session) {
-                    return true;
-                };                
-            };
-
-            clientConfiguration = ClientConfiguration.builder()
-                .connectedTo(env.getRequiredProperty("elasticsearch.service.url"))
-                .usingSsl(sslContext, hostnameVerifier)
-                .withBasicAuth(env.getRequiredProperty("elasticsearch.service.user"), env.getRequiredProperty("elasticsearch.service.password"))
-                .build();
-
-        } catch (Exception e) {
-            log.error("elasticsearch rest client initialization failed", e);
-        }
-
-        return RestClients.create(clientConfiguration).rest();
+        return this.elasticSearchRestClientResolver.get();
     }
 }

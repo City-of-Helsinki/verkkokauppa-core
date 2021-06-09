@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model.recurringorder;
 
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderCriteria;
 import fi.hel.verkkokauppa.shared.service.QueryBuilderBuilder;
-import fi.hel.verkkokauppa.utils.StringUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;

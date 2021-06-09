@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.ProductMapping;
-import fi.hel.verkkokauppa.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 
 @Component
 public class ProductMappingService {
@@ -20,6 +20,11 @@ public class ProductMappingService {
     @Autowired
     private ProductMappingRepository productMappingRepository;
 
+
+    public List<ProductMapping> findBy(String namespace) {
+        List<ProductMapping> mappings = productMappingRepository.findByNamespace(namespace);
+        return mappings;
+    }
 
     public ProductMapping findById(String productId) {
         Optional<ProductMapping> mapping = productMappingRepository.findById(productId);
@@ -35,6 +40,7 @@ public class ProductMappingService {
         String productId = UUIDGenerator.generateType3UUIDString(namespace, namespaceEntityId);
         ProductMapping productMapping = new ProductMapping(productId, namespace, namespaceEntityId);
         productMappingRepository.save(productMapping);
+        log.debug("created product mapping for namespace: " + namespace + " with productId: " + productId);
 
         return productMapping;
     }
@@ -51,6 +57,7 @@ public class ProductMappingService {
         });
 
         productMappingRepository.saveAll(entities);
+        log.debug("initialized product mappings mock data");
 
         return entities;
     }

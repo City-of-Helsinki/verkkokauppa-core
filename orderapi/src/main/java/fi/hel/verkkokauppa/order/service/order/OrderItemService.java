@@ -3,14 +3,16 @@ package fi.hel.verkkokauppa.order.service.order;
 import java.util.List;
 import java.util.Optional;
 
-import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.OrderItem;
-import fi.hel.verkkokauppa.utils.UUIDGenerator;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+
 @Component
 public class OrderItemService {
         
@@ -24,6 +26,7 @@ public class OrderItemService {
         String orderItemId = UUIDGenerator.generateType3UUIDString(orderId, productId);
         OrderItem orderItem = new OrderItem(orderItemId, orderId, productId, productName, quantity, unit, rowPriceNet, rowPriceVat, rowPriceTotal);
         orderItemRepository.save(orderItem);
+
         log.debug("created new orderItem, orderItemId: " + orderItemId);
     }
 
