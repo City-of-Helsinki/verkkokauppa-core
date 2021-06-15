@@ -1,16 +1,23 @@
 package fi.hel.verkkokauppa.product.api;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import fi.hel.verkkokauppa.product.constants.ApiUrls;
+import fi.hel.verkkokauppa.product.dto.ProductAccountingDto;
+import fi.hel.verkkokauppa.product.service.ProductAccountingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class ProductAccountingController {
 
+    @Autowired
+    private ProductAccountingService productAccountingService;
 
-    @PostMapping("/product/{productId}/accounting")
-    public void saveProductAccountingDetails(@PathVariable final String productId) {
+    @PostMapping(ApiUrls.PRODUCT_ROOT + "/{productId}/" + ApiUrls.ACCOUNTING)
+    public void createProductAccounting(@PathVariable final String productId,
+                                        @RequestBody ProductAccountingDto productAccountingDto)
+    {
+        productAccountingDto.setProductId(productId);
 
+        productAccountingService.createProductAccounting(productAccountingDto);
     }
 }

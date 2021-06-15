@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.product.dto;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,25 +19,20 @@ import lombok.Setter;
  * Toimintoalue
  */
 
-@Getter
-@Setter
-@NoArgsConstructor
-public class ProductAccountingDto {
+@Data
+public class ProductAccountingDto extends BaseDto {
+
+    private String productId;
 
     private String mainLedgerAccount;
 
     private String vatCode;
 
-    //ToDo: more info needed
     private String internalOrder;
 
-    //ToDo: more info needed
     private String profitCenter;
 
-    //ToDo: more info needed
     private String project;
 
-    //ToDo: more info needed
     private String operationArea;
-
 }
