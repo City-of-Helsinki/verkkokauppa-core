@@ -6,6 +6,7 @@
 		<groupId>fi.hel</groupId>
 		<artifactId>verkkokauppa</artifactId>
 		<version>0.0.1</version>
+		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
 	<groupId>fi.hel.verkkokauppa</groupId>
