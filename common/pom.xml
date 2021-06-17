@@ -32,6 +32,12 @@
 		</dependency>
 	</dependencies>
 
+<distributionManagement>
+		<repository>
+			<id>City-of-Helsinki</id>
+			<url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/common/maven/v1</url>
+		</repository>
+</distributionManagement>
 <repositories>
 	<repository>
 		<id>City-of-Helsinki</id>
