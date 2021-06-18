@@ -71,6 +71,7 @@ public class OrderController {
                     item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                 );
         }
+        // TODO: what if order items change and is subscription type?
 
         return getOrderWithItems(orderId);
 	}
