@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +34,11 @@ public class OrderService {
         String createdAt = DateTimeUtil.getDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
         Order order = new Order(orderId, namespace, user, createdAt);
+
         orderRepository.save(order);
+
         log.debug("created new order, orderId: " + orderId);
+
         return order;
     }
 
@@ -45,6 +49,7 @@ public class OrderService {
             return mapping.get();
 
         log.debug("order not found, orderId: " + orderId);
+
         return null;
     }
 
@@ -55,6 +60,7 @@ public class OrderService {
             return matchingOrders.get(0);
 
         log.debug("order not found, namespace: " + namespace + " user: " + user);
+
         return null;
     }
 
@@ -63,7 +69,9 @@ public class OrderService {
         order.setCustomerFirstName(customerFirstName);
         order.setCustomerLastName(customerLastName);
         order.setCustomerEmail(customerEmail);
+
         orderRepository.save(order);
+
         log.debug("saved order customer details, orderId: " + orderId);
     }
 
@@ -71,7 +79,7 @@ public class OrderService {
         Order order = findById(orderId);
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+
         log.debug("canceled order, orderId: " + orderId);
     }
-    
 }
