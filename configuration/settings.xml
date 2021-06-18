@@ -6,7 +6,7 @@
 
     <server>
       <id>${env.SERVER_ID}</id>
-      <username>${env.SERVER_USERNAME}<</username>
+      <username>${env.SERVER_USERNAME}</username>
       <password>${env.SERVER_PASSWORD}</password>
     </server>
 
