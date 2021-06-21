@@ -22,24 +22,27 @@ import java.util.Set;
 public class RecurringOrderController {
 
 	private final CreateRecurringOrderCommand createRecurringOrderCommand;
-	private final UpdateRecurringOrderCommand updateRecurringOrderCommand;
+	//private final UpdateRecurringOrderCommand updateRecurringOrderCommand;
 	private final GetRecurringOrderQuery getRecurringOrderQuery;
 	private final SearchRecurringOrdersQuery searchRecurringOrdersQuery;
 	private final CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand;
+	private final CancelRecurringOrderCommand cancelRecurringOrderCommand;
 
 	@Autowired
 	public RecurringOrderController(
 			CreateRecurringOrderCommand createRecurringOrderCommand,
-			UpdateRecurringOrderCommand updateRecurringOrderCommand,
+			//UpdateRecurringOrderCommand updateRecurringOrderCommand,
 			GetRecurringOrderQuery getRecurringOrderQuery,
 			SearchRecurringOrdersQuery searchRecurringOrdersQuery,
-			CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand
+			CreateRecurringOrdersFromOrderCommand createRecurringOrdersFromOrderCommand,
+			CancelRecurringOrderCommand cancelRecurringOrderCommand
 	) {
 		this.createRecurringOrderCommand = createRecurringOrderCommand;
 		this.createRecurringOrdersFromOrderCommand = createRecurringOrdersFromOrderCommand;
-		this.updateRecurringOrderCommand = updateRecurringOrderCommand;
+		//this.updateRecurringOrderCommand = updateRecurringOrderCommand;
 		this.getRecurringOrderQuery = getRecurringOrderQuery;
 		this.searchRecurringOrdersQuery = searchRecurringOrdersQuery;
+		this.cancelRecurringOrderCommand = cancelRecurringOrderCommand;
 	}
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,7 +55,7 @@ public class RecurringOrderController {
 		}
 	}
 
-	@PostMapping(value = "/search/active", produces = MediaType.APPLICATION_JSON_VALUE) // TODO: any way to change to get?
+	@PostMapping(value = "/search/active", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RecurringOrderDto>> searchActive(
 			@RequestBody RecurringOrderCriteria criteria
 	) {
@@ -77,13 +80,27 @@ public class RecurringOrderController {
 
 	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Set<String>> createRecurringOrdersFromOrder(@RequestBody OrderDto dto) {
-		Set<String> idList = createRecurringOrdersFromOrderCommand.createFromOrder(dto);
+		try {
+			Set<String> idList = createRecurringOrdersFromOrderCommand.createFromOrder(dto);
 
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(idList); // TODO: ok response?
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(idList);
+		} catch (Exception e) {
+			// TODO: at least log exception?
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
 	}
 
-	// TODO?
+	@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> cancelRecurringOrder(@PathVariable("id") String id) {
+		try {
+			cancelRecurringOrderCommand.cancel(id);
+			return ResponseEntity.ok().build();
+		} catch(EntityNotFoundException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
 	/*@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> updateRecurringOrder(@PathVariable("id") String id, @RequestBody RecurringOrderDto dto) {
 		try {

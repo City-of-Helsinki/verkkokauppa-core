@@ -5,6 +5,8 @@ import fi.hel.verkkokauppa.order.model.recurringorder.Period;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 
+import java.time.LocalDate;
+
 @Component
 public class RecurringOrderValidationLogic {
 
@@ -23,6 +25,15 @@ public class RecurringOrderValidationLogic {
 	public void validateSupportedPeriodFrequency(RecurringOrderDto dto, Errors errors) {
 		if (dto.getPeriodFrequency() < 1 && !dto.getPeriodUnit().equals(Period.ONCE)) {
 			errors.reject("error.recurringorder.invalid-period-frequency"); // TODO: ok?
+		}
+		// TODO: some kind of max?
+	}
+
+	public void validateStartDate(RecurringOrderDto dto, Errors errors) {
+		final LocalDate now = LocalDate.now();
+
+		if (dto.getStartDate() != null && dto.getStartDate().isBefore(now)) {
+			errors.reject("error.recurringorder.invalid-start-date"); // TODO: ok?
 		}
 	}
 }

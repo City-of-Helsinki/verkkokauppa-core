@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.MerchantDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.ProductDto;
+import fi.hel.verkkokauppa.order.model.OrderType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,12 +33,16 @@ public class CreateRecurringOrdersFromOrderCommand {
 		Set<String> idList = new HashSet<>();
 
 		for (OrderItem item : dto.getItems()) {
+			if (!canCreateFromOrderItem(item)) {
+				continue;
+			}
+
 			RecurringOrderDto recurringOrderDto = new RecurringOrderDto();
 
 			copyOrderFieldsToRecurringOrder(dto.getOrder(), recurringOrderDto);
 			copyOrderItemFieldsToRecurringOrder(item, recurringOrderDto);
 
-			String id = createRecurringOrderCommand.create(recurringOrderDto); // TODO: what if fails? catch exception?
+			String id = createRecurringOrderCommand.create(recurringOrderDto);
 			idList.add(id);
 		}
 
@@ -50,7 +55,7 @@ public class CreateRecurringOrdersFromOrderCommand {
 		merchant.setNamespace(order.getNamespace());
 
 		recurringOrderDto.setRelatedOrderIds(new HashSet<>() {{ add(order.getOrderId()); }});
-		recurringOrderDto.setCustomerId(order.getCustomerEmail()); // TODO: ok?
+		recurringOrderDto.setCustomerId(order.getCustomerEmail());
 		recurringOrderDto.setMerchant(merchant);
 	}
 
@@ -61,12 +66,19 @@ public class CreateRecurringOrdersFromOrderCommand {
 
 		recurringOrderDto.setProduct(product);
 		recurringOrderDto.setQuantity(orderItem.getQuantity());
+		recurringOrderDto.setStartDate(orderItem.getStartDate());
+		recurringOrderDto.setPeriodFrequency(orderItem.getPeriodFrequency());
+		recurringOrderDto.setPeriodUnit(orderItem.getPeriodUnit());
 		recurringOrderDto.setPriceTotal(orderItem.getRowPriceTotal());
 		recurringOrderDto.setPriceVat(orderItem.getRowPriceVat());
 		recurringOrderDto.setPriceNet(orderItem.getRowPriceNet());
 	}
 
 	private boolean canCreateFromOrder(OrderDto orderDto) {
-		return orderDto.getOrder().getType().equals("subscription"); // TODO: ok? move to constant
+		return orderDto.getOrder().getType().equals(OrderType.SUBSCRIPTION);
+	}
+
+	private boolean canCreateFromOrderItem(OrderItem item) {
+		return item.getPeriodUnit() != null && item.getPeriodFrequency() != null;
 	}
 }
