@@ -42,7 +42,9 @@ public class CartItemService {
 
         CartItem cartItem = findById(cartItemId);
         Integer newQuantity = cartItem.getQuantity() - quantity;
-        if (newQuantity > 0) {
+        final boolean isQuantitySpecified = quantity > 0;
+
+        if (newQuantity > 0 && isQuantitySpecified) {
             cartItem.setQuantity(newQuantity);
             cartItemRepository.save(cartItem);    
             log.debug("reduced cartItem quantity, cartItemId: " + cartItemId);                
