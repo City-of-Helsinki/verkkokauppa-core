@@ -41,8 +41,9 @@ public class CartItemService {
         String cartItemId = UUIDGenerator.generateType3UUIDString(cartId, productId);
 
         CartItem cartItem = findById(cartItemId);
-        Integer newQuantity = cartItem.getQuantity() - quantity;
-        if (newQuantity > 0) {
+        final Integer newQuantity = cartItem.getQuantity() - quantity;
+        
+        if (newQuantity > 0 && quantity > 0) {
             cartItem.setQuantity(newQuantity);
             cartItemRepository.save(cartItem);    
             log.debug("reduced cartItem quantity, cartItemId: " + cartItemId);                
