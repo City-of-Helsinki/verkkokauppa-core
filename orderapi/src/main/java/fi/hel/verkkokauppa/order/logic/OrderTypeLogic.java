@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.logic;
 
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderType;
@@ -10,7 +11,7 @@ import java.util.List;
 @Component
 public class OrderTypeLogic {
 
-	public boolean setOrderType(Order order, List<OrderItem> items) {
+	public boolean setOrderType(Order order, List<OrderItemDto> items) {
 		String oldType = order.getType();
 
 		if (items == null || items.isEmpty()) {
@@ -27,7 +28,7 @@ public class OrderTypeLogic {
 		return true;
 	}
 
-	private String decideOrderTypeBasedOnItems(List<OrderItem> items) {
+	private String decideOrderTypeBasedOnItems(List<OrderItemDto> items) {
 		boolean subscriptionItemsFound = (int)items.stream()
 				.filter(item -> item.getPeriodFrequency() != null && item.getPeriodUnit() != null)
 				.count() > 0;

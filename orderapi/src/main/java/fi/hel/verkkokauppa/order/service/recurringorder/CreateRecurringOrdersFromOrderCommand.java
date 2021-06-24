@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.order.service.recurringorder;
 
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -25,22 +27,22 @@ public class CreateRecurringOrdersFromOrderCommand {
 		this.createRecurringOrderCommand = createRecurringOrderCommand;
 	}
 
-	public Set<String> createFromOrder(OrderDto dto) {
-		if (!canCreateFromOrder(dto)) {
+	public Set<String> createFromOrder(OrderAggregateDto orderAggregateDto) {
+		if (!canCreateFromOrder(orderAggregateDto)) {
 			throw new IllegalArgumentException("Can't create recurring order from this order.");
 		}
 
 		Set<String> idList = new HashSet<>();
 
-		for (OrderItem item : dto.getItems()) {
-			if (!canCreateFromOrderItem(item)) {
+		for (OrderItemDto orderItemDto : orderAggregateDto.getOrderItemDtos()) {
+			if (!canCreateFromOrderItem(orderItemDto)) {
 				continue;
 			}
 
 			RecurringOrderDto recurringOrderDto = new RecurringOrderDto();
 
-			copyOrderFieldsToRecurringOrder(dto.getOrder(), recurringOrderDto);
-			copyOrderItemFieldsToRecurringOrder(item, recurringOrderDto);
+			copyOrderFieldsToRecurringOrder(orderAggregateDto.getOrderDto(), recurringOrderDto);
+			copyOrderItemFieldsToRecurringOrder(orderItemDto, recurringOrderDto);
 
 			String id = createRecurringOrderCommand.create(recurringOrderDto);
 			idList.add(id);
@@ -49,7 +51,7 @@ public class CreateRecurringOrdersFromOrderCommand {
 		return idList;
 	}
 
-	private void copyOrderFieldsToRecurringOrder(Order order, RecurringOrderDto recurringOrderDto) {
+	private void copyOrderFieldsToRecurringOrder(OrderDto order, RecurringOrderDto recurringOrderDto) {
 		MerchantDto merchant = new MerchantDto();
 		merchant.setName(order.getUser());
 		merchant.setNamespace(order.getNamespace());
@@ -59,7 +61,7 @@ public class CreateRecurringOrdersFromOrderCommand {
 		recurringOrderDto.setMerchant(merchant);
 	}
 
-	private void copyOrderItemFieldsToRecurringOrder(OrderItem orderItem, RecurringOrderDto recurringOrderDto) {
+	private void copyOrderItemFieldsToRecurringOrder(OrderItemDto orderItem, RecurringOrderDto recurringOrderDto) {
 		ProductDto product = new ProductDto();
 		product.setId(orderItem.getProductId());
 		product.setName(orderItem.getProductName());
@@ -74,11 +76,11 @@ public class CreateRecurringOrdersFromOrderCommand {
 		recurringOrderDto.setPriceNet(orderItem.getRowPriceNet());
 	}
 
-	private boolean canCreateFromOrder(OrderDto orderDto) {
-		return orderDto.getOrder().getType().equals(OrderType.SUBSCRIPTION);
+	private boolean canCreateFromOrder(OrderAggregateDto orderAggregateDto) {
+		return orderAggregateDto.getOrderDto().getType().equals(OrderType.SUBSCRIPTION);
 	}
 
-	private boolean canCreateFromOrderItem(OrderItem item) {
+	private boolean canCreateFromOrderItem(OrderItemDto item) {
 		return item.getPeriodUnit() != null && item.getPeriodFrequency() != null;
 	}
 }

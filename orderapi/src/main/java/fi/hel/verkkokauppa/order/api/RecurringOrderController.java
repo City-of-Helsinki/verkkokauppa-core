@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderCriteria;
 import fi.hel.verkkokauppa.order.constants.RecurringOrderUrlConstants;
@@ -79,7 +80,7 @@ public class RecurringOrderController {
 	}
 
 	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createRecurringOrdersFromOrder(@RequestBody OrderDto dto) {
+	public ResponseEntity<Set<String>> createRecurringOrdersFromOrder(@RequestBody OrderAggregateDto dto) {
 		try {
 			Set<String> idList = createRecurringOrdersFromOrderCommand.createFromOrder(dto);
 

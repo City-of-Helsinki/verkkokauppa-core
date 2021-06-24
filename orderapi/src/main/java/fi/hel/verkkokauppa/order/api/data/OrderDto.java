@@ -5,20 +5,40 @@ import java.util.List;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Getter
-@Setter
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+
+
+@Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class OrderDto {
 
-    private Order order;
-    private List<OrderItem> items = new ArrayList<>();
+    private String orderId;
 
-    public OrderDto(Order order, List<OrderItem> items) {
-        this.order = order;
-        this.items = items;
-    }
+    private String namespace;
+
+    private String user;
+
+    private String createdAt;
+
+    private String status;
+
+    private String type;
+
+    @NotBlank(message = "firstname required")
+    private String customerFirstName;
+
+    @NotBlank(message = "lastname required")
+    private String customerLastName;
+
+    @Email(message = "email must be in correct format")
+    @NotBlank(message = "email required")
+    private String customerEmail;
 }

@@ -2,7 +2,10 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +31,7 @@ public class OrderController {
 
 	@Autowired
 	private OrderTypeLogic orderTypeLogic;
-    
+
     @GetMapping("/order/create")
 	public ResponseEntity<Order> createOrder(@RequestParam(value = "namespace") String namespace,
                                              @RequestParam(value = "user") String user) {
@@ -37,36 +40,34 @@ public class OrderController {
 
 		return response;
 	}
-    
-	private OrderDto getOrderWithItems(@RequestParam(value = "orderId") String orderId) {
-		Order order = orderService.findById(orderId);
-		List<OrderItem> items = orderItemService.findByOrderId(orderId);
-
-        return new OrderDto(order, items);
-	}
 
     @GetMapping("/order/get")
-	public OrderDto getOrder(@RequestParam(value = "orderId") String orderId) {
+	public OrderAggregateDto getOrder(@RequestParam(value = "orderId") String orderId) {
         return getOrderWithItems(orderId);
 	}
 
+    private OrderAggregateDto getOrderWithItems(final String orderId) {
+        OrderAggregateDto orderAggregateDto = orderService.getOrderWithItems(orderId);
+        return orderAggregateDto;
+    }
+
     @GetMapping("/order/cancel")
-	public OrderDto cancelOrder(@RequestParam(value = "orderId") String orderId) {
+	public OrderAggregateDto cancelOrder(@RequestParam(value = "orderId") String orderId) {
 		orderService.cancel(orderId);
         return getOrderWithItems(orderId);
     }
 
     @PostMapping("/order/setCustomer")
-	public OrderDto setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName, 
+	public OrderAggregateDto setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
             @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail) {
 		orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail);
         return getOrderWithItems(orderId);
 	}
 
     @PostMapping("/order/setItems")
-	public OrderDto setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderDto dto) {
-        if (dto != null && dto.getItems() != null) {
-            dto.getItems().stream().forEach(item -> {
+	public OrderAggregateDto setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderAggregateDto dto) {
+        if (dto != null && dto.getOrderItemDtos() != null) {
+            dto.getOrderItemDtos().stream().forEach(item -> {
                 orderItemService.addItem(orderId, item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnit(), 
                     item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                 );
@@ -77,15 +78,15 @@ public class OrderController {
 	}
 
     @PostMapping("/order/createWithItems")
-    public OrderDto createWithItems(@RequestBody OrderDto dto) {
-        Order orderIn = dto.getOrder();
-        Order order = orderService.createByParams(orderIn.getNamespace(), orderIn.getUser());
+    public OrderAggregateDto createWithItems(@RequestBody OrderAggregateDto orderAggregateDto) {
+        OrderDto orderDto = orderAggregateDto.getOrderDto();
+        Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
 
 		// TODO: refactor this code and move this to service!
-		orderTypeLogic.setOrderType(order, dto.getItems());
+		orderTypeLogic.setOrderType(order, orderAggregateDto.getOrderItemDtos());
 
-        orderService.setCustomer(order.getOrderId(), orderIn.getCustomerFirstName(), orderIn.getCustomerLastName(), orderIn.getCustomerEmail());
-        setItems(order.getOrderId(), dto);
+        orderService.setCustomer(order.getOrderId(), orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail());
+        setItems(order.getOrderId(), orderAggregateDto);
 
         return getOrderWithItems(order.getOrderId());
     }
