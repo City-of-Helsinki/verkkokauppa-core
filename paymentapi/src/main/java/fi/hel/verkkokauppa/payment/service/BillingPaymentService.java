@@ -1,15 +1,13 @@
 package fi.hel.verkkokauppa.payment.service;
 
-import org.springframework.stereotype.Component;
+import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
+import org.springframework.stereotype.Service;
 
-import fi.hel.verkkokauppa.payment.api.OrderPaymentDto;
-
-@Component
+@Service
 public class BillingPaymentService {
    
-    public String createFromOrder(OrderPaymentDto dto) {
-        //TODO a redirect url containing id of created Payment
-        return null;
+    public String createFromOrder(GetPaymentRequestDataDto dto) {
+        //TODO a real redirect url
+        return "https://localhost/?paymentId=123";
     }
-     
 }

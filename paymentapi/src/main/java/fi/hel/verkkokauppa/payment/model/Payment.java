@@ -5,92 +5,143 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.math.BigDecimal;
+
 @Document(indexName = "payments")
 public class Payment {
-    @Id
-    String paymentId;
-    @Field(type = FieldType.Keyword)
-    String namespace;
-    @Field(type = FieldType.Text)
-    String orderId;
 
-    @Field(type = FieldType.Text)
-    String paymentType;
-    @Field(type = FieldType.Text)
-    String sum;
-    @Field(type = FieldType.Text)
-    String description;
-    @Field(type = FieldType.Text)
-    String status;
+	@Id
+	String paymentId;
 
-    public Payment() {}
+	@Field(type = FieldType.Keyword)
+	String namespace;
 
-    public Payment(String paymentId, String namespace, String orderId, String paymentType, String sum,
-            String description) {
-        this.paymentId = paymentId;
-        this.namespace = namespace;
-        this.orderId = orderId;
-        this.paymentType = paymentType;
-        this.sum = sum;
-        this.description = description;
+	@Field(type = FieldType.Text)
+	String orderId;
 
-        this.status = PaymentStatus.CREATED;
-    }
+	@Field(type = FieldType.Text)
+	String status = PaymentStatus.CREATED;
 
-    public String getPaymentId() {
-        return paymentId;
-    }
+	@Field(type = FieldType.Text)
+	String paymentMethod;
 
-    public void setPaymentId(String paymentId) {
-        this.paymentId = paymentId;
-    }
+	@Field(type = FieldType.Text)
+	String paymentType; // TODO: what is this?
 
-    public String getNamespace() {
-        return namespace;
-    }
+	@Field(type = FieldType.Double)
+	BigDecimal totalExclTax;
 
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
+	@Field(type = FieldType.Double)
+	BigDecimal total;
 
-    public String getOrderId() {
-        return orderId;
-    }
+	@Field(type = FieldType.Double)
+	BigDecimal taxPercent;
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
+	@Field(type = FieldType.Double)
+	BigDecimal taxAmount;
 
-    public String getStatus() {
-        return status;
-    }
+	@Field(type = FieldType.Text)
+	String description; // TODO: what is this?
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+	@Field(type = FieldType.Text)
+	String additionalInfo;
 
-    public String getPaymentType() {
-        return paymentType;
-    }
+	public Payment() {
+	}
 
-    public void setPaymentType(String paymentType) {
-        this.paymentType = paymentType;
-    }
+	public String getPaymentId() {
+		return paymentId;
+	}
 
-    public String getSum() {
-        return sum;
-    }
+	public void setPaymentId(String paymentId) {
+		this.paymentId = paymentId;
+	}
 
-    public void setSum(String sum) {
-        this.sum = sum;
-    }
+	public String getNamespace() {
+		return namespace;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public void setNamespace(String namespace) {
+		this.namespace = namespace;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public String getOrderId() {
+		return orderId;
+	}
 
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public String getPaymentType() {
+		return paymentType;
+	}
+
+	public void setPaymentType(String paymentType) {
+		this.paymentType = paymentType;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getPaymentMethod() {
+		return paymentMethod;
+	}
+
+	public void setPaymentMethod(String paymentMethod) {
+		this.paymentMethod = paymentMethod;
+	}
+
+	public BigDecimal getTotalExclTax() {
+		return totalExclTax;
+	}
+
+	public void setTotalExclTax(BigDecimal totalExclTax) {
+		this.totalExclTax = totalExclTax;
+	}
+
+	public BigDecimal getTotal() {
+		return total;
+	}
+
+	public void setTotal(BigDecimal total) {
+		this.total = total;
+	}
+
+	public BigDecimal getTaxPercent() {
+		return taxPercent;
+	}
+
+	public void setTaxPercent(BigDecimal taxPercent) {
+		this.taxPercent = taxPercent;
+	}
+
+	public BigDecimal getTaxAmount() {
+		return taxAmount;
+	}
+
+	public void setTaxAmount(BigDecimal taxAmount) {
+		this.taxAmount = taxAmount;
+	}
+
+	public String getAdditionalInfo() {
+		return additionalInfo;
+	}
+
+	public void setAdditionalInfo(String additionalInfo) {
+		this.additionalInfo = additionalInfo;
+	}
 }
