@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.transformer;
 
+import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
@@ -15,7 +16,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class OrderTransformerTests {
+public class OrderTransformerTests extends DummyData {
     private OrderTransformer orderTransformer = new OrderTransformer();
 
     private List<String> excludedFields = new ArrayList<>();
@@ -63,47 +64,6 @@ public class OrderTransformerTests {
         final OrderDto dto = orderTransformer.transformToDto(entity);
 
         assertNotNull(dto);
-    }
-
-
-    @Test
-    public void should_GiveException_WhenEmailIsWrongAndValidated() {
-        ConstraintValidator<>
-        OrderDto dto = generateDummyOrderDto();
-        dto.setCustomerEmail("not an email address!");
-        
-
-    }
-
-    private Order generateDummyOrder() {
-        Order order = new Order();
-        order.setOrderId("1");
-        order.setCreatedAt("today");
-        order.setUser("dummy_user");
-        order.setNamespace("dummy_namespace");
-        order.setStatus("dummy_status");
-        order.setCustomerFirstName("dummy_firstname");
-        order.setCustomerLastName("dummy_lastname");
-        order.setCustomerEmail("dummy@example.com");
-        order.setType("dummy_type");
-
-        return order;
-    }
-
-    private OrderDto generateDummyOrderDto() {
-        OrderDto dto = OrderDto.builder()
-                .orderId("1")
-                .createdAt("today")
-                .customerEmail("dummy_email")
-                .customerFirstName("dummy_firstname")
-                .customerLastName("dummy_lastname")
-                .namespace("dummy_namespace")
-                .status("dummy_status")
-                .type("dummy_type")
-                .user("dummy_user")
-                .build();
-
-        return dto;
     }
 
  }
