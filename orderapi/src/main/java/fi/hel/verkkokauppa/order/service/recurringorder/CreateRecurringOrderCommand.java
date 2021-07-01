@@ -44,6 +44,7 @@ public class CreateRecurringOrderCommand extends DefaultCreateEntityCommand<Recu
 		recurringOrderValidationLogic.validateQuantityGiven(dto, errors);
 		//recurringOrderValidationLogic.validateSupportedPeriod(dto, errors); // TODO: commented out only for testing!
 		//recurringOrderValidationLogic.validateSupportedPeriodFrequency(dto, errors); // TODO: commented out only for testing!
+		//recurringOrderValidationLogic.validateStartDate(dto, errors); // TODO: commented out only for testing!
 
 		assertRequiredParameterNotEmpty(dto.getCustomerId(), "customerId");
 		//assertRequiredParameterNotEmpty(dto.getPaymentMethod(), "paymentMethod"); // TODO: commented out only for testing!

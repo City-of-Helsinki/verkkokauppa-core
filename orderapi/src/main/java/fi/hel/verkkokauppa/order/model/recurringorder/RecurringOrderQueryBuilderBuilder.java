@@ -16,7 +16,7 @@ public class RecurringOrderQueryBuilderBuilder implements QueryBuilderBuilder<Re
 		BoolQueryBuilder qb = QueryBuilders.boolQuery();
 
 		if (criteria.getActiveAtDate() != null) {
-			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("field").gte(criteria.getActiveAtDate());
+			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("nextDate").gte(criteria.getActiveAtDate());
 			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 

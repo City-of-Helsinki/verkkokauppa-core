@@ -56,7 +56,7 @@ public class CartController {
 
 	@GetMapping("/cart/removeItem")
 	public CartDto removeItem(@RequestParam(value = "cartId") String cartId, @RequestParam(value = "productId") String productId, 
-			@RequestParam(value = "quantity", required = false, defaultValue = "1") Integer quantity) {
+			@RequestParam(value = "quantity", required = false, defaultValue = "0") Integer quantity) {
 		cartItemService.removeItem(cartId, productId, quantity);
 		return getCartWithItems(cartId);
 	}

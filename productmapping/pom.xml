@@ -17,12 +17,13 @@
 		<java.version>11</java.version>
 	</properties>
 	<dependencies>
+<!--
 		<dependency>
 			<groupId>fi.hel</groupId>
 			<artifactId>common</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-
+-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -41,12 +42,6 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-                <dependency>
-                        <groupId>fi.hel</groupId>
-                        <artifactId>common</artifactId>
-                        <version>0.0.1-SNAPSHOT</version>
-                        <scope>compile</scope>
-                </dependency>
 	</dependencies>
 
 	<build>
@@ -55,7 +50,54 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+<plugin>
+    <artifactId>maven-resources-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>copy-common</id>
+            <phase>generate-resources</phase>
+            <goals>
+                <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>src/main/java</outputDirectory>
+                <overwrite>true</overwrite>
+                <resources>
+                    <resource>
+                        <directory>../common/src/main/java</directory>
+                        <includes>
+                            <include>**/*</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+
 		</plugins>
 	</build>
+
+
+<distributionManagement>
+                <repository>
+                        <id>talpa-artifacts</id>
+                        <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1</url>
+                </repository>
+</distributionManagement>
+<repositories>
+        <repository>
+                <id>talpa-artifacts</id>
+                <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1</url>
+                <releases>
+                        <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                        <enabled>true</enabled>
+                </snapshots>
+        </repository>
+</repositories>
+
 
 </project>

@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api;
 import java.util.List;
 
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +26,9 @@ public class OrderController {
     @Autowired
     private OrderItemService orderItemService;
 
-
+	@Autowired
+	private OrderTypeLogic orderTypeLogic;
+    
     @GetMapping("/order/create")
 	public ResponseEntity<Order> createOrder(@RequestParam(value = "namespace") String namespace,
                                              @RequestParam(value = "user") String user) {
@@ -68,6 +71,7 @@ public class OrderController {
                     item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                 );
         }
+        // TODO: what if order items change and is subscription type?
 
         return getOrderWithItems(orderId);
 	}
@@ -76,6 +80,10 @@ public class OrderController {
     public OrderDto createWithItems(@RequestBody OrderDto dto) {
         Order orderIn = dto.getOrder();
         Order order = orderService.createByParams(orderIn.getNamespace(), orderIn.getUser());
+
+		// TODO: refactor this code and move this to service!
+		orderTypeLogic.setOrderType(order, dto.getItems());
+
         orderService.setCustomer(order.getOrderId(), orderIn.getCustomerFirstName(), orderIn.getCustomerLastName(), orderIn.getCustomerEmail());
         setItems(order.getOrderId(), dto);
 

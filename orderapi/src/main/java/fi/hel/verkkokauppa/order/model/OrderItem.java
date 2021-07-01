@@ -1,12 +1,16 @@
 package fi.hel.verkkokauppa.order.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
+
 @Document(indexName = "orderitems")
 public class OrderItem {
+
     @Id
     String orderItemId;
     @Field(type = FieldType.Keyword)
@@ -27,6 +31,15 @@ public class OrderItem {
     String rowPriceVat;
     @Field(type = FieldType.Text)
     String rowPriceTotal;
+
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    private LocalDate startDate; // TODO: aika myös?
+
+    @Field(type = FieldType.Text)
+    private String periodUnit;
+
+    @Field(type = FieldType.Long)
+    private Long periodFrequency;
 
     public OrderItem() {}
 
@@ -115,4 +128,27 @@ public class OrderItem {
         this.rowPriceTotal = rowPriceTotal;
     }
 
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getPeriodUnit() {
+        return periodUnit;
+    }
+
+    public void setPeriodUnit(String periodUnit) {
+        this.periodUnit = periodUnit;
+    }
+
+    public Long getPeriodFrequency() {
+        return periodFrequency;
+    }
+
+    public void setPeriodFrequency(Long periodFrequency) {
+        this.periodFrequency = periodFrequency;
+    }
 }
