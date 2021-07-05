@@ -3,7 +3,7 @@
 trigger:
   paths:
     include:
-      - product-mapping-api
+      - productmapping
   tags:
     include:
       - product-mapping-api/*
