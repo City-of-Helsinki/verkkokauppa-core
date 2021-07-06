@@ -2,25 +2,43 @@ package fi.hel.verkkokauppa.order.api.data.dto;
 
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
 import static org.junit.Assert.*;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
+import javax.validation.*;
 import java.util.Iterator;
 import java.util.Set;
 
+@RunWith(SpringRunner.class )
+@SpringBootTest
 public class OrderDtoValidationTests extends DummyData {
 
     private Validator validator;
+
+    @Autowired
+    private CommonBeanValidationService commonBeanValidationService;
 
     @Before
     public void setUp() {
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         validator = factory.getValidator();
+    }
+
+    @Test
+    public void should_ThrowConstraintViolationException_IfUsingValidationService_WithInvalidOrderDto() {
+        OrderDto dto = generateDummyOrderDto();
+        dto.setCustomerLastName("");
+
+        assertThrows(ConstraintViolationException.class, () -> {
+            commonBeanValidationService.validateInput(dto);
+        });
     }
 
     @Test

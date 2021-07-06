@@ -1,28 +1,18 @@
 package fi.hel.verkkokauppa.order.api.data;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderDto {
-
-    private String orderId;
-
-    private String namespace;
-
-    private String user;
-
-    private String createdAt;
-
-    private String status;
-
-    private String type;
+public class CustomerDto {
 
     @NotBlank(message = "firstname required")
     private String customerFirstName;

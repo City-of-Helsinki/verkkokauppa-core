@@ -2,11 +2,13 @@ package fi.hel.verkkokauppa.order.api;
 
 import java.util.List;
 
+import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
+import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +33,9 @@ public class OrderController {
 
 	@Autowired
 	private OrderTypeLogic orderTypeLogic;
+
+	@Autowired
+    private CommonBeanValidationService commonBeanValidationService;
 
     @GetMapping("/order/create")
 	public ResponseEntity<Order> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -60,6 +65,15 @@ public class OrderController {
     @PostMapping("/order/setCustomer")
 	public OrderAggregateDto setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
             @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail) {
+
+        CustomerDto customerDto = CustomerDto.builder()
+                .customerLastName(customerLastName)
+                .customerFirstName(customerFirstName)
+                .customerEmail(customerEmail)
+                .build();
+
+        commonBeanValidationService.validateInput(customerDto);
+
 		orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail);
         return getOrderWithItems(orderId);
 	}
