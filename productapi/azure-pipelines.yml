@@ -3,7 +3,7 @@
 trigger:
   paths:
     include:
-      - product-api
+      - productapi
   tags:
     include:
       - product-api/*
