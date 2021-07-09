@@ -4,17 +4,20 @@ import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.TokenFetcher;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
+import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
+import org.helsinki.vismapay.VismaPayClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 
 import java.util.List;
 
@@ -32,6 +35,12 @@ public class OnlinePaymentService {
     @Autowired
     private PaymentItemRepository paymentItemRepository;
 
+    @Autowired
+    private PaymentTokenPayloadBuilder payloadBuilder;
+
+    @Autowired
+    private TokenFetcher tokenFetcher;
+
     public String getPaymentRequestData(GetPaymentRequestDataDto dto) {
         // TODO: should check order status
         // TODO: if wrong status, return failure url (where to get it from?)
@@ -39,17 +48,14 @@ public class OnlinePaymentService {
         Payment payment = createPayment(dto);
         // TODO: if creating payment fails, return failure url
 
-        // TODO get common payment configuration from configuration api:
-        // currency (or does it come from order dto?)
-        // api key
-        // private key
-        // allowed payment methods (if some are not ok)
+        try {
+            String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto));
 
-        // TODO: where to get return url?
-        // TODO: get language from where?
-
-        // TODO a real redirect url from visma pay
-        return "https://localhost/?paymentId=123";
+            // TODO: Kortin token tulee tallentaa jos subscription, mistä tiedetään?
+            return VismaPayClient.API_URL + "/token/" + token;
+        } catch (RuntimeException e) {
+            return null; // TODO: return failure url
+        }
     }
 
     // TODO: transaction?
