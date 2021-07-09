@@ -41,10 +41,13 @@ public class Payment {
 	BigDecimal taxAmount;
 
 	@Field(type = FieldType.Text)
-	String description; // TODO: what is this?
+	String description; // TODO: needed?
 
 	@Field(type = FieldType.Text)
 	String additionalInfo;
+
+	@Field(type = FieldType.Text)
+	String token;
 
 	public Payment() {
 	}
@@ -143,5 +146,13 @@ public class Payment {
 
 	public void setAdditionalInfo(String additionalInfo) {
 		this.additionalInfo = additionalInfo;
+	}
+
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 }

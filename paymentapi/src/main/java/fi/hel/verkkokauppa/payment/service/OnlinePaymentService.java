@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -42,24 +43,26 @@ public class OnlinePaymentService {
     private TokenFetcher tokenFetcher;
 
     public String getPaymentRequestData(GetPaymentRequestDataDto dto) {
-        // TODO: should check order status
-        // TODO: if wrong status, return failure url (where to get it from?)
+        // TODO: should check order status - if wrong status, return failure url
 
-        Payment payment = createPayment(dto);
-        // TODO: if creating payment fails, return failure url
+        boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
+        String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
 
         try {
             String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto));
 
-            // TODO: Kortin token tulee tallentaa jos subscription, mistä tiedetään?
+            Payment payment = createPayment(dto, paymentType, isRecurringOrder ? token : null);
+            if (payment.getPaymentId() == null) {
+                throw new RuntimeException("Didn't manage to create payment.");
+            }
+
             return VismaPayClient.API_URL + "/token/" + token;
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return null; // TODO: return failure url
         }
     }
 
-    // TODO: transaction?
-    private Payment createPayment(GetPaymentRequestDataDto dto) {
+    private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token) {
         OrderDto order = dto.getOrder().getOrder();
         List<OrderItemDto> items = dto.getOrder().getItems();
 
@@ -74,20 +77,19 @@ public class OnlinePaymentService {
         payment.setPaymentId(paymentId);
         payment.setNamespace(order.getNamespace());
         payment.setOrderId(order.getOrderId());
-        // TODO: additional info => how?
-        // TODO: set payment method?
+        payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
+        payment.setPaymentType(type);
+        payment.setStatus(PaymentStatus.CREATED);
+        payment.setToken(token); // TODO: ok?
 
         calculateTotals(payment, items);
-
-        payment.setStatus(PaymentStatus.CREATED);
+        createPayer(order);
 
         for (OrderItemDto item : items) {
             createPaymentItem(item, paymentId, order.getOrderId());
         }
-        createPayer(order);
 
         paymentRepository.save(payment);
-
         log.debug("created payment for namespace: " + namespace + " with paymentId: " + paymentId);
 
         return payment;
@@ -103,7 +105,6 @@ public class OnlinePaymentService {
         item.setRowPriceNet(itemDto.getRowPriceNet());
         item.setRowPriceTotal(itemDto.getRowPriceTotal());
         item.setRowPriceVat(itemDto.getRowPriceVat());
-        // TODO: something else?
 
         paymentItemRepository.save(item);
     }
@@ -118,14 +119,19 @@ public class OnlinePaymentService {
     }
 
     private void calculateTotals(Payment payment, List<OrderItemDto> items) {
+        BigDecimal totalExclTax = BigDecimal.valueOf(0);
+        BigDecimal total = BigDecimal.valueOf(0);
+        BigDecimal taxAmount = BigDecimal.valueOf(0);
+
         for (OrderItemDto item : items) {
-            // TODO: somehow calculate the following:
-            /*
-            BigDecimal totalExclTax;
-            BigDecimal total;
-            BigDecimal taxPercent;
-            BigDecimal taxAmount;
-         */
+            totalExclTax = totalExclTax.add(item.getRowPriceNet());
+            total = total.add(item.getRowPriceTotal());
+            taxAmount = taxAmount.add(item.getRowPriceVat());
         }
+
+        payment.setTotal(total);
+        payment.setTotalExclTax(totalExclTax);
+        payment.setTaxAmount(taxAmount);
+        payment.setTaxPercent(taxAmount.divide(totalExclTax)); // TODO: ok?
     }
 }

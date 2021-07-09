@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutionException;
 public class TokenFetcher {
 
 	public String getToken(ChargeRequest.PaymentTokenPayload payload) {
-		VismaPayClient client = new VismaPayClient("api_key", "private_key");
+		VismaPayClient client = new VismaPayClient("api_key", "private_key"); // TODO: replace
 
 		CompletableFuture<ChargeResponse> responseCF =
 				client.sendRequest(new ChargeRequest(payload));

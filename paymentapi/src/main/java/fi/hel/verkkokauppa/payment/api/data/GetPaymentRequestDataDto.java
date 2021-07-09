@@ -3,7 +3,8 @@ package fi.hel.verkkokauppa.payment.api.data;
 public class GetPaymentRequestDataDto {
 
 	private OrderWrapper order;
-	private String paymentMethod; // TODO: is this needed?
+	private String paymentMethod;
+	private String language;
 
 	public OrderWrapper getOrder() {
 		return order;
@@ -19,5 +20,13 @@ public class GetPaymentRequestDataDto {
 
 	public void setPaymentMethod(String paymentMethod) {
 		this.paymentMethod = paymentMethod;
+	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
 	}
 }

@@ -16,6 +16,8 @@ import java.math.BigInteger;
 @Component
 public class PaymentTokenPayloadBuilder {
 
+	private static final String DEFAULT_LANGUAGE = "fi";
+
 	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
 		OrderDto order = dto.getOrder().getOrder();
@@ -31,13 +33,14 @@ public class PaymentTokenPayloadBuilder {
 	}
 
 	private void assignPaymentMethod(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto) {
-		// TODO: hardcoded values should be fetched from configuration API! Only for testing!
+		boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
+
 		PaymentMethod paymentMethod = new PaymentMethod();
 		paymentMethod.setType(PaymentMethod.TYPE_EPAYMENT)
-				.setReturnUrl("http://localhost:8080/")
-				.setNotifyUrl("http://localhost:8080/")
-				.setLang("FI"); // TODO: Kieli (Tilaus API, lisättävä asiakkaan kieli)
-		// TODO: Rekisteröidäänkö kortin token vai ei (riippuen onko subscription vai ei) => mistä tiedetään?
+				.setReturnUrl("http://localhost:8080/") // TODO: replace
+				.setNotifyUrl("http://localhost:8080/") // TODO: replace
+				.setLang(dto.getLanguage() != null ? dto.getLanguage() : DEFAULT_LANGUAGE)
+				.setRegisterCardToken(isRecurringOrder);
 
 		if (dto.getPaymentMethod() != null && !dto.getPaymentMethod().isEmpty()) {
 			paymentMethod.setSelected(new String[] { dto.getPaymentMethod() });
@@ -61,17 +64,23 @@ public class PaymentTokenPayloadBuilder {
 					.setType(ProductType.TYPE_PRODUCT)
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
-					.setPretaxPrice(BigDecimal.valueOf(100)) // TODO: mistä?
-					.setTax(24) // TODO: mistä?
-					.setPrice(BigDecimal.valueOf(124)); // TODO: mikä?
-			// TODO: (Ali)kauppiastunnus (Konfiguraatio API)
-			// TODO: Provisio
+					.setPretaxPrice(item.getRowPriceNet())
+					.setTax(item.getRowPriceVat().intValue())
+					.setPrice(item.getRowPriceTotal())
+					.setMerchantId(12345L) // TODO: replace
+					.setCp("cp"); // TODO: replace
 
 			payload.addProduct(product);
 		}
 	}
 
 	private BigInteger calculateTotalsInCents(GetPaymentRequestDataDto dto) {
-		return BigInteger.valueOf(123); // TODO: laske summa sentteinä! kerro sadalla jotain
+		BigDecimal totalSum = BigDecimal.valueOf(0);
+		BigDecimal multiplier = BigDecimal.valueOf(100L);
+
+		for (OrderItemDto item : dto.getOrder().getItems()) {
+			totalSum = totalSum.add(item.getRowPriceTotal());
+		}
+		return totalSum.multiply(multiplier).toBigInteger(); // TODO: ok?
 	}
 }
