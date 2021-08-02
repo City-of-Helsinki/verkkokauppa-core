@@ -3,7 +3,7 @@
 trigger:
   paths:
     include:
-    - price-api
+    - priceapi
   tags:
     include:
       - price-api/*
