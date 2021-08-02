@@ -10,9 +10,6 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Data
 public class ProductAccounting extends BaseModel {
     @Id
-    private String id;
-
-    @Field(type = FieldType.Text)
     private String productId;
 
     @Field(type = FieldType.Text)
