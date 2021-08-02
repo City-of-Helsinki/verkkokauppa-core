@@ -11,6 +11,7 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         ProductAccounting productAccounting = new ProductAccounting();
         productAccounting.setProductId(dto.getProductId());
         productAccounting.setMainLedgerAccount(dto.getMainLedgerAccount());
+        productAccounting.setVatCode(dto.getVatCode());
         productAccounting.setProject(dto.getProject());
         productAccounting.setInternalOrder(dto.getInternalOrder());
         productAccounting.setProfitCenter(dto.getProfitCenter());
@@ -23,6 +24,7 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         ProductAccountingDto dto = new ProductAccountingDto();
         dto.setProductId(productAccounting.getProductId());
         dto.setMainLedgerAccount(productAccounting.getMainLedgerAccount());
+        dto.setVatCode(productAccounting.getVatCode());
         dto.setProject(productAccounting.getProject());
         dto.setInternalOrder(productAccounting.getInternalOrder());
         dto.setProfitCenter(productAccounting.getProfitCenter());
