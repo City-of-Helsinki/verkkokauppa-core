@@ -17,6 +17,7 @@
 		<java.version>11</java.version>
 	</properties>
 	<dependencies>
+
 		<dependency>
 			<groupId>fi.hel</groupId>
 			<artifactId>common</artifactId>
@@ -51,5 +52,25 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+<distributionManagement>
+                <repository>
+                        <id>talpa-artifacts</id>
+                        <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1</url>
+                </repository>
+</distributionManagement>
+<repositories>
+        <repository>
+                <id>talpa-artifacts</id>
+                <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1</url>
+                <releases>
+                        <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                        <enabled>true</enabled>
+                </snapshots>
+        </repository>
+</repositories>
+
 
 </project>

@@ -20,12 +20,12 @@ public class ServiceConfigurationController {
     private ServiceConfigurationService service;
 
 	@GetMapping("/serviceconfiguration/public/get")
-	public ServiceConfiguration getPublicServiceMapping(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "key") String key) {
+	public ServiceConfiguration getPublicServiceConfiguration(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "key") String key) {
 		return service.findBy(namespace, key);
 	}
 
     @GetMapping("/serviceconfiguration/public/getAll")
-	public List<ServiceConfiguration> getPublicServiceConfiguration(@RequestParam(value = "namespace") String namespace) {
+	public List<ServiceConfiguration> getPublicServiceConfigurationAll(@RequestParam(value = "namespace") String namespace) {
 		return service.findBy(namespace);
 	}
 
@@ -33,7 +33,7 @@ public class ServiceConfigurationController {
 	 * TODO access control by path
 	 */	
 	@GetMapping("/serviceconfiguration/restricted/get")
-	public ServiceConfiguration getRestrictedServiceMapping(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "key") String key) {
+	public ServiceConfiguration getRestrictedServiceConfiguration(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "key") String key) {
 		return service.findRestricted(namespace, key);
 	}
 
@@ -41,7 +41,7 @@ public class ServiceConfigurationController {
 	 * TODO access control by path
 	 */	
 	@GetMapping("/serviceconfiguration/restricted/getAll")
-	public List<ServiceConfiguration> getRestrictedServiceConfiguration(@RequestParam(value = "namespace") String namespace) {
+	public List<ServiceConfiguration> getRestrictedServiceConfigurationAll(@RequestParam(value = "namespace") String namespace) {
 		return service.findRestricted(namespace);
 	}
 
