@@ -66,13 +66,23 @@ public class OrderController {
     @PostMapping("/order/setItems")
 	public OrderDto setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderDto dto) {
         if (dto != null && dto.getItems() != null) {
-            dto.getItems().stream().forEach(item -> {
+            dto.getItems().stream().forEach(item -> { 
                 orderItemService.addItem(orderId, item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnit(), 
                     item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                 );
         }
-        // TODO: what if order items change and is subscription type?
 
+        Order order = orderService.findById(orderId);
+        String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
+        orderService.setType(order, orderType);
+
+        return getOrderWithItems(orderId);
+	}
+
+    @PostMapping("/order/setTotals")
+	public OrderDto setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "priceNet") String priceNet, 
+            @RequestParam(value = "priceVat") String priceVat, @RequestParam(value = "priceTotal") String priceTotal) {
+		orderService.setTotals(orderId, priceNet, priceVat, priceTotal);
         return getOrderWithItems(orderId);
 	}
 
@@ -81,11 +91,9 @@ public class OrderController {
         Order orderIn = dto.getOrder();
         Order order = orderService.createByParams(orderIn.getNamespace(), orderIn.getUser());
 
-		// TODO: refactor this code and move this to service!
-		orderTypeLogic.setOrderType(order, dto.getItems());
-
-        orderService.setCustomer(order.getOrderId(), orderIn.getCustomerFirstName(), orderIn.getCustomerLastName(), orderIn.getCustomerEmail());
+        orderService.setCustomer(order, orderIn.getCustomerFirstName(), orderIn.getCustomerLastName(), orderIn.getCustomerEmail());
         setItems(order.getOrderId(), dto);
+		orderService.setTotals(order, orderIn.getPriceNet(), orderIn.getPriceVat(), orderIn.getPriceTotal());
 
         return getOrderWithItems(order.getOrderId());
     }

@@ -27,7 +27,7 @@ public class OrderTypeLogic {
 		return true;
 	}
 
-	private String decideOrderTypeBasedOnItems(List<OrderItem> items) {
+	public String decideOrderTypeBasedOnItems(List<OrderItem> items) {
 		boolean subscriptionItemsFound = (int)items.stream()
 				.filter(item -> item.getPeriodFrequency() != null && item.getPeriodUnit() != null)
 				.count() > 0;
