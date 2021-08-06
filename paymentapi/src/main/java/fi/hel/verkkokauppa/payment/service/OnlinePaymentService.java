@@ -56,7 +56,7 @@ public class OnlinePaymentService {
         String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
         // get common payment configuration from configuration api
         WebClient client = serviceConfigurationClient.getClient();
-        String namespace = dto.getNamespace();
+        String namespace = dto.getOrder().getOrder().getNamespace();
         JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
 
         // refer to ServiceConfigurationKeys
