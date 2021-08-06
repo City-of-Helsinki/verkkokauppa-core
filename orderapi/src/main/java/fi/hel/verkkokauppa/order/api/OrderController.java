@@ -80,16 +80,8 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
             @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
-            CustomerDto customerDto = CustomerDto.builder()
-                    .customerLastName(customerLastName)
-                    .customerFirstName(customerFirstName)
-                    .customerEmail(customerEmail)
-                    .customerPhone(customerPhone)
-                    .build();
-
-            commonBeanValidationService.validateInput(customerDto);
-
-            orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail, customerPhone);
+            CustomerDto customerDto = validateCustomerData(customerFirstName, customerLastName, customerEmail, customerPhone);
+            orderService.setCustomer(orderId, customerDto);
             return orderAggregateDto(orderId);
 
         } catch (Exception e) {
@@ -140,8 +132,9 @@ public class OrderController {
             Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
             String orderId = order.getOrderId();
 
-            orderService.setCustomer(order, orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
-            setItems(order.getOrderId(), orderAggregateDto);
+            CustomerDto customerDto = validateCustomerData(orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
+            orderService.setCustomer(orderId, customerDto);
+            setItems(orderId, orderAggregateDto);
             orderService.setTotals(order, orderDto.getPriceNet(), orderDto.getPriceVat(), orderDto.getPriceTotal());
 
             return orderAggregateDto(orderId);
@@ -161,4 +154,16 @@ public class OrderController {
         return ResponseEntity.ok().body(getOrderWithItems(orderId));
     }
 
+    private CustomerDto validateCustomerData(String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
+        CustomerDto customerDto = CustomerDto.builder()
+        .customerLastName(customerLastName)
+        .customerFirstName(customerFirstName)
+        .customerEmail(customerEmail)
+        .customerPhone(customerPhone)
+        .build();
+
+        commonBeanValidationService.validateInput(customerDto);
+        return customerDto;
+    }
+    
 }

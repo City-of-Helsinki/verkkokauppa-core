@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -76,10 +77,11 @@ public class OrderService {
         return null;
     }
 
-    public void setCustomer(String orderId, String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
+
+    public void setCustomer(String orderId, CustomerDto customerDto) {
         Order order = findById(orderId);
         if (order != null)
-            setCustomer(order, customerFirstName, customerLastName, customerEmail, customerPhone);
+            setCustomer(order, customerDto.getCustomerFirstName(), customerDto.getCustomerLastName(), customerDto.getCustomerEmail(), customerDto.getCustomerPhone());
     }
 
     public void setCustomer(Order order, String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
