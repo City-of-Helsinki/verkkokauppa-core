@@ -27,6 +27,14 @@ public class Order {
     @Field(type = FieldType.Text)
     String customerEmail;
 
+    @Field(type = FieldType.Text)
+    String priceNet;
+    @Field(type = FieldType.Text)
+    String priceVat;
+    @Field(type = FieldType.Text)
+    String priceTotal;
+
+
     public Order() {}
 
     public Order(String orderId, String namespace, String user, String createdAt) {
@@ -124,6 +132,30 @@ public class Order {
 
     public void setCustomerLastName(String customerLastName) {
         this.customerLastName = customerLastName;
+    }
+
+    public String getPriceNet() {
+        return priceNet;
+    }
+
+    public void setPriceNet(String priceNet) {
+        this.priceNet = priceNet;
+    }
+
+    public String getPriceVat() {
+        return priceVat;
+    }
+
+    public void setPriceVat(String priceVat) {
+        this.priceVat = priceVat;
+    }
+
+    public String getPriceTotal() {
+        return priceTotal;
+    }
+
+    public void setPriceTotal(String priceTotal) {
+        this.priceTotal = priceTotal;
     }
     
 }
