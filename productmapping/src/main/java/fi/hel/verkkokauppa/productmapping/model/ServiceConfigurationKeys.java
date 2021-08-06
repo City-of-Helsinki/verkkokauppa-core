@@ -14,6 +14,7 @@ public class ServiceConfigurationKeys {
     //
     public static String PAYMENT_API_VERSION = "payment_api_version";
     public static String PAYMENT_API_KEY = "payment_api_key";
+    public static String PAYMENT_ENCRYPTION_KEY = "payment_encryption_key";
     // order id
     // order total sum in cents
     public static String PAYMENT_CURRENCY = "payment_currency";

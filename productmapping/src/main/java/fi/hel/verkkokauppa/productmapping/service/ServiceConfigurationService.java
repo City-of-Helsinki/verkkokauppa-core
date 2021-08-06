@@ -64,6 +64,7 @@ public class ServiceConfigurationService {
         List<ServiceConfiguration> entities = Arrays.asList(new ServiceConfiguration[]{
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_API_VERSION, "wm3.1", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_API_KEY, "asukaspysakointi_mock_api_key", true),
+            createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "asukaspysakointi_mock_encryption_key", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_CURRENCY, "EUR", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_TYPE, "e-payment", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_REGISTER_CARD_TOKEN, "false", true),
@@ -75,6 +76,7 @@ public class ServiceConfigurationService {
 
             createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_API_VERSION, "wm3.1", true),
             createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_API_KEY, "tilavaraus_mock_api_key", true),
+            createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "tilavaraus_mock_encryption_key", true),
             createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_CURRENCY, "EUR", true),
             createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_TYPE, "e-payment", true),
             createByParams("tilavaraus", ServiceConfigurationKeys.PAYMENT_REGISTER_CARD_TOKEN, "false", true),
@@ -86,6 +88,7 @@ public class ServiceConfigurationService {
 
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_VERSION, "wm3.1", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
+            createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_CURRENCY, "EUR", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_TYPE, "e-payment", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_REGISTER_CARD_TOKEN, "false", true),

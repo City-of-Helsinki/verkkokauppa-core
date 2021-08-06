@@ -4,6 +4,10 @@ import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;
 import org.helsinki.vismapay.request.paymentmethods.PaymentMethodsRequest;
 import org.helsinki.vismapay.response.paymentmethods.PaymentMethodsResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.CompletableFuture;
@@ -11,12 +15,21 @@ import java.util.concurrent.ExecutionException;
 
 @Component
 public class PaymentMethodListFetcher {
+    
+    private Logger log = LoggerFactory.getLogger(PaymentMethodListFetcher.class);
+
+    @Autowired
+    private Environment env;
 
 	public final static String DEFAULT_CURRENCY = "EUR";
 
 	public PaymentMethod[] getList(String currency) {
+		String apiKey = env.getRequiredProperty("payment_api_key");
+		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
+		String apiVersion = env.getRequiredProperty("payment_api_version");
+
 		// Version is different for payment method API
-		VismaPayClient client = new VismaPayClient("api_key", "private_key", "2"); // TODO: replace
+		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
 		CompletableFuture<PaymentMethodsResponse> responseCF =
 				client.sendRequest(new PaymentMethodsRequest(buildPayloadFor(currency)));
@@ -26,12 +39,14 @@ public class PaymentMethodListFetcher {
 			if (response.getResult() == 0) {
 				return response.getPaymentMethods();
 			} else {
+				log.error("payment methods request failed, check application.properties");
 				throw new RuntimeException(
 						"Unable to get the payment methods for the merchant. " +
 						"Please check that api key and private key are correct."
 				);
 			}
 		} catch (InterruptedException | ExecutionException e) {
+			log.error("exception when getting payment methods", e);
 			throw new RuntimeException("Got the following exception: " + e.getMessage());
 		}
 	}
