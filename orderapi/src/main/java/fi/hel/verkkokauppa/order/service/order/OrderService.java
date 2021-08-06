@@ -76,16 +76,17 @@ public class OrderService {
         return null;
     }
 
-    public void setCustomer(String orderId, String customerFirstName, String customerLastName, String customerEmail) {
+    public void setCustomer(String orderId, String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
         Order order = findById(orderId);
         if (order != null)
-            setCustomer(order, customerFirstName, customerLastName, customerEmail);
+            setCustomer(order, customerFirstName, customerLastName, customerEmail, customerPhone);
     }
 
-    public void setCustomer(Order order, String customerFirstName, String customerLastName, String customerEmail) {
+    public void setCustomer(Order order, String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
         order.setCustomerFirstName(customerFirstName);
         order.setCustomerLastName(customerLastName);
         order.setCustomerEmail(customerEmail);
+        order.setCustomerPhone(customerPhone);
 
         orderRepository.save(order);
         log.debug("saved order customer details, orderId: " + order.getOrderId());

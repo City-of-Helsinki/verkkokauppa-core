@@ -89,7 +89,7 @@ public class OrderController {
 
             commonBeanValidationService.validateInput(customerDto);
 
-            orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail);
+            orderService.setCustomer(orderId, customerFirstName, customerLastName, customerEmail, customerPhone);
             return orderAggregateDto(orderId);
 
         } catch (Exception e) {
@@ -140,7 +140,7 @@ public class OrderController {
             Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
             String orderId = order.getOrderId();
 
-            orderService.setCustomer(order, orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail());
+            orderService.setCustomer(order, orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
             setItems(order.getOrderId(), orderAggregateDto);
             orderService.setTotals(order, orderDto.getPriceNet(), orderDto.getPriceVat(), orderDto.getPriceTotal());
 
