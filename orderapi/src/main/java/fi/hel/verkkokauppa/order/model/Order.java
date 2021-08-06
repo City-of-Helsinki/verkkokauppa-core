@@ -5,6 +5,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+
 @Document(indexName = "orders")
 public class Order {
     @Id
@@ -45,21 +46,6 @@ public class Order {
         this.namespace = namespace;
         this.user = user;
         this.createdAt = createdAt;
-    }
-    
-    public Order(String orderId, String namespace, String user, String createdAt, String status, String customerFirstName, String customerLastName,
-            String customerEmail) {
-        this.status = OrderStatus.CREATED;
-        this.type = OrderType.ORDER;
-
-        this.orderId = orderId;
-        this.namespace = namespace;
-        this.user = user;
-        this.createdAt = createdAt;
-        this.status = status;
-        this.customerFirstName = customerFirstName;
-        this.customerLastName = customerLastName;
-        this.customerEmail = customerEmail;
     }
 
     public String getOrderId() {
