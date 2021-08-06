@@ -26,9 +26,8 @@ public class PaymentMethodListFetcher {
 	public PaymentMethod[] getList(String currency) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
 		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
-		String apiVersion = env.getRequiredProperty("payment_api_version");
+		String apiVersion = env.getRequiredProperty("payment_methods_api_version");
 
-		// Version is different for payment method API
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
 		CompletableFuture<PaymentMethodsResponse> responseCF =
