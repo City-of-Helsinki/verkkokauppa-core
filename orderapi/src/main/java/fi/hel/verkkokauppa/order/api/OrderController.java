@@ -78,12 +78,13 @@ public class OrderController {
 
     @PostMapping(value = "/order/setCustomer", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
-            @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail) {
+            @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
             CustomerDto customerDto = CustomerDto.builder()
                     .customerLastName(customerLastName)
                     .customerFirstName(customerFirstName)
                     .customerEmail(customerEmail)
+                    .customerPhone(customerPhone)
                     .build();
 
             commonBeanValidationService.validateInput(customerDto);

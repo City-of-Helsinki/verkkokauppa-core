@@ -23,4 +23,7 @@ public class CustomerDto {
     @Email(message = "email must be in correct format")
     @NotBlank(message = "email required")
     private String customerEmail;
+
+    private String customerPhone;
+
 }

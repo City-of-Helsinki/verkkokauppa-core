@@ -27,6 +27,8 @@ public class Order {
     String customerLastName;
     @Field(type = FieldType.Text)
     String customerEmail;
+    @Field(type = FieldType.Text)
+    String customerPhone;
 
     @Field(type = FieldType.Text)
     String priceNet;
@@ -142,6 +144,14 @@ public class Order {
 
     public void setPriceTotal(String priceTotal) {
         this.priceTotal = priceTotal;
+    }
+
+    public String getCustomerPhone() {
+        return customerPhone;
+    }
+
+    public void setCustomerPhone(String customerPhone) {
+        this.customerPhone = customerPhone;
     }
     
 }
