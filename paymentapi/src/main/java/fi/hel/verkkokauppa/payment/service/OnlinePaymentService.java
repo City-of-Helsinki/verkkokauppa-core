@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
 import fi.hel.verkkokauppa.payment.logic.TokenFetcher;
 import fi.hel.verkkokauppa.payment.model.Payer;
@@ -54,19 +55,27 @@ public class OnlinePaymentService {
 
         boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
         String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
-        // get common payment configuration from configuration api
-        WebClient client = serviceConfigurationClient.getClient();
-        String namespace = dto.getOrder().getOrder().getNamespace();
-        JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
 
+        // get common payment configuration from configuration api
+        //WebClient client = serviceConfigurationClient.getClient();
+        //String namespace = dto.getOrder().getOrder().getNamespace();
+        //JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
+        //
         // refer to ServiceConfigurationKeys
-        String payment_return_url = (String) namespaceServiceConfiguration.get("payment_return_url");
-        log.debug("namespace: " + namespace + " payment_return_url: " + payment_return_url);
+        //String payment_return_url = (String) namespaceServiceConfiguration.get("payment_return_url");
+        //String payment_notification_url = (String) namespaceServiceConfiguration.get("payment_notification_url");
+        //log.debug("namespace: " + namespace + " payment_return_url: " + payment_return_url);
 
         // TODO use the common payment configuration values
+        PaymentContext context = new PaymentContext();
+        context.setReturnUrl("http://localhost:8080/");
+        context.setNotifyUrl("http://localhost:8080/");
+//        context.setMerchantId(""); // merchant_id
+        context.setMerchantId(36240L); // submerchant_id
+        context.setCp("PRO-31312-1");
 
         try {
-            String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto));
+            String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto, context));
 
             Payment payment = createPayment(dto, paymentType, isRecurringOrder ? token : null);
             if (payment.getPaymentId() == null) {

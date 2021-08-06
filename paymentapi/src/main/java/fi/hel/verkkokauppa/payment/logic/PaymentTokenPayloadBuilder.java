@@ -18,27 +18,27 @@ public class PaymentTokenPayloadBuilder {
 
 	private static final String DEFAULT_LANGUAGE = "fi";
 
-	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto) {
+	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto, PaymentContext context) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
 		OrderDto order = dto.getOrder().getOrder();
 
-		assignPaymentMethod(payload, dto);
+		assignPaymentMethod(payload, dto, context);
 		assignCustomer(payload, order);
-		assignProducts(payload, dto);
+		assignProducts(payload, dto, context);
 
-		payload.setAmount(calculateTotalsInCents(dto))
+		payload.setAmount(calculateTotals(dto))
 				.setOrderNumber(order.getOrderId())
 				.setCurrency("EUR");
 		return payload;
 	}
 
-	private void assignPaymentMethod(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto) {
+	private void assignPaymentMethod(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto, PaymentContext context) {
 		boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
 
 		PaymentMethod paymentMethod = new PaymentMethod();
 		paymentMethod.setType(PaymentMethod.TYPE_EPAYMENT)
-				.setReturnUrl("http://localhost:8080/") // TODO: replace
-				.setNotifyUrl("http://localhost:8080/") // TODO: replace
+				.setReturnUrl(context.getReturnUrl())
+				.setNotifyUrl(context.getNotifyUrl())
 				.setLang(dto.getLanguage() != null ? dto.getLanguage() : DEFAULT_LANGUAGE)
 				.setRegisterCardToken(isRecurringOrder);
 
@@ -57,7 +57,7 @@ public class PaymentTokenPayloadBuilder {
 		payload.setCustomer(customer);
 	}
 
-	private void assignProducts(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto) {
+	private void assignProducts(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto, PaymentContext context) {
 		for (OrderItemDto item : dto.getOrder().getItems()) {
 			Product product = new Product();
 			product.setId(item.getProductId())
@@ -67,11 +67,20 @@ public class PaymentTokenPayloadBuilder {
 					.setPretaxPrice(item.getRowPriceNet())
 					.setTax(item.getRowPriceVat().intValue())
 					.setPrice(item.getRowPriceTotal())
-					.setMerchantId(12345L) // TODO: replace
-					.setCp("cp"); // TODO: replace
+					.setMerchantId(context.getMerchantId())
+					.setCp(context.getCp());
 
 			payload.addProduct(product);
 		}
+	}
+
+	private BigInteger calculateTotals(GetPaymentRequestDataDto dto) {
+		BigDecimal totalSum = BigDecimal.valueOf(0);
+
+		for (OrderItemDto item : dto.getOrder().getItems()) {
+			totalSum = totalSum.add(item.getRowPriceTotal());
+		}
+		return totalSum.toBigInteger();
 	}
 
 	private BigInteger calculateTotalsInCents(GetPaymentRequestDataDto dto) {
@@ -81,6 +90,7 @@ public class PaymentTokenPayloadBuilder {
 		for (OrderItemDto item : dto.getOrder().getItems()) {
 			totalSum = totalSum.add(item.getRowPriceTotal());
 		}
-		return totalSum.multiply(multiplier).toBigInteger(); // TODO: ok?
+		return totalSum.multiply(multiplier).toBigInteger();
 	}
+
 }
