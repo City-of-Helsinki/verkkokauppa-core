@@ -14,8 +14,8 @@ import java.util.List;
 public class OrderAggregateDto {
 
     @NotNull(message = "order required")
-    private OrderDto orderDto;
+    private OrderDto order;
 
     @NotNull(message = "items required")
-    private List<OrderItemDto> orderItemDtos = new ArrayList<>();
+    private List<OrderItemDto> items = new ArrayList<>();
 }

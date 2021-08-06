@@ -1,13 +1,11 @@
 package fi.hel.verkkokauppa.order.api.data.transformer;
 
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,12 +21,12 @@ public class OrderTransformerUtils {
 
     public OrderAggregateDto transformToOrderAggregateDto(Order order, List<OrderItem> orderItems) {
         OrderAggregateDto dto = new OrderAggregateDto();
-        dto.setOrderDto(orderTransformer.transformToDto(order));
+        dto.setOrder(orderTransformer.transformToDto(order));
         List<OrderItemDto> orderItemDtoList = orderItems.stream()
                 .map(orderItem -> orderItemTransformer.transformToDto(orderItem))
                 .collect(Collectors.toList());
 
-        dto.setOrderItemDtos(orderItemDtoList);
+        dto.setItems(orderItemDtoList);
 
         return dto;
     }

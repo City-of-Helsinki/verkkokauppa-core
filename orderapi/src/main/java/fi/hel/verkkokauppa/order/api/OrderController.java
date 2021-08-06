@@ -100,15 +100,15 @@ public class OrderController {
     @PostMapping(value = "/order/setItems", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderAggregateDto dto) {
         try {
-            if (dto != null && dto.getOrderItemDtos() != null) {
-                dto.getOrderItemDtos().stream().forEach(item -> {
+            if (dto != null && dto.getItems() != null) {
+                dto.getItems().stream().forEach(item -> {
                     orderItemService.addItem(orderId, item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnit(), 
                         item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                     );
             }
 
             Order order = orderService.findById(orderId);
-            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getOrderItemDtos());
+            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
             orderService.setType(order, orderType);
 
             return orderAggregateDto(orderId);
@@ -135,7 +135,7 @@ public class OrderController {
     @PostMapping(value = "/order/createWithItems", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<OrderAggregateDto> createWithItems(@RequestBody OrderAggregateDto orderAggregateDto) {
         try {
-            OrderDto orderDto = orderAggregateDto.getOrderDto();
+            OrderDto orderDto = orderAggregateDto.getOrder();
             Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
             String orderId = order.getOrderId();
 

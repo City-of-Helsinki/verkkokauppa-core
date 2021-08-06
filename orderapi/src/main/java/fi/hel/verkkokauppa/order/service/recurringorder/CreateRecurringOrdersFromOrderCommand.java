@@ -4,8 +4,6 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.MerchantDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.ProductDto;
 import fi.hel.verkkokauppa.order.model.OrderType;
@@ -34,14 +32,14 @@ public class CreateRecurringOrdersFromOrderCommand {
 
 		Set<String> idList = new HashSet<>();
 
-		for (OrderItemDto orderItemDto : orderAggregateDto.getOrderItemDtos()) {
+		for (OrderItemDto orderItemDto : orderAggregateDto.getItems()) {
 			if (!canCreateFromOrderItem(orderItemDto)) {
 				continue;
 			}
 
 			RecurringOrderDto recurringOrderDto = new RecurringOrderDto();
 
-			copyOrderFieldsToRecurringOrder(orderAggregateDto.getOrderDto(), recurringOrderDto);
+			copyOrderFieldsToRecurringOrder(orderAggregateDto.getOrder(), recurringOrderDto);
 			copyOrderItemFieldsToRecurringOrder(orderItemDto, recurringOrderDto);
 
 			String id = createRecurringOrderCommand.create(recurringOrderDto);
@@ -77,7 +75,7 @@ public class CreateRecurringOrdersFromOrderCommand {
 	}
 
 	private boolean canCreateFromOrder(OrderAggregateDto orderAggregateDto) {
-		return orderAggregateDto.getOrderDto().getType().equals(OrderType.SUBSCRIPTION);
+		return orderAggregateDto.getOrder().getType().equals(OrderType.SUBSCRIPTION);
 	}
 
 	private boolean canCreateFromOrderItem(OrderItemDto item) {
