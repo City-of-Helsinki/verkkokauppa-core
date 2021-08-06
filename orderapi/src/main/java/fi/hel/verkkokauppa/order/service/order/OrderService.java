@@ -6,10 +6,7 @@ import java.util.Optional;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
-import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
-import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,9 +52,7 @@ public class OrderService {
         Order order = new Order(orderId, namespace, user, createdAt);
 
         orderRepository.save(order);
-
         log.debug("created new order, orderId: " + orderId);
-
         return order;
     }
 
@@ -67,8 +62,7 @@ public class OrderService {
         if (mapping.isPresent())
             return mapping.get();
 
-        log.debug("order not found, orderId: " + orderId);
-
+        log.warn("order not found, orderId: " + orderId);
         return null;
     }
 
@@ -79,26 +73,52 @@ public class OrderService {
             return matchingOrders.get(0);
 
         log.debug("order not found, namespace: " + namespace + " user: " + user);
-
         return null;
     }
 
     public void setCustomer(String orderId, String customerFirstName, String customerLastName, String customerEmail) {
         Order order = findById(orderId);
+        if (order != null)
+            setCustomer(order, customerFirstName, customerLastName, customerEmail);
+    }
+
+    public void setCustomer(Order order, String customerFirstName, String customerLastName, String customerEmail) {
         order.setCustomerFirstName(customerFirstName);
         order.setCustomerLastName(customerLastName);
         order.setCustomerEmail(customerEmail);
 
         orderRepository.save(order);
+        log.debug("saved order customer details, orderId: " + order.getOrderId());
+    }
 
-        log.debug("saved order customer details, orderId: " + orderId);
+    public void setTotals(String orderId, String priceNet, String priceVat, String priceTotal) {
+        Order order = findById(orderId);
+        if (order != null)
+            setTotals(order, priceNet, priceVat, priceTotal);        
+    }
+
+    public void setTotals(Order order, String priceNet, String priceVat, String priceTotal) {
+        order.setPriceNet(priceNet);
+        order.setPriceVat(priceVat);
+        order.setPriceTotal(priceTotal);
+
+        orderRepository.save(order);
+        log.debug("saved order price totals, orderId: " + order.getOrderId());
+    }
+
+    public void setType(Order order, String type) {
+        order.setType(type);
+        
+        orderRepository.save(order);
+        log.debug("set order type, orderId: " + order.getOrderId() + " type: " + order.getType());
     }
 
     public void cancel(String orderId) {
         Order order = findById(orderId);
         order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
 
+        orderRepository.save(order);
         log.debug("canceled order, orderId: " + orderId);
     }
+
 }

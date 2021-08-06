@@ -86,8 +86,18 @@ public class OrderController {
                     item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
                 );
         }
-        // TODO: what if order items change and is subscription type?
 
+        Order order = orderService.findById(orderId);
+        String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getOrderItemDtos());
+        orderService.setType(order, orderType);
+
+        return getOrderWithItems(orderId);
+	}
+
+    @PostMapping("/order/setTotals")
+	public OrderAggregateDto setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "priceNet") String priceNet, 
+            @RequestParam(value = "priceVat") String priceVat, @RequestParam(value = "priceTotal") String priceTotal) {
+		orderService.setTotals(orderId, priceNet, priceVat, priceTotal);
         return getOrderWithItems(orderId);
 	}
 
@@ -96,11 +106,9 @@ public class OrderController {
         OrderDto orderDto = orderAggregateDto.getOrderDto();
         Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
 
-		// TODO: refactor this code and move this to service!
-		orderTypeLogic.setOrderType(order, orderAggregateDto.getOrderItemDtos());
-
-        orderService.setCustomer(order.getOrderId(), orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail());
+        orderService.setCustomer(order, orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail());
         setItems(order.getOrderId(), orderAggregateDto);
+        orderService.setTotals(order, orderDto.getPriceNet(), orderDto.getPriceVat(), orderDto.getPriceTotal());
 
         return getOrderWithItems(order.getOrderId());
     }

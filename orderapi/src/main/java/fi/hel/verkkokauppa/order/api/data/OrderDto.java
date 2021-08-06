@@ -13,16 +13,15 @@ import javax.validation.constraints.NotBlank;
 public class OrderDto {
 
     private String orderId;
-
     private String namespace;
-
     private String user;
-
     private String createdAt;
-
     private String status;
-
     private String type;
+    private String priceNet;
+    private String priceVat;
+    private String priceTotal;
+
 
     @NotBlank(message = "firstname required")
     private String customerFirstName;

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.product.service;
+package fi.hel.verkkokauppa.product.repository;
 
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;

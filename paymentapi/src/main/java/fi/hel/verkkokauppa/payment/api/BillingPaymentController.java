@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,9 +17,8 @@ public class BillingPaymentController {
     @Autowired
     private BillingPaymentService service;
 
-
 	@PostMapping(value = "/payment/billing/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> createPaymentFromOrder(@RequestBody OrderPaymentDto dto) {
+	public ResponseEntity<String> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
 		String redirectUrl = service.createFromOrder(dto);
 
 		return ResponseEntity.status(HttpStatus.CREATED)

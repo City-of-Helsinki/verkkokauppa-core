@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -21,6 +23,8 @@ import java.util.Set;
 @RestController
 @RequestMapping(RecurringOrderUrlConstants.RECURRING_ORDER_API_ROOT)
 public class RecurringOrderController {
+
+	private Logger log = LoggerFactory.getLogger(RecurringOrderController.class);
 
 	private final CreateRecurringOrderCommand createRecurringOrderCommand;
 	//private final UpdateRecurringOrderCommand updateRecurringOrderCommand;
@@ -52,6 +56,7 @@ public class RecurringOrderController {
 			final RecurringOrderDto recurringOrder = getRecurringOrderQuery.getOne(id);
 			return ResponseEntity.ok(recurringOrder);
 		} catch(EntityNotFoundException e) {
+			log.error("Exception on getting recurring order", e);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
@@ -67,6 +72,7 @@ public class RecurringOrderController {
 			final List<RecurringOrderDto> recurringOrder = searchRecurringOrdersQuery.searchActive(criteria);
 			return ResponseEntity.ok(recurringOrder);
 		} catch (Exception e) {
+			log.error("Exception on searching recurring order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
@@ -87,7 +93,7 @@ public class RecurringOrderController {
 			return ResponseEntity.status(HttpStatus.CREATED)
 					.body(idList);
 		} catch (Exception e) {
-			// TODO: at least log exception?
+			log.error("Exception on creating recurring order from order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
@@ -98,6 +104,7 @@ public class RecurringOrderController {
 			cancelRecurringOrderCommand.cancel(id);
 			return ResponseEntity.ok().build();
 		} catch(EntityNotFoundException e) {
+			log.error("Exception on cancelling recurring order", e);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
