@@ -9,16 +9,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>fi.hel.verkkokauppa</groupId>
     <artifactId>payment</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>payment</name>
     <description>Kaupunkiyhteinen verkkokauppa, tilausten maksutiedot api</description>
-    <properties>
-        <java.version>11</java.version>
-  	<maven.compiler.source>11</maven.compiler.source>
-  	<maven.compiler.target>11</maven.compiler.target>
-    </properties>
+
     <dependencies>
         <dependency>
             <groupId>fi.hel</groupId>

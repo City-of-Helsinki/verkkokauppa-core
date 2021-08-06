@@ -14,17 +14,12 @@
 	<name>productmapping</name>
 	<description>Kaupunkiyhteinen verkkokauppa, tuotetiedon mappays</description>
 
-	<properties>
-		<java.version>11</java.version>
-	</properties>
 	<dependencies>
-
 		<dependency>
 			<groupId>fi.hel</groupId>
 			<artifactId>common</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
