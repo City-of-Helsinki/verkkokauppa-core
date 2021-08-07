@@ -132,6 +132,9 @@ public class OrderController {
             Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
             String orderId = order.getOrderId();
 
+            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(orderAggregateDto.getItems());
+            orderService.setType(order, orderType);
+
             CustomerDto customerDto = validateCustomerData(orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
             orderService.setCustomer(orderId, customerDto);
             setItems(orderId, orderAggregateDto);
