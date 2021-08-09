@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.payment.logic;
 
 public class PaymentContext {
+    private String namespace;
     private String returnUrl;
     private String notifyUrl;
     private Long merchantId;
@@ -30,6 +31,12 @@ public class PaymentContext {
     }
     public void setCp(String cp) {
         this.cp = cp;
+    }
+    public String getNamespace() {
+        return namespace;
+    }
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
     
 }

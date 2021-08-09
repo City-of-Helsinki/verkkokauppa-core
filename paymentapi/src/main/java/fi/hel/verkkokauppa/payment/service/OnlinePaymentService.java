@@ -53,12 +53,13 @@ public class OnlinePaymentService {
     public String getPaymentRequestData(GetPaymentRequestDataDto dto) {
         // TODO: should check order status - if wrong status, return failure url
 
+        String namespace = dto.getOrder().getOrder().getNamespace();
+
         boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
         String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
 
         // get common payment configuration from configuration api
         //WebClient client = serviceConfigurationClient.getClient();
-        //String namespace = dto.getOrder().getOrder().getNamespace();
         //JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
         //
         // refer to ServiceConfigurationKeys
@@ -68,16 +69,16 @@ public class OnlinePaymentService {
 
         // TODO use the common payment configuration values
         PaymentContext context = new PaymentContext();
+        context.setNamespace(namespace);
         context.setReturnUrl("http://localhost:8080/");
         context.setNotifyUrl("http://localhost:8080/");
-//        context.setMerchantId(""); // merchant_id
         context.setMerchantId(36240L); // submerchant_id
-        context.setCp("PRO-31312-1");
+        context.setCp("PRO-31312-1"); // provision scheme
 
         try {
             String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto, context));
 
-            Payment payment = createPayment(dto, paymentType, isRecurringOrder ? token : null);
+            Payment payment = createPayment(dto, paymentType, token);
             if (payment.getPaymentId() == null) {
                 throw new RuntimeException("Didn't manage to create payment.");
             }
@@ -106,7 +107,7 @@ public class OnlinePaymentService {
         payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);
-        payment.setToken(token); // TODO: ok?
+        payment.setToken(token);
 
         calculateTotals(payment, items);
         createPayer(order);
