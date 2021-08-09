@@ -29,12 +29,13 @@ public class ServiceConfigurationKeys {
     // order customer name
     // order customer email
     public static String PAYMENT_SUBMERCHANT_ID = "payment_submerchant_id";
+    public static String PAYMENT_CP= "payment_cp";
 
 
     public static List<String> getRestrictedConfigurationKeys() {
         return Arrays.asList(new String[]{
             PAYMENT_API_VERSION, PAYMENT_API_KEY, PAYMENT_CURRENCY, PAYMENT_TYPE, PAYMENT_REGISTER_CARD_TOKEN, 
-            PAYMENT_RETURN_URL, PAYMENT_NOTIFICATION_URL, PAYMENT_LANGUAGE, PAYMENT_SUBMERCHANT_ID
+            PAYMENT_RETURN_URL, PAYMENT_NOTIFICATION_URL, PAYMENT_LANGUAGE, PAYMENT_SUBMERCHANT_ID, PAYMENT_CP
         });
     }
 

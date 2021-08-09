@@ -16,8 +16,6 @@ import java.math.BigInteger;
 @Component
 public class PaymentTokenPayloadBuilder {
 
-	private static final String DEFAULT_LANGUAGE = "fi";
-
 	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto, PaymentContext context) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
 		OrderDto order = dto.getOrder().getOrder();
@@ -28,7 +26,7 @@ public class PaymentTokenPayloadBuilder {
 
 		payload.setAmount(calculateTotals(dto))
 				.setOrderNumber(order.getOrderId())
-				.setCurrency("EUR");
+				.setCurrency(context.getDefaultCurrency());
 		return payload;
 	}
 
@@ -39,7 +37,7 @@ public class PaymentTokenPayloadBuilder {
 		paymentMethod.setType(PaymentMethod.TYPE_EPAYMENT)
 				.setReturnUrl(context.getReturnUrl())
 				.setNotifyUrl(context.getNotifyUrl())
-				.setLang(dto.getLanguage() != null ? dto.getLanguage() : DEFAULT_LANGUAGE)
+				.setLang(dto.getLanguage() != null ? dto.getLanguage() : context.getDefaultLanguage())
 				.setRegisterCardToken(isRecurringOrder);
 
 		if (dto.getPaymentMethod() != null && !dto.getPaymentMethod().isEmpty()) {

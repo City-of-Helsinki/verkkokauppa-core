@@ -6,6 +6,8 @@ public class PaymentContext {
     private String notifyUrl;
     private Long merchantId;
     private String cp;
+    private String defaultCurrency;
+    private String defaultLanguage;
 
 
     public String getReturnUrl() {
@@ -38,5 +40,17 @@ public class PaymentContext {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+    public String getDefaultCurrency() {
+        return defaultCurrency;
+    }
+    public void setDefaultCurrency(String defaultCurrency) {
+        this.defaultCurrency = defaultCurrency;
+    }
+    public String getDefaultLanguage() {
+        return defaultLanguage;
+    }
+    public void setDefaultLanguage(String defaultLanguage) {
+        this.defaultLanguage = defaultLanguage;
+    }
+ 
 }

@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
+import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
 import fi.hel.verkkokauppa.payment.logic.TokenFetcher;
 import fi.hel.verkkokauppa.payment.model.Payer;
@@ -47,8 +48,7 @@ public class OnlinePaymentService {
     private TokenFetcher tokenFetcher;
 
     @Autowired
-    private ServiceConfigurationClient serviceConfigurationClient;
-
+    private PaymentContextBuilder paymentContextBuilder;
 
     public String getPaymentRequestData(GetPaymentRequestDataDto dto) {
         // TODO: should check order status - if wrong status, return failure url
@@ -58,22 +58,7 @@ public class OnlinePaymentService {
         boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
         String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
 
-        // get common payment configuration from configuration api
-        //WebClient client = serviceConfigurationClient.getClient();
-        //JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
-        //
-        // refer to ServiceConfigurationKeys
-        //String payment_return_url = (String) namespaceServiceConfiguration.get("payment_return_url");
-        //String payment_notification_url = (String) namespaceServiceConfiguration.get("payment_notification_url");
-        //log.debug("namespace: " + namespace + " payment_return_url: " + payment_return_url);
-
-        // TODO use the common payment configuration values
-        PaymentContext context = new PaymentContext();
-        context.setNamespace(namespace);
-        context.setReturnUrl("http://localhost:8080/");
-        context.setNotifyUrl("http://localhost:8080/");
-        context.setMerchantId(36240L); // submerchant_id
-        context.setCp("PRO-31312-1"); // provision scheme
+        PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
         try {
             String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto, context));
@@ -83,10 +68,34 @@ public class OnlinePaymentService {
                 throw new RuntimeException("Didn't manage to create payment.");
             }
 
-            return VismaPayClient.API_URL + "/token/" + token;
+            return getPaymentUrl(token);
         } catch (Exception e) {
             return null; // TODO: return failure url
         }
+    }
+
+    public String getPaymentUrl(String token) {
+        return VismaPayClient.API_URL + "/token/" + token; 
+    }
+
+    public String getPaymentUrl(String namespace, String orderId) {
+        Payment payment = getPayment(namespace, orderId);
+        return getPaymentUrl(payment.getToken());
+    }
+
+    public String getPaymentStatus(String namespace, String orderId) {
+        Payment payment = getPayment(namespace, orderId);
+        return payment.getStatus();
+    }
+
+    private Payment getPayment(String namespace, String orderId) {
+        List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
+
+        if (payments.isEmpty()) {
+            throw new IllegalArgumentException("Payment not found.");
+        }
+
+        return payments.get(0);
     }
 
     private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token) {
