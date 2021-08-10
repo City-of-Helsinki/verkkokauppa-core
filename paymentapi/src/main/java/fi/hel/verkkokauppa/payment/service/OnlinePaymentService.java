@@ -50,7 +50,7 @@ public class OnlinePaymentService {
     @Autowired
     private PaymentContextBuilder paymentContextBuilder;
 
-    public String getPaymentRequestData(GetPaymentRequestDataDto dto) {
+    public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
         // TODO: should check order status - if wrong status, return failure url
 
         String namespace = dto.getOrder().getOrder().getNamespace();
@@ -68,7 +68,7 @@ public class OnlinePaymentService {
                 throw new RuntimeException("Didn't manage to create payment.");
             }
 
-            return getPaymentUrl(token);
+            return payment;
         } catch (Exception e) {
             return null; // TODO: return failure url
         }
