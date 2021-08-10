@@ -66,16 +66,16 @@ public class ServiceConfigurationService {
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "asukaspysakointi_mock_encryption_key", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/return_url", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/notification_url", true),
-            createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "asukaspysakointi_mock_submerchant_id", true),
-            createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_CP, "asukaspysakointi_mock_cp", true),
+            createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+            createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
             createByParams("asukaspysakointi", ServiceConfigurationKeys.TERMS_OF_USE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
 
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/return_url", true),
             createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/notification_url", true),
-            createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "venepaikat_mock_submerchant_id", true),
-            createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_CP, "venepaikat_mock_cp", true),
+            createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+            createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
             createByParams("venepaikat", ServiceConfigurationKeys.TERMS_OF_USE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
         });
 
