@@ -32,6 +32,15 @@ public class OrderItem {
     @Field(type = FieldType.Text)
     String rowPriceTotal;
 
+    @Field(type = FieldType.Text)
+    String vatPercentage;
+    @Field(type = FieldType.Text)
+    String priceNet;
+    @Field(type = FieldType.Text)
+    String priceVat;
+    @Field(type = FieldType.Text)
+    String priceGross;
+
     @Field(type = FieldType.Date, format = DateFormat.date)
     private LocalDate startDate; // TODO: aika myös?
 
@@ -44,7 +53,7 @@ public class OrderItem {
     public OrderItem() {}
 
     public OrderItem(String orderItemId, String orderId, String productId, String productName, Integer quantity,
-            String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal) {
+            String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
@@ -54,6 +63,10 @@ public class OrderItem {
         this.rowPriceNet = rowPriceNet;
         this.rowPriceVat = rowPriceVat;
         this.rowPriceTotal = rowPriceTotal;
+        this.vatPercentage = vatPercentage;
+        this.priceNet = priceNet;
+        this.priceVat = priceVat;
+        this.priceGross = priceGross;
     }
 
     public String getOrderItemId() {
@@ -151,4 +164,20 @@ public class OrderItem {
     public void setPeriodFrequency(Long periodFrequency) {
         this.periodFrequency = periodFrequency;
     }
+
+    public String getVatPercentage() { return vatPercentage; }
+
+    public void setVatPercentage(String vatPercentage) { this.vatPercentage = vatPercentage; }
+
+    public String getPriceNet() { return priceNet; }
+
+    public void setPriceNet(String priceNet) { this.priceNet = priceNet; }
+
+    public String getPriceVat() { return priceVat; }
+
+    public void setPriceVat(String priceVat) { this.priceVat = priceVat; }
+
+    public String getPriceGross() { return priceGross; }
+
+    public void setPriceGross(String priceGross) { this.priceGross = priceGross; }
 }

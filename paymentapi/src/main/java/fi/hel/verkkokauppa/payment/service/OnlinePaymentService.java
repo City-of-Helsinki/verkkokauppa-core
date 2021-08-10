@@ -117,8 +117,10 @@ public class OnlinePaymentService {
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);
         payment.setToken(token);
+        payment.setTotal(new BigDecimal(order.getPriceTotal()));
+        payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
+        payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
 
-        calculateTotals(payment, items);
         createPayer(order);
 
         for (OrderItemDto item : items) {
@@ -141,6 +143,10 @@ public class OnlinePaymentService {
         item.setRowPriceNet(itemDto.getRowPriceNet());
         item.setRowPriceTotal(itemDto.getRowPriceTotal());
         item.setRowPriceVat(itemDto.getRowPriceVat());
+        item.setTaxAmount(itemDto.getPriceVat());
+        item.setTaxPercent(itemDto.getVatPercentage());
+        item.setPriceGross(itemDto.getPriceGross());
+        item.setPriceNet(itemDto.getPriceNet());
 
         paymentItemRepository.save(item);
     }
@@ -152,21 +158,5 @@ public class OnlinePaymentService {
         payer.setEmail(orderDto.getCustomerEmail());
 
         payerRepository.save(payer);
-    }
-
-    private void calculateTotals(Payment payment, List<OrderItemDto> items) {
-        BigDecimal totalExclTax = BigDecimal.valueOf(0);
-        BigDecimal total = BigDecimal.valueOf(0);
-        BigDecimal taxAmount = BigDecimal.valueOf(0);
-
-        for (OrderItemDto item : items) {
-            totalExclTax = totalExclTax.add(item.getRowPriceNet());
-            total = total.add(item.getRowPriceTotal());
-            taxAmount = taxAmount.add(item.getRowPriceVat());
-        }
-
-        payment.setTotal(total);
-        payment.setTotalExclTax(totalExclTax);
-        payment.setTaxAmount(taxAmount);
     }
 }

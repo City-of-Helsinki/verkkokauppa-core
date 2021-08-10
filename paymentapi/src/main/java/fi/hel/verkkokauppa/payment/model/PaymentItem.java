@@ -37,11 +37,17 @@ public class PaymentItem {
 	@Field(type = FieldType.Double)
 	BigDecimal rowPriceTotal;
 
-	@Field(type = FieldType.Double)
-	BigDecimal taxPercent;
+	@Field(type = FieldType.Text)
+	String taxPercent;
 
 	@Field(type = FieldType.Double)
 	BigDecimal taxAmount;
+
+	@Field(type = FieldType.Double)
+	BigDecimal priceNet;
+
+	@Field(type = FieldType.Double)
+	BigDecimal priceGross;
 
 	public String getPaymentItemId() {
 		return paymentItemId;
@@ -115,11 +121,11 @@ public class PaymentItem {
 		this.rowPriceTotal = rowPriceTotal;
 	}
 
-	public BigDecimal getTaxPercent() {
+	public String getTaxPercent() {
 		return taxPercent;
 	}
 
-	public void setTaxPercent(BigDecimal taxPercent) {
+	public void setTaxPercent(String taxPercent) {
 		this.taxPercent = taxPercent;
 	}
 
@@ -129,5 +135,21 @@ public class PaymentItem {
 
 	public void setTaxAmount(BigDecimal taxAmount) {
 		this.taxAmount = taxAmount;
+	}
+
+	public BigDecimal getPriceNet() {
+		return priceNet;
+	}
+
+	public void setPriceNet(BigDecimal priceNet) {
+		this.priceNet = priceNet;
+	}
+
+	public BigDecimal getPriceGross() {
+		return priceGross;
+	}
+
+	public void setPriceGross(BigDecimal priceGross) {
+		this.priceGross = priceGross;
 	}
 }

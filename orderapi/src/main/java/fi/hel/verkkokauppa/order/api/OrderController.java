@@ -95,9 +95,21 @@ public class OrderController {
         try {
             if (dto != null && dto.getItems() != null) {
                 dto.getItems().stream().forEach(item -> {
-                    orderItemService.addItem(orderId, item.getProductId(), item.getProductName(), item.getQuantity(), item.getUnit(), 
-                        item.getRowPriceNet(), item.getRowPriceVat(), item.getRowPriceTotal());}
+                    orderItemService.addItem(
+                            orderId,
+                            item.getProductId(),
+                            item.getProductName(),
+                            item.getQuantity(),
+                            item.getUnit(),
+                            item.getRowPriceNet(),
+                            item.getRowPriceVat(),
+                            item.getRowPriceTotal(),
+                            item.getVatPercentage(),
+                            item.getPriceNet(),
+                            item.getPriceVat(),
+                            item.getPriceGross()
                     );
+                });
             }
 
             Order order = orderService.findById(orderId);
