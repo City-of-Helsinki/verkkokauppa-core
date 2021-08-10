@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.payment.api;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,11 +26,11 @@ public class OnlinePaymentController {
 	private PaymentMethodListService paymentMethodListService;
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
-		String redirectUrl = service.getPaymentRequestData(dto);
+	public ResponseEntity<Payment> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
+		Payment payment = service.getPaymentRequestData(dto);
 
 		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(redirectUrl);
+				.body(payment);
 	}
 
 	@PostMapping(value = "/payment/online/get-available-methods", produces = MediaType.APPLICATION_JSON_VALUE)
