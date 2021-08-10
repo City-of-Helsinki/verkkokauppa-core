@@ -24,7 +24,7 @@ public class PaymentTokenPayloadBuilder {
 		assignCustomer(payload, order);
 		assignProducts(payload, dto, context);
 
-		payload.setAmount(dto.getOrder().getOrder().getPriceTotal())
+		payload.setAmount(new BigInteger(dto.getOrder().getOrder().getPriceTotal()))
 				.setOrderNumber(order.getOrderId())
 				.setCurrency(context.getDefaultCurrency());
 		return payload;
@@ -63,7 +63,7 @@ public class PaymentTokenPayloadBuilder {
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
 					.setPretaxPrice(convertToCents(item.getPriceNet()))
-					.setTax(item.getPriceVat())
+					.setTax(item.getPriceVat().intValue())
 					.setPrice(convertToCents(item.getPriceGross()))
 					.setMerchantId(context.getMerchantId())
 					.setCp(context.getCp());
