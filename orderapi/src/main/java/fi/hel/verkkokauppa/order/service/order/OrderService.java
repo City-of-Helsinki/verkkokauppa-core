@@ -84,6 +84,10 @@ public class OrderService {
             setCustomer(order, customerDto.getCustomerFirstName(), customerDto.getCustomerLastName(), customerDto.getCustomerEmail(), customerDto.getCustomerPhone());
     }
 
+    public void setCustomer(Order order, CustomerDto customerDto) {
+        setCustomer(order, customerDto.getCustomerFirstName(), customerDto.getCustomerLastName(), customerDto.getCustomerEmail(), customerDto.getCustomerPhone());
+    }
+
     public void setCustomer(Order order, String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {
         order.setCustomerFirstName(customerFirstName);
         order.setCustomerLastName(customerLastName);

@@ -148,7 +148,8 @@ public class OrderController {
             orderService.setType(order, orderType);
 
             CustomerDto customerDto = validateCustomerData(orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
-            orderService.setCustomer(orderId, customerDto);
+            orderService.setCustomer(order, customerDto);
+
             setItems(orderId, orderAggregateDto);
             orderService.setTotals(order, orderDto.getPriceNet(), orderDto.getPriceVat(), orderDto.getPriceTotal());
 
