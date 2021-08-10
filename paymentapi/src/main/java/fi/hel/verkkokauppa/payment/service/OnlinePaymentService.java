@@ -168,6 +168,5 @@ public class OnlinePaymentService {
         payment.setTotal(total);
         payment.setTotalExclTax(totalExclTax);
         payment.setTaxAmount(taxAmount);
-        payment.setTaxPercent(taxAmount.divide(totalExclTax)); // TODO: ok?
     }
 }

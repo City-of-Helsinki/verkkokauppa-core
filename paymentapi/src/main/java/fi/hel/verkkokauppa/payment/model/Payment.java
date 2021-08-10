@@ -35,9 +35,6 @@ public class Payment {
 	BigDecimal total;
 
 	@Field(type = FieldType.Double)
-	BigDecimal taxPercent;
-
-	@Field(type = FieldType.Double)
 	BigDecimal taxAmount;
 
 	@Field(type = FieldType.Text)
@@ -122,14 +119,6 @@ public class Payment {
 
 	public void setTotal(BigDecimal total) {
 		this.total = total;
-	}
-
-	public BigDecimal getTaxPercent() {
-		return taxPercent;
-	}
-
-	public void setTaxPercent(BigDecimal taxPercent) {
-		this.taxPercent = taxPercent;
 	}
 
 	public BigDecimal getTaxAmount() {
