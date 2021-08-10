@@ -24,7 +24,7 @@ public class PaymentTokenPayloadBuilder {
 		assignCustomer(payload, order);
 		assignProducts(payload, dto, context);
 
-		payload.setAmount(calculateTotals(dto))
+		payload.setAmount(new BigInteger(dto.getOrder().getOrder().getPriceTotal()))
 				.setOrderNumber(order.getOrderId())
 				.setCurrency(context.getDefaultCurrency());
 		return payload;
@@ -62,9 +62,9 @@ public class PaymentTokenPayloadBuilder {
 					.setType(ProductType.TYPE_PRODUCT)
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
-					.setPretaxPrice(convertToCents(item.getRowPriceNet()))
-					.setTax(item.getRowPriceVat().intValue())
-					.setPrice(convertToCents(item.getRowPriceTotal()))
+					.setPretaxPrice(convertToCents(item.getPriceNet()))
+					.setTax(item.getPriceVat().intValue())
+					.setPrice(convertToCents(item.getPriceGross()))
 					.setMerchantId(context.getMerchantId())
 					.setCp(context.getCp());
 
@@ -72,14 +72,6 @@ public class PaymentTokenPayloadBuilder {
 		}
 	}
 
-	private BigInteger calculateTotals(GetPaymentRequestDataDto dto) {
-		BigDecimal totalSum = BigDecimal.valueOf(0);
-
-		for (OrderItemDto item : dto.getOrder().getItems()) {
-			totalSum = totalSum.add(convertToCents(item.getRowPriceTotal()));
-		}
-		return totalSum.toBigInteger();
-	}
 
 	private BigDecimal convertToCents(BigDecimal input) {
 		BigDecimal multiplier = BigDecimal.valueOf(100L);

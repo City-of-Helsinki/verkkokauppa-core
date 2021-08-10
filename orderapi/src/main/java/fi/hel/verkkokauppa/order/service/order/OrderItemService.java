@@ -22,9 +22,23 @@ public class OrderItemService {
     private OrderItemRepository orderItemRepository;
 
 
-    public void addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal) {
+    public void addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
         String orderItemId = UUIDGenerator.generateType3UUIDString(orderId, productId);
-        OrderItem orderItem = new OrderItem(orderItemId, orderId, productId, productName, quantity, unit, rowPriceNet, rowPriceVat, rowPriceTotal);
+        OrderItem orderItem = new OrderItem(
+                orderItemId,
+                orderId,
+                productId,
+                productName,
+                quantity,
+                unit,
+                rowPriceNet,
+                rowPriceVat,
+                rowPriceTotal,
+                vatPercentage,
+                priceNet,
+                priceVat,
+                priceGross
+        );
         orderItemRepository.save(orderItem);
 
         log.debug("created new orderItem, orderItemId: " + orderItemId);

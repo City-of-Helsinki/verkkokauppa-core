@@ -13,6 +13,10 @@ public class OrderItemDto {
 	private BigDecimal rowPriceNet;
 	private BigDecimal rowPriceVat;
 	private BigDecimal rowPriceTotal;
+	private String vatPercentage;
+	private BigDecimal priceNet;
+	private BigDecimal priceVat;
+	private BigDecimal priceGross;
 
 	public String getOrderItemId() {
 		return orderItemId;
@@ -85,4 +89,20 @@ public class OrderItemDto {
 	public void setRowPriceTotal(BigDecimal rowPriceTotal) {
 		this.rowPriceTotal = rowPriceTotal;
 	}
+
+	public String getVatPercentage() { return vatPercentage; }
+
+	public void setVatPercentage(String vatPercentage) { this.vatPercentage = vatPercentage; }
+
+	public BigDecimal getPriceNet() { return priceNet; }
+
+	public void setPriceNet(BigDecimal priceNet) { this.priceNet = priceNet; }
+
+	public BigDecimal getPriceVat() { return priceVat; }
+
+	public void setPriceVat(BigDecimal priceVat) { this.priceVat = priceVat; }
+
+	public BigDecimal getPriceGross() { return priceGross; }
+
+	public void setPriceGross(BigDecimal priceGross) { this.priceGross = priceGross; }
 }

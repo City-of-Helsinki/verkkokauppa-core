@@ -11,6 +11,9 @@ public class OrderDto {
 	private String customerFirstName;
 	private String customerLastName;
 	private String customerEmail;
+	private String priceNet;
+	private String priceVat;
+	private String priceTotal;
 
 	public String getOrderId() {
 		return orderId;
@@ -83,4 +86,16 @@ public class OrderDto {
 	public void setCustomerEmail(String customerEmail) {
 		this.customerEmail = customerEmail;
 	}
+
+	public String getPriceNet() { return priceNet; }
+
+	public void setPriceNet(String priceNet) { this.priceNet = priceNet; }
+
+	public String getPriceVat() { return priceVat; }
+
+	public void setPriceVat(String priceVat) { this.priceVat = priceVat; }
+
+	public String getPriceTotal() { return priceTotal; }
+
+	public void setPriceTotal(String priceTotal) { this.priceTotal = priceTotal; }
 }

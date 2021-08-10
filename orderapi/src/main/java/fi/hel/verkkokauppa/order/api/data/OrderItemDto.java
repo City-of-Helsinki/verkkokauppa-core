@@ -30,4 +30,12 @@ public class OrderItemDto {
     private String periodUnit;
 
     private Long periodFrequency;
+
+    private String vatPercentage;
+
+    private String priceNet;
+
+    private String priceVat;
+
+    private String priceGross;
 }
