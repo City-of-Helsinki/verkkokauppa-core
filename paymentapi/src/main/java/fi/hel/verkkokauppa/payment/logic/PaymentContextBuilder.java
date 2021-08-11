@@ -23,27 +23,32 @@ public class PaymentContextBuilder {
 
 
     public PaymentContext buildFor(String namespace) {
-        PaymentContext context = new PaymentContext();
-        context.setNamespace(namespace);
+        PaymentContext defaultContext = new PaymentContext();
+        defaultContext.setNamespace(namespace);
 
         // set default values
-        context.setDefaultCurrency(env.getRequiredProperty("payment_default_currency"));
-        context.setDefaultLanguage(env.getRequiredProperty("payment_default_language"));
-        context.setReturnUrl(env.getRequiredProperty("payment_default_return_url"));
-        context.setNotifyUrl(env.getRequiredProperty("payment_default_notify_url"));
-        context.setMerchantId(Long.valueOf(env.getRequiredProperty("payment_default_submerchant_id")));
-        context.setCp(env.getRequiredProperty("payment_default_cp"));
+        defaultContext.setDefaultCurrency(env.getRequiredProperty("payment_default_currency"));
+        defaultContext.setDefaultLanguage(env.getRequiredProperty("payment_default_language"));
+        defaultContext.setReturnUrl(env.getRequiredProperty("payment_default_return_url"));
+        defaultContext.setNotifyUrl(env.getRequiredProperty("payment_default_notify_url"));
+        defaultContext.setMerchantId(Long.valueOf(env.getRequiredProperty("payment_default_submerchant_id")));
+        defaultContext.setCp(env.getRequiredProperty("payment_default_cp"));
 
         // fetch namespace specific service configuration from mapping api
+        PaymentContext namespaceContext = null;
         try {
-            PaymentContext enrichedContext = enrichWithNamespaceConfiguration(context);
-            return enrichedContext;
+            namespaceContext = enrichWithNamespaceConfiguration(defaultContext);
         } catch (Exception e) {
             log.error("failed to fetch service configuration for namespace: " + namespace, e);
             // TODO by default allowing payments with defaults
         }
 
-        return context;
+        if (namespaceContext != null)
+            log.debug("using namespace specific service configuration");
+            return namespaceContext;
+        else
+            log.debug("using default service configuration");
+            return defaultContext;
     }
 
     private JSONObject getNamespaceConfiguration(String namespace) {

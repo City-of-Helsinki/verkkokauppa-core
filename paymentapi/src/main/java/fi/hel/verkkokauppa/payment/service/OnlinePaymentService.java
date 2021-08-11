@@ -17,6 +17,7 @@ import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import org.helsinki.vismapay.VismaPayClient;
+import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,15 +54,17 @@ public class OnlinePaymentService {
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
         // TODO: should check order status - if wrong status, return failure url
 
-        String namespace = dto.getOrder().getOrder().getNamespace();
-
-        boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
-        String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
-
-        PaymentContext context = paymentContextBuilder.buildFor(namespace);
-
         try {
-            String token = tokenFetcher.getToken(payloadBuilder.buildFor(dto, context));
+            String namespace = dto.getOrder().getOrder().getNamespace();
+
+            boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
+            String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
+
+            PaymentContext context = paymentContextBuilder.buildFor(namespace);
+
+            ChargeRequest.PaymentTokenPayload tokenRequestPayload = payloadBuilder.buildFor(dto, context);
+            log.debug("tokenRequestPayload: " + tokenRequestPayload); // TODO toString()
+            String token = tokenFetcher.getToken(tokenRequestPayload);
 
             Payment payment = createPayment(dto, paymentType, token);
             if (payment.getPaymentId() == null) {
@@ -70,6 +73,7 @@ public class OnlinePaymentService {
 
             return payment;
         } catch (Exception e) {
+            log.error("creating payment or chargerequest failed", e);
             return null; // TODO: return failure url
         }
     }
@@ -117,9 +121,9 @@ public class OnlinePaymentService {
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);
         payment.setToken(token);
-        payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
+        payment.setTotal(new BigDecimal(order.getPriceTotal()));
 
         createPayer(order);
 
@@ -141,12 +145,12 @@ public class OnlinePaymentService {
         item.setProductName(itemDto.getProductName());
         item.setQuantity(item.getQuantity());
         item.setRowPriceNet(itemDto.getRowPriceNet());
-        item.setRowPriceTotal(itemDto.getRowPriceTotal());
         item.setRowPriceVat(itemDto.getRowPriceVat());
-        item.setTaxAmount(itemDto.getPriceVat());
+        item.setRowPriceTotal(itemDto.getRowPriceTotal());
         item.setTaxPercent(itemDto.getVatPercentage());
-        item.setPriceGross(itemDto.getPriceGross());
         item.setPriceNet(itemDto.getPriceNet());
+        item.setTaxAmount(itemDto.getPriceVat());
+        item.setPriceGross(itemDto.getPriceGross());
 
         paymentItemRepository.save(item);
     }
