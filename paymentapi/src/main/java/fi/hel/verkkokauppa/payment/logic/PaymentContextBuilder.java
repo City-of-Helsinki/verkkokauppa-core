@@ -43,12 +43,13 @@ public class PaymentContextBuilder {
             // TODO by default allowing payments with defaults
         }
 
-        if (namespaceContext != null)
+        if (namespaceContext != null) {
             log.debug("using namespace specific service configuration");
             return namespaceContext;
-        else
+        } else {
             log.debug("using default service configuration");
             return defaultContext;
+        }
     }
 
     private JSONObject getNamespaceConfiguration(String namespace) {
