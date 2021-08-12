@@ -3,6 +3,8 @@ package fi.hel.verkkokauppa.payment.api;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
+import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
@@ -24,6 +26,10 @@ public class OnlinePaymentController {
 
 	@Autowired
 	private PaymentMethodListService paymentMethodListService;
+
+	@Autowired
+	private PaymentReturnValidator paymentReturnValidator;
+
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
@@ -59,4 +65,35 @@ public class OnlinePaymentController {
 				.body(paymentStatus);
 	}
 	
+	@GetMapping("/payment/online/check-return-url")
+	public ResponseEntity<PaymentReturnDto> getPaymentStatus(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode, 
+		@RequestParam(value = "ORDER_NUMBER") String orderNumber, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
+
+		boolean isValid = false;
+		boolean isPaymentPaid = false;
+		boolean canRetry = false;
+	
+		isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, orderNumber, settled, incidentId);
+
+		if (isValid) {
+			if ("0".equals(returnCode) && "1".equals(settled)) {
+				isPaymentPaid = true;
+				canRetry = false;
+			} else {
+				isPaymentPaid = false;
+				// TODO resolve canRetry
+			}
+		}
+
+		// TODO resolve namespace (with orderId from Payment)
+		// TODO Payment status options
+		// TODO update Payment status
+
+		PaymentReturnDto paymentReturnDto = new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
+
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(paymentReturnDto);
+	}
+
+
 }
