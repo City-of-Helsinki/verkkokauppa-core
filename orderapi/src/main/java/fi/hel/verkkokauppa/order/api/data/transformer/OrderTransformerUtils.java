@@ -22,11 +22,14 @@ public class OrderTransformerUtils {
     public OrderAggregateDto transformToOrderAggregateDto(Order order, List<OrderItem> orderItems) {
         OrderAggregateDto dto = new OrderAggregateDto();
         dto.setOrder(orderTransformer.transformToDto(order));
-        List<OrderItemDto> orderItemDtoList = orderItems.stream()
+
+        if (!orderItems.isEmpty()) {
+            List<OrderItemDto> orderItemDtoList = orderItems.stream()
                 .map(orderItem -> orderItemTransformer.transformToDto(orderItem))
                 .collect(Collectors.toList());
 
-        dto.setItems(orderItemDtoList);
+            dto.setItems(orderItemDtoList);
+        }
 
         return dto;
     }

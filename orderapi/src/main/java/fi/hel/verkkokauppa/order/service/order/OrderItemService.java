@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,7 +68,7 @@ public class OrderItemService {
             return orderItems;
 
         log.debug("orderItems not found, orderId: " + orderId);
-        return null;
+        return new ArrayList<OrderItem>();
     }
 
 }
