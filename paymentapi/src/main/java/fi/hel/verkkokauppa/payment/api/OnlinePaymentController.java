@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,13 +68,13 @@ public class OnlinePaymentController {
 	
 	@GetMapping("/payment/online/check-return-url")
 	public ResponseEntity<PaymentReturnDto> getPaymentStatus(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode, 
-		@RequestParam(value = "ORDER_NUMBER") String orderNumber, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
+		@RequestParam(value = "ORDER_NUMBER") String orderId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
 
 		boolean isValid = false;
 		boolean isPaymentPaid = false;
 		boolean canRetry = false;
 	
-		isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, orderNumber, settled, incidentId);
+		isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, orderId, settled, incidentId);
 
 		if (isValid) {
 			if ("0".equals(returnCode) && "1".equals(settled)) {
@@ -81,19 +82,24 @@ public class OnlinePaymentController {
 				canRetry = false;
 			} else {
 				isPaymentPaid = false;
-				// TODO resolve canRetry
+				// returnCode 4 = "Transaction status could not be updated after customer returned from a payment facilitator's web page. Please use the merchant UI to resolve the payment status."
+				if (!"4".equals(returnCode)) {
+					canRetry = true;
+				}
 			}
 		}
 
-		// TODO resolve namespace (with orderId from Payment)
-		// TODO Payment status options
-		// TODO update Payment status
-
 		PaymentReturnDto paymentReturnDto = new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
+		updatePaymentStatus(orderId, paymentReturnDto);
 
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(paymentReturnDto);
 	}
 
+	private void updatePaymentStatus(String orderId, PaymentReturnDto paymentReturnDto) {
+		if (paymentReturnDto.isValid() && paymentReturnDto.isPaymentPaid()) {
+			service.setPaymentStatus(orderId, PaymentStatus.PAID_ONLINE);
+		}
+	}
 
 }

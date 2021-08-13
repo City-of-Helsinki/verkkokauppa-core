@@ -92,8 +92,24 @@ public class OnlinePaymentService {
         return payment.getStatus();
     }
 
-    private Payment getPayment(String namespace, String orderId) {
+    public void setPaymentStatus(String orderId, String status) {
+        Payment payment = getPayment(orderId);
+        payment.setStatus(status);
+        paymentRepository.save(payment);
+    }
+
+    public Payment getPayment(String namespace, String orderId) {
         List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
+
+        if (payments.isEmpty()) {
+            throw new IllegalArgumentException("Payment not found.");
+        }
+
+        return payments.get(0);
+    }
+
+    public Payment getPayment(String orderId) {
+        List<Payment> payments = paymentRepository.findByOrderId(orderId);
 
         if (payments.isEmpty()) {
             throw new IllegalArgumentException("Payment not found.");

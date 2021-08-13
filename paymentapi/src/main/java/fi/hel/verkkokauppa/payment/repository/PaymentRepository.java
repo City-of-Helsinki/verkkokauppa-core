@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PaymentRepository extends ElasticsearchRepository<Payment, String> {
 
+    List<Payment> findByOrderId(String orderId);
     List<Payment> findByNamespaceAndOrderId(String namespace, String orderId);
 
 }
