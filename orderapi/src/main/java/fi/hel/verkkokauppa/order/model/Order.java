@@ -41,7 +41,7 @@ public class Order {
     public Order() {}
 
     public Order(String orderId, String namespace, String user, String createdAt) {
-        this.status = OrderStatus.CREATED;
+        this.status = OrderStatus.DRAFT;
         this.type = OrderType.ORDER;
 
         this.orderId = orderId;

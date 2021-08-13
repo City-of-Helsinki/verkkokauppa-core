@@ -120,10 +120,16 @@ public class OrderService {
         log.debug("set order type, orderId: " + order.getOrderId() + " type: " + order.getType());
     }
 
+    public void confirm(String orderId) {
+        Order order = findById(orderId);
+        order.setStatus(OrderStatus.CONFIRMED);
+        orderRepository.save(order);
+        log.debug("confirmed order, orderId: " + orderId);
+    }
+
     public void cancel(String orderId) {
         Order order = findById(orderId);
         order.setStatus(OrderStatus.CANCELLED);
-
         orderRepository.save(order);
         log.debug("canceled order, orderId: " + orderId);
     }

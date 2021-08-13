@@ -64,6 +64,18 @@ public class OrderController {
         }
     }
 
+    @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId) {
+        try {
+            orderService.confirm(orderId);
+            return orderAggregateDto(orderId);
+
+        } catch (Exception e) {
+            log.error("confirming order failed, orderId: " + orderId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping(value = "/order/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId) {
         try {
