@@ -133,6 +133,7 @@ public class OnlinePaymentService {
         payment.setPaymentId(paymentId);
         payment.setNamespace(order.getNamespace());
         payment.setOrderId(order.getOrderId());
+        payment.setPaymentMethod(dto.getPaymentMethod());
         payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);

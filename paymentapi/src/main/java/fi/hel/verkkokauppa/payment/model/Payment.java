@@ -20,7 +20,7 @@ public class Payment {
 	String orderId;
 
 	@Field(type = FieldType.Text)
-	String status = PaymentStatus.CREATED;
+	String status;
 
 	@Field(type = FieldType.Text)
 	String paymentMethod;
@@ -47,6 +47,7 @@ public class Payment {
 	String token;
 
 	public Payment() {
+		this.status = PaymentStatus.CREATED;
 	}
 
 	public String getPaymentId() {
