@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 
@@ -92,8 +93,12 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
             @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
+            Order order = orderService.findById(orderId);
+            if (!changesToOrderAllowed(order))
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                
             CustomerDto customerDto = validateCustomerData(customerFirstName, customerLastName, customerEmail, customerPhone);
-            orderService.setCustomer(orderId, customerDto);
+            orderService.setCustomer(order, customerDto);
             return orderAggregateDto(orderId);
 
         } catch (Exception e) {
@@ -105,6 +110,10 @@ public class OrderController {
     @PostMapping(value = "/order/setItems", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderAggregateDto dto) {
         try {
+            Order order = orderService.findById(orderId);
+            if (!changesToOrderAllowed(order))
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
             if (dto != null && dto.getItems() != null) {
                 dto.getItems().stream().forEach(item -> {
                     orderItemService.addItem(
@@ -124,7 +133,6 @@ public class OrderController {
                 });
             }
 
-            Order order = orderService.findById(orderId);
             String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
             orderService.setType(order, orderType);
 
@@ -140,7 +148,11 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "priceNet") String priceNet, 
             @RequestParam(value = "priceVat") String priceVat, @RequestParam(value = "priceTotal") String priceTotal) {
         try {
-            orderService.setTotals(orderId, priceNet, priceVat, priceTotal);
+            Order order = orderService.findById(orderId);
+            if (!changesToOrderAllowed(order))
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+            orderService.setTotals(order, priceNet, priceVat, priceTotal);
             return orderAggregateDto(orderId);
 
         } catch (Exception e) {
@@ -193,5 +205,12 @@ public class OrderController {
         commonBeanValidationService.validateInput(customerDto);
         return customerDto;
     }
+
+    private boolean changesToOrderAllowed(Order order) {
+        boolean changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
+        log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
+        return changesToOrderAllowed;
+    }
+
     
 }
