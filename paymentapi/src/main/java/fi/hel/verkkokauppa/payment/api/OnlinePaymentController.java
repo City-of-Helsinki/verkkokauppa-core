@@ -50,6 +50,14 @@ public class OnlinePaymentController {
 				.body(methods);
 	}
 
+	@GetMapping("/payment/online/get")
+	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
+		Payment payment = service.getPayment(namespace, orderId);
+
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(payment);
+	}
+
 	@GetMapping("/payment/online/url")
 	public ResponseEntity<String> getPaymentUrl(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
 		String paymentUrl = service.getPaymentUrl(namespace, orderId);
