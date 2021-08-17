@@ -1,10 +1,10 @@
 package fi.hel.verkkokauppa.mockproductmanagement.api;
 
 public class MockProduct {
-    String id;
-    String name;
-    String description;
-    String namespace;
+    private String id;
+    private String name;
+    private String description;
+    private String namespace;
 
     public MockProduct() {}
 

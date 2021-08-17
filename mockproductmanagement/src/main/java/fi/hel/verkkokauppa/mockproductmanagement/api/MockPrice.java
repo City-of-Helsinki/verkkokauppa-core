@@ -1,13 +1,13 @@
 package fi.hel.verkkokauppa.mockproductmanagement.api;
 
 public class MockPrice {
-    String id;
-    String namespace;
-    String productId;
-    String netValue;
-    String vatPercentage;
-    String vatValue;
-    String grossValue;
+    private String id;
+    private String namespace;
+    private String productId;
+    private String netValue;
+    private String vatPercentage;
+    private String vatValue;
+    private String grossValue;
 
     public MockPrice() {}
 
@@ -68,6 +68,14 @@ public class MockPrice {
 
     public void setGrossValue(String grossValue) {
         this.grossValue = grossValue;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
 }
