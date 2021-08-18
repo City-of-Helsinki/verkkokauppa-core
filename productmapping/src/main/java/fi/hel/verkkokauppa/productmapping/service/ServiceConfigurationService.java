@@ -33,13 +33,12 @@ public class ServiceConfigurationService {
     }
 
     public ServiceConfiguration findBy(String namespace, String configurationKey) {
-        List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndConfigurationKeyAndRestrictedNot(namespace, configurationKey);
+        List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndConfigurationKeyAndRestricted(namespace, configurationKey, false);
         return configurations.size() > 0 ? configurations.get(0) : null;
     }
 
     public List<ServiceConfiguration> findRestricted(String namespace) {
         List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespace(namespace);
-        configurations = configurations.stream().filter(conf -> conf.getRestricted() == false).collect(Collectors.toList());
         return configurations;
     }
 
