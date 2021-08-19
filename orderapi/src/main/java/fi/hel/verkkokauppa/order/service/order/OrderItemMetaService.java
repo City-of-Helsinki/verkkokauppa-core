@@ -58,7 +58,7 @@ public class OrderItemMetaService {
     }
 
     public List<OrderItemMeta> findByOrderItemId(String orderItemId) {
-        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderItemIdOrderByOrdinalAsc(orderItemId);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderItemId(orderItemId);
 
         if (orderItemMetas.size() > 0)
             return orderItemMetas;
@@ -68,7 +68,7 @@ public class OrderItemMetaService {
     }
 
     public List<OrderItemMeta> findByOrderId(String orderId) {
-        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderIdOrderByOrdinalAsc(orderId);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
 
         if (orderItemMetas.size() > 0)
             return orderItemMetas;

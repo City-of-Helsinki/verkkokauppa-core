@@ -10,8 +10,8 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 @Repository
 public interface OrderItemMetaRepository extends ElasticsearchRepository<OrderItemMeta, String> {
 
-    List<OrderItemMeta> findByOrderIdOrderByOrdinalAsc(String orderId);
-    List<OrderItemMeta> findByOrderItemIdOrderByOrdinalAsc(String orderItemId);
+    List<OrderItemMeta> findByOrderId(String orderId);
+    List<OrderItemMeta> findByOrderItemId(String orderItemId);
     List<OrderItemMeta> findByOrderItemIdAndKey(String orderItemId, String key);
 
 }
