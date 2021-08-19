@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 
 @RestController
@@ -33,6 +34,9 @@ public class OrderController {
 
     @Autowired
     private OrderItemService orderItemService;
+
+    @Autowired
+    private OrderItemMetaService orderItemMetaService;
 
 	@Autowired
 	private OrderTypeLogic orderTypeLogic;
@@ -130,6 +134,14 @@ public class OrderController {
                             item.getPriceVat(),
                             item.getPriceGross()
                     );
+
+                    if (item.getMeta() != null) {
+                        item.getMeta().stream().forEach(meta -> {
+                            meta.setOrderItemId(item.getOrderItemId());
+                            meta.setOrderId(orderId);
+                            orderItemMetaService.addItemMeta(meta);
+                        });
+                    }
                 });
             }
 

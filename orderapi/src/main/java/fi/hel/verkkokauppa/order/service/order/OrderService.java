@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.service.order;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
@@ -9,6 +10,8 @@ import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,13 +34,17 @@ public class OrderService {
     private OrderItemService orderItemService;
 
     @Autowired
+    private OrderItemMetaService orderItemMetaService;
+
+    @Autowired
     private OrderTransformerUtils orderTransformerUtils;
 
     public OrderAggregateDto getOrderWithItems(final String orderId) {
         Order order = findById(orderId);
         List<OrderItem> items = this.orderItemService.findByOrderId(orderId);
-
-        OrderAggregateDto orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items);
+        List<OrderItemMeta> metas = this.orderItemMetaService.findByOrderId(orderId);
+        
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items, metas);
         return orderAggregateDto;
     }
 
