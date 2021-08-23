@@ -12,6 +12,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 @Component
 public class PaymentTokenPayloadBuilder {
@@ -19,13 +22,14 @@ public class PaymentTokenPayloadBuilder {
 	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto, PaymentContext context) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
 		OrderDto order = dto.getOrder().getOrder();
+		String paymentOrderNumber = generatePaymentOrderNumber(order.getOrderId());
 
 		assignPaymentMethod(payload, dto, context);
 		assignCustomer(payload, order);
 		assignProducts(payload, dto, context);
 
 		payload.setAmount((convertToCents(new BigDecimal(dto.getOrder().getOrder().getPriceTotal()))).toBigInteger())
-				.setOrderNumber(order.getOrderId())
+				.setOrderNumber(paymentOrderNumber)
 				.setCurrency(context.getDefaultCurrency());
 		return payload;
 	}
@@ -75,6 +79,14 @@ public class PaymentTokenPayloadBuilder {
 	private BigDecimal convertToCents(BigDecimal input) {
 		BigDecimal multiplier = BigDecimal.valueOf(100L);
 		return input.multiply(multiplier);
+	}
+
+	private String generatePaymentOrderNumber(String orderId) {
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+		String currentMinute = sdf.format(timestamp);
+
+		return orderId + "_at_" + currentMinute;
 	}
 
 }
