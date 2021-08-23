@@ -120,7 +120,7 @@ public class OrderController {
 
             if (dto != null && dto.getItems() != null) {
                 dto.getItems().stream().forEach(item -> {
-                    orderItemService.addItem(
+                    String orderItemId = orderItemService.addItem(
                             orderId,
                             item.getProductId(),
                             item.getProductName(),
@@ -137,7 +137,7 @@ public class OrderController {
 
                     if (item.getMeta() != null) {
                         item.getMeta().stream().forEach(meta -> {
-                            meta.setOrderItemId(item.getOrderItemId());
+                            meta.setOrderItemId(orderItemId);
                             meta.setOrderId(orderId);
                             orderItemMetaService.addItemMeta(meta);
                         });

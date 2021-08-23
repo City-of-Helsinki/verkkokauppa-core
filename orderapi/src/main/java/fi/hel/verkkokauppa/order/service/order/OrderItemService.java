@@ -23,7 +23,7 @@ public class OrderItemService {
     private OrderItemRepository orderItemRepository;
 
 
-    public void addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
+    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
         String orderItemId = UUIDGenerator.generateType3UUIDString(orderId, productId);
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -43,6 +43,7 @@ public class OrderItemService {
         orderItemRepository.save(orderItem);
 
         log.debug("created new orderItem, orderItemId: " + orderItemId);
+        return orderItemId;
     }
 
     public void removeItem(String orderId, String productId) {
