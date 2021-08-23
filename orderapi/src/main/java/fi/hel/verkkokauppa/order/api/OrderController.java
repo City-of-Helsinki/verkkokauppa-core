@@ -3,8 +3,13 @@ package fi.hel.verkkokauppa.order.api;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.TotalsDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
+
+import java.math.BigDecimal;
+
+import javax.validation.ConstraintViolationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,8 +77,17 @@ public class OrderController {
     @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId) {
         try {
-            orderService.confirm(orderId);
+            Order order = orderService.findById(orderId);
+
+            validateCustomerData(order.getCustomerFirstName(), order.getCustomerLastName(), order.getCustomerEmail(), order.getCustomerPhone());
+            validateOrderTotalsExist(order);
+
+            orderService.confirm(order);
             return orderAggregateDto(orderId);
+
+        } catch (ConstraintViolationException cve) {
+            log.warn("confirming invalid order rejected, orderId: " + orderId, cve);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 
         } catch (Exception e) {
             log.error("confirming order failed, orderId: " + orderId, e);
@@ -84,7 +98,8 @@ public class OrderController {
     @GetMapping(value = "/order/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId) {
         try {
-            orderService.cancel(orderId);
+            Order order = orderService.findById(orderId);
+            orderService.cancel(order);
             return orderAggregateDto(orderId);
 
         } catch (Exception e) {
@@ -216,6 +231,17 @@ public class OrderController {
 
         commonBeanValidationService.validateInput(customerDto);
         return customerDto;
+    }
+
+    private TotalsDto validateOrderTotalsExist(Order order) {
+        TotalsDto totalsDto = TotalsDto.builder()
+        .priceNet(new BigDecimal(order.getPriceNet()))
+        .priceVat(new BigDecimal(order.getPriceVat()))
+        .priceTotal(new BigDecimal(order.getPriceTotal()))
+        .build();
+
+        commonBeanValidationService.validateInput(totalsDto);
+        return totalsDto;
     }
 
     private boolean changesToOrderAllowed(Order order) {

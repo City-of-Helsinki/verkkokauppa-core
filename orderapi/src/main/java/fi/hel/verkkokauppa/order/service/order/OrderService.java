@@ -127,18 +127,16 @@ public class OrderService {
         log.debug("set order type, orderId: " + order.getOrderId() + " type: " + order.getType());
     }
 
-    public void confirm(String orderId) {
-        Order order = findById(orderId);
+    public void confirm(Order order ) {
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
-        log.debug("confirmed order, orderId: " + orderId);
+        log.debug("confirmed order, orderId: " + order.getOrderId());
     }
 
-    public void cancel(String orderId) {
-        Order order = findById(orderId);
+    public void cancel(Order order ) {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
-        log.debug("canceled order, orderId: " + orderId);
+        log.debug("canceled order, orderId: " + order.getOrderId());
     }
 
 }
