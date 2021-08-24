@@ -4,6 +4,8 @@ import fi.hel.verkkokauppa.cart.model.Cart;
 import fi.hel.verkkokauppa.cart.model.CartItem;
 import fi.hel.verkkokauppa.cart.service.CartItemService;
 import fi.hel.verkkokauppa.cart.service.CartService;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,41 +35,45 @@ public class CartController {
 			return ResponseEntity.ok().body(cartService.createByParams(namespace, user));
 		} catch (Exception e) {
 			log.error("creating cart failed", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-create-cart", "failed to create cart"));
 		}
 	}
 
 	@GetMapping("/cart/get")
 	public ResponseEntity<Cart> getCart(@RequestParam(value = "cartId") String cartId) {
+		Cart cart = null;
+
 		try {
-			Cart cart = cartService.findById(cartId);
-
-			if (cart == null) {
-				return ResponseEntity.notFound().build();
-			}
-
-			return ResponseEntity.ok().body(cart);
+			cart = cartService.findById(cartId);
 		} catch (Exception e) {
 			log.error("getting cart failed, cartId: " + cartId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-get-cart", "failed to get cart with id [" + cartId + "]"));
 		}
+
+		if (cart == null) {
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("cart-not-found", "cart with id [" + cartId + "] not found"));
+		}
+
+		return ResponseEntity.ok().body(cart);
 	}
 
 	@GetMapping("/cart/getByNames")
 	public ResponseEntity<Cart> getCartByNames(@RequestParam(value = "namespace") String namespace,
 											   @RequestParam(value = "user") String user) {
+		Cart cart = null;
+
 		try {
-			Cart cart = cartService.findByNamespaceAndUser(namespace, user);
-
-			if (cart == null) {
-				return ResponseEntity.notFound().build();
-			}
-
-			return ResponseEntity.ok().body(cart);
+			cart = cartService.findByNamespaceAndUser(namespace, user);
 		} catch (Exception e) {
 			log.error("getting cart failed, namespace: " + namespace + "user: " + user, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-get-cart-by-names", "failed to get cart with namescapce and user"));
 		}
+
+		if (cart == null) {
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("cart-not-found-by-names", "cart not found by namescapce and user"));
+		}
+
+		return ResponseEntity.ok().body(cart);
 	}
 
 	@GetMapping("/cart/getCartWithItems")
@@ -79,7 +85,8 @@ public class CartController {
 			return ResponseEntity.ok().body(new CartDto(cart, items));
 		} catch (Exception e) {
 			log.error("getting cart with items failed, cartId: " + cartId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-get-cart-with-items", "failed to get cart with id [" + cartId + "] with items");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 
@@ -91,7 +98,8 @@ public class CartController {
 			return getCartWithItems(cartId);
 		} catch (Exception e) {
 			log.error("adding cart item failed, cartId: " + cartId + ", productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-add-cart-item", "failed to add item [" + productId + "] to cart with id [" + cartId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 
@@ -103,7 +111,8 @@ public class CartController {
 			return getCartWithItems(cartId);
 		} catch (Exception e) {
 			log.error("removing cart item failed, cartId: " + cartId + ", productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-remove-cart-item", "failed to remove item [" + productId + "] from cart with id [" + cartId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 
@@ -115,7 +124,8 @@ public class CartController {
 			return getCartWithItems(cartId);
 		} catch (Exception e) {
 			log.error("editing cart item quantity failed, cartId: " + cartId + ", productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-edit-cart-item", "failed to edit cart item [" + productId + "] quantity for cart with id [" + cartId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 
@@ -130,7 +140,7 @@ public class CartController {
 			return createCart(namespace, user);
 		} catch (Exception e) {
 			log.error("clearing cart failed, namespace: " + namespace + "user: " + user, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-clear-cart", "failed to clear cart"));
 		}
 	}
 
