@@ -107,7 +107,7 @@ public class OnlinePaymentService {
             throw new IllegalArgumentException("Payment not found.");
         }
 
-        return payments.get(0);
+        return payments.get(payments.size()-1);
     }
 
     public Payment getPayment(String orderId) {
@@ -117,7 +117,7 @@ public class OnlinePaymentService {
             throw new IllegalArgumentException("Payment not found.");
         }
 
-        return payments.get(0);
+        return payments.get(payments.size()-1);
     }
 
     private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token, String paymentId) {
