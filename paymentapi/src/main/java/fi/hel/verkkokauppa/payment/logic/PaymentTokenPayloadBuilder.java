@@ -83,7 +83,7 @@ public class PaymentTokenPayloadBuilder {
 
 	private String generatePaymentOrderNumber(String orderId) {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmm");
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
 		String currentMinute = sdf.format(timestamp);
 
 		return orderId + "_at_" + currentMinute;
