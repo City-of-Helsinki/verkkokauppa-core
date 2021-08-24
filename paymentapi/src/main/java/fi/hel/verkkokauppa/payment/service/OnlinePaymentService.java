@@ -63,10 +63,12 @@ public class OnlinePaymentService {
             PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
             ChargeRequest.PaymentTokenPayload tokenRequestPayload = payloadBuilder.buildFor(dto, context);
-            log.debug("tokenRequestPayload: " + tokenRequestPayload); // TODO toString()
+            log.debug("tokenRequestPayload: " + tokenRequestPayload);
+
+            String paymentId = tokenRequestPayload.getOrderNumber();
             String token = tokenFetcher.getToken(tokenRequestPayload);
 
-            Payment payment = createPayment(dto, paymentType, token);
+            Payment payment = createPayment(dto, paymentType, token, paymentId);
             if (payment.getPaymentId() == null) {
                 throw new RuntimeException("Didn't manage to create payment.");
             }
@@ -118,7 +120,7 @@ public class OnlinePaymentService {
         return payments.get(0);
     }
 
-    private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token) {
+    private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token, String paymentId) {
         OrderDto order = dto.getOrder().getOrder();
         List<OrderItemDto> items = dto.getOrder().getItems();
 
@@ -127,7 +129,6 @@ public class OnlinePaymentService {
         }
 
         String namespace = order.getNamespace();
-        String paymentId = UUIDGenerator.generateType3UUIDString(namespace, order.getOrderId());
 
         Payment payment = new Payment();
         payment.setPaymentId(paymentId);
