@@ -39,9 +39,9 @@ public class VenepaikatController {
             MockProduct product = products.get(productId);
 
             if (product == null)
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                return ResponseEntity.notFound().build();
 
-            return ResponseEntity.ok().body(product);            
+            return ResponseEntity.ok().body(product);
         } catch (Exception e) {
             log.error("getting product failed, productId: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -50,47 +50,47 @@ public class VenepaikatController {
 
     @GetMapping("/backend/venepaikat/price")
     public ResponseEntity<MockPrice> getPrice(@RequestParam(value = "productId") String productId) {
-        try {        
+        try {
             MockPrice product = prices.get(productId);
 
             if (product == null)
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                return ResponseEntity.notFound().build();
 
             return ResponseEntity.ok().body(product);
         } catch (Exception e) {
             log.error("getting product price failed, productId: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }        
+        }
     }
 
     @GetMapping("/backend/venepaikat/availability")
     public ResponseEntity<MockAvailability> getAvailability(@RequestParam(value = "productId") String productId) {
-        try {        
+        try {
             MockAvailability product = availabilities.get(productId);
 
             if (product == null)
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                return ResponseEntity.notFound().build();
 
             return ResponseEntity.ok().body(product);
         } catch (Exception e) {
             log.error("getting product availability failed, productId: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }        
+        }
     }
 
     @GetMapping("/backend/venepaikat/right-of-purchase")
     public ResponseEntity<MockRightOfPurchase> getRightOfPurchase(@RequestParam(value = "productId") String productId) {
-        try {        
+        try {
             MockRightOfPurchase product = purchaseRights.get(productId);
 
             if (product == null)
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                return ResponseEntity.notFound().build();
 
             return ResponseEntity.ok().body(product);
         } catch (Exception e) {
             log.error("getting product right of purchase failed, productId: " + productId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }        
+        }
     }
 
 }
