@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.price.api;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.price.model.Price;
 import fi.hel.verkkokauppa.price.service.PriceService;
 import org.slf4j.Logger;
@@ -26,7 +28,8 @@ public class PriceController {
 			return ResponseEntity.ok().body(price);
 		} catch (Exception e) {
 			log.error("getting price failed, productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-get-price", "failed to get price for product [" + productId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 
