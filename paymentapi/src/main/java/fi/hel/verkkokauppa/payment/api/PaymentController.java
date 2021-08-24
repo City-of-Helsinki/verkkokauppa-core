@@ -17,7 +17,7 @@ public class PaymentController {
 
 	@GetMapping(value = "/payment/get", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> getPayment(@RequestParam(value = "orderId") String orderId) {
-		Payment payment = onlinePaymentService.getPayment(orderId);
+		Payment payment = onlinePaymentService.getPaymentForOrder(orderId);
 
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(payment);
