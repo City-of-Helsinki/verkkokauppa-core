@@ -1,7 +1,5 @@
 package fi.hel.verkkokauppa.payment.service;
 
-import org.json.JSONObject;
-import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -22,11 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OnlinePaymentService {
@@ -85,22 +83,22 @@ public class OnlinePaymentService {
     }
 
     public String getPaymentUrl(String namespace, String orderId) {
-        Payment payment = getPayment(namespace, orderId);
+        Payment payment = getPaymentForOrder(namespace, orderId);
         return getPaymentUrl(payment.getToken());
     }
 
     public String getPaymentStatus(String namespace, String orderId) {
-        Payment payment = getPayment(namespace, orderId);
+        Payment payment = getPaymentForOrder(namespace, orderId);
         return payment.getStatus();
     }
 
-    public void setPaymentStatus(String orderId, String status) {
-        Payment payment = getPayment(orderId);
+    public void setPaymentStatus(String paymentId, String status) {
+        Payment payment = getPayment(paymentId);
         payment.setStatus(status);
         paymentRepository.save(payment);
     }
 
-    public Payment getPayment(String namespace, String orderId) {
+    public Payment getPaymentForOrder(String namespace, String orderId) {
         List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
 
         if (payments.isEmpty()) {
@@ -110,7 +108,7 @@ public class OnlinePaymentService {
         return payments.get(payments.size()-1);
     }
 
-    public Payment getPayment(String orderId) {
+    public Payment getPaymentForOrder(String orderId) {
         List<Payment> payments = paymentRepository.findByOrderId(orderId);
 
         if (payments.isEmpty()) {
@@ -118,6 +116,16 @@ public class OnlinePaymentService {
         }
 
         return payments.get(payments.size()-1);
+    }
+
+    public Payment getPayment(String paymentId) {
+        Optional<Payment> payment = paymentRepository.findById(paymentId);
+
+        if (false == payment.isPresent()) {
+            log.warn("payment not found, paymentId: " + paymentId);
+            throw new IllegalArgumentException("Payment not found.");
+        }
+        return payment.get();
     }
 
     private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token, String paymentId) {

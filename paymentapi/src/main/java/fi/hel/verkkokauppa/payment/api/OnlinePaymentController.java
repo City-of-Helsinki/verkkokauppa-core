@@ -52,7 +52,7 @@ public class OnlinePaymentController {
 
 	@GetMapping("/payment/online/get")
 	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
-		Payment payment = service.getPayment(namespace, orderId);
+		Payment payment = service.getPaymentForOrder(namespace, orderId);
 
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(payment);
@@ -76,13 +76,13 @@ public class OnlinePaymentController {
 	
 	@GetMapping("/payment/online/check-return-url")
 	public ResponseEntity<PaymentReturnDto> getPaymentStatus(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode, 
-		@RequestParam(value = "ORDER_NUMBER") String orderId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
+		@RequestParam(value = "ORDER_NUMBER") String paymentId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
 
 		boolean isValid = false;
 		boolean isPaymentPaid = false;
 		boolean canRetry = false;
 	
-		isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, orderId, settled, incidentId);
+		isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, paymentId, settled, incidentId);
 
 		if (isValid) {
 			if ("0".equals(returnCode) && "1".equals(settled)) {
@@ -98,15 +98,15 @@ public class OnlinePaymentController {
 		}
 
 		PaymentReturnDto paymentReturnDto = new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
-		updatePaymentStatus(orderId, paymentReturnDto);
+		updatePaymentStatus(paymentId, paymentReturnDto);
 
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(paymentReturnDto);
 	}
 
-	private void updatePaymentStatus(String orderId, PaymentReturnDto paymentReturnDto) {
+	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
 		if (paymentReturnDto.isValid() && paymentReturnDto.isPaymentPaid()) {
-			service.setPaymentStatus(orderId, PaymentStatus.PAID_ONLINE);
+			service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
 		}
 	}
 
