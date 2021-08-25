@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.api;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
@@ -59,7 +61,7 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("creating order failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-create-order", "failed to create order"));
         }
 	}
 
@@ -70,7 +72,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("getting order failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
+            );
         }
     }
 
@@ -87,11 +92,17 @@ public class OrderController {
 
         } catch (ConstraintViolationException cve) {
             log.warn("confirming invalid order rejected, orderId: " + orderId, cve);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-confirming-invalid-order", "rejected confirming invalid order with id [" + orderId + "]")
+            );
 
         } catch (Exception e) {
             log.error("confirming order failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-confirm-order", "failed to confirm order with id [" + orderId + "]")
+            );
         }
     }
 
@@ -104,7 +115,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("canceling order failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-cancel-order", "failed to cancel order with id [" + orderId + "]")
+            );
         }
     }
 
@@ -122,7 +136,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("setting order customer failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-customer", "failed to set customer for order with id [" + orderId + "]")
+            );
         }
     }
 
@@ -167,7 +184,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("setting order items failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-items", "failed to set items for order with id [" + orderId + "]")
+            );
         }
 	}
 
@@ -184,7 +204,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("setting order totals failed, orderId: " + orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-totals", "failed to set totals for order with id [" + orderId + "]")
+            );
         }
 	}
 
@@ -208,7 +231,10 @@ public class OrderController {
 
         } catch (Exception e) {
             log.error("creating order with items failed", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-order-with-items", "failed to create order with items")
+            );
         }
     }
 
