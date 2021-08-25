@@ -2,6 +2,8 @@ package fi.hel.verkkokauppa.productmapping.api;
 
 import java.util.List;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,18 +31,21 @@ public class ProductMappingController {
      */
 	@GetMapping("/productmapping/get")
 	public ResponseEntity<ProductMapping> getProductMapping(@RequestParam(value = "productId") String productId) {
+		ProductMapping productMapping = null;
+
 		try {
-			ProductMapping productMapping = service.findById(productId);
-
-			if (productMapping == null) {
-				return ResponseEntity.notFound().build();
-			}
-
-			return ResponseEntity.ok().body(productMapping);
+			productMapping = service.findById(productId);
 		} catch (Exception e) {
 			log.error("getting product mapping failed, productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-get-product mapping", "failed to get mapping for product [" + productId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
+
+		if (productMapping == null) {
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found", "Mapping for product [" + productId + "] not found"));
+		}
+
+		return ResponseEntity.ok().body(productMapping);
 	}
 
     /**
@@ -57,7 +62,9 @@ public class ProductMappingController {
 			return ResponseEntity.ok().body(service.createByParams(namespace, namespaceEntityId));
 		} catch (Exception e) {
 			log.error("creating product mapping failed", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-create-product-mapping", "failed to create product mapping");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+
 		}
 	}
 
@@ -67,7 +74,8 @@ public class ProductMappingController {
 			return ResponseEntity.ok().body(service.initializeTestData());
 		} catch (Exception e) {
 			log.error("initializing product mapping test data failed", e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			Error error = new Error("failed-to-create-product-mapping-test-data", "failed to initialize product mapping test data");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 	}
 }
