@@ -23,6 +23,8 @@ import org.springframework.stereotype.Service;
 
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -136,6 +138,9 @@ public class OnlinePaymentService {
             throw new IllegalArgumentException("Items cannot be empty.");
         }
 
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+
         String namespace = order.getNamespace();
 
         Payment payment = new Payment();
@@ -143,6 +148,8 @@ public class OnlinePaymentService {
         payment.setNamespace(order.getNamespace());
         payment.setOrderId(order.getOrderId());
         payment.setPaymentMethod(dto.getPaymentMethod());
+        payment.setPaymentMethodLabel(dto.getPaymentMethodLabel());
+        payment.setTimestamp(sdf.format(timestamp));
         payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);

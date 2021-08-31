@@ -4,6 +4,7 @@ public class GetPaymentRequestDataDto {
 
 	private OrderWrapper order;
 	private String paymentMethod;
+	private String paymentMethodLabel;
 	private String language;
 
 	public OrderWrapper getOrder() {
@@ -20,6 +21,14 @@ public class GetPaymentRequestDataDto {
 
 	public void setPaymentMethod(String paymentMethod) {
 		this.paymentMethod = paymentMethod;
+	}
+
+	public String getPaymentMethodLabel() {
+		return paymentMethodLabel;
+	}
+
+	public void setPaymentMethodLabel(String paymentMethodLabel) {
+		this.paymentMethodLabel = paymentMethodLabel;
 	}
 
 	public String getLanguage() {
