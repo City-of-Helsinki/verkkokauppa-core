@@ -27,7 +27,7 @@ public class ServiceConfigurationService {
 
 
     public List<ServiceConfiguration> findBy(String namespace) {
-        List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndRestrictedNot(namespace);
+        List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndRestricted(namespace, false);
         configurations = configurations.stream().filter(conf -> conf.getRestricted() == false).collect(Collectors.toList());
         return configurations;
     }
