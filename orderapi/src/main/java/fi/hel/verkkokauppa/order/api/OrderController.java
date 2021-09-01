@@ -82,7 +82,7 @@ public class OrderController {
     @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId) {
         try {
-            Order order = orderService.findById(orderId);
+            Order order = findById(orderId);
 
             validateCustomerData(order.getCustomerFirstName(), order.getCustomerLastName(), order.getCustomerEmail(), order.getCustomerPhone());
             validateOrderTotalsExist(order);
@@ -109,7 +109,7 @@ public class OrderController {
     @GetMapping(value = "/order/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId) {
         try {
-            Order order = orderService.findById(orderId);
+            Order order = findById(orderId);
             orderService.cancel(order);
             return orderAggregateDto(orderId);
 
@@ -126,7 +126,7 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
             @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
-            Order order = orderService.findById(orderId);
+            Order order = findById(orderId);
             if (!changesToOrderAllowed(order))
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
                 
@@ -146,7 +146,7 @@ public class OrderController {
     @PostMapping(value = "/order/setItems", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderAggregateDto dto) {
         try {
-            Order order = orderService.findById(orderId);
+            Order order = findById(orderId);
             if (!changesToOrderAllowed(order))
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -195,7 +195,7 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "priceNet") String priceNet, 
             @RequestParam(value = "priceVat") String priceVat, @RequestParam(value = "priceTotal") String priceTotal) {
         try {
-            Order order = orderService.findById(orderId);
+            Order order = findById(orderId);
             if (!changesToOrderAllowed(order))
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
@@ -236,6 +236,17 @@ public class OrderController {
                     new Error("failed-to-create-order-with-items", "failed to create order with items")
             );
         }
+    }
+
+    private Order findById(String orderId) {
+        Order order = orderService.findById(orderId);
+
+        if (order == null) {
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return order;
     }
 
     private OrderAggregateDto getOrderWithItems(String orderId) {
