@@ -244,7 +244,14 @@ public class OrderController {
     }
 
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
-        return ResponseEntity.ok().body(getOrderWithItems(orderId));
+        OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
+
+        if (orderAggregateDto == null) {
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return ResponseEntity.ok().body(orderAggregateDto);
     }
 
     private CustomerDto validateCustomerData(String customerFirstName, String customerLastName, String customerEmail, String customerPhone) {

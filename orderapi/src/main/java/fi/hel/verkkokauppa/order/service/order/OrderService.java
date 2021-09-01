@@ -40,11 +40,15 @@ public class OrderService {
     private OrderTransformerUtils orderTransformerUtils;
 
     public OrderAggregateDto getOrderWithItems(final String orderId) {
+        OrderAggregateDto orderAggregateDto = null;
         Order order = findById(orderId);
-        List<OrderItem> items = this.orderItemService.findByOrderId(orderId);
-        List<OrderItemMeta> metas = this.orderItemMetaService.findByOrderId(orderId);
-        
-        OrderAggregateDto orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items, metas);
+
+        if (order != null) {
+            List<OrderItem> items = this.orderItemService.findByOrderId(orderId);
+            List<OrderItemMeta> metas = this.orderItemMetaService.findByOrderId(orderId);
+            orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items, metas);
+        }
+
         return orderAggregateDto;
     }
 
