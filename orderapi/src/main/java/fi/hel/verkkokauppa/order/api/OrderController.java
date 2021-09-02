@@ -59,6 +59,8 @@ public class OrderController {
             String orderId = order.getOrderId();
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("creating order failed", e);
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-create-order", "failed to create order"));
@@ -70,6 +72,8 @@ public class OrderController {
         try {
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("getting order failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -96,7 +100,8 @@ public class OrderController {
                     HttpStatus.FORBIDDEN,
                     new Error("rejected-confirming-invalid-order", "rejected confirming invalid order with id [" + orderId + "]")
             );
-
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("confirming order failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -113,6 +118,8 @@ public class OrderController {
             orderService.cancel(order);
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("canceling order failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -134,6 +141,8 @@ public class OrderController {
             orderService.setCustomer(order, customerDto);
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("setting order customer failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -182,6 +191,8 @@ public class OrderController {
 
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("setting order items failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -202,6 +213,8 @@ public class OrderController {
             orderService.setTotals(order, priceNet, priceVat, priceTotal);
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("setting order totals failed, orderId: " + orderId, e);
             throw new CommonApiException(
@@ -229,6 +242,8 @@ public class OrderController {
 
             return orderAggregateDto(orderId);
 
+        } catch (CommonApiException cae) {
+            throw cae;
         } catch (Exception e) {
             log.error("creating order with items failed", e);
             throw new CommonApiException(
