@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +30,7 @@ public class OrderAccountingService {
     }
 
     public OrderAccountingDto createOrderAccounting(String orderId, List<OrderItemAccountingDto> orderItemAccountings) {
-        String createdAt = DateTimeUtil.getDateTime();
+        String createdAt = DateTimeUtil.getDate();
         OrderAccountingDto orderAccountingDto = new OrderAccountingDto(orderId, createdAt, orderItemAccountings);
         createOrderAccounting(orderAccountingDto);
 
@@ -44,6 +45,16 @@ public class OrderAccountingService {
 
         log.warn("order accounting not found, orderId: " + orderId);
         return null;
+    }
+
+    public List<OrderAccounting> getOrderAccountings(List<String> orderIds) {
+        List<OrderAccounting> accountings = orderAccountingRepository.findByOrderIdIn(orderIds);
+
+        if (!accountings.isEmpty())
+            return accountings;
+
+        log.debug("order accountings not found, orderIds: " + orderIds);
+        return new ArrayList<OrderAccounting>();
     }
 
 }

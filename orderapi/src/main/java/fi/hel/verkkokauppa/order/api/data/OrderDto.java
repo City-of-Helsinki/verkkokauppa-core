@@ -5,7 +5,6 @@ import lombok.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
-
 @Data
 @Builder
 @AllArgsConstructor
@@ -21,7 +20,7 @@ public class OrderDto {
     private String priceNet;
     private String priceVat;
     private String priceTotal;
-
+    private String accounted;
 
     @NotBlank(message = "firstname required")
     private String customerFirstName;
