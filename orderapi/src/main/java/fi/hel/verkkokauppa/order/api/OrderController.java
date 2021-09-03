@@ -83,6 +83,22 @@ public class OrderController {
         }
     }
 
+    @GetMapping(value = "/order/get-and-validate-user", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<OrderAggregateDto> getOrderValidateUser(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
+        try {
+            findByIdValidateByUser(orderId, userId);
+            return orderAggregateDto(orderId);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting order failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
+            );
+        }
+    }
+
     @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId) {
         try {
@@ -251,6 +267,24 @@ public class OrderController {
                     new Error("failed-to-create-order-with-items", "failed to create order with items")
             );
         }
+    }
+
+    private Order findByIdValidateByUser(String orderId, String userId) {
+        Order order = orderService.findById(orderId);
+
+        if (order == null) {
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        String orderUserId = order.getUser();
+        if (!orderUserId.equals(userId)) {
+            log.error("unauthorized attempt to load order, userId does not match");
+            Error error = new Error("order-not-found-from-backend", "order with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return order;
     }
 
     private Order findById(String orderId) {
