@@ -21,6 +21,9 @@ public class Payment {
 	String orderId;
 
 	@Field(type = FieldType.Text)
+	String userId;
+
+	@Field(type = FieldType.Text)
 	String status;
 
 	@Field(type = FieldType.Text)
@@ -167,5 +170,13 @@ public class Payment {
 
 	public void setPaymentMethodLabel(String paymentMethodLabel) {
 		this.paymentMethodLabel = paymentMethodLabel;
+	}
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 }

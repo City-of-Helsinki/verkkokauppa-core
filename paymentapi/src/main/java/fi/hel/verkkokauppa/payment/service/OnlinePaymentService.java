@@ -1,8 +1,11 @@
 package fi.hel.verkkokauppa.payment.service;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
@@ -19,6 +22,7 @@ import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 
@@ -52,13 +56,23 @@ public class OnlinePaymentService {
     private PaymentContextBuilder paymentContextBuilder;
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
-        // TODO: should check order status - if wrong status, return failure url
-
         try {
-            String namespace = dto.getOrder().getOrder().getNamespace();
+            OrderDto order = dto.getOrder().getOrder();
+            String namespace = order.getNamespace();
+            String orderId = order.getOrderId();
+            String orderStatus = order.getStatus();
 
-            boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
-            String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
+            // check order status, can only create payment for confirmed orders
+            if (!"confirmed".equals(orderStatus)) {
+                log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order with order id [" + orderId + "]")
+                );
+            }
+
+            boolean isRecurringOrder = order.getType().equals("subscription");
+            String paymentType = isRecurringOrder ? "subscription" : "order";
 
             PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
@@ -104,7 +118,9 @@ public class OnlinePaymentService {
         List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
 
         if (payments.isEmpty()) {
-            throw new IllegalArgumentException("Payment not found.");
+            log.debug("payment not found, orderId: " + orderId);
+            Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
         return payments.get(payments.size()-1);
@@ -114,7 +130,9 @@ public class OnlinePaymentService {
         List<Payment> payments = paymentRepository.findByOrderId(orderId);
 
         if (payments.isEmpty()) {
-            throw new IllegalArgumentException("Payment not found.");
+            log.debug("payment not found, orderId: " + orderId);
+            Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
         return payments.get(payments.size()-1);
@@ -123,10 +141,12 @@ public class OnlinePaymentService {
     public Payment getPayment(String paymentId) {
         Optional<Payment> payment = paymentRepository.findById(paymentId);
 
-        if (false == payment.isPresent()) {
-            log.warn("payment not found, paymentId: " + paymentId);
-            throw new IllegalArgumentException("Payment not found.");
+        if (!payment.isPresent()) {
+            log.debug("payment not found, paymentId: " + paymentId);
+            Error error = new Error("payment-not-found-from-backend", "payment with payment id [" + paymentId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
+
         return payment.get();
     }
 
@@ -147,6 +167,7 @@ public class OnlinePaymentService {
         payment.setPaymentId(paymentId);
         payment.setNamespace(order.getNamespace());
         payment.setOrderId(order.getOrderId());
+        payment.setUserId(order.getUser());
         payment.setPaymentMethod(dto.getPaymentMethod());
         payment.setPaymentMethodLabel(dto.getPaymentMethodLabel());
         payment.setTimestamp(sdf.format(timestamp));
