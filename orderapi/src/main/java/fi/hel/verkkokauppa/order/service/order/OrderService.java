@@ -1,25 +1,22 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
-
+import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import java.util.List;
+import java.util.Optional;
 
 
 @Component
@@ -118,6 +115,13 @@ public class OrderService {
 
         orderRepository.save(order);
         log.debug("saved order price totals, orderId: " + order.getOrderId());
+    }
+
+    public void markAsAccounted(String orderId) {
+        Order order = findById(orderId);
+        order.setAccounted(DateTimeUtil.getDate());
+        orderRepository.save(order);
+        log.debug("marked order accounted, orderId: " + order.getOrderId());
     }
 
     public void setType(Order order, String type) {

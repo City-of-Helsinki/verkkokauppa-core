@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -37,6 +38,8 @@ public class Order {
     @Field(type = FieldType.Text)
     String priceTotal;
 
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    String accounted;
 
     public Order() {}
 
@@ -153,5 +156,12 @@ public class Order {
     public void setCustomerPhone(String customerPhone) {
         this.customerPhone = customerPhone;
     }
-    
+
+    public String getAccounted() {
+        return accounted;
+    }
+
+    public void setAccounted(String accounted) {
+        this.accounted = accounted;
+    }
 }
