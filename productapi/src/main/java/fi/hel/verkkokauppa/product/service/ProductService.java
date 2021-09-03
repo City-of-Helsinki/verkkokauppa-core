@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.product.service;
 import java.util.Optional;
 
 import fi.hel.verkkokauppa.product.repository.ProductRepository;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,31 +51,38 @@ public class ProductService {
     }
 
     public Product getFromBackend(String productId) {
-        // initialize http client
-        WebClient client = mappingServiceClient.getClient();
+        try {
+            // initialize http client
+            WebClient client = mappingServiceClient.getClient();
 
-        // query product mapping from common product mapping service
-        JSONObject productMapping = mappingServiceClient.queryJsonService(client, env.getProperty("productmapping.url")+productId);
+            // query product mapping from common product mapping service
+            JSONObject productMapping = mappingServiceClient.queryJsonService(client, env.getProperty("productmapping.url")+productId);
 
-        String namespace = (String) productMapping.get("namespace");
-        String namespaceEntityId = (String) productMapping.get("namespaceEntityId");
-        log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
+            String namespace = (String) productMapping.get("namespace");
+            String namespaceEntityId = (String) productMapping.get("namespaceEntityId");
+            log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
 
-        // resolve original product backend from common service mapping service        
-        String serviceUrl = mappingServiceClient.resolveServiceUrl(client, namespace, "product");
+            // resolve original product backend from common service mapping service
+            String serviceUrl = mappingServiceClient.resolveServiceUrl(client, namespace, "product");
 
-        // query product data from origin backend service
-        JSONObject originalProduct = mappingServiceClient.queryJsonService(client, serviceUrl+namespaceEntityId);
-        String productName = (String) originalProduct.get("name");
+            // query product data from origin backend service
+            JSONObject originalProduct = mappingServiceClient.queryJsonService(client, serviceUrl+namespaceEntityId);
+            String productName = (String) originalProduct.get("name");
 
-        // construct a common product with mapping and original content
-        Product product = new Product(productId, productName, productMapping, originalProduct);
-        log.debug("product: " + product);
+            // construct a common product with mapping and original content
+            Product product = new Product(productId, productName, productMapping, originalProduct);
+            log.debug("product: " + product);
 
-        // store to cache
-        productRepository.save(product);
+            // store to cache
+            productRepository.save(product);
 
-        return product;
+            return product;
+        } catch (Exception e) {
+            log.error("getting product from backend failed, productId: " + productId, e);
+        }
+
+        log.debug("product not found from backend, productId: " + productId);
+        return null;
     }
 
 }

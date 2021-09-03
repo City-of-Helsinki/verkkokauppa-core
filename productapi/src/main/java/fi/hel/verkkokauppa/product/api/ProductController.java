@@ -26,41 +26,41 @@ public class ProductController {
 
 	@GetMapping(ApiUrls.PRODUCT_ROOT + "/get")
 	public ResponseEntity<Product> getProduct(@RequestParam(value = "productId") String productId) {
-		Product product = null;
-
 		try {
-			product = service.findById(productId);
+			Product product = service.findById(productId);
+
+			if (product == null) {
+				Error error = new Error("product-not-found-from-backend", "product with id [" + productId + "] not found from backend");
+				throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+			}
+
+			return ResponseEntity.ok().body(product);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("getting product failed, productId: " + productId, e);
 			Error error = new Error("failed-to-get-product", "failed to get product with id [" + productId + "]");
 			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
-
-		if (product == null) {
-			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-not-found", "product with id [" + productId + "] not found"));
-		}
-
-		return ResponseEntity.ok().body(product);
 	}
 
 	@GetMapping(ApiUrls.PRODUCT_ROOT + "/getFromBackend")
 	public ResponseEntity<Product> getFromBackend(@RequestParam(value = "productId") String productId) {
-		Product product = null;
-
 		try {
-			product = service.getFromBackend(productId);
+			Product product = service.getFromBackend(productId);
+
+			if (product == null) {
+				Error error = new Error("product-not-found-from-backend", "product with id [" + productId + "] not found from backend");
+				throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+			}
+
+			return ResponseEntity.ok().body(product);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("getting product from backend failed, productId: " + productId, e);
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-get-product-from-backend", "failed to get product with id [" + productId + "] from backend "));
 		}
-
-		if (product == null) {
-			Error error = new Error("product-not-found-from-backend", "product with id [" + productId + "] not found from backend");
-			throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-
-		}
-
-		return ResponseEntity.ok().body(product);
 	}
 
 }
