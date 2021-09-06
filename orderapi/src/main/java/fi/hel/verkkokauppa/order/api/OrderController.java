@@ -68,26 +68,11 @@ public class OrderController {
 	}
 
     @GetMapping(value = "/order/get", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> getOrder(@RequestParam(value = "orderId") String orderId) {
-        try {
-            return orderAggregateDto(orderId);
-
-        } catch (CommonApiException cae) {
-            throw cae;
-        } catch (Exception e) {
-            log.error("getting order failed, orderId: " + orderId, e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
-            );
-        }
-    }
-
-    @GetMapping(value = "/order/get-and-validate-user", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<OrderAggregateDto> getOrderValidateUser(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
+	public ResponseEntity<OrderAggregateDto> getOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
             findByIdValidateByUser(orderId, userId);
             return orderAggregateDto(orderId);
+
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -100,9 +85,9 @@ public class OrderController {
     }
 
     @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId) {
+	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
-            Order order = findById(orderId);
+            Order order = findByIdValidateByUser(orderId, userId);
 
             validateCustomerData(order.getCustomerFirstName(), order.getCustomerLastName(), order.getCustomerEmail(), order.getCustomerPhone());
             validateOrderTotalsExist(order);
@@ -128,9 +113,10 @@ public class OrderController {
     }
 
     @GetMapping(value = "/order/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId) {
+	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
-            Order order = findById(orderId);
+            Order order = findByIdValidateByUser(orderId, userId);
+
             orderService.cancel(order);
             return orderAggregateDto(orderId);
 
@@ -146,13 +132,20 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order/setCustomer", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "customerFirstName") String customerFirstName,
-            @RequestParam(value = "customerLastName") String customerLastName, @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
+	public ResponseEntity<OrderAggregateDto> setCustomer(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId,
+                                                         @RequestParam(value = "customerFirstName") String customerFirstName, @RequestParam(value = "customerLastName") String customerLastName,
+                                                         @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
-            Order order = findById(orderId);
-            if (!changesToOrderAllowed(order))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-                
+            Order order = findByIdValidateByUser(orderId, userId);
+
+            if (!changesToOrderAllowed(order)) {
+                log.warn("setting customer to order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-changes-to-order", "rejected changes to order with id [" + orderId + "]")
+                );
+            }
+
             CustomerDto customerDto = validateCustomerData(customerFirstName, customerLastName, customerEmail, customerPhone);
             orderService.setCustomer(order, customerDto);
             return orderAggregateDto(orderId);
@@ -169,41 +162,20 @@ public class OrderController {
     }
 
     @PostMapping(value = "/order/setItems", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestBody OrderAggregateDto dto) {
+	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId,
+                                                      @RequestBody OrderAggregateDto dto) {
         try {
-            Order order = findById(orderId);
-            if (!changesToOrderAllowed(order))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            Order order = findByIdValidateByUser(orderId, userId);
 
-            if (dto != null && dto.getItems() != null) {
-                dto.getItems().stream().forEach(item -> {
-                    String orderItemId = orderItemService.addItem(
-                            orderId,
-                            item.getProductId(),
-                            item.getProductName(),
-                            item.getQuantity(),
-                            item.getUnit(),
-                            item.getRowPriceNet(),
-                            item.getRowPriceVat(),
-                            item.getRowPriceTotal(),
-                            item.getVatPercentage(),
-                            item.getPriceNet(),
-                            item.getPriceVat(),
-                            item.getPriceGross()
-                    );
-
-                    if (item.getMeta() != null) {
-                        item.getMeta().stream().forEach(meta -> {
-                            meta.setOrderItemId(orderItemId);
-                            meta.setOrderId(orderId);
-                            orderItemMetaService.addItemMeta(meta);
-                        });
-                    }
-                });
+            if (!changesToOrderAllowed(order)) {
+                log.warn("setting items to order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-changes-to-order", "rejected changes to order with id [" + orderId + "]")
+                );
             }
 
-            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
-            orderService.setType(order, orderType);
+            setItems(orderId, order, dto);
 
             return orderAggregateDto(orderId);
 
@@ -218,13 +190,52 @@ public class OrderController {
         }
 	}
 
+	private void setItems(String orderId, Order order, OrderAggregateDto dto) {
+        if (dto != null && dto.getItems() != null) {
+            dto.getItems().stream().forEach(item -> {
+                String orderItemId = orderItemService.addItem(
+                        orderId,
+                        item.getProductId(),
+                        item.getProductName(),
+                        item.getQuantity(),
+                        item.getUnit(),
+                        item.getRowPriceNet(),
+                        item.getRowPriceVat(),
+                        item.getRowPriceTotal(),
+                        item.getVatPercentage(),
+                        item.getPriceNet(),
+                        item.getPriceVat(),
+                        item.getPriceGross()
+                );
+
+                if (item.getMeta() != null) {
+                    item.getMeta().stream().forEach(meta -> {
+                        meta.setOrderItemId(orderItemId);
+                        meta.setOrderId(orderId);
+                        orderItemMetaService.addItemMeta(meta);
+                    });
+                }
+            });
+        }
+
+        String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
+        orderService.setType(order, orderType);
+    }
+
     @PostMapping(value = "/order/setTotals", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<OrderAggregateDto> setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "priceNet") String priceNet, 
-            @RequestParam(value = "priceVat") String priceVat, @RequestParam(value = "priceTotal") String priceTotal) {
+	public ResponseEntity<OrderAggregateDto> setTotals(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId,
+                                                       @RequestParam(value = "priceNet") String priceNet, @RequestParam(value = "priceVat") String priceVat,
+                                                       @RequestParam(value = "priceTotal") String priceTotal) {
         try {
-            Order order = findById(orderId);
-            if (!changesToOrderAllowed(order))
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            Order order = findByIdValidateByUser(orderId, userId);
+
+            if (!changesToOrderAllowed(order)) {
+                log.warn("setting totals to order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-changes-to-order", "rejected changes to order with id [" + orderId + "]")
+                );
+            }
 
             orderService.setTotals(order, priceNet, priceVat, priceTotal);
             return orderAggregateDto(orderId);
@@ -253,7 +264,7 @@ public class OrderController {
             CustomerDto customerDto = validateCustomerData(orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
             orderService.setCustomer(order, customerDto);
 
-            setItems(orderId, orderAggregateDto);
+            setItems(orderId, order, orderAggregateDto);
             orderService.setTotals(order, orderDto.getPriceNet(), orderDto.getPriceVat(), orderDto.getPriceTotal());
 
             return orderAggregateDto(orderId);
@@ -278,20 +289,9 @@ public class OrderController {
         }
 
         String orderUserId = order.getUser();
-        if (!orderUserId.equals(userId)) {
+        if (orderUserId == null || userId == null || !orderUserId.equals(userId)) {
             log.error("unauthorized attempt to load order, userId does not match");
             Error error = new Error("order-not-found-from-backend", "order with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        return order;
-    }
-
-    private Order findById(String orderId) {
-        Order order = orderService.findById(orderId);
-
-        if (order == null) {
-            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
