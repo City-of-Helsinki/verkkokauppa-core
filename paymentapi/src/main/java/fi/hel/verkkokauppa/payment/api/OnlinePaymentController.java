@@ -80,23 +80,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping("/payment/online/get")
-	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
-		try {
-			Payment payment = service.getPaymentForOrder(namespace, orderId);
-			return ResponseEntity.status(HttpStatus.OK).body(payment);
-		} catch (CommonApiException cae) {
-			throw cae;
-		} catch (Exception e) {
-			log.error("getting payment failed, orderId: " + orderId, e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
-			);
-		}
-	}
-
-	@GetMapping(value = "/payment/online/get-and-validate-user", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/payment/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> getPaymentValidateUser(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 														  @RequestParam(value = "userId") String userId) {
 		try {
@@ -114,9 +98,11 @@ public class OnlinePaymentController {
 	}
 
 	@GetMapping("/payment/online/url")
-	public ResponseEntity<String> getPaymentUrl(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
+	public ResponseEntity<String> getPaymentUrl(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+												@RequestParam(value = "userId") String userId) {
 		try {
-			String paymentUrl = service.getPaymentUrl(namespace, orderId);
+			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			String paymentUrl = service.getPaymentUrl(payment);
 			return ResponseEntity.status(HttpStatus.OK).body(paymentUrl);
 		} catch (CommonApiException cae) {
 			throw cae;
@@ -130,10 +116,11 @@ public class OnlinePaymentController {
 	}
 
 	@GetMapping("/payment/online/status")
-	public ResponseEntity<String> getPaymentStatus(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId) {
+	public ResponseEntity<String> getPaymentStatus(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+												   @RequestParam(value = "userId") String userId) {
 		try {
-			String paymentStatus = service.getPaymentStatus(namespace, orderId);
-			return ResponseEntity.status(HttpStatus.OK).body(paymentStatus);
+			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			return ResponseEntity.status(HttpStatus.OK).body(payment.getStatus());
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
