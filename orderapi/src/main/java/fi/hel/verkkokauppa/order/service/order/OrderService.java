@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
@@ -13,6 +15,8 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,6 +39,18 @@ public class OrderService {
 
     @Autowired
     private OrderTransformerUtils orderTransformerUtils;
+
+
+    public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
+        OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
+
+        if (orderAggregateDto == null) {
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return ResponseEntity.ok().body(orderAggregateDto);
+    }
 
     public OrderAggregateDto getOrderWithItems(final String orderId) {
         OrderAggregateDto orderAggregateDto = null;
