@@ -117,28 +117,51 @@ public class OnlinePaymentService {
         paymentRepository.save(payment);
     }
 
-    public Payment getPaymentForOrder(String namespace, String orderId) {
-        List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
-
-        if (payments.isEmpty()) {
-            log.debug("payment not found, orderId: " + orderId);
-            Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        return payments.get(payments.size()-1);
-    }
-
     public Payment getPaymentForOrder(String orderId) {
         List<Payment> payments = paymentRepository.findByOrderId(orderId);
 
-        if (payments.isEmpty()) {
-            log.debug("payment not found, orderId: " + orderId);
-            Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] not found from backend");
+        Payment paidPayment = selectPaidPayment(payments);
+        Payment payablePayment = selectPayablePayment(payments);
+
+        if (paidPayment != null)
+            return paidPayment;
+        else if (payablePayment != null)
+            return payablePayment;
+        else {
+            log.debug("no returnable payment, orderId: " + orderId);
+            Error error = new Error("payment-not-found-from-backend", "paid or payable payment with order id [" + orderId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
+    }
 
-        return payments.get(payments.size()-1);
+    // payment precedence selection from KYV-186
+    private Payment selectPayablePayment(List<Payment> payments) {
+        Payment payablePayment = null;
+
+        if (payments != null)
+            for (Payment payment : payments) {
+                // in an unpayable state
+                if (payment.getStatus() == PaymentStatus.PAID_ONLINE || payment.getStatus() == PaymentStatus.CANCELLED)
+                    continue;
+
+                // an earlier selected payment is newer
+                if (payablePayment != null && payablePayment.getTimestamp().compareTo(payment.getTimestamp()) > 0)
+                    continue;
+
+                payablePayment = payment;
+            }
+
+        return payablePayment;
+    }
+
+    private Payment selectPaidPayment(List<Payment> payments) {
+        if (payments != null)
+            for (Payment payment : payments) {
+                if (payment.getStatus() == PaymentStatus.PAID_ONLINE)
+                    return payment;
+            }
+
+        return null;
     }
 
     public Payment getPayment(String paymentId) {

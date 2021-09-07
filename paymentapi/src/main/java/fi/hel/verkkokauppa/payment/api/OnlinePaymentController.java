@@ -81,7 +81,7 @@ public class OnlinePaymentController {
 	}
 
 	@GetMapping(value = "/payment/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Payment> getPaymentValidateUser(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 														  @RequestParam(value = "userId") String userId) {
 		try {
 			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
@@ -171,13 +171,17 @@ public class OnlinePaymentController {
 	}
 
 	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
-		if (paymentReturnDto.isValid() && paymentReturnDto.isPaymentPaid()) {
-			service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+		if (paymentReturnDto.isValid()) {
+			if (paymentReturnDto.isPaymentPaid()) {
+				service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+			} else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
+				service.setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
+			}
 		}
 	}
 
 	private Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
-		Payment payment = service.getPaymentForOrder(namespace, orderId);
+		Payment payment = service.getPaymentForOrder(orderId);
 
 		String paymentUserId = payment.getUserId();
 		if (!paymentUserId.equals(userId)) {
