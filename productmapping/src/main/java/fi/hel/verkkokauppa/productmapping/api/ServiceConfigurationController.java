@@ -19,6 +19,13 @@ public class ServiceConfigurationController {
     @Autowired
     private ServiceConfigurationService service;
 
+
+	@GetMapping("/serviceconfiguration/keys")
+	public ResponseEntity<List<String>> getKeys() {
+		List<String> knownKeys = ServiceConfigurationKeys.getAllConfigurationKeys();
+		return ResponseEntity.ok(knownKeys);
+	}
+
 	@GetMapping("/serviceconfiguration/public/get")
 	public ServiceConfiguration getPublicServiceConfiguration(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "key") String key) {
 		return service.findBy(namespace, key);
