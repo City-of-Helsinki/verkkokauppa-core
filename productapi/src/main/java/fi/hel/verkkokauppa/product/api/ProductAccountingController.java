@@ -45,7 +45,7 @@ public class ProductAccountingController {
     }
 
     @GetMapping(ApiUrls.PRODUCT_ROOT + "/" + ApiUrls.ACCOUNTING + "/list")
-    public ResponseEntity<List<ProductAccounting>> listProductAccountings(GetProductAccountingListRequestDto request) {
+    public ResponseEntity<List<ProductAccounting>> listProductAccountings(@RequestBody GetProductAccountingListRequestDto request) {
         try {
             List<ProductAccounting> productAccountings = new ArrayList<>();
 
