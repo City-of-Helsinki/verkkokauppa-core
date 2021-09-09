@@ -1,8 +1,11 @@
 package fi.hel.verkkokauppa.payment.service;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
@@ -19,10 +22,13 @@ import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,13 +56,32 @@ public class OnlinePaymentService {
     private PaymentContextBuilder paymentContextBuilder;
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
-        // TODO: should check order status - if wrong status, return failure url
-
         try {
-            String namespace = dto.getOrder().getOrder().getNamespace();
+            OrderDto order = dto.getOrder().getOrder();
+            String namespace = order.getNamespace();
+            String orderId = order.getOrderId();
+            String orderStatus = order.getStatus();
+            String userId = order.getUser();
 
-            boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
-            String paymentType = isRecurringOrder ? "subscription" : "order"; // TODO: ok?
+            // check order status, can only create payment for confirmed orders
+            if (!"confirmed".equals(orderStatus)) {
+                log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
+                );
+            }
+
+            if (userId == null || userId.isEmpty()) {
+                log.warn("creating payment without user rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
+                );
+            }
+
+            boolean isRecurringOrder = order.getType().equals("subscription");
+            String paymentType = isRecurringOrder ? "subscription" : "order";
 
             PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
@@ -82,14 +107,8 @@ public class OnlinePaymentService {
         return VismaPayClient.API_URL + "/token/" + token; 
     }
 
-    public String getPaymentUrl(String namespace, String orderId) {
-        Payment payment = getPaymentForOrder(namespace, orderId);
+    public String getPaymentUrl(Payment payment) {
         return getPaymentUrl(payment.getToken());
-    }
-
-    public String getPaymentStatus(String namespace, String orderId) {
-        Payment payment = getPaymentForOrder(namespace, orderId);
-        return payment.getStatus();
     }
 
     public void setPaymentStatus(String paymentId, String status) {
@@ -98,33 +117,62 @@ public class OnlinePaymentService {
         paymentRepository.save(payment);
     }
 
-    public Payment getPaymentForOrder(String namespace, String orderId) {
-        List<Payment> payments = paymentRepository.findByNamespaceAndOrderId(namespace, orderId);
-
-        if (payments.isEmpty()) {
-            throw new IllegalArgumentException("Payment not found.");
-        }
-
-        return payments.get(payments.size()-1);
-    }
-
     public Payment getPaymentForOrder(String orderId) {
         List<Payment> payments = paymentRepository.findByOrderId(orderId);
 
-        if (payments.isEmpty()) {
-            throw new IllegalArgumentException("Payment not found.");
-        }
+        Payment paidPayment = selectPaidPayment(payments);
+        Payment payablePayment = selectPayablePayment(payments);
 
-        return payments.get(payments.size()-1);
+        if (paidPayment != null)
+            return paidPayment;
+        else if (payablePayment != null)
+            return payablePayment;
+        else {
+            log.debug("no returnable payment, orderId: " + orderId);
+            Error error = new Error("payment-not-found-from-backend", "paid or payable payment with order id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+    }
+
+    // payment precedence selection from KYV-186
+    private Payment selectPayablePayment(List<Payment> payments) {
+        Payment payablePayment = null;
+
+        if (payments != null)
+            for (Payment payment : payments) {
+                // in an unpayable state
+                if (payment.getStatus() == PaymentStatus.PAID_ONLINE || payment.getStatus() == PaymentStatus.CANCELLED)
+                    continue;
+
+                // an earlier selected payment is newer
+                if (payablePayment != null && payablePayment.getTimestamp().compareTo(payment.getTimestamp()) > 0)
+                    continue;
+
+                payablePayment = payment;
+            }
+
+        return payablePayment;
+    }
+
+    private Payment selectPaidPayment(List<Payment> payments) {
+        if (payments != null)
+            for (Payment payment : payments) {
+                if (payment.getStatus() == PaymentStatus.PAID_ONLINE)
+                    return payment;
+            }
+
+        return null;
     }
 
     public Payment getPayment(String paymentId) {
         Optional<Payment> payment = paymentRepository.findById(paymentId);
 
-        if (false == payment.isPresent()) {
-            log.warn("payment not found, paymentId: " + paymentId);
-            throw new IllegalArgumentException("Payment not found.");
+        if (!payment.isPresent()) {
+            log.debug("payment not found, paymentId: " + paymentId);
+            Error error = new Error("payment-not-found-from-backend", "payment with payment id [" + paymentId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
+
         return payment.get();
     }
 
@@ -136,13 +184,19 @@ public class OnlinePaymentService {
             throw new IllegalArgumentException("Items cannot be empty.");
         }
 
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+
         String namespace = order.getNamespace();
 
         Payment payment = new Payment();
         payment.setPaymentId(paymentId);
         payment.setNamespace(order.getNamespace());
         payment.setOrderId(order.getOrderId());
+        payment.setUserId(order.getUser());
         payment.setPaymentMethod(dto.getPaymentMethod());
+        payment.setPaymentMethodLabel(dto.getPaymentMethodLabel());
+        payment.setTimestamp(sdf.format(timestamp));
         payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
         payment.setPaymentType(type);
         payment.setStatus(PaymentStatus.CREATED);

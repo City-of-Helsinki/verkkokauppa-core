@@ -8,40 +8,34 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Document(indexName = "orderitemaccountings")
+@Document(indexName = "accountingslips")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderItemAccounting {
+public class AccountingSlip {
 
     @Id
-    private String orderItemId;
+    private String accountingSlipId;
 
     @Field(type = FieldType.Text)
-    private String orderId;
+    private String documentDate;
 
     @Field(type = FieldType.Text)
-    private String priceGross;
+    private String companyCode;
 
     @Field(type = FieldType.Text)
-    private String priceNet;
+    private String documentType;
 
     @Field(type = FieldType.Text)
-    private String mainLedgerAccount;
+    private String postingDate;
 
     @Field(type = FieldType.Text)
-    private String vatCode;
+    private String reference;
 
     @Field(type = FieldType.Text)
-    private String internalOrder;
+    private String headerText;
 
     @Field(type = FieldType.Text)
-    private String profitCenter;
-
-    @Field(type = FieldType.Text)
-    private String project;
-
-    @Field(type = FieldType.Text)
-    private String operationArea;
+    private String currencyCode;
 
 }

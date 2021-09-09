@@ -35,7 +35,6 @@ public class OrderItemAccountingService {
     }
 
     public List<OrderItemAccountingDto> createOrderItemAccountings(CreateOrderAccountingRequestDto request) {
-        log.info("here!");
         List<OrderItemAccountingDto> orderItemAccountings = new ArrayList<>();
 
         String orderId = request.getOrderId();
@@ -71,5 +70,15 @@ public class OrderItemAccountingService {
 
         log.warn("product accounting not found, orderItemId: " + orderItemId);
         return null;
+    }
+
+    public List<OrderItemAccounting> getOrderItemAccountings(String orderId) {
+        List<OrderItemAccounting> accountings = orderItemAccountingRepository.findByOrderId(orderId);
+
+        if (accountings.size() > 0)
+            return accountings;
+
+        log.debug("orderItems not found, orderId: " + orderId);
+        return new ArrayList<OrderItemAccounting>();
     }
 }

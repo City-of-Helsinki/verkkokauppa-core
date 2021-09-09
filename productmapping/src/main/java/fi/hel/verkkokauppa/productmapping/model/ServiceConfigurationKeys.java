@@ -4,10 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ServiceConfigurationKeys {
-    
-    public static String TERMS_OF_USE_URL = "terms_of_use_url";
-    public static String TERMS_OF_USE_EMBEDDABLE_CONTENT = "terms_of_use_embeddable_content";
-    public static String ORDER_CREATED_REDIRECT_URL = "order_created_redirect_url";
 
     //
     // Payment related configuration keys, based on KYV-60 Jira task
@@ -29,14 +25,35 @@ public class ServiceConfigurationKeys {
     // order customer name
     // order customer email
     public static String PAYMENT_SUBMERCHANT_ID = "payment_submerchant_id";
-    public static String PAYMENT_CP= "payment_cp";
+    public static String PAYMENT_CP = "payment_cp";
 
+    //
+    // Merchant info related keys from KYV-182
+    //
+    public static String MERCHANT_NAME = "merchantName";
+    public static String MERCHANT_STREET = "merchantStreet";
+    public static String MERCHANT_ZIP = "merchantZip";
+    public static String MERCHANT_CITY = "merchantCity";
+    public static String MERCHANT_EMAIL = "merchantEmail";
+    public static String MERCHANT_PHONE = "merchantPhone";
+    public static String MERCHANT_URL = "merchantUrl";
+    public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
+
+
+    public static List<String> getAllConfigurationKeys() {
+        List<String> knownKeys = getUnrestrictedConfigurationKeys();
+        knownKeys.addAll(getRestrictedConfigurationKeys());
+        return knownKeys;
+    }
+
+    public static List<String> getUnrestrictedConfigurationKeys() {
+        return Arrays.asList(MERCHANT_NAME, MERCHANT_STREET, MERCHANT_ZIP, MERCHANT_CITY, MERCHANT_EMAIL,
+                MERCHANT_PHONE, MERCHANT_URL, MERCHANT_TERMS_OF_SERVICE_URL);
+    }
 
     public static List<String> getRestrictedConfigurationKeys() {
-        return Arrays.asList(new String[]{
-            PAYMENT_API_VERSION, PAYMENT_API_KEY, PAYMENT_CURRENCY, PAYMENT_TYPE, PAYMENT_REGISTER_CARD_TOKEN, 
-            PAYMENT_RETURN_URL, PAYMENT_NOTIFICATION_URL, PAYMENT_LANGUAGE, PAYMENT_SUBMERCHANT_ID, PAYMENT_CP
-        });
+        return Arrays.asList(PAYMENT_API_VERSION, PAYMENT_API_KEY, PAYMENT_CURRENCY, PAYMENT_TYPE, PAYMENT_REGISTER_CARD_TOKEN,
+                PAYMENT_RETURN_URL, PAYMENT_NOTIFICATION_URL, PAYMENT_LANGUAGE, PAYMENT_SUBMERCHANT_ID, PAYMENT_CP);
     }
 
     public static boolean isRestrictedConfigurationKey(String key) {
