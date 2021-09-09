@@ -25,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 public class AccountingSlipService {
 
     private Logger log = LoggerFactory.getLogger(AccountingSlipService.class);
+
+    public static final int REFERENCE_NUMBER_LENGTH = 4;
 
     @Autowired
     private OrderService orderService;
@@ -87,8 +90,8 @@ public class AccountingSlipService {
         List<AccountingSlipDto> accountingSlips = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
-            AccountingSlipDto accountingSlipDto = createAccountingSlipForDate(accountingsForDate);
-            accountingSlips.add(accountingSlipDto);
+            List<AccountingSlipDto> accountingSlipDtos = createAccountingSlipForDate(accountingsForDate);
+            accountingSlips.addAll(accountingSlipDtos);
         }
         return accountingSlips;
     }
@@ -121,29 +124,93 @@ public class AccountingSlipService {
         return map;
     }
 
-    private AccountingSlipDto createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
-        List<OrderItemAccountingDto> itemAccountings = getOrderItemAccountingsForDate(accountingsForDate);
+    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
+        List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
-        // Summataan hinnat yksittäisen tiliöinnin tasolle
-        Collection<OrderItemAccountingDto> summedItemAccountings = itemAccountings.stream()
-                .collect(Collectors.toMap(OrderItemAccountingDto::createKey, Function.identity(), (OrderItemAccountingDto::merge)))
-                .values();
+        Map<String, List<OrderItemAccountingDto>> summedItemAccountingsPerCompanyCode = getSummedOrderItemAccountingsForDate(accountingsForDate);
 
-        String postingDate = accountingsForDate.getKey();
-        String documentDate = DateTimeUtil.getDate();
-        String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDate, documentDate);
+        for (var accountingListForCompanyCode : summedItemAccountingsPerCompanyCode.entrySet()) {
+            List<OrderItemAccountingDto> summedItemAccountings = accountingListForCompanyCode.getValue();
 
+            int year = LocalDate.now().getYear();
+            int count = accountingSlipRepository.countAccountingSlipsByReferenceContains(Integer.toString(year));
+
+            String documentDate = DateTimeUtil.getDate();
+            String accountingSlipId = UUIDGenerator.generateType3UUIDString(documentDate, Integer.toString(count));
+
+            List<AccountingSlipRowDto> rows = createAccountingSlipRowDtos(summedItemAccountings, accountingSlipId);
+
+            DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
+            String documentDateFormatted = DateTimeUtil.getFormattedDate(documentDate, formatter);
+
+            String companyCode = accountingListForCompanyCode.getKey();
+
+            String postingDate = accountingsForDate.getKey();
+            String postingDateFormatted = DateTimeUtil.getFormattedDate(postingDate, formatter);
+
+            int referenceNumber = count + 1;
+            String referenceNumberFormatted = String.format("%1$" + REFERENCE_NUMBER_LENGTH + "s", referenceNumber).replace(' ', '0');
+            String reference = year + ":" + referenceNumberFormatted;
+
+            // TODO add header text when defined
+            AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
+                    accountingSlipId,
+                    documentDateFormatted,
+                    companyCode,
+                    "VK",
+                    postingDateFormatted,
+                    reference,
+                    "HEADERTEXT_PLACEHOLDER",
+                    "EUR",
+                    rows
+            );
+
+            createAccountingWithRows(accountingSlipDto);
+            accountingSlipDtos.add(accountingSlipDto);
+
+        }
+        accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
+
+        return accountingSlipDtos;
+    }
+
+    public Map<String, List<OrderItemAccountingDto>> getSummedOrderItemAccountingsForDate(Map.Entry<String, List<String>> accountingsForDate) {
+        List<OrderItemAccountingDto> accountingItemsForDate = new ArrayList<>();
+
+        for (String id : accountingsForDate.getValue()) {
+            List<OrderItemAccounting> list = orderItemAccountingService.getOrderItemAccountings(id);
+            list.forEach(itemAccounting -> accountingItemsForDate.add(new OrderItemAccountingTransformer().transformToDto(itemAccounting)));
+        }
+
+        Map<String, List<OrderItemAccountingDto>> accountingsForCompanyCode = groupByCompanyCode(accountingItemsForDate);
+
+        Map<String, List<OrderItemAccountingDto>> summedAccountingsForCompanyCode = new HashMap<>();
+        for (Map.Entry<String, List<OrderItemAccountingDto>> entry : accountingsForCompanyCode.entrySet()) {
+            // Sum prices per posting (same key info)
+            Collection<OrderItemAccountingDto> values = entry.getValue().stream()
+                    .collect(Collectors.toMap(OrderItemAccountingDto::createKey, Function.identity(), (OrderItemAccountingDto::merge)))
+                    .values();
+
+            summedAccountingsForCompanyCode.put(entry.getKey(), new ArrayList<>(values));
+        }
+
+        return summedAccountingsForCompanyCode;
+    }
+
+    private List<AccountingSlipRowDto> createAccountingSlipRowDtos(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId) {
         List<AccountingSlipRowDto> rows = new ArrayList<>();
         int rowNumber = 1;
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
             String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
 
+            // TODO add line text when defined
             AccountingSlipRowDto accountingSlipRowDto = new AccountingSlipRowDto(
                     accountingSlipRowId,
                     accountingSlipId,
                     formatSum(summedItemAccounting.getPriceGrossAsDouble()),
                     formatSum(summedItemAccounting.getPriceNetAsDouble()),
+                    "LINETEXT_PLACEHOLDER",
                     summedItemAccounting.getMainLedgerAccount(),
                     summedItemAccounting.getVatCode(),
                     summedItemAccounting.getInternalOrder(),
@@ -156,33 +223,25 @@ public class AccountingSlipService {
             rowNumber++;
         }
 
-        AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
-                accountingSlipId,
-                documentDate,
-                "FILL THIS",
-                "VK",
-                postingDate,
-                "FILL THIS",
-                "FILL THIS",
-                "EUR",
-                rows
-        );
-
-        createAccountingWithRows(accountingSlipDto);
-
-        accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
-
-        return accountingSlipDto;
+        return rows;
     }
 
-    private List<OrderItemAccountingDto> getOrderItemAccountingsForDate(Map.Entry<String, List<String>> accountingsForDate) {
-        List<OrderItemAccountingDto> accountingItemsForDate = new ArrayList<>();
+    private Map<String, List<OrderItemAccountingDto>> groupByCompanyCode(List<OrderItemAccountingDto> accountingItemsForDate) {
+        Map<String, List<OrderItemAccountingDto>> groupedAccountings = new HashMap<>();
 
-        for (String id : accountingsForDate.getValue()) {
-            List<OrderItemAccounting> list = orderItemAccountingService.getOrderItemAccountings(id);
-            list.forEach(itemAccounting -> accountingItemsForDate.add(new OrderItemAccountingTransformer().transformToDto(itemAccounting)));
+        for (OrderItemAccountingDto orderItemAccountingDto : accountingItemsForDate) {
+            String companyCode = orderItemAccountingDto.getCompanyCode();
+            List<OrderItemAccountingDto> accountingList = groupedAccountings.get(companyCode);
+
+            if (accountingList == null) {
+                ArrayList<OrderItemAccountingDto> accountings = new ArrayList<>();
+                accountings.add(orderItemAccountingDto);
+                groupedAccountings.put(companyCode, accountings);
+            } else {
+                accountingList.add(orderItemAccountingDto);
+            }
         }
-        return accountingItemsForDate;
+        return groupedAccountings;
     }
 
     private void createAccountingWithRows(AccountingSlipDto accountingSlipDto) {
