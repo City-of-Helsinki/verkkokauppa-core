@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.accounting;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -7,6 +8,8 @@ import lombok.NoArgsConstructor;
 import java.util.Objects;
 
 /**
+ * Yritys
+ *
  * Pääkirjatili
  *
  * Alv-koodi
@@ -33,6 +36,8 @@ public class OrderItemAccountingDto {
 
     private String priceNet;
 
+    private String companyCode;
+
     private String mainLedgerAccount;
 
     private String vatCode;
@@ -50,6 +55,7 @@ public class OrderItemAccountingDto {
         this.orderId = orderId;
         this.priceGross = priceGross;
         this.priceNet = priceNet;
+        this.companyCode = productAccountingDto.getCompanyCode();
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();
         this.internalOrder = productAccountingDto.getInternalOrder();
@@ -75,6 +81,7 @@ public class OrderItemAccountingDto {
         return priceGross;
     }
 
+    @JsonIgnore
     public Double getPriceGrossAsDouble() {
         return Double.valueOf(priceGross);
     }
@@ -91,6 +98,7 @@ public class OrderItemAccountingDto {
         return priceNet;
     }
 
+    @JsonIgnore
     public Double getPriceNetAsDouble() {
         return Double.valueOf(priceNet);
     }

@@ -3,6 +3,8 @@ package fi.hel.verkkokauppa.order.api.data.accounting;
 import lombok.Data;
 
 /**
+ * Yritys
+ *
  * Pääkirjatili
  *
  * Alv-koodi
@@ -20,6 +22,8 @@ import lombok.Data;
 public class ProductAccountingDto {
 
     private String productId;
+
+    private String companyCode;
 
     private String mainLedgerAccount;
 

@@ -6,6 +6,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Document(indexName = "payments")
 public class Payment {
@@ -18,6 +19,9 @@ public class Payment {
 
 	@Field(type = FieldType.Text)
 	String orderId;
+
+	@Field(type = FieldType.Text)
+	String userId;
 
 	@Field(type = FieldType.Text)
 	String status;
@@ -45,6 +49,12 @@ public class Payment {
 
 	@Field(type = FieldType.Text)
 	String token;
+
+	@Field(type = FieldType.Text)
+	String timestamp;
+
+	@Field(type = FieldType.Text)
+	String paymentMethodLabel;
 
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
@@ -144,5 +154,29 @@ public class Payment {
 
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	public String getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(String timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public String getPaymentMethodLabel() {
+		return paymentMethodLabel;
+	}
+
+	public void setPaymentMethodLabel(String paymentMethodLabel) {
+		this.paymentMethodLabel = paymentMethodLabel;
+	}
+
+	public String getUserId() {
+		return userId;
+	}
+
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 }

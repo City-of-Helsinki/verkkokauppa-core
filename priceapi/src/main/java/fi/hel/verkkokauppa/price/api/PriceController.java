@@ -25,7 +25,15 @@ public class PriceController {
 	public ResponseEntity<Price> getPrice(@RequestParam(value = "productId") String productId) {
 		try {
 			Price price = service.findByCommonProductId(productId);
+
+			if (price == null) {
+				Error error = new Error("price-not-found-from-backend", "price with product id [" + productId + "] not found from backend");
+				throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+			}
+
 			return ResponseEntity.ok().body(price);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("getting price failed, productId: " + productId, e);
 			Error error = new Error("failed-to-get-price", "failed to get price for product [" + productId + "]");

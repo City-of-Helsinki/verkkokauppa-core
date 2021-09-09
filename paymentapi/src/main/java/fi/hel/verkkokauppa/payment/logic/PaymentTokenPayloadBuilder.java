@@ -67,7 +67,7 @@ public class PaymentTokenPayloadBuilder {
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
 					.setPretaxPrice(convertToCents(item.getPriceNet()))
-					.setTax(item.getPriceVat().intValue())
+					.setTax(Integer.valueOf(item.getVatPercentage()))
 					.setPrice(convertToCents(item.getPriceGross()))
 					.setMerchantId(context.getMerchantId())
 					.setCp(context.getCp());

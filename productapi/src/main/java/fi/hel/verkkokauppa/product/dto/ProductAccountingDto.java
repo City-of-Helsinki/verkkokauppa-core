@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
+ * Yritys
+ *
  * Pääkirjatili
  *
  * Alv-koodi
@@ -23,6 +25,8 @@ import lombok.Setter;
 public class ProductAccountingDto extends BaseDto {
 
     private String productId;
+
+    private String companyCode;
 
     private String mainLedgerAccount;
 

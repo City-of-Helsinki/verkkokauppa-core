@@ -30,23 +30,30 @@ public class PriceService {
 
 
     public Price findByCommonProductId(String productId) {
-        // initialize http client
-        WebClient client = getClient();
+        try {
+            // initialize http client
+            WebClient client = getClient();
 
-        // query product mapping from common product mapping service
-        JSONObject productMapping = queryJsonService(client, env.getProperty("productmapping.url")+productId);
-        String namespace = (String) productMapping.get("namespace");
-        String namespaceEntityId = (String) productMapping.get("namespaceEntityId");
-        log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
-        
-        JSONObject priceDetails = findByNamespaceEntityId(client, namespace, namespaceEntityId);
+            // query product mapping from common product mapping service
+            JSONObject productMapping = queryJsonService(client, env.getProperty("productmapping.url")+productId);
+            String namespace = (String) productMapping.get("namespace");
+            String namespaceEntityId = (String) productMapping.get("namespaceEntityId");
+            log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
 
-        // construct a common price response, priceDetails may vary per backend service
-        String productPrice = (String) priceDetails.get("grossValue");
-        Price price = new Price(productId, productPrice, priceDetails);
-        log.debug("price: " + price);
+            JSONObject priceDetails = findByNamespaceEntityId(client, namespace, namespaceEntityId);
 
-        return price;
+            // construct a common price response, priceDetails may vary per backend service
+            String productPrice = (String) priceDetails.get("grossValue");
+            Price price = new Price(productId, productPrice, priceDetails);
+            log.debug("price: " + price);
+
+            return price;
+        } catch (Exception e) {
+            log.error("getting price from backend failed, productId: " + productId, e);
+        }
+
+        log.debug("price not found from backend, productId: " + productId);
+        return null;
     }
 
     private JSONObject findByNamespaceEntityId(WebClient client, String namespace, String namespaceEntityId) {
