@@ -13,6 +13,9 @@ public class ProductAccounting extends BaseModel {
     private String productId;
 
     @Field(type = FieldType.Text)
+    private String companyCode;
+
+    @Field(type = FieldType.Text)
     private String mainLedgerAccount;
 
     @Field(type = FieldType.Text)
