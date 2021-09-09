@@ -30,16 +30,11 @@ public class ProductService {
 
 
     public Product findById(String productId) {
-        // TODO add lastmodified timestamp to ease cache invalidation
-        Product product = getFromCache(productId);
-
-        if (product != null) {
-            return product;
-        } else {
-            return getFromBackend(productId);
-        }
+        return getFromBackend(productId);
     }
 
+    // TODO wip, returns on first call but not consecutive calls
+    /*
     public Product getFromCache(String productId) {
         Optional<Product> cachedProduct = productRepository.findById(productId);
         
@@ -49,6 +44,7 @@ public class ProductService {
         log.debug("product not found from cache, productId: " + productId);
         return null;
     }
+    */
 
     public Product getFromBackend(String productId) {
         try {
