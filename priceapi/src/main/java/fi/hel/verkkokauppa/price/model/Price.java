@@ -14,7 +14,7 @@ public class Price {
 
     public Price(String productId, String price, JSONObject original) {
         this.productId = productId;
-        this.price = price;
+        this.price = price.replace(",", ".");
         this.original = original;
     }
 
