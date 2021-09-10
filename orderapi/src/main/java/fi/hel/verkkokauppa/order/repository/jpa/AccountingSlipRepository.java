@@ -7,6 +7,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AccountingSlipRepository extends ElasticsearchRepository<AccountingSlip, String> {
 
-    int countAccountingSlipsByReferenceContains(String year);
-
 }

@@ -24,7 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -35,7 +37,7 @@ public class AccountingSlipService {
 
     private Logger log = LoggerFactory.getLogger(AccountingSlipService.class);
 
-    public static final int REFERENCE_NUMBER_LENGTH = 4;
+    public static final int REFERENCE_NUMBER_LENGTH = 3;
 
     @Autowired
     private OrderService orderService;
@@ -127,32 +129,33 @@ public class AccountingSlipService {
     private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
         List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
-        Map<String, List<OrderItemAccountingDto>> summedItemAccountingsPerCompanyCode = getSummedOrderItemAccountingsForDate(accountingsForDate);
+        String postingDateString = accountingsForDate.getKey();
+        LocalDate postingDate = LocalDate.parse(postingDateString);
+        int referenceNumber = postingDate.getDayOfYear();
 
-        for (var accountingListForCompanyCode : summedItemAccountingsPerCompanyCode.entrySet()) {
-            List<OrderItemAccountingDto> summedItemAccountings = accountingListForCompanyCode.getValue();
+        Map<String, List<OrderItemAccountingDto>> summedItemAccountings = getSummedOrderItemAccountingsForDate(accountingsForDate);
 
-            int year = LocalDate.now().getYear();
-            int count = accountingSlipRepository.countAccountingSlipsByReferenceContains(Integer.toString(year));
-
-            String documentDate = DateTimeUtil.getDate();
-            String accountingSlipId = UUIDGenerator.generateType3UUIDString(documentDate, Integer.toString(count));
-
-            List<AccountingSlipRowDto> rows = createAccountingSlipRowDtos(summedItemAccountings, accountingSlipId);
-
-            DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
-            String documentDateFormatted = DateTimeUtil.getFormattedDate(documentDate, formatter);
+        for (var accountingListForCompanyCode : summedItemAccountings.entrySet()) {
+            List<OrderItemAccountingDto> summedItemAccountingsForCompanyCode = accountingListForCompanyCode.getValue();
 
             String companyCode = accountingListForCompanyCode.getKey();
+            String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDateString, companyCode);
 
-            String postingDate = accountingsForDate.getKey();
-            String postingDateFormatted = DateTimeUtil.getFormattedDate(postingDate, formatter);
+            String headerTextDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(postingDate);
+            String headertext = "Verkkokauppa " + headerTextDate;
 
-            int referenceNumber = count + 1;
+            List<AccountingSlipRowDto> rows = createAccountingSlipRowDtos(summedItemAccountingsForCompanyCode, accountingSlipId, headertext);
+
+            DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
+
+            String documentDate = DateTimeUtil.getDate();
+            String documentDateFormatted = DateTimeUtil.getFormattedDate(documentDate, formatter);
+            String postingDateFormatted = DateTimeUtil.getFormattedDate(postingDateString, formatter);
+
+            String referenceYear = DateTimeFormatter.ofPattern("yy").format(postingDate);
             String referenceNumberFormatted = String.format("%1$" + REFERENCE_NUMBER_LENGTH + "s", referenceNumber).replace(' ', '0');
-            String reference = year + ":" + referenceNumberFormatted;
+            String reference = referenceYear + companyCode + referenceNumberFormatted;
 
-            // TODO add header text when defined
             AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
                     accountingSlipId,
                     documentDateFormatted,
@@ -160,7 +163,7 @@ public class AccountingSlipService {
                     "VK",
                     postingDateFormatted,
                     reference,
-                    "HEADERTEXT_PLACEHOLDER",
+                    headertext,
                     "EUR",
                     rows
             );
@@ -197,20 +200,20 @@ public class AccountingSlipService {
         return summedAccountingsForCompanyCode;
     }
 
-    private List<AccountingSlipRowDto> createAccountingSlipRowDtos(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId) {
+    private List<AccountingSlipRowDto> createAccountingSlipRowDtos(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId,
+                                                                   String lineText) {
         List<AccountingSlipRowDto> rows = new ArrayList<>();
         int rowNumber = 1;
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
             String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
-
-            // TODO add line text when defined
+            
             AccountingSlipRowDto accountingSlipRowDto = new AccountingSlipRowDto(
                     accountingSlipRowId,
                     accountingSlipId,
                     formatSum(summedItemAccounting.getPriceGrossAsDouble()),
                     formatSum(summedItemAccounting.getPriceNetAsDouble()),
-                    "LINETEXT_PLACEHOLDER",
+                    lineText,
                     summedItemAccounting.getMainLedgerAccount(),
                     summedItemAccounting.getVatCode(),
                     summedItemAccounting.getInternalOrder(),
@@ -254,7 +257,9 @@ public class AccountingSlipService {
     }
 
     private String formatSum(Double sum) {
-        return Double.toString(-sum).replace(".", ",");
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+
+        return decimalFormat.format(-sum).replace(".", ",");
     }
 
 }
