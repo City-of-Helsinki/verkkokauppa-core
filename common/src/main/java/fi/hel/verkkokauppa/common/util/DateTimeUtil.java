@@ -12,9 +12,16 @@ public class DateTimeUtil {
 
     public static String getFormattedDate(LocalDate localDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-        String dateWithCommonFormatting = localDate.format(formatter);
+        return getFormattedDate(localDate, formatter);
+    }
 
-        return dateWithCommonFormatting;
+    public static String getFormattedDate(String localDateString, DateTimeFormatter formatter) {
+        LocalDate localDate = LocalDate.parse(localDateString);
+        return getFormattedDate(localDate, formatter);
+    }
+
+    public static String getFormattedDate(LocalDate localDate, DateTimeFormatter formatter) {
+        return localDate.format(formatter);
     }
 
     public static String getDateTime() {

@@ -17,6 +17,8 @@ public class AccountingSlipRowDto {
 
     private String baseAmount;
 
+    private String lineText;
+
     private String GLAccount;
 
     private String taxCode;

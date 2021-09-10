@@ -17,7 +17,7 @@ public class AccountingSlipRow {
     @Id
     private String accountingSlipRowId;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String accountingSlipId;
 
     @Field(type = FieldType.Text)
@@ -25,6 +25,9 @@ public class AccountingSlipRow {
 
     @Field(type = FieldType.Text)
     private String baseAmount;
+
+    @Field(type = FieldType.Text)
+    private String lineText;
 
     @Field(type = FieldType.Text)
     private String GLAccount;
