@@ -1,13 +1,15 @@
 package fi.hel.verkkokauppa.productmapping.api;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import fi.hel.verkkokauppa.productmapping.model.ServiceConfigurationBatchDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import fi.hel.verkkokauppa.productmapping.model.ServiceConfiguration;
 import fi.hel.verkkokauppa.productmapping.model.ServiceConfigurationKeys;
@@ -81,9 +83,37 @@ public class ServiceConfigurationController {
 		}	
 	}
 
+	@PostMapping("/serviceconfiguration/public/create-batch")
+	public ResponseEntity<List<ServiceConfiguration>> batchCreatePublicServiceConfiguration(@RequestBody ServiceConfigurationBatchDto dto) {
+		String namespace = dto.getNamespace();
+
+		dto.getConfigurations().keySet().forEach(configurationKey -> {
+			String configurationValue = dto.getConfigurations().get(configurationKey);
+			service.createByParams(namespace, configurationKey, configurationValue,
+					ServiceConfigurationKeys.isRestrictedConfigurationKey(configurationKey));
+		});
+
+		List<ServiceConfiguration> configurations = service.findBy(namespace);
+
+		return ResponseEntity.ok(configurations);
+	}
+
     @GetMapping("/serviceconfiguration/initializetestdata")
 	public List<ServiceConfiguration> initializeTestData() {
         return service.initializeTestData();
+	}
+
+
+	private ServiceConfigurationBatchDto getConfigurationsDto(String namespace) {
+		return new ServiceConfigurationBatchDto(namespace, getConfigurations(namespace));
+	}
+
+	private Map<String, String> getConfigurations(String namespace) {
+		List<ServiceConfiguration> configurations = service.findBy(namespace);
+		Map<String, String> configurationsMap = configurations.stream()
+				.collect(Collectors.toMap(ServiceConfiguration::getConfigurationKey, ServiceConfiguration::getConfigurationValue));
+
+		return configurationsMap;
 	}
 
 }
