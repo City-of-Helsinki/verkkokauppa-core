@@ -17,7 +17,7 @@ pool: Default
 
 # Opting out of pull request validation
 pr: none
-ö
+
 resources:
   repositories:
     # Azure DevOps repository
