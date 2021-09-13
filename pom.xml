@@ -25,6 +25,7 @@
         <module>common</module>
         <module>productmapping</module>
         <module>productapi</module>
+        <module>messageapi</module>
         <module>priceapi</module>
         <module>cartapi</module>
         <module>orderapi</module>
