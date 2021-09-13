@@ -19,7 +19,6 @@ public class MessageDto extends BaseDto {
     @NotEmpty
     private String orderId;
 
-    @NotBlank
     private String sender;
 
     @NotEmpty
@@ -32,9 +31,8 @@ public class MessageDto extends BaseDto {
     @NotBlank
     private String body;
 
-    public MessageDto(String orderId, String sender, String receiver, String header, String body) {
+    public MessageDto(String orderId, String receiver, String header, String body) {
         this.orderId = orderId;
-        this.sender = sender;
         this.receiver = receiver;
         this.header = header;
         this.body = body;

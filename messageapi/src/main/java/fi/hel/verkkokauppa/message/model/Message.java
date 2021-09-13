@@ -3,26 +3,16 @@ package fi.hel.verkkokauppa.message.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import fi.hel.verkkokauppa.message.enums.MessageTypes;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Document(indexName = "messages")
 @JsonIgnoreProperties("messageText")
 public class Message {
     @Id
     String id;
-    @Field(type = FieldType.Text)
     String messageText;
-    @Field(type = FieldType.Text)
     String sendTo;
-    @Field(type = FieldType.Text)
     String from;
-    @Field(type = FieldType.Text)
     String header;
-    @Field(type = FieldType.Text)
     String identifierValue;
-    @Field(type = FieldType.Text)
     MessageTypes messageType;
 
     public Message() {

@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.message.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -20,16 +21,18 @@ import javax.mail.internet.MimeMessage;
 public class MessageService {
 
     private final Logger log = LoggerFactory.getLogger(MessageService.class);
+    @Autowired
+    private Environment env;
 
     @Autowired
     private JavaMailSender javaMailSender;
 
     public Message createSendableEmailMessage(MessageDto messageDto) {
         return new Message(
-                UUIDGenerator.generateType3UUIDString(MessageTypes.EMAIL.toString(), messageDto.getOrderId()),
+                UUIDGenerator.generateType4UUID() + ":" +  messageDto.getOrderId(),
                 messageDto.getBody(),
                 messageDto.getReceiver(),
-                messageDto.getSender(),
+                env.getRequiredProperty("spring.mail.username"),
                 messageDto.getHeader(),
                 messageDto.getOrderId(),
                 MessageTypes.EMAIL

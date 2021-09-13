@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.message.dto.MessageDto;
 import fi.hel.verkkokauppa.message.model.Message;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +14,13 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
@@ -35,16 +34,15 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {
+        "spring.mail.host=127.0.0.1",
+        "spring.mail.username=donotreply@gmail.com",
+        "spring.mail.password=",
+        "spring.mail.port=1025",
+        "spring.mail.properties.mail.smtp.auth=",
+        "spring.mail.properties.mail.smtp.starttls.enable=false",
+})
 public class MessageServiceTest {
-    /**
-     * Elasticsearch version which should be used for the Tests
-     */
-    private static final String ELASTICSEARCH_VERSION = "7.9.2";
-    private static final DockerImageName ELASTICSEARCH_IMAGE =
-            DockerImageName
-                    .parse("docker.elastic.co/elasticsearch/elasticsearch")
-                    .withTag(ELASTICSEARCH_VERSION);
-
     // bind the above RANDOM_PORT
     @LocalServerPort
     private int port;
@@ -53,16 +51,10 @@ public class MessageServiceTest {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private TestRestTemplate restTemplate;
+    private Environment env;
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        // Create the elasticsearch container.
-        try (ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)) {
-            // Start the container. This step might take some time...
-            container.start();
-        }
-    }
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     private static final Integer PORT_SMTP = 1025;
 
@@ -84,7 +76,6 @@ public class MessageServiceTest {
         String header = "test@email.com";
         MessageDto messageDto = new MessageDto(
                 "orderId",
-                "severikupari1@gmail.com",
                 "severikupari1+receive@gmail.com",
                 header,
                 "Body"
@@ -108,7 +99,7 @@ public class MessageServiceTest {
         assertThat(email.getHeaderValue("Subject"), is(header));
         assertThat(email.getBody(), is("Body"));
         assertThat(email.getHeaderValue("To"), is("severikupari1+receive@gmail.com"));
-        assertThat(email.getHeaderValue("From"), is("severikupari1@gmail.com"));
+        assertThat(email.getHeaderValue("From"), is(env.getRequiredProperty("spring.mail.username")));
         assertThat(email.getHeaderValue("Subject"), is("test@email.com"));
         assertThat(email.getHeaderValue("Content-Type"), is( "text/html;charset=utf-8"));
 

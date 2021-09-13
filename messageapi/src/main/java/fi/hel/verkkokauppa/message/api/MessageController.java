@@ -38,7 +38,7 @@ public class MessageController {
         try {
             Message message = service.createSendableEmailMessage(messageDto);
             service.sendEmail(message);
-            return new ResponseEntity<Message>(message, HttpStatus.CREATED);
+            return new ResponseEntity<>(message, HttpStatus.CREATED);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
