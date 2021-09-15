@@ -56,51 +56,46 @@ public class OnlinePaymentService {
     private PaymentContextBuilder paymentContextBuilder;
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
-        try {
-            OrderDto order = dto.getOrder().getOrder();
-            String namespace = order.getNamespace();
-            String orderId = order.getOrderId();
-            String orderStatus = order.getStatus();
-            String userId = order.getUser();
+        OrderDto order = dto.getOrder().getOrder();
+        String namespace = order.getNamespace();
+        String orderId = order.getOrderId();
+        String orderStatus = order.getStatus();
+        String userId = order.getUser();
 
-            // check order status, can only create payment for confirmed orders
-            if (!"confirmed".equals(orderStatus)) {
-                log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
-                throw new CommonApiException(
-                        HttpStatus.FORBIDDEN,
-                        new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
-                );
-            }
-
-            if (userId == null || userId.isEmpty()) {
-                log.warn("creating payment without user rejected, orderId: " + orderId);
-                throw new CommonApiException(
-                        HttpStatus.FORBIDDEN,
-                        new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
-                );
-            }
-
-            boolean isRecurringOrder = order.getType().equals("subscription");
-            String paymentType = isRecurringOrder ? "subscription" : "order";
-
-            PaymentContext context = paymentContextBuilder.buildFor(namespace);
-
-            ChargeRequest.PaymentTokenPayload tokenRequestPayload = payloadBuilder.buildFor(dto, context);
-            log.debug("tokenRequestPayload: " + tokenRequestPayload);
-
-            String paymentId = tokenRequestPayload.getOrderNumber();
-            String token = tokenFetcher.getToken(tokenRequestPayload);
-
-            Payment payment = createPayment(dto, paymentType, token, paymentId);
-            if (payment.getPaymentId() == null) {
-                throw new RuntimeException("Didn't manage to create payment.");
-            }
-
-            return payment;
-        } catch (Exception e) {
-            log.error("creating payment or chargerequest failed", e);
-            return null; // TODO: return failure url
+        // check order status, can only create payment for confirmed orders
+        if (!"confirmed".equals(orderStatus)) {
+            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
+            );
         }
+
+        if (userId == null || userId.isEmpty()) {
+            log.warn("creating payment without user rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
+            );
+        }
+
+        boolean isRecurringOrder = order.getType().equals("subscription");
+        String paymentType = isRecurringOrder ? "subscription" : "order";
+
+        PaymentContext context = paymentContextBuilder.buildFor(namespace);
+
+        ChargeRequest.PaymentTokenPayload tokenRequestPayload = payloadBuilder.buildFor(dto, context);
+        log.debug("tokenRequestPayload: " + tokenRequestPayload);
+
+        String paymentId = tokenRequestPayload.getOrderNumber();
+        String token = tokenFetcher.getToken(tokenRequestPayload);
+
+        Payment payment = createPayment(dto, paymentType, token, paymentId);
+        if (payment.getPaymentId() == null) {
+            throw new RuntimeException("Didn't manage to create payment.");
+        }
+
+        return payment;
     }
 
     public String getPaymentUrl(String token) {
