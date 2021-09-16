@@ -125,9 +125,8 @@ public class AccountingSlipService {
 
         for (OrderAccounting orderAccounting : orderAccountings) {
             String createdAt = orderAccounting.getCreatedAt();
-
-            // BLOCKER for testing only, pls don't push!
-//            if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
+            
+            if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -137,7 +136,7 @@ public class AccountingSlipService {
                 } else {
                     accountingsForDate.add(orderAccounting.getOrderId());
                 }
-//            }
+            }
         }
 
         return map;
