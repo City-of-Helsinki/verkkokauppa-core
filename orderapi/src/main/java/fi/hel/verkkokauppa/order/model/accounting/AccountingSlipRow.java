@@ -21,6 +21,9 @@ public class AccountingSlipRow {
     private String accountingSlipId;
 
     @Field(type = FieldType.Text)
+    private String taxCode;
+
+    @Field(type = FieldType.Text)
     private String amountInDocumentCurrency;
 
     @Field(type = FieldType.Text)
@@ -30,19 +33,16 @@ public class AccountingSlipRow {
     private String lineText;
 
     @Field(type = FieldType.Text)
-    private String GLAccount;
-
-    @Field(type = FieldType.Text)
-    private String taxCode;
-
-    @Field(type = FieldType.Text)
-    private String orderItemNumber;
+    private String glAccount;
 
     @Field(type = FieldType.Text)
     private String profitCenter;
 
     @Field(type = FieldType.Text)
-    private String WBS_Element;
+    private String orderItemNumber;
+
+    @Field(type = FieldType.Text)
+    private String wbsElement;
 
     @Field(type = FieldType.Text)
     private String functionalArea;

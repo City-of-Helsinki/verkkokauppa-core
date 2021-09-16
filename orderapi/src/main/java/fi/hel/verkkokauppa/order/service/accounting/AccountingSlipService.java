@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -47,6 +47,9 @@ public class AccountingSlipService {
 
     @Autowired
     private OrderItemAccountingService orderItemAccountingService;
+
+    @Autowired
+    private AccountingExportService accountingExportService;
 
     @Autowired
     private AccountingSlipRepository accountingSlipRepository;
@@ -79,6 +82,19 @@ public class AccountingSlipService {
         );
     }
 
+    public AccountingSlipDto getAccountingSlipDtoWithRows(AccountingSlip accountingSlip) {
+        String accountingSlipId = accountingSlip.getAccountingSlipId();
+        List<AccountingSlipRow> accountingSlipRows = getAccountingSlipRows(accountingSlipId);
+
+        List<AccountingSlipRowDto> rowDtos = new ArrayList<>();
+        accountingSlipRows.forEach(row -> rowDtos.add(new AccountingSlipRowTransformer().transformToDto(row)));
+
+        AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
+        accountingSlipDto.setRows(rowDtos);
+
+        return accountingSlipDto;
+    }
+
     public AccountingSlipDto transformAccountingSlipWithRowsToDto(AccountingSlip accounting, List<AccountingSlipRow> accountingSlipRows) {
         AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accounting);
         List<AccountingSlipRowDto> accountingSlipRowDtos = new ArrayList<>();
@@ -88,7 +104,7 @@ public class AccountingSlipService {
         return accountingSlipDto;
     }
 
-    public List<AccountingSlipDto> createAccountingSlips(Map<String, List<String>> accountingIdsByDate) {
+    public List<AccountingSlipDto> createAccountingSlips(Map<String, List<String>> accountingIdsByDate) throws JsonProcessingException {
         List<AccountingSlipDto> accountingSlips = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
@@ -110,7 +126,8 @@ public class AccountingSlipService {
         for (OrderAccounting orderAccounting : orderAccountings) {
             String createdAt = orderAccounting.getCreatedAt();
 
-            if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
+            // BLOCKER for testing only, pls don't push!
+//            if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -120,13 +137,13 @@ public class AccountingSlipService {
                 } else {
                     accountingsForDate.add(orderAccounting.getOrderId());
                 }
-            }
+//            }
         }
 
         return map;
     }
 
-    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
+    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) throws JsonProcessingException {
         List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
         String postingDateString = accountingsForDate.getKey();
@@ -158,9 +175,9 @@ public class AccountingSlipService {
 
             AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
                     accountingSlipId,
-                    documentDateFormatted,
                     companyCode,
                     "VK",
+                    documentDateFormatted,
                     postingDateFormatted,
                     reference,
                     headertext,
@@ -168,7 +185,8 @@ public class AccountingSlipService {
                     rows
             );
 
-            createAccountingWithRows(accountingSlipDto);
+            createAccountingAndRows(accountingSlipDto);
+            accountingExportService.createAccountingExportDataDto(accountingSlipDto);
             accountingSlipDtos.add(accountingSlipDto);
 
         }
@@ -211,13 +229,13 @@ public class AccountingSlipService {
             AccountingSlipRowDto accountingSlipRowDto = new AccountingSlipRowDto(
                     accountingSlipRowId,
                     accountingSlipId,
+                    summedItemAccounting.getVatCode(),
                     formatSum(summedItemAccounting.getPriceGrossAsDouble()),
                     formatSum(summedItemAccounting.getPriceNetAsDouble()),
                     lineText,
                     summedItemAccounting.getMainLedgerAccount(),
-                    summedItemAccounting.getVatCode(),
-                    summedItemAccounting.getInternalOrder(),
                     summedItemAccounting.getProfitCenter(),
+                    summedItemAccounting.getInternalOrder(),
                     summedItemAccounting.getProject(),
                     summedItemAccounting.getOperationArea()
             );
@@ -247,7 +265,7 @@ public class AccountingSlipService {
         return groupedAccountings;
     }
 
-    private void createAccountingWithRows(AccountingSlipDto accountingSlipDto) {
+    private void createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
         AccountingSlip accountingSlip = accountingSlipRepository.save(new AccountingSlipTransformer().transformToEntity(accountingSlipDto));
 
         List<AccountingSlipRowDto> rows = accountingSlipDto.getRows();
