@@ -54,7 +54,6 @@ public class OrderItemAccountingService {
                     OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross, priceNet, productAccountingDto);
 
                     createOrderItemAccounting(orderItemAccountingDto);
-                    log.info("dto: {}", orderItemAccountingDto);
                     orderItemAccountings.add(orderItemAccountingDto);
                 }
             }

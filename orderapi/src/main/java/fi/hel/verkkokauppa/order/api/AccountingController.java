@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.IterableUtils;
@@ -50,6 +51,11 @@ public class AccountingController {
 
             return ResponseEntity.ok().body(accountingSlips);
 
+        } catch (JsonProcessingException jpe) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-accounting-export-data-xml", "failed to create accounting export data xml")
+            );
         } catch (Exception e) {
             log.error("creating accounting data failed", e);
             throw new CommonApiException(
