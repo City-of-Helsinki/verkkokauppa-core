@@ -31,6 +31,12 @@ public class VenepaikatController {
         prices.put("1234", new MockPrice("price_generic_1234", "venepaikat", "1234", "64.52", "24", "15.48", "80"));
         availabilities.put("1234", new MockAvailability("availability_generic_1234", "venepaikat", "1234", true));
         purchaseRights.put("1234", new MockRightOfPurchase("rightofpurchase_generic_1234", "venepaikat", "1234", true));
+
+        // TODO cheap test product for payment and accounting pipeline
+        products.put("5678", new MockProduct("5678", "Testituote", "Helsingin kaupunki, Venepaikat, Testituote", "venepaikat"));
+        prices.put("5678", new MockPrice("price_generic_5678", "venepaikat", "5678", "0.81", "24", "0.19", "1"));
+        availabilities.put("5678", new MockAvailability("availability_generic_5678", "venepaikat", "5678", true));
+        purchaseRights.put("5678", new MockRightOfPurchase("rightofpurchase_generic_5678", "venepaikat", "5678", true));
     }
 
     @GetMapping("/backend/venepaikat/product")
