@@ -47,14 +47,16 @@ public class ProductMappingService {
 
     // generate some mock data
     public List<ProductMapping> initializeTestData() {
-        List<ProductMapping> entities = Arrays.asList(new ProductMapping[]{
-            createByParams("asukaspysakointi", "1234"),
-            createByParams("asukaspysakointi", "12345"),
-            createByParams("asukaspysakointi", "123456"),
-            createByParams("tilavaraus", "1234"),
-            createByParams("tilavaraus", "12345"),
-            createByParams("tilavaraus", "123456")
-        });
+        List<ProductMapping> entities = Arrays.asList(
+                createByParams("asukaspysakointi", "1234"),
+                createByParams("asukaspysakointi", "12345"),
+                createByParams("asukaspysakointi", "123456"),
+                createByParams("tilavaraus", "1234"),
+                createByParams("tilavaraus", "12345"),
+                createByParams("tilavaraus", "123456"),
+                createByParams("venepaikat", "1234"),
+                createByParams("venepaikat", "5678")
+        );
 
         productMappingRepository.saveAll(entities);
         log.debug("initialized product mappings mock data");
