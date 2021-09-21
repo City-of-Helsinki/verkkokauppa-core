@@ -48,17 +48,22 @@ public class ServiceMappingService {
     public List<ServiceMapping> initializeTestData() {
         String mockbackendurl = env.getProperty("mockbackend.url");
 
-        List<ServiceMapping> entities = Arrays.asList(new ServiceMapping[]{
-            createByParams("asukaspysakointi", "product", mockbackendurl+"/mockproductmanagement/asukaspysakointi/get?productId="),
-            createByParams("asukaspysakointi", "price", mockbackendurl+"/mockprice/asukaspysakointi/get?productId="),
-            createByParams("asukaspysakointi", "rightofpurchase", "http://asukaspysakointibackendservice/api/rightofpurchase/get?productId="),
-            createByParams("asukaspysakointi", "availability", "http://asukaspysakointibackendservice/api/availability/get?productId="),
+        List<ServiceMapping> entities = Arrays.asList(
+                createByParams("asukaspysakointi", "product", mockbackendurl+"/mockproductmanagement/asukaspysakointi/get?productId="),
+                createByParams("asukaspysakointi", "price", mockbackendurl+"/mockprice/asukaspysakointi/get?productId="),
+                createByParams("asukaspysakointi", "rightofpurchase", "http://asukaspysakointibackendservice/api/rightofpurchase/get?productId="),
+                createByParams("asukaspysakointi", "availability", "http://asukaspysakointibackendservice/api/availability/get?productId="),
 
-            createByParams("tilavaraus", "product", mockbackendurl+"/mockproductmanagement/tilavaraus/get?productId="),
-            createByParams("tilavaraus", "price", mockbackendurl+"/mockprice/tilavaraus/get?productId="),
-            createByParams("tilavaraus", "rightofpurchase", "http://tilavarausbackendservice/api/rightofpurchase/get?productId="),
-            createByParams("tilavaraus", "availability", "http://tilavarausbackendservice/api/availability/get?productId="),
-        });
+                createByParams("tilavaraus", "product", mockbackendurl+"/mockproductmanagement/tilavaraus/get?productId="),
+                createByParams("tilavaraus", "price", mockbackendurl+"/mockprice/tilavaraus/get?productId="),
+                createByParams("tilavaraus", "rightofpurchase", "http://tilavarausbackendservice/api/rightofpurchase/get?productId="),
+                createByParams("tilavaraus", "availability", "http://tilavarausbackendservice/api/availability/get?productId="),
+
+                createByParams("venepaikat", "product", mockbackendurl+"/backend/venepaikat/product?productId="),
+                createByParams("venepaikat", "price", mockbackendurl+"/backend/venepaikat/price?productId="),
+                createByParams("venepaikat", "rightofpurchase", mockbackendurl+"/backend/venepaikat/right-of-purchase?productId="),
+                createByParams("venepaikat", "availability", mockbackendurl+"/backend/venepaikat/availability?productId=")
+        );
 
         serviceMappingRepository.saveAll(entities);
         log.debug("initialized service mappings mock data");
