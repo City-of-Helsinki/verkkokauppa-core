@@ -51,7 +51,9 @@ public class OrderItemAccountingService {
                     String orderItemId = orderItem.getOrderItemId();
                     String priceGross = orderItem.getPriceGross();
                     String priceNet = orderItem.getPriceNet();
-                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross, priceNet, productAccountingDto);
+                    String priceVat = orderItem.getPriceVat();
+                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
+                            priceNet, priceVat, productAccountingDto);
 
                     createOrderItemAccounting(orderItemAccountingDto);
                     orderItemAccountings.add(orderItemAccountingDto);
