@@ -46,8 +46,6 @@ public class OrderItemAccountingDto {
 
     private String internalOrder;
 
-    private String profitCenter;
-
     private String project;
 
     private String operationArea;
@@ -62,22 +60,20 @@ public class OrderItemAccountingDto {
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();
         this.internalOrder = productAccountingDto.getInternalOrder();
-        this.profitCenter = productAccountingDto.getProfitCenter();
         this.project = productAccountingDto.getProject();
         this.operationArea = productAccountingDto.getOperationArea();
     }
 
-    public OrderItemAccountingDto(String mainLedgerAccount, String vatCode, String internalOrder, String profitCenter, String project, String operationArea) {
+    public OrderItemAccountingDto(String mainLedgerAccount, String vatCode, String internalOrder, String project, String operationArea) {
         this.mainLedgerAccount = mainLedgerAccount;
         this.vatCode = vatCode;
         this.internalOrder = internalOrder;
-        this.profitCenter = profitCenter;
         this.project = project;
         this.operationArea = operationArea;
     }
 
     public OrderItemAccountingDto createKey() {
-        return new OrderItemAccountingDto(mainLedgerAccount, vatCode, internalOrder, profitCenter, project, operationArea);
+        return new OrderItemAccountingDto(mainLedgerAccount, vatCode, internalOrder, project, operationArea);
     }
 
     public String getPriceGross() {
@@ -150,12 +146,12 @@ public class OrderItemAccountingDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         OrderItemAccountingDto that = (OrderItemAccountingDto) o;
-        return Objects.equals(mainLedgerAccount, that.mainLedgerAccount) && Objects.equals(vatCode, that.vatCode) && Objects.equals(internalOrder, that.internalOrder) && Objects.equals(profitCenter, that.profitCenter) && Objects.equals(project, that.project) && Objects.equals(operationArea, that.operationArea);
+        return Objects.equals(mainLedgerAccount, that.mainLedgerAccount) && Objects.equals(vatCode, that.vatCode) && Objects.equals(internalOrder, that.internalOrder) && Objects.equals(project, that.project) && Objects.equals(operationArea, that.operationArea);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mainLedgerAccount, vatCode, internalOrder, profitCenter, project, operationArea);
+        return Objects.hash(mainLedgerAccount, vatCode, internalOrder, project, operationArea);
     }
 
 }

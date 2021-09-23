@@ -30,6 +30,9 @@ public class AccountingSlipRow {
     private String baseAmount;
 
     @Field(type = FieldType.Text)
+    private String vatAmount;
+
+    @Field(type = FieldType.Text)
     private String lineText;
 
     @Field(type = FieldType.Text)

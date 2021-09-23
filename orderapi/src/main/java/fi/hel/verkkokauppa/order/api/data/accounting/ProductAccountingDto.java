@@ -11,8 +11,6 @@ import lombok.Data;
  *
  * Sisäinen tilaus
  *
- * Tulosyksikkö
- *
  * Projekti
  *
  * Toimintoalue
@@ -30,8 +28,6 @@ public class ProductAccountingDto {
     private String vatCode;
 
     private String internalOrder;
-
-    private String profitCenter;
 
     private String project;
 

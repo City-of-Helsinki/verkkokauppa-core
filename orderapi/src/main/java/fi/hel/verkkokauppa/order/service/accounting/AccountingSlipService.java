@@ -125,7 +125,7 @@ public class AccountingSlipService {
 
         for (OrderAccounting orderAccounting : orderAccountings) {
             String createdAt = orderAccounting.getCreatedAt();
-            
+
             if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
@@ -184,9 +184,10 @@ public class AccountingSlipService {
                     rows
             );
 
-            createAccountingAndRows(accountingSlipDto);
+            AccountingSlip createdSlip = createAccountingAndRows(accountingSlipDto);
+            accountingSlipDtos.add(getAccountingSlipDtoWithRows(createdSlip));
+
             accountingExportService.createAccountingExportDataDto(accountingSlipDto);
-            accountingSlipDtos.add(accountingSlipDto);
 
         }
         accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
@@ -224,20 +225,20 @@ public class AccountingSlipService {
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
             String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
-            
-            AccountingSlipRowDto accountingSlipRowDto = new AccountingSlipRowDto(
-                    accountingSlipRowId,
-                    accountingSlipId,
-                    summedItemAccounting.getVatCode(),
-                    formatSum(summedItemAccounting.getPriceGrossAsDouble()),
-                    formatSum(summedItemAccounting.getPriceNetAsDouble()),
-                    lineText,
-                    summedItemAccounting.getMainLedgerAccount(),
-                    summedItemAccounting.getProfitCenter(),
-                    summedItemAccounting.getInternalOrder(),
-                    summedItemAccounting.getProject(),
-                    summedItemAccounting.getOperationArea()
-            );
+
+            AccountingSlipRowDto accountingSlipRowDto = AccountingSlipRowDto.builder()
+                    .accountingSlipRowId(accountingSlipRowId)
+                    .accountingSlipId(accountingSlipId)
+                    .taxCode(summedItemAccounting.getVatCode())
+                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .lineText(lineText)
+                    .glAccount(summedItemAccounting.getMainLedgerAccount())
+                    .orderItemNumber(summedItemAccounting.getInternalOrder())
+                    .wbsElement(summedItemAccounting.getProject())
+                    .functionalArea(summedItemAccounting.getOperationArea())
+                    .build();
 
             rows.add(accountingSlipRowDto);
             rowNumber++;
@@ -264,13 +265,14 @@ public class AccountingSlipService {
         return groupedAccountings;
     }
 
-    private void createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
+    private AccountingSlip createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
         AccountingSlip accountingSlip = accountingSlipRepository.save(new AccountingSlipTransformer().transformToEntity(accountingSlipDto));
 
         List<AccountingSlipRowDto> rows = accountingSlipDto.getRows();
         rows.forEach(row -> accountingSlipRowRepository.save(new AccountingSlipRowTransformer().transformToEntity(row)));
 
         log.debug("created new accounting slip, accountingId: " + accountingSlip.getAccountingSlipId());
+        return accountingSlip;
     }
 
     private String formatSum(Double sum) {

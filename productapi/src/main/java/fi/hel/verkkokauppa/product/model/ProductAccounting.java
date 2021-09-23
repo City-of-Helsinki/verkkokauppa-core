@@ -25,9 +25,6 @@ public class ProductAccounting extends BaseModel {
     private String internalOrder;
 
     @Field(type = FieldType.Text)
-    private String profitCenter;
-
-    @Field(type = FieldType.Text)
     private String project;
 
     @Field(type = FieldType.Text)
