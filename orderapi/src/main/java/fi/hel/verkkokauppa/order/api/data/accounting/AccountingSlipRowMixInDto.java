@@ -10,4 +10,7 @@ public interface AccountingSlipRowMixInDto {
     @JsonIgnore
     String getAccountingSlipRowId();
 
+    @JsonIgnore
+    String getVatAmount();
+
 }

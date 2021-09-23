@@ -125,7 +125,7 @@ public class AccountingSlipService {
 
         for (OrderAccounting orderAccounting : orderAccountings) {
             String createdAt = orderAccounting.getCreatedAt();
-            
+
             if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
@@ -184,9 +184,10 @@ public class AccountingSlipService {
                     rows
             );
 
-            createAccountingAndRows(accountingSlipDto);
+            AccountingSlip createdSlip = createAccountingAndRows(accountingSlipDto);
+            accountingSlipDtos.add(getAccountingSlipDtoWithRows(createdSlip));
+
             accountingExportService.createAccountingExportDataDto(accountingSlipDto);
-            accountingSlipDtos.add(accountingSlipDto);
 
         }
         accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
@@ -231,6 +232,7 @@ public class AccountingSlipService {
                     summedItemAccounting.getVatCode(),
                     formatSum(summedItemAccounting.getPriceGrossAsDouble()),
                     formatSum(summedItemAccounting.getPriceNetAsDouble()),
+                    formatSum(summedItemAccounting.getPriceVatAsDouble()),
                     lineText,
                     summedItemAccounting.getMainLedgerAccount(),
                     summedItemAccounting.getProfitCenter(),
@@ -264,13 +266,14 @@ public class AccountingSlipService {
         return groupedAccountings;
     }
 
-    private void createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
+    private AccountingSlip createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
         AccountingSlip accountingSlip = accountingSlipRepository.save(new AccountingSlipTransformer().transformToEntity(accountingSlipDto));
 
         List<AccountingSlipRowDto> rows = accountingSlipDto.getRows();
         rows.forEach(row -> accountingSlipRowRepository.save(new AccountingSlipRowTransformer().transformToEntity(row)));
 
         log.debug("created new accounting slip, accountingId: " + accountingSlip.getAccountingSlipId());
+        return accountingSlip;
     }
 
     private String formatSum(Double sum) {
