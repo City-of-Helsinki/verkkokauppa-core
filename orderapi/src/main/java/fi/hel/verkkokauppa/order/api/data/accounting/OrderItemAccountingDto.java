@@ -36,6 +36,8 @@ public class OrderItemAccountingDto {
 
     private String priceNet;
 
+    private String priceVat;
+
     private String companyCode;
 
     private String mainLedgerAccount;
@@ -50,11 +52,12 @@ public class OrderItemAccountingDto {
 
     private String operationArea;
 
-    public OrderItemAccountingDto(String orderItemId, String orderId, String priceGross, String priceNet, ProductAccountingDto productAccountingDto) {
+    public OrderItemAccountingDto(String orderItemId, String orderId, String priceGross, String priceNet, String priceVat, ProductAccountingDto productAccountingDto) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.priceGross = priceGross;
         this.priceNet = priceNet;
+        this.priceVat = priceVat;
         this.companyCode = productAccountingDto.getCompanyCode();
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();
@@ -111,6 +114,23 @@ public class OrderItemAccountingDto {
         this.priceNet = Double.toString(priceNet);
     }
 
+    public String getPriceVat() {
+        return priceVat;
+    }
+
+    @JsonIgnore
+    public Double getPriceVatAsDouble() {
+        return Double.valueOf(priceVat);
+    }
+
+    public void setPriceVat(String priceVat) {
+        this.priceVat = priceVat;
+    }
+
+    public void setPriceVat(Double priceVat) {
+        this.priceVat = Double.toString(priceVat);
+    }
+
     public OrderItemAccountingDto merge(OrderItemAccountingDto other) {
         if (other.equals(this)) {
             this.sumPrices(other);
@@ -122,6 +142,7 @@ public class OrderItemAccountingDto {
     public void sumPrices(OrderItemAccountingDto other) {
         setPriceGross(Double.sum(this.getPriceGrossAsDouble(), other.getPriceGrossAsDouble()));
         setPriceNet(Double.sum(this.getPriceNetAsDouble(), other.getPriceNetAsDouble()));
+        setPriceVat(Double.sum(this.getPriceVatAsDouble(), other.getPriceVatAsDouble()));
     }
 
     @Override
