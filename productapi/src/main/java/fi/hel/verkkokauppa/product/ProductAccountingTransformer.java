@@ -15,7 +15,6 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         productAccounting.setVatCode(dto.getVatCode());
         productAccounting.setProject(dto.getProject());
         productAccounting.setInternalOrder(dto.getInternalOrder());
-        productAccounting.setProfitCenter(dto.getProfitCenter());
         productAccounting.setOperationArea(dto.getOperationArea());
         return productAccounting;
     }
@@ -29,7 +28,6 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         dto.setVatCode(productAccounting.getVatCode());
         dto.setProject(productAccounting.getProject());
         dto.setInternalOrder(productAccounting.getInternalOrder());
-        dto.setProfitCenter(productAccounting.getProfitCenter());
         dto.setOperationArea(productAccounting.getOperationArea());
         return dto;
     }

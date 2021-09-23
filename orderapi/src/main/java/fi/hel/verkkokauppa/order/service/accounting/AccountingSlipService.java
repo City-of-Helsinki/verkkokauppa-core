@@ -225,21 +225,20 @@ public class AccountingSlipService {
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
             String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
-            
-            AccountingSlipRowDto accountingSlipRowDto = new AccountingSlipRowDto(
-                    accountingSlipRowId,
-                    accountingSlipId,
-                    summedItemAccounting.getVatCode(),
-                    formatSum(summedItemAccounting.getPriceGrossAsDouble()),
-                    formatSum(summedItemAccounting.getPriceNetAsDouble()),
-                    formatSum(summedItemAccounting.getPriceVatAsDouble()),
-                    lineText,
-                    summedItemAccounting.getMainLedgerAccount(),
-                    summedItemAccounting.getProfitCenter(),
-                    summedItemAccounting.getInternalOrder(),
-                    summedItemAccounting.getProject(),
-                    summedItemAccounting.getOperationArea()
-            );
+
+            AccountingSlipRowDto accountingSlipRowDto = AccountingSlipRowDto.builder()
+                    .accountingSlipRowId(accountingSlipRowId)
+                    .accountingSlipId(accountingSlipId)
+                    .taxCode(summedItemAccounting.getVatCode())
+                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .lineText(lineText)
+                    .glAccount(summedItemAccounting.getMainLedgerAccount())
+                    .orderItemNumber(summedItemAccounting.getInternalOrder())
+                    .wbsElement(summedItemAccounting.getProject())
+                    .functionalArea(summedItemAccounting.getOperationArea())
+                    .build();
 
             rows.add(accountingSlipRowDto);
             rowNumber++;
