@@ -24,22 +24,23 @@ public class OrderItemMetaService {
     private OrderItemMetaRepository orderItemMetaRepository;
 
 
-    public void addItemMeta(OrderItemMetaDto orderItemMetaDto) {
-        String orderItemMetaId = UUIDGenerator.generateType3UUIDString(orderItemMetaDto.getOrderItemId(), orderItemMetaDto.getKey());
+    public String addItemMeta(OrderItemMetaDto orderItemMetaDto) {
+        String orderItemMetaId = UUIDGenerator.generateType4UUID().toString();
 
         OrderItemMeta orderItem = new OrderItemMeta(
-            orderItemMetaId, 
+            orderItemMetaId,
             orderItemMetaDto.getOrderItemId(),
-            orderItemMetaDto.getOrderId(), 
-            orderItemMetaDto.getKey(), 
-            orderItemMetaDto.getValue(), 
-            orderItemMetaDto.getLabel(), 
-            orderItemMetaDto.getVisibleInCheckout(), 
+            orderItemMetaDto.getOrderId(),
+            orderItemMetaDto.getKey(),
+            orderItemMetaDto.getValue(),
+            orderItemMetaDto.getLabel(),
+            orderItemMetaDto.getVisibleInCheckout(),
             orderItemMetaDto.getOrdinal()
         );
 
         orderItemMetaRepository.save(orderItem);
         log.debug("created new orderItemMeta, orderItemMetaId: " + orderItemMetaId);
+        return orderItemMetaId;
     }
 
     public void removeItemMeta(String orderItemMetaId) {
