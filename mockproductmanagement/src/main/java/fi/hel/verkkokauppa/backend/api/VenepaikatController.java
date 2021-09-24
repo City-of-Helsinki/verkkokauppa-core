@@ -27,7 +27,7 @@ public class VenepaikatController {
     private Map<String, MockRightOfPurchase> purchaseRights = new HashMap<String, MockRightOfPurchase>();
 
     {
-        products.put("1234", new MockProduct("1234", "Traileripaikka", "Helsingin kaupunki, Venepaikat, Traileripaikka", "venepaikat"));
+        products.put("1234", new MockProduct("1234", "Trailerin kesäsäilytys 2021", "Helsingin kaupunki, Venepaikat, Traileripaikka", "venepaikat"));
         prices.put("1234", new MockPrice("price_generic_1234", "venepaikat", "1234", "64.52", "24", "15.48", "80"));
         availabilities.put("1234", new MockAvailability("availability_generic_1234", "venepaikat", "1234", true));
         purchaseRights.put("1234", new MockRightOfPurchase("rightofpurchase_generic_1234", "venepaikat", "1234", true));
