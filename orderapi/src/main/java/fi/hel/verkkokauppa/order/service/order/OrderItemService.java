@@ -22,9 +22,8 @@ public class OrderItemService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
-
     public String addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
-        String orderItemId = UUIDGenerator.generateType3UUIDString(orderId, productId);
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
                 orderId,
@@ -44,12 +43,6 @@ public class OrderItemService {
 
         log.debug("created new orderItem, orderItemId: " + orderItemId);
         return orderItemId;
-    }
-
-    public void removeItem(String orderId, String productId) {
-        String orderItemId = UUIDGenerator.generateType3UUIDString(orderId, productId);
-        orderItemRepository.deleteById(orderItemId);
-        log.debug("deleted orderItem, orderItemId: " + orderItemId);
     }
 
     public OrderItem findById(String orderItemId) {
