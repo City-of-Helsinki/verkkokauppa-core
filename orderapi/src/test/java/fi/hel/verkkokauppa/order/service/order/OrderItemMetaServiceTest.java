@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.order;
 
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class )
@@ -29,6 +31,7 @@ class OrderItemMetaServiceTest {
         OrderItemMetaDto meta = new OrderItemMetaDto();
         meta.setOrderItemId("orderId");
         meta.setKey("keyTest");
+        doReturn("Success", "Success").when(orderItemMetaRepository).save(new OrderItemMeta());
         String metaId1 = orderItemMetaService.addItemMeta(meta);
         String metaId2 = orderItemMetaService.addItemMeta(meta);
         assertNotEquals(metaId1,metaId2,"You should be able to add 2 ");

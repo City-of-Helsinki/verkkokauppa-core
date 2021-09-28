@@ -22,9 +22,10 @@ class OrderItemServiceTest {
     private OrderItemMetaRepository orderItemMetaRepository;
 
     @Mock
-    private OrderItemMetaService orderItemMetaService;
-    @Mock
     private OrderItemRepository orderItemRepository;
+
+    @InjectMocks
+    private OrderItemMetaService orderItemMetaService;
 
     @InjectMocks
     private OrderItemService orderItemService;
