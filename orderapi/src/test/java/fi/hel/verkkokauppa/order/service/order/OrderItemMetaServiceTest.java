@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,7 +21,7 @@ class OrderItemMetaServiceTest {
     @Mock
     private OrderItemMetaRepository orderItemMetaRepository;
 
-    @Autowired
+    @InjectMocks
     private OrderItemMetaService orderItemMetaService;
 
     @Test
