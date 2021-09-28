@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class AccountingExportService {
 
     public static final String VAT_LINE_TEXT = "ALV:n osuus";
+    public static final String VAT_LINE_GL_ACCOUNT = "263200";
     public static final String INCOME_ENTRY_GL_ACCOUNT = "171810";
     public static final String INCOME_ENTRY_PROFIT_CENTER = "2923000";
 
@@ -74,6 +75,7 @@ public class AccountingExportService {
                     .amountInDocumentCurrency(originalRow.getVatAmount())
                     .baseAmount(baseAmount)
                     .lineText(VAT_LINE_TEXT)
+                    .glAccount(VAT_LINE_GL_ACCOUNT)
                     .build();
 
             separatedRows.add(row);
