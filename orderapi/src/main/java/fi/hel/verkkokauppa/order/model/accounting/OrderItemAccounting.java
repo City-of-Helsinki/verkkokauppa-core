@@ -27,6 +27,9 @@ public class OrderItemAccounting {
     private String priceNet;
 
     @Field(type = FieldType.Text)
+    private String priceVat;
+
+    @Field(type = FieldType.Text)
     private String companyCode;
 
     @Field(type = FieldType.Text)

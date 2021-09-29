@@ -1,11 +1,8 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.PrettyPrinter;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.fasterxml.jackson.dataformat.xml.util.DefaultXmlPrettyPrinter;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.IterableUtils;
@@ -19,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,12 +27,23 @@ import java.util.stream.Collectors;
 @Service
 public class AccountingExportService {
 
+    public static final String VAT_LINE_TEXT = "ALV:n osuus";
+    public static final String VAT_LINE_GL_ACCOUNT = "263200";
+    public static final String INCOME_ENTRY_GL_ACCOUNT = "171810";
+    public static final String INCOME_ENTRY_PROFIT_CENTER = "2923000";
+
     @Autowired
     private AccountingExportDataRepository exportDataRepository;
 
     private Logger log = LoggerFactory.getLogger(AccountingExportService.class);
 
     public AccountingExportDataDto createAccountingExportDataDto(AccountingSlipDto accountingSlip) throws JsonProcessingException {
+        List<AccountingSlipRowDto> originalRows = accountingSlip.getRows();
+
+        List<AccountingSlipRowDto> separatedRows = separateVatRows(originalRows);
+        addIncomeEntryRow(originalRows, separatedRows, accountingSlip.getHeaderText());
+        accountingSlip.setRows(separatedRows);
+
         String xml = generateAccountingExportXML(accountingSlip);
         log.debug("generated accounting export data xml successfully");
 
@@ -49,6 +58,44 @@ public class AccountingExportService {
 
         createAccountingExportData(exportDataDto);
         return exportDataDto;
+    }
+
+    private List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows) {
+        List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
+
+        for (AccountingSlipRowDto originalRow : originalRows) {
+            String baseAmount = originalRow.getBaseAmount();
+
+            AccountingSlipRowDto row = new AccountingSlipRowDto(originalRow);
+            row.setAmountInDocumentCurrency(baseAmount);
+            row.setBaseAmount(null);
+
+            AccountingSlipRowDto vatRow = AccountingSlipRowDto.builder()
+                    .taxCode(originalRow.getTaxCode())
+                    .amountInDocumentCurrency(originalRow.getVatAmount())
+                    .baseAmount(baseAmount)
+                    .lineText(VAT_LINE_TEXT)
+                    .glAccount(VAT_LINE_GL_ACCOUNT)
+                    .build();
+
+            separatedRows.add(row);
+            separatedRows.add(vatRow);
+        }
+
+        return separatedRows;
+    }
+
+    private void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
+        double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
+
+        AccountingSlipRowDto incomeEntryRow = AccountingSlipRowDto.builder()
+                .amountInDocumentCurrency(formatIncomeEntrySum(sum))
+                .lineText(lineText)
+                .glAccount(INCOME_ENTRY_GL_ACCOUNT)
+                .profitCenter(INCOME_ENTRY_PROFIT_CENTER)
+                .build();
+
+        rows.add(incomeEntryRow);
     }
 
     public String generateAccountingExportXML(AccountingSlipDto accountingSlip) throws JsonProcessingException {
@@ -108,6 +155,12 @@ public class AccountingExportService {
                 .map(AccountingExportData::getTimestamp)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    private String formatIncomeEntrySum(Double sum) {
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+
+        return "+" + decimalFormat.format(-sum).replace(".", ",");
     }
 
 }

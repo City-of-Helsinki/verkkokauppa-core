@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateOrderAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
@@ -51,7 +52,9 @@ public class OrderItemAccountingService {
                     String orderItemId = orderItem.getOrderItemId();
                     String priceGross = orderItem.getPriceGross();
                     String priceNet = orderItem.getPriceNet();
-                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross, priceNet, productAccountingDto);
+                    String priceVat = orderItem.getPriceVat();
+                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
+                            priceNet, priceVat, productAccountingDto);
 
                     createOrderItemAccounting(orderItemAccountingDto);
                     orderItemAccountings.add(orderItemAccountingDto);
@@ -78,6 +81,16 @@ public class OrderItemAccountingService {
             return accountings;
 
         log.debug("orderItems not found, orderId: " + orderId);
+        return new ArrayList<OrderItemAccounting>();
+    }
+
+    public List<OrderItemAccounting> getOrderItemAccountings() {
+        List<OrderItemAccounting> accountings = IterableUtils.iterableToList(orderItemAccountingRepository.findAll());
+
+        if (accountings.size() > 0)
+            return accountings;
+
+        log.debug("orderItems not found");
         return new ArrayList<OrderItemAccounting>();
     }
 }
