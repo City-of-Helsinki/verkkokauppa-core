@@ -235,6 +235,7 @@ public class AccountingSlipService {
                     .vatAmount(formatSum(summedItemAccounting.getPriceVatAsDouble()))
                     .lineText(lineText)
                     .glAccount(summedItemAccounting.getMainLedgerAccount())
+                    .profitCenter(summedItemAccounting.getProfitCenter())
                     .orderItemNumber(summedItemAccounting.getInternalOrder())
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
