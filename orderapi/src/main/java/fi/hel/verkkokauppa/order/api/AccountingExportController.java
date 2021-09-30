@@ -5,9 +5,9 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
+import fi.hel.verkkokauppa.order.service.accounting.AccountingExportDataService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingSlipService;
 import org.slf4j.Logger;
@@ -33,6 +33,9 @@ public class AccountingExportController {
     private AccountingSlipService accountingSlipService;
 
     @Autowired
+    private AccountingExportDataService accountingExportDataService;
+
+    @Autowired
     private AccountingExportService accountingExportService;
 
     @PostMapping(value = "/accounting/export/generate", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -40,9 +43,33 @@ public class AccountingExportController {
         try {
             AccountingSlip accountingSlip = accountingSlipService.getAccountingSlip(accountingSlipId);
             AccountingSlipDto accountingSlipWithRows = accountingSlipService.getAccountingSlipDtoWithRows(accountingSlip);
-            AccountingExportDataDto exportData = accountingExportService.createAccountingExportDataDto(accountingSlipWithRows);
+            AccountingExportDataDto exportData = accountingExportDataService.createAccountingExportDataDto(accountingSlipWithRows);
 
             return ResponseEntity.ok().body(exportData);
+        } catch (Exception e) {
+            log.error("generating accounting export data failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-generate-accounting-export-data", "failed to generate accounting export data")
+            );
+        }
+    }
+
+    @GetMapping(value = "/accounting/export", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<AccountingExportDataDto>> ExportAccountingData() {
+        List<AccountingExportDataDto> result = new ArrayList<>();
+
+        try {
+            List<AccountingExportData> accountingExportDataList = accountingExportDataService.getNotExportedAccountingExportData();
+
+            for (AccountingExportData accountingExportData : accountingExportDataList) {
+                AccountingExportDataDto accountingExportDataDto = new AccountingExportDataTransformer().transformToDto(accountingExportData);
+
+                accountingExportService.exportAccountingData(accountingExportDataDto);
+                result.add(accountingExportDataDto);
+            }
+
+            return ResponseEntity.ok().body(result);
         } catch (Exception e) {
             log.error("generating accounting export data failed", e);
             throw new CommonApiException(
@@ -55,7 +82,7 @@ public class AccountingExportController {
     @GetMapping(value = "/accounting/export/list", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<String>> listAccountingExportDataIds() {
         try {
-            List<String> accountingExportDataIds = accountingExportService.getAccountingExportDataTimestamps();
+            List<String> accountingExportDataIds = accountingExportDataService.getAccountingExportDataTimestamps();
 
             return ResponseEntity.ok().body(accountingExportDataIds);
         } catch (Exception e) {
@@ -70,7 +97,7 @@ public class AccountingExportController {
     @GetMapping(value = "/accounting/export/getByTimestamp", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountingExportDataDto>> getAccountExportDataWithTimestamp(@RequestParam(value = "timestamp") String timestamp) {
         try {
-            List<AccountingExportData> exportDatas = accountingExportService.getAccountingExportDataByTimestamp(timestamp);
+            List<AccountingExportData> exportDatas = accountingExportDataService.getAccountingExportDataByTimestamp(timestamp);
             List<AccountingExportDataDto> result = new ArrayList<>();
             exportDatas.forEach(exportData -> result.add(new AccountingExportDataTransformer().transformToDto(exportData)));
 
@@ -89,7 +116,7 @@ public class AccountingExportController {
     @GetMapping(value = "/accounting/export/getByAccountingSlipId", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountingExportDataDto> listAccountingExportData(@RequestParam(value = "accountingSlipId") String accountingSlipId) {
         try {
-            AccountingExportData exportData = accountingExportService.getAccountingExportData(accountingSlipId);
+            AccountingExportData exportData = accountingExportDataService.getAccountingExportData(accountingSlipId);
             AccountingExportDataDto dto = new AccountingExportDataTransformer().transformToDto(exportData);
 
             return ResponseEntity.ok().body(dto);
