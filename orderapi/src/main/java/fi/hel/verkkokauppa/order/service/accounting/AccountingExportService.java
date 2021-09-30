@@ -45,7 +45,7 @@ public class AccountingExportService {
     private AccountingSlipService accountingSlipService;
 
 
-    public void exportAccountingData(AccountingExportDataDto exportData) throws IOException {
+    public void exportAccountingData(AccountingExportDataDto exportData) {
         String accountingSlipId = exportData.getAccountingSlipId();
         AccountingSlip accountingSlip = accountingSlipService.getAccountingSlip(accountingSlipId);
         AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
@@ -70,7 +70,7 @@ public class AccountingExportService {
         return "KP_IN_" + senderId + "_" + runningNumberFormatted + ".xml";
     }
 
-    public void export(String fileContent, String filename) throws IOException {
+    public void export(String fileContent, String filename) {
         if (sftpServerUrl == null || sftpServerUrl.isEmpty()) {
             log.debug("Not exporting file, server url not set");
             return;
@@ -85,7 +85,7 @@ public class AccountingExportService {
             channelSftp.disconnect();
 
             log.info("Exported file [" + filename + "] succesfully");
-        } catch (SftpException e) {
+        } catch (SftpException | IOException e) {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("export-accounting-data-failed", "Failed to export accounting data")
