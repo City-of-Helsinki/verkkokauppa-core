@@ -49,7 +49,7 @@ public class AccountingSlipService {
     private OrderItemAccountingService orderItemAccountingService;
 
     @Autowired
-    private AccountingExportService accountingExportService;
+    private AccountingExportDataService accountingExportDataService;
 
     @Autowired
     private AccountingSlipRepository accountingSlipRepository;
@@ -187,7 +187,7 @@ public class AccountingSlipService {
             AccountingSlip createdSlip = createAccountingAndRows(accountingSlipDto);
             accountingSlipDtos.add(getAccountingSlipDtoWithRows(createdSlip));
 
-            accountingExportService.createAccountingExportDataDto(accountingSlipDto);
+            accountingExportDataService.createAccountingExportDataDto(accountingSlipDto);
 
         }
         accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
