@@ -45,14 +45,23 @@ public class AccountingExportDataService {
 
     private Logger log = LoggerFactory.getLogger(AccountingExportDataService.class);
 
-    public AccountingExportDataDto createAccountingExportDataDto(AccountingSlipDto accountingSlip) throws JsonProcessingException {
+    public AccountingExportDataDto createAccountingExportDataDto(AccountingSlipDto accountingSlip) {
         List<AccountingSlipRowDto> originalRows = accountingSlip.getRows();
 
         List<AccountingSlipRowDto> separatedRows = separateVatRows(originalRows);
         addIncomeEntryRow(originalRows, separatedRows, accountingSlip.getHeaderText());
         accountingSlip.setRows(separatedRows);
 
-        String xml = generateAccountingExportXML(accountingSlip);
+        String xml;
+        try {
+            xml = generateAccountingExportXML(accountingSlip);
+        } catch (JsonProcessingException jpe) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-accounting-export-data-xml", "failed to create accounting export data xml")
+            );
+        }
+
         log.debug("generated accounting export data xml successfully");
 
         String postingDate = accountingSlip.getPostingDate();
