@@ -71,10 +71,10 @@ public class AccountingExportController {
 
             return ResponseEntity.ok().body(result);
         } catch (Exception e) {
-            log.error("generating accounting export data failed", e);
+            log.error("exporting accounting data failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-generate-accounting-export-data", "failed to generate accounting export data")
+                    new Error("failed-to-export-accounting-data", "failed to export accounting data")
             );
         }
     }
