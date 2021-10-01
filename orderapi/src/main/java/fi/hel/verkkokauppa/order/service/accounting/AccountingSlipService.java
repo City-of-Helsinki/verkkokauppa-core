@@ -175,7 +175,7 @@ public class AccountingSlipService {
             AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
                     accountingSlipId,
                     companyCode,
-                    "VK",
+                    "3N",
                     documentDateFormatted,
                     postingDateFormatted,
                     reference,
