@@ -3,10 +3,10 @@
 trigger:
   paths:
     include:
-    - cartapi
+      - messageapi
   tags:
     include:
-      - cart-api/*
+      - message-api/*
   branches:
     include:
       - master
@@ -28,4 +28,4 @@ resources:
       name: talpa-verkkokauppa/talpa-verkkokauppa-pipelines
 
 extends:
-  template: azure-pipelines-talpa-verkkokauppa-cart-api.yml@talpa-verkkokauppa-pipelines
+  template: azure-pipelines-talpa-verkkokauppa-message-api.yml@talpa-verkkokauppa-pipelines
