@@ -62,7 +62,7 @@ public class PaymentTokenPayloadBuilder {
 	private void assignProducts(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto, PaymentContext context) {
 		for (OrderItemDto item : dto.getOrder().getItems()) {
 			Product product = new Product();
-			product.setId(item.getProductId())
+			product.setId(item.getOrderItemId())
 					.setType(ProductType.TYPE_PRODUCT)
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
