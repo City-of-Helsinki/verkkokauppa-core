@@ -75,7 +75,6 @@ public class AccountingExportService {
                     .amountInDocumentCurrency(originalRow.getVatAmount())
                     .baseAmount(baseAmount)
                     .lineText(VAT_LINE_TEXT)
-                    .glAccount(VAT_LINE_GL_ACCOUNT)
                     .build();
 
             separatedRows.add(row);
