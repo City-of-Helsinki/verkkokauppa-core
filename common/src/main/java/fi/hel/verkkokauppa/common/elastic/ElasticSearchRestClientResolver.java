@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Component
 public class ElasticSearchRestClientResolver {
 
@@ -43,8 +45,14 @@ public class ElasticSearchRestClientResolver {
     }
 
     private RestHighLevelClient getLocalElasticSearchRestClient() {
-        final ClientConfiguration clientConfiguration = ClientConfiguration.builder()
-                .connectedTo(this.serviceUrl)
+        ClientConfiguration.MaybeSecureClientConfigurationBuilder maybeSecureClientConfigurationBuilder = ClientConfiguration.builder()
+                .connectedTo(this.serviceUrl);
+
+        if (!Objects.equals(this.password, "") && !Objects.equals(this.username, "")) {
+            maybeSecureClientConfigurationBuilder.withBasicAuth(this.username, this.password);
+        }
+
+        final ClientConfiguration clientConfiguration = maybeSecureClientConfigurationBuilder
                 .build();
 
         return RestClients.create(clientConfiguration).rest();
