@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.productmapping.model.ServiceConfigurationBatchDto;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +20,9 @@ import fi.hel.verkkokauppa.productmapping.service.ServiceConfigurationService;
 
 @RestController
 public class ServiceConfigurationController {
+
+	@Autowired
+	private Environment env;
 
     @Autowired
     private ServiceConfigurationService service;
@@ -96,6 +102,51 @@ public class ServiceConfigurationController {
 		List<ServiceConfiguration> configurations = service.findBy(namespace);
 
 		return ResponseEntity.ok(configurations);
+	}
+
+	@GetMapping("/serviceconfiguration/api-access/create")
+	public ResponseEntity<String> createNamespaceAccessToken(@RequestParam(value = "namespace") String namespace) {
+		String salt = env.getRequiredProperty("api.access.encryption.salt");
+		// TODO fail if empty salt
+
+		String namespaceAccessToken = UUIDGenerator.generateType3UUIDString(namespace, salt);
+
+		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+		encryptor.setPassword(salt);
+		String encryptedNamespaceAccessToken = encryptor.encrypt(namespace);
+
+		service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_API_ACCESS_TOKEN, encryptedNamespaceAccessToken, true);
+
+		return ResponseEntity.ok(namespaceAccessToken);
+	}
+
+	@GetMapping("/serviceconfiguration/api-access/get")
+	public ResponseEntity<String> getNamespaceAccessToken(@RequestParam(value = "namespace") String namespace) {
+		String salt = env.getRequiredProperty("api.access.encryption.salt");
+		// TODO fail if empty salt
+
+		ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_API_ACCESS_TOKEN);
+		String encryptedNamespaceAccessToken = sc.getConfigurationValue();
+
+		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+		encryptor.setPassword(salt);
+		String namespaceAccessToken = encryptor.decrypt(encryptedNamespaceAccessToken);
+
+		return ResponseEntity.ok(namespaceAccessToken);
+	}
+
+	@GetMapping("/serviceconfiguration/api-access/validate")
+	public ResponseEntity<Boolean> validateNamespaceAccessToken(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "token") String token) {
+		String salt = env.getRequiredProperty("api.access.encryption.salt");
+		// TODO fail if empty salt
+
+		String whatTheTokenShouldBe = UUIDGenerator.generateType3UUIDString(namespace, salt);
+
+		if (token.equals(whatTheTokenShouldBe)) {
+			return ResponseEntity.ok(Boolean.TRUE);
+		} else {
+			return ResponseEntity.ok(Boolean.FALSE);
+		}
 	}
 
     @GetMapping("/serviceconfiguration/initializetestdata")
