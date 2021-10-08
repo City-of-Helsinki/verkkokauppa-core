@@ -128,6 +128,7 @@ services:
         - API_DIR=/tmp/src/priceapi
     volumes:
       - "${HOME}/.m2:/root/.m2"
+      - "./infra/priceapi/src/main/resources/application.properties:/tmp/src/priceapi/src/main/resources/application.properties"
     env_file:
       - .env.docker
     ports:
@@ -152,6 +153,7 @@ services:
         - API_DIR=/tmp/src/productapi
     volumes:
       - "${HOME}/.m2:/root/.m2"
+      - "./infra/productapi/src/main/resources/application.properties:/tmp/src/productapi/src/main/resources/application.properties"
     env_file:
       - .env.docker
     ports:
@@ -176,6 +178,7 @@ services:
         - API_DIR=/tmp/src/productmapping
     volumes:
       - "${HOME}/.m2:/root/.m2"
+      - "./infra/productmapping/src/main/resources/application.properties:/tmp/src/productmapping/src/main/resources/application.properties"
     env_file:
       - .env.docker
     ports:

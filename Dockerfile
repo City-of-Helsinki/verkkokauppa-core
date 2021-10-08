@@ -15,6 +15,6 @@ RUN chmod +x wait-for-it.sh
 # Copy maven settings, containing repository configurations
 COPY infra/settings.xml /root/.m2/settings.xml
 
-ARG SPRING_APPLICATION_JSON="{\"elasticsearch.service.url\":\"elasticsearch:9200\",\"elasticsearch.service.local.environment\":\"true\",\"elasticsearch.service.user\":\"elastic\",\"elasticsearch.service.password\":\"changeme\"}"
+ARG SPRING_APPLICATION_JSON="{\"elasticsearch.service.url\":\"elasticsearch:9200\",\"elasticsearch.service.local.environment\":\"true\",\"elasticsearch.service.user\":\"elastic\",\"elasticsearch.service.password\":\"changeme\",\"mockbackend.url\":\"http:\/\/host.docker.internal:8182\",\"productmapping.url\":\"http:\/\/host.docker.internal:8187\",\"servicemapping.url\":\"http:\/\/host.docker.internal:8187\"}"
 ENV SPRING_APPLICATION_JSON=$SPRING_APPLICATION_JSON
-ENTRYPOINT ["./wait-for-it.sh", "elasticsearch:9200", "--strict", "--timeout=0", "--","mvn","-DSPRING_APPLICATION_JSON=${SPRING_APPLICATION_JSON} -DELASTICSEARCH_SERVICE_URL=${host.docker.internal}:9200","spring-boot:run"]
+ENTRYPOINT ["./wait-for-it.sh", "elasticsearch:9200", "--strict", "--timeout=0", "--","mvn","spring-boot:run","-Drun.jvmArguments=\"-DSPRING_APPLICATION_JSON=${SPRING_APPLICATION_JSON} -DELASTICSEARCH_SERVICE_URL=${host.docker.internal}:9200\""]
