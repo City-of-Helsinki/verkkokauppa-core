@@ -2,10 +2,7 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
+import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
@@ -61,6 +58,8 @@ public class OnlinePaymentController {
 			PaymentMethodDto[] methods = paymentMethodListService.getPaymentMethodList(request.getCurrency());
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
+
+			methods = paymentMethodListService.filterPaymentMethodList(request, methods);
 
 			if (methods.length == 0) {
 				log.debug("payment methods not found, namespace: " + namespace);
