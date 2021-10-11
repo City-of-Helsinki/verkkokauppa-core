@@ -81,7 +81,7 @@ public class CreateRecurringOrderCommand extends DefaultCreateEntityCommand<Recu
 
 		recurringOrderMappingLogic.mapMerchantDataToEntity(dto, recurringOrder);
 		recurringOrderMappingLogic.mapProductDataToEntity(dto, recurringOrder);
-		recurringOrderMappingLogic.mapShippingAddressDataToEntity(dto, recurringOrder);
+
 		recurringOrderMappingLogic.mapBillingAddressDataToEntity(dto, recurringOrder);
 
 		return recurringOrder;
