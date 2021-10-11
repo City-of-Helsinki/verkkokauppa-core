@@ -5,7 +5,6 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
-import fi.hel.verkkokauppa.order.model.recurringorder.Period;
 
 import java.util.ArrayList;
 import java.util.List;

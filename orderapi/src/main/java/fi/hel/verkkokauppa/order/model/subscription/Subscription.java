@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.model.recurringorder;
+package fi.hel.verkkokauppa.order.model.subscription;
 
 import fi.hel.verkkokauppa.shared.model.impl.BaseVersionedEntity;
 import lombok.Getter;
@@ -16,8 +16,8 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@Document(indexName = "recurring_orders")
-public class RecurringOrder extends BaseVersionedEntity implements Serializable {
+@Document(indexName = "subscriptions")
+public class Subscription extends BaseVersionedEntity implements Serializable {
 
 	private static final long serialVersionUID = -8963491435675971922L;
 
@@ -117,7 +117,7 @@ public class RecurringOrder extends BaseVersionedEntity implements Serializable 
 	// TODO: discounts? discount arraylist...
 
 	public void updateNextDate() {
-		//getNextAvailableDateForRecurringOrder(this, null, true, true);
+		//getNextAvailableDateForSubscription(this, null, true, true);
 	}
 
 	public void updateStatus() {
@@ -126,8 +126,8 @@ public class RecurringOrder extends BaseVersionedEntity implements Serializable 
 		}
 	}
 
-	// TODO: can cancel? => workflow/recurringOrderStatusLogic for allowed status transitions
-	// TODO: can pause? => workflow/recurringOrderStatusLogic for allowed status transitions
+	// TODO: can cancel? => workflow/SubscriptionStatusLogic for allowed status transitions
+	// TODO: can pause? => workflow/SubscriptionStatusLogic for allowed status transitions
 
 	public void addRelatedOrderId(String id) {
 		relatedOrderIds.add(id);

@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.logic;
 
-import fi.hel.verkkokauppa.order.model.recurringorder.Period;
-import fi.hel.verkkokauppa.order.model.recurringorder.RecurringOrder;
+import fi.hel.verkkokauppa.order.model.subscription.Period;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -13,13 +13,13 @@ public class NextDateCalculator {
 
 	private final static int DATE_SEARCH_LIMIT = 50000;
 
-	private final IsDateAvailableForRecurringOrderChecker isDateAvailableForRecurringOrderChecker;
+	private final IsDateAvailableForSubscriptionChecker isDateAvailableForSubscriptionChecker;
 
 	@Autowired
 	public NextDateCalculator(
-			IsDateAvailableForRecurringOrderChecker isDateAvailableForRecurringOrderChecker
+			IsDateAvailableForSubscriptionChecker isDateAvailableForSubscriptionChecker
 	) {
-		this.isDateAvailableForRecurringOrderChecker = isDateAvailableForRecurringOrderChecker;
+		this.isDateAvailableForSubscriptionChecker = isDateAvailableForSubscriptionChecker;
 	}
 
 	private LocalDate calculateNextDate(LocalDate date, String periodUnit, long periodFrequency) {
@@ -37,26 +37,26 @@ public class NextDateCalculator {
 		}
 	}
 
-	public LocalDate getNextAvailableDateForRecurringOrder(
-			RecurringOrder recurringOrder,
+	public LocalDate getNextAvailableDateForSubscription(
+			Subscription subscription,
 			LocalDate dateAfter,
 			boolean ignoreExcludeDate,
 			boolean ignorePausePeriod
 	) {
-		String periodUnit = recurringOrder.getPeriodUnit();
-		long periodFrequency = recurringOrder.getPeriodFrequency();
+		String periodUnit = subscription.getPeriodUnit();
+		long periodFrequency = subscription.getPeriodFrequency();
 
 		int counter = 0;
 
 		while(true) {
 			LocalDate date = null;
 			try {
-				date = calculateNextDate(recurringOrder.getNextDate(), periodUnit, periodFrequency);
+				date = calculateNextDate(subscription.getNextDate(), periodUnit, periodFrequency);
 			} catch (Exception e) {
 				return null;
 			}
 
-			if (isDateAvailableForRecurringOrderChecker.isDateAvailableForRecurringOrder(recurringOrder, date, dateAfter, ignoreExcludeDate, ignorePausePeriod)) {
+			if (isDateAvailableForSubscriptionChecker.isDateAvailableForSubscription(subscription, date, dateAfter, ignoreExcludeDate, ignorePausePeriod)) {
 				return date;
 			}
 			if (counter++ > DATE_SEARCH_LIMIT) {

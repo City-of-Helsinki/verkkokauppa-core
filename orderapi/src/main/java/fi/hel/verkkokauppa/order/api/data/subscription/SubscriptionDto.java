@@ -1,17 +1,16 @@
-package fi.hel.verkkokauppa.order.api.data.recurringorder;
+package fi.hel.verkkokauppa.order.api.data.subscription;
 
 import fi.hel.verkkokauppa.shared.model.impl.BaseIdentifiableDto;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
 @Setter
-public class RecurringOrderDto extends BaseIdentifiableDto implements Serializable {
+public class SubscriptionDto extends BaseIdentifiableDto implements Serializable {
 
     private static final long serialVersionUID = 7841002984877186380L;
 

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.model.recurringorder;
+package fi.hel.verkkokauppa.order.model.subscription;
 
 public interface Status {
     public static String NOT_ACTIVE = "not_active";

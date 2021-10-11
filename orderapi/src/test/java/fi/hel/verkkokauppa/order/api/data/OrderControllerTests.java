@@ -5,7 +5,7 @@ import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
-import fi.hel.verkkokauppa.order.model.recurringorder.Period;
+import fi.hel.verkkokauppa.order.model.subscription.Period;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
