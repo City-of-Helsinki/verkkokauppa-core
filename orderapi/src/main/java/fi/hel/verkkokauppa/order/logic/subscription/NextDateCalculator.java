@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.logic;
+package fi.hel.verkkokauppa.order.logic.subscription;
 
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -40,8 +40,7 @@ public class NextDateCalculator {
 	public LocalDate getNextAvailableDateForSubscription(
 			Subscription subscription,
 			LocalDate dateAfter,
-			boolean ignoreExcludeDate,
-			boolean ignorePausePeriod
+			boolean ignoreExcludeDate
 	) {
 		String periodUnit = subscription.getPeriodUnit();
 		long periodFrequency = subscription.getPeriodFrequency();
@@ -50,15 +49,15 @@ public class NextDateCalculator {
 
 		while(true) {
 			LocalDate date = null;
-			try {
-				date = calculateNextDate(subscription.getNextDate(), periodUnit, periodFrequency);
-			} catch (Exception e) {
-				return null;
-			}
+//			try {
+//				date = calculateNextDate(subscription.getNextDate(), periodUnit, periodFrequency);
+//			} catch (Exception e) {
+//				return null;
+//			}
 
-			if (isDateAvailableForSubscriptionChecker.isDateAvailableForSubscription(subscription, date, dateAfter, ignoreExcludeDate, ignorePausePeriod)) {
-				return date;
-			}
+//			if (isDateAvailableForSubscriptionChecker.isDateAvailableForSubscription(subscription, date, dateAfter,ignoreExcludeDate)) {
+//				return date;
+//			}
 			if (counter++ > DATE_SEARCH_LIMIT) {
 				return null;
 			}

@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.order.service.subscription;
 
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.logic.SubscriptionMappingLogic;
+import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionMappingLogic;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionQueryBuilderBuilder;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;

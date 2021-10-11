@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
-import fi.hel.verkkokauppa.order.logic.SubscriptionMappingLogic;
-import fi.hel.verkkokauppa.order.logic.SubscriptionValidationLogic;
+import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionMappingLogic;
+import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionValidationLogic;
 import fi.hel.verkkokauppa.order.model.subscription.Status;
 import fi.hel.verkkokauppa.shared.mapper.ObjectMapper;
 import fi.hel.verkkokauppa.shared.service.DefaultCreateEntityCommand;
@@ -15,7 +15,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscription, SubscriptionDto, String> {
@@ -82,8 +82,6 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 		subscriptionMappingLogic.mapMerchantDataToEntity(dto, subscription);
 		subscriptionMappingLogic.mapProductDataToEntity(dto, subscription);
 
-		subscriptionMappingLogic.mapBillingAddressDataToEntity(dto, subscription);
-
 		return subscription;
 	}
 
@@ -94,16 +92,10 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 		subscription.setStatus(Status.ACTIVE);
 		subscription.setCreatedAt(Instant.now());
 
-		if (subscription.getShippingAddressId() == null || subscription.getShippingAddressId().isEmpty()) {
-			subscription.setShippingAddressId(subscription.getBillingAddressId());
-			subscription.setShippingAddressData(subscription.getBillingAddressData());
-		}
 		if (subscription.getStartDate() == null) {
-			subscription.setStartDate(LocalDate.now()); // TODO: ok?
+			subscription.setStartDate(LocalDateTime.now()); // TODO: ok?
 		}
-		if (subscription.getNextDate() == null) {
-			subscription.setNextDate(LocalDate.now()); // TODO: ok?
-		}
+
 		// TODO: end date?
 	}
 }

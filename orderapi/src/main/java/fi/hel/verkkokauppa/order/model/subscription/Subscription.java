@@ -11,6 +11,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -33,18 +34,6 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Text)
 	private String merchantName;
 
-	@Field(type = FieldType.Text)
-	private String billingAddressId;
-
-	@Field(type = FieldType.Text)
-	private String shippingAddressId;
-
-	@Field(type = FieldType.Text)
-	private String billingAddressData;
-
-	@Field(type = FieldType.Text)
-	private String shippingAddressData;
-
 	@Field(type = FieldType.Integer)
 	private Integer daysPastDue; // TODO: ok?
 
@@ -57,20 +46,14 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Text)
 	private String shippingMethod;
 
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate startDate; // TODO: aika myös? timezone?
+	@Field(type = FieldType.Keyword)
+	String user;
 
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate nextDate;// TODO: aika myös? timezone?
+	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	private LocalDateTime startDate; // TODO: aika myös? timezone?
 
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate endDate; // TODO: aika myös? timezone?
-
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate pauseStartDate; // TODO: aika myös? timezone?
-
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate pauseEndDate; // TODO: aika myös? timezone?
+	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	private LocalDateTime endDate; // TODO: aika myös? timezone?
 
 	@Field(type = FieldType.Text)
 	private String periodUnit;
@@ -84,15 +67,6 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Text)
 	private String productName;
 
-	@Field(type = FieldType.Text)
-	private String priceNet;
-
-	@Field(type = FieldType.Text)
-	private String priceVat;
-
-	@Field(type = FieldType.Text)
-	private String priceTotal;
-
 	@Field(type = FieldType.Integer)
 	private Integer quantity;
 
@@ -103,7 +77,7 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	private Integer currentBillingCycle;
 
 	@Field(type = FieldType.Integer)
-	private Integer numberOfBillingCycles;
+	private Integer numberOfBillingCycles; // TODO rename?
 
 	@Field(type = FieldType.Date, format = DateFormat.date)
 	private LocalDate paidThroughDate;
@@ -121,9 +95,9 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	}
 
 	public void updateStatus() {
-		if (getNextDate() == null) {
-			setStatus(Status.DONE);
-		}
+//		if (getNextDate() == null) {
+//			setStatus(Status.DONE);
+//		}
 	}
 
 	// TODO: can cancel? => workflow/SubscriptionStatusLogic for allowed status transitions

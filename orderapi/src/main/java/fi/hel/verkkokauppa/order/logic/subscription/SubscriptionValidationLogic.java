@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.logic;
+package fi.hel.verkkokauppa.order.logic.subscription;
 
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
