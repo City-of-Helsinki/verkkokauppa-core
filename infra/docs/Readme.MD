@@ -1,22 +1,19 @@
 #How to use backend with docker guide
-###You need to rename and configure file
-infra/settings-example.xml 
+###You need to create settings.xml file to users/username/.m2/ folder
 
-## 1. Rename file
-infra/settings-example.xml -> infra/settings.xml
-
-## 2. Get server id, username and personal access token from azure portal
-[https://dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging?_a=connect&feed=common](https://dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging?_a=connect&feed=common)
+## 1. Get server id, username and personal access token from azure portal
+[https://dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging?_a=feed&feed=talpa-artifacts](https://dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging?_a=feed&feed=talpa-artifacts)
 
 * Open artifacts 
-* Select common artifact
+* Select talpa-artifacts
 * Press "Connect to feed" button
 * Press "Maven"
 * Then you see id and username
 * Then you need to create Personal Access Token [https://dev.azure.com/City-of-Helsinki/_usersSettings/tokens](https://dev.azure.com/City-of-Helsinki/_usersSettings/tokens)
   * Create read only token! 
 * Finally, generate a Personal Access Token with Packaging read scope and paste it into the <password> tag.
-  * infra/settings.xml is added to .gitignore file to prevent token to be exposed accidentally
+  * users/username/.m2/settings.xml 
+![img.png](img.png)
 
 ## 3. Now you can start backend docker-compose with command
 ### Run on verkkokauppa-core folder.

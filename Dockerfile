@@ -12,8 +12,6 @@ ARG API_DIR=NOTSET
 WORKDIR ${API_DIR}
 COPY infra/wait-for-it.sh wait-for-it.sh
 RUN chmod +x wait-for-it.sh
-# Copy maven settings, containing repository configurations
-COPY infra/settings.xml /root/.m2/settings.xml
 
 ARG SPRING_APPLICATION_JSON="{\"elasticsearch.service.url\":\"elasticsearch:9200\",\"elasticsearch.service.local.environment\":\"true\",\"elasticsearch.service.user\":\"elastic\",\"elasticsearch.service.password\":\"changeme\",\"mockbackend.url\":\"http:\/\/host.docker.internal:8182\",\"productmapping.url\":\"http:\/\/host.docker.internal:8187\",\"servicemapping.url\":\"http:\/\/host.docker.internal:8187\"}"
 ENV SPRING_APPLICATION_JSON=$SPRING_APPLICATION_JSON
