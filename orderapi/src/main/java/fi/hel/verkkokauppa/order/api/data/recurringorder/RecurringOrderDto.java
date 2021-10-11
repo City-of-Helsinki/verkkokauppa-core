@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Getter
@@ -17,27 +18,19 @@ public class RecurringOrderDto extends BaseIdentifiableDto implements Serializab
     private String status;
     private String customerId;
     private MerchantDto merchant;
-    private AddressDto billingAddress;
-    private AddressDto shippingAddress;
-    private Integer daysPastDue; // TODO: ok?
+    private AddressDto billingAddress; // TODO POISTA!
+    // TODO Lisää asiakkaan tiedot
     private String paymentMethod;
     private String paymentMethodToken;
-    private String shippingMethod;
-    private LocalDate startDate; // TODO: aika myös?
-    private LocalDate nextDate;// TODO: aika myös?
-    private LocalDate endDate;// TODO: aika myös?
-    private LocalDate pauseStartDate;// TODO: aika myös?
-    private LocalDate pauseEndDate;// TODO: aika myös?
+    private LocalDateTime startDate; // TODO: aika myös?
+    private LocalDateTime nextDate;// TODO: aika myös?
+    private LocalDateTime endDate;// TODO: aika myös?
     private String periodUnit;
     private Long periodFrequency;
-    private ProductDto product;
-    private String priceNet;
-    private String priceVat;
-    private String priceTotal;
+    private ProductDto product; // TODO tämä on orderItems Päätasolle productid ja productname
     private Integer quantity;
     private Integer failureCount;
     private Integer currentBillingCycle;
     private Integer numberOfBillingCycles;
-    private LocalDate paidThroughDate;
     private Set<String> relatedOrderIds;
 }

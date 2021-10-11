@@ -205,7 +205,9 @@ public class OrderController {
                         item.getVatPercentage(),
                         item.getPriceNet(),
                         item.getPriceVat(),
-                        item.getPriceGross()
+                        item.getPriceGross(),
+                        item.getPeriodUnit(),
+                        item.getPeriodFrequency() //TODO lisää period tms
                 );
 
                 if (item.getMeta() != null) {
@@ -216,10 +218,10 @@ public class OrderController {
                     });
                 }
             });
-        }
 
-        String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
-        orderService.setType(order, orderType);
+            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
+            orderService.setType(order, orderType);
+        }
     }
 
     @PostMapping(value = "/order/setTotals", produces = MediaType.APPLICATION_JSON_VALUE)
