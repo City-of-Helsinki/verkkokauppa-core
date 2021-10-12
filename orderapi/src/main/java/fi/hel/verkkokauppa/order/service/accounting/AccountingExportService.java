@@ -86,9 +86,10 @@ public class AccountingExportService {
 
             log.info("Exported file [" + filename + "] succesfully");
         } catch (SftpException | IOException e) {
+            log.debug("Failed to export accounting data");
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("export-accounting-data-failed", "Failed to export accounting data")
+                    new Error("export-accounting-data-failed", "Failed to export accounting data. Transfer failed")
             );
         }
 
@@ -98,9 +99,11 @@ public class AccountingExportService {
         try {
             ChannelSftp channelSftp = setupJsch();
             channelSftp.connect();
+            log.info("Connected to the sftp channel succesfully");
 
             return channelSftp;
         } catch (JSchException e) {
+            log.debug("Failed to export accounting data. Connection to server failed");
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("export-accounting-data-server-connection-failed",
@@ -116,6 +119,7 @@ public class AccountingExportService {
         jschSession.setPassword(sftpServerPassword);
 
         jschSession.connect();
+        log.info("Connected to the server succesfully");
 
         return (ChannelSftp) jschSession.openChannel("sftp");
     }
