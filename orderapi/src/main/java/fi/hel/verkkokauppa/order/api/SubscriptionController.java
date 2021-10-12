@@ -12,6 +12,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ public class SubscriptionController {
 	private final SearchSubscriptionQuery searchSubscriptionQuery;
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
 	private final CancelSubscriptionCommand cancelSubscriptionCommand;
+	private final UpdateSubscriptionCommand updateSubscriptionCommand;
 
 	@Autowired
 	public SubscriptionController(
@@ -49,7 +51,8 @@ public class SubscriptionController {
 			GetSubscriptionQuery getSubscriptionQuery,
 			SearchSubscriptionQuery searchSubscriptionQuery,
 			CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand,
-			CancelSubscriptionCommand cancelSubscriptionCommand) {
+			CancelSubscriptionCommand cancelSubscriptionCommand,
+			UpdateSubscriptionCommand updateSubscriptionCommand) {
 		this.env = env;
 		this.createSubscriptionCommand = createSubscriptionCommand;
 		this.createSubscriptionsFromOrderCommand = createSubscriptionsFromOrderCommand;
@@ -57,6 +60,7 @@ public class SubscriptionController {
 		this.getSubscriptionQuery = getSubscriptionQuery;
 		this.searchSubscriptionQuery = searchSubscriptionQuery;
 		this.cancelSubscriptionCommand = cancelSubscriptionCommand;
+		this.updateSubscriptionCommand = updateSubscriptionCommand;
 	}
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -123,6 +127,47 @@ public class SubscriptionController {
 					HttpStatus.INTERNAL_SERVER_ERROR,
 					new Error("failed-to-create-subscription-from-order",
 							"Failed to create subscription from order [" + orderId + "]")
+			);
+		}
+	}
+
+	@GetMapping(value = "/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> getRecurringOrderCardToken(@RequestParam(value = "id") String id) {
+		try {
+			SubscriptionDto recurringOrder = getSubscriptionQuery.getOne(id);
+			String token = recurringOrder.getPaymentMethodToken();
+
+			return ResponseEntity.ok().body(token);
+		} catch (Exception e) {
+			log.error("getting payment method token from recurring order with id [" + id + "] failed", e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-get-payment-method-token-from-recurring-order",
+							"getting payment method token from recurring order with id [" + id + "] failed")
+			);
+		}
+	}
+
+	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> setRecurringOrderCardToken(@RequestParam(value = "id") String id, @RequestParam("token") String token) {
+		try {
+			String password = env.getRequiredProperty("payment.card_token.encryption.password");
+
+			StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+			encryptor.setPassword(password);
+			String encryptedToken = encryptor.encrypt(token);
+
+			SubscriptionDto recurringOrder = getSubscriptionQuery.getOne(id);
+			recurringOrder.setPaymentMethodToken(encryptedToken);
+			updateSubscriptionCommand.update(id, recurringOrder);
+
+			return ResponseEntity.ok().build();
+		} catch (Exception e) {
+			log.error("setting payment method token for recurring order with id [" + id + "] failed", e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-set-payment-method-token-for-recurring-order",
+							"setting payment method token for recurring order with id [" + id + "] failed")
 			);
 		}
 	}
