@@ -99,6 +99,7 @@ public class AccountingExportService {
         try {
             ChannelSftp channelSftp = setupJsch();
             channelSftp.connect();
+            log.info("Connected to the sftp channel succesfully");
 
             return channelSftp;
         } catch (JSchException e) {
@@ -118,6 +119,7 @@ public class AccountingExportService {
         jschSession.setPassword(sftpServerPassword);
 
         jschSession.connect();
+        log.info("Connected to the server succesfully");
 
         return (ChannelSftp) jschSession.openChannel("sftp");
     }
