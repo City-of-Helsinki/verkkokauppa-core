@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.MerchantDto;
 import fi.hel.verkkokauppa.order.api.data.recurringorder.ProductDto;
-import fi.hel.verkkokauppa.order.model.OrderType;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

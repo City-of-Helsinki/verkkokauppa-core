@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.order.logic;
 
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderType;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
