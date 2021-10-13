@@ -115,7 +115,7 @@ public class AccountingExportService {
     private ChannelSftp setupJsch() throws JSchException {
         JSch jsch = new JSch();
 
-        log.debug("Connecting to server: [{}], with username", sftpServerUsername);
+        log.debug("Connecting to server with username [{}]", sftpServerUsername);
         Session jschSession = jsch.getSession(sftpServerUsername, sftpServerUrl);
         jschSession.setPassword(sftpServerPassword);
 
