@@ -1,15 +1,17 @@
 package fi.hel.verkkokauppa.order.model;
 
+import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
+import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Document(indexName = "orderitems")
-public class OrderItem {
+public class OrderItem implements SubscriptionItem {
 
     @Id
     String orderItemId;
@@ -40,20 +42,24 @@ public class OrderItem {
     String priceVat;
     @Field(type = FieldType.Text)
     String priceGross;
+    @Field(type = FieldType.Text)
+    String type;
 
-    @Field(type = FieldType.Date, format = DateFormat.date)
-    private LocalDate startDate; // TODO: aika myös?
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    private LocalDateTime startDate; // TODO: Test for date_optional
 
+    // Subscription field
     @Field(type = FieldType.Text)
     private String periodUnit;
-
+    // Subscription field
     @Field(type = FieldType.Long)
     private Long periodFrequency;
 
     public OrderItem() {}
 
     public OrderItem(String orderItemId, String orderId, String productId, String productName, Integer quantity,
-            String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
+                     String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
+                     String periodUnit, Long periodFrequency) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
@@ -67,6 +73,10 @@ public class OrderItem {
         this.priceNet = priceNet;
         this.priceVat = priceVat;
         this.priceGross = priceGross;
+        // Subscription fields
+        this.periodUnit = periodUnit;
+        this.periodFrequency = periodFrequency;
+        this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.ORDER;
     }
 
     public String getOrderItemId() {
@@ -141,11 +151,11 @@ public class OrderItem {
         this.rowPriceTotal = rowPriceTotal;
     }
 
-    public LocalDate getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
@@ -180,4 +190,8 @@ public class OrderItem {
     public String getPriceGross() { return priceGross; }
 
     public void setPriceGross(String priceGross) { this.priceGross = priceGross; }
+
+    public String getType() { return type; }
+
+    public void setType(String type) { this.type = type; }
 }

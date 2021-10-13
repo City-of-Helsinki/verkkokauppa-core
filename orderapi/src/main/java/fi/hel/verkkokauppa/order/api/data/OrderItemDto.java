@@ -1,13 +1,14 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class OrderItemDto {
+public class OrderItemDto implements SubscriptionItem {
 
     private String orderItemId;
     private String orderId;
@@ -18,7 +19,7 @@ public class OrderItemDto {
     private String rowPriceNet;
     private String rowPriceVat;
     private String rowPriceTotal;
-    private LocalDate startDate; // TODO: aika myös?
+    private LocalDateTime startDate; // TODO: aika myös?
     private String periodUnit;
     private Long periodFrequency;
     private String vatPercentage;
