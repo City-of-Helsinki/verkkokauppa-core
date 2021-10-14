@@ -49,9 +49,9 @@ public class CreateRecurringOrderCommand extends DefaultCreateEntityCommand<Recu
 		assertRequiredParameterNotEmpty(dto.getCustomerId(), "customerId");
 		//assertRequiredParameterNotEmpty(dto.getPaymentMethod(), "paymentMethod"); // TODO: commented out only for testing!
 		//assertRequiredParameterNotEmpty(dto.getPaymentMethodToken(), "paymentMethodToken"); // TODO: commented out only for testing!
-		assertRequiredParameterNotEmpty(dto.getPriceVat(), "priceVat");
-		assertRequiredParameterNotEmpty(dto.getPriceNet(), "priceNet");
-		assertRequiredParameterNotEmpty(dto.getPriceTotal(), "priceTotal");
+		//assertRequiredParameterNotEmpty(dto.getPriceVat(), "priceVat");
+		//assertRequiredParameterNotEmpty(dto.getPriceNet(), "priceNet");
+		//assertRequiredParameterNotEmpty(dto.getPriceTotal(), "priceTotal");
 
 		validateMerchant(dto);
 		validateProduct(dto);
@@ -81,7 +81,7 @@ public class CreateRecurringOrderCommand extends DefaultCreateEntityCommand<Recu
 
 		recurringOrderMappingLogic.mapMerchantDataToEntity(dto, recurringOrder);
 		recurringOrderMappingLogic.mapProductDataToEntity(dto, recurringOrder);
-		recurringOrderMappingLogic.mapShippingAddressDataToEntity(dto, recurringOrder);
+
 		recurringOrderMappingLogic.mapBillingAddressDataToEntity(dto, recurringOrder);
 
 		return recurringOrder;

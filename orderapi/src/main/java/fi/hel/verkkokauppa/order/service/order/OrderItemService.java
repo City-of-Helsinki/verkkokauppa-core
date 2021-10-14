@@ -6,6 +6,7 @@ import java.util.Optional;
 
 
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class OrderItemService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
-    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross) {
+    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross, String periodUnit, Long periodFrequency) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -37,7 +38,9 @@ public class OrderItemService {
                 vatPercentage,
                 priceNet,
                 priceVat,
-                priceGross
+                priceGross,
+                periodUnit,
+                periodFrequency
         );
         orderItemRepository.save(orderItem);
 

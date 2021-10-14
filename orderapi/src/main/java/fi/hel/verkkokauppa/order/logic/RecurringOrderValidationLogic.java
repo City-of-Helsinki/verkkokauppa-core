@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 
 import java.time.LocalDate;
+import java.time.chrono.ChronoLocalDateTime;
 
 @Component
 public class RecurringOrderValidationLogic {
@@ -32,7 +33,7 @@ public class RecurringOrderValidationLogic {
 	public void validateStartDate(RecurringOrderDto dto, Errors errors) {
 		final LocalDate now = LocalDate.now();
 
-		if (dto.getStartDate() != null && dto.getStartDate().isBefore(now)) {
+		if (dto.getStartDate() != null && dto.getStartDate().isBefore(ChronoLocalDateTime.from(now))) {
 			errors.reject("error.recurringorder.invalid-start-date"); // TODO: ok?
 		}
 	}

@@ -69,9 +69,10 @@ public class CreateRecurringOrdersFromOrderCommand {
 		recurringOrderDto.setStartDate(orderItem.getStartDate());
 		recurringOrderDto.setPeriodFrequency(orderItem.getPeriodFrequency());
 		recurringOrderDto.setPeriodUnit(orderItem.getPeriodUnit());
-		recurringOrderDto.setPriceTotal(orderItem.getRowPriceTotal());
-		recurringOrderDto.setPriceVat(orderItem.getRowPriceVat());
-		recurringOrderDto.setPriceNet(orderItem.getRowPriceNet());
+		//TODO Poista
+//		recurringOrderDto.setPriceTotal(orderItem.getRowPriceTotal());
+//		recurringOrderDto.setPriceVat(orderItem.getRowPriceVat());
+//		recurringOrderDto.setPriceNet(orderItem.getRowPriceNet());
 	}
 
 	private boolean canCreateFromOrder(OrderAggregateDto orderAggregateDto) {
