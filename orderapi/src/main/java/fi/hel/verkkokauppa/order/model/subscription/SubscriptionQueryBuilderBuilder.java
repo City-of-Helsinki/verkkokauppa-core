@@ -24,11 +24,11 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 				&& Period.getAllowedPeriods().contains(criteria.getStatus())) {
 			qb.must(QueryBuilders.termQuery("status", criteria.getStatus()));
 		}
-		if (!StringUtils.isEmpty(criteria.getCustomerId())) {
-			qb.must(QueryBuilders.termQuery("customerId", criteria.getCustomerId()));
+		if (!StringUtils.isEmpty(criteria.getCustomerEmail())) {
+			qb.must(QueryBuilders.termQuery("customerEmail", criteria.getCustomerEmail()));
 		}
-		if (!StringUtils.isEmpty(criteria.getMerchantNamespace())) {
-			qb.must(QueryBuilders.termQuery("merchantNamespace", criteria.getMerchantNamespace()));
+		if (!StringUtils.isEmpty(criteria.getNamespace())) {
+			qb.must(QueryBuilders.termQuery("namespace", criteria.getNamespace()));
 		}
 
 		return qb;

@@ -16,9 +16,9 @@ public class SubscriptionCriteria implements Serializable {
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) // TODO: aika myös?
 	private LocalDate activeAtDate;
 
-	private String customerId;
+	private String customerEmail;
 	private String status;
-	private String merchantNamespace;
+	private String namespace;
 
 	// TODO: 2 x address id?
 }

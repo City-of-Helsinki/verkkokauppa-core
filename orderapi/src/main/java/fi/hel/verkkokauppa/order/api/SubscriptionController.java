@@ -4,7 +4,8 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.model.subscription.Status;
+
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +67,7 @@ public class SubscriptionController {
 	) {
 		try {
 			// It's possible to give other status in criteria, but we always want to search for active Subscription order.
-			criteria.setStatus(Status.ACTIVE);
+			criteria.setStatus(SubscriptionStatus.ACTIVE);
 
 			final List<SubscriptionDto> subscription = searchSubscriptionQuery.searchActive(criteria);
 			return ResponseEntity.ok(subscription);

@@ -24,15 +24,8 @@ public class GetSubscriptionQuery extends DefaultGetEntityQuery<Subscription, Su
 		this.subscriptionMappingLogic = subscriptionMappingLogic;
 	}
 
-	@Override
-	protected SubscriptionDto mapToDto(Subscription entity) {
-		final SubscriptionDto dto = super.mapToDto(entity);
-
-		subscriptionMappingLogic.mapMerchantDataToDto(entity, dto);
-		subscriptionMappingLogic.mapProductDataToDto(entity, dto);
-		//SubscriptionMappingLogic.mapBillingAddressDataToDto(entity, dto); // TODO?
-		//SubscriptionMappingLogic.mapShippingAddressDataToDto(entity, dto); // TODO?
-
-		return dto;
-	}
+//	@Override
+//	protected SubscriptionDto mapToDto(Subscription entity) {
+//		return super.mapToDto(entity);
+//	}
 }

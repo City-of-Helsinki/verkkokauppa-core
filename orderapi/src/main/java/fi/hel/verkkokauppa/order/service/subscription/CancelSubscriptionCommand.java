@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
-import fi.hel.verkkokauppa.order.model.subscription.Status;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.shared.service.BaseServiceOperation;
@@ -54,7 +54,7 @@ public class CancelSubscriptionCommand extends BaseServiceOperation {
 	}
 
 	private void doCancel(Subscription subscription) {
-		subscription.setStatus(Status.CANCELLED); // TODO: implement status logic separately?
+		subscription.setStatus(SubscriptionStatus.CANCELLED); // TODO: implement status logic separately?
 
 		repository.save(subscription);
 	}

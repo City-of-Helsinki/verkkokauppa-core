@@ -1,8 +1,10 @@
 package fi.hel.verkkokauppa.order.model.subscription;
 
+import fi.hel.verkkokauppa.order.interfaces.Customer;
+import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.shared.model.impl.BaseVersionedEntity;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -16,9 +18,8 @@ import java.util.Set;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @Document(indexName = "subscriptions")
-public class Subscription extends BaseVersionedEntity implements Serializable {
+public class Subscription extends BaseVersionedEntity implements Serializable, Customer, IdentifiableUser {
 
 	private static final long serialVersionUID = -8963491435675971922L;
 
@@ -26,16 +27,25 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	private String status;
 
 	@Field(type = FieldType.Keyword)
-	private String customerId;
-
-	@Field(type = FieldType.Keyword)
-	private String merchantNamespace;
+	private String namespace;
 
 	@Field(type = FieldType.Text)
 	private String merchantName;
 
-	@Field(type = FieldType.Integer)
-	private Integer daysPastDue; // TODO: ok?
+	@Field(type = FieldType.Text)
+	String customerFirstName;
+
+	@Field(type = FieldType.Text)
+	String customerLastName;
+
+	@Field(type = FieldType.Keyword)
+	String customerEmail;
+
+	@Field(type = FieldType.Text)
+	String customerPhone;
+
+//	@Field(type = FieldType.Integer)
+//	private Integer daysPastDue; // TODO: needed?
 
 	@Field(type = FieldType.Text)
 	private String paymentMethod;
@@ -43,17 +53,14 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Text)
 	private String paymentMethodToken;
 
-	@Field(type = FieldType.Text)
-	private String shippingMethod;
-
 	@Field(type = FieldType.Keyword)
 	String user;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime startDate; // TODO: aika myös? timezone?
+	private LocalDateTime orderItemStartDate;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime endDate; // TODO: aika myös? timezone?
+	private LocalDateTime endDate;
 
 	@Field(type = FieldType.Text)
 	private String periodUnit;
@@ -67,14 +74,9 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Text)
 	private String productName;
 
+	// Product quantity, not subscription count.
 	@Field(type = FieldType.Integer)
 	private Integer quantity;
-
-	@Field(type = FieldType.Integer)
-	private Integer failureCount;
-
-	@Field(type = FieldType.Integer)
-	private Integer currentBillingCycle;
 
 	@Field(type = FieldType.Integer)
 	private Integer numberOfBillingCycles; // TODO rename?
@@ -85,10 +87,16 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 	@Field(type = FieldType.Auto) // TODO: ok?
 	private Set<String> relatedOrderIds;
 
-	//private BigDecimal nextBillAmount; // TODO?
-	//private List<SubscriptionStatusEvent> statusHistory; // TODO?
-	//private Calendar firstBillingDate; // TODO?
-	// TODO: discounts? discount arraylist...
+	//	@Field(type = FieldType.Integer)
+	//	private Integer failureCount;// TODO needed?
+
+	//	@Field(type = FieldType.Integer)
+	//	private Integer currentBillingCycle;// TODO needed?
+
+
+	public Subscription() {
+		this.status = OrderStatus.DRAFT;
+	}
 
 	public void updateNextDate() {
 		//getNextAvailableDateForSubscription(this, null, true, true);
@@ -99,9 +107,6 @@ public class Subscription extends BaseVersionedEntity implements Serializable {
 //			setStatus(Status.DONE);
 //		}
 	}
-
-	// TODO: can cancel? => workflow/SubscriptionStatusLogic for allowed status transitions
-	// TODO: can pause? => workflow/SubscriptionStatusLogic for allowed status transitions
 
 	public void addRelatedOrderId(String id) {
 		relatedOrderIds.add(id);

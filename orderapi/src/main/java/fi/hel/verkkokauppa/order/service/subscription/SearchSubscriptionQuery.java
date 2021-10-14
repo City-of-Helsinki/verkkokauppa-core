@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.order.model.subscription.SubscriptionQueryBuilderBuil
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.shared.mapper.ListMapper;
 import fi.hel.verkkokauppa.shared.service.DefaultSearchEntitiesQuery;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,8 +36,10 @@ public class SearchSubscriptionQuery extends
 	}
 
 	protected void mapItemToDto(Subscription entity, SubscriptionDto dto) {
-		subscriptionMappingLogic.mapMerchantDataToDto(entity, dto);
-		subscriptionMappingLogic.mapProductDataToDto(entity, dto);
+//		subscriptionMappingLogic.mapUserDataToDto(entity, dto);
+//		subscriptionMappingLogic.mapProductDataToDto(entity, dto);
+		ModelMapper mm = new ModelMapper();
+		mm.map(entity,dto);
 		//SubscriptionMappingLogic.mapBillingAddressDataToDto(entity, dto); // TODO?
 		//SubscriptionMappingLogic.mapShippingAddressDataToDto(entity, dto); // TODO?
 	}

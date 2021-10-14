@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface SubscriptionRepository extends BaseRepository<Subscription, String> {
 
-    List<Subscription> findByCustomerId(String customerId);
+    List<Subscription> findByCustomerEmail(String customerEmail);
 }

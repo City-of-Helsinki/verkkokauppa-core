@@ -5,8 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ProductDto {
-
-	private String name;
-	private String id;
+public class SubscriptionAggregateDto {
+    private Integer numberOfBillingCycles;
 }

@@ -3,9 +3,8 @@ package fi.hel.verkkokauppa.order.service.subscription;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.MerchantDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.ProductDto;
 import fi.hel.verkkokauppa.order.model.OrderType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,7 +40,8 @@ public class CreateSubscriptionsFromOrderCommand {
 
 			copyOrderFieldsToSubscription(orderAggregateDto.getOrder(), subscriptionDto);
 			copyOrderItemFieldsToSubscription(orderItemDto, subscriptionDto);
-
+			// TODO refactor? Set billing cycles count
+			subscriptionDto.setNumberOfBillingCycles(orderAggregateDto.getNumberOfBillingCycles());
 			String id = createSubscriptionCommand.create(subscriptionDto);
 			idList.add(id);
 		}
@@ -50,29 +50,27 @@ public class CreateSubscriptionsFromOrderCommand {
 	}
 
 	private void copyOrderFieldsToSubscription(OrderDto order, SubscriptionDto subscriptionDto) {
-		MerchantDto merchant = new MerchantDto();
-		merchant.setName(order.getUser());
-		merchant.setNamespace(order.getNamespace());
+		// User fields
+		subscriptionDto.setUser(order.getUser());
+		subscriptionDto.setNamespace(order.getNamespace());
+		// Customer fields
+		subscriptionDto.setCustomerEmail(order.getCustomerEmail());
+		subscriptionDto.setCustomerPhone(order.getCustomerPhone());
+		subscriptionDto.setCustomerFirstName(order.getCustomerFirstName());
+		subscriptionDto.setCustomerLastName(order.getCustomerLastName());
 
+		// Adds relation to order
 		subscriptionDto.setRelatedOrderIds(new HashSet<>() {{ add(order.getOrderId()); }});
-		subscriptionDto.setCustomerId(order.getCustomerEmail());
-		subscriptionDto.setMerchant(merchant);
 	}
 
 	private void copyOrderItemFieldsToSubscription(OrderItemDto orderItem, SubscriptionDto subscriptionDto) {
-		ProductDto product = new ProductDto();
-		product.setId(orderItem.getProductId());
-		product.setName(orderItem.getProductName());
-
-		subscriptionDto.setProduct(product);
+		subscriptionDto.setProductId(orderItem.getProductId());
+		subscriptionDto.setProductName(orderItem.getProductName());
 		subscriptionDto.setQuantity(orderItem.getQuantity());
-		subscriptionDto.setStartDate(orderItem.getStartDate());
 		subscriptionDto.setPeriodFrequency(orderItem.getPeriodFrequency());
 		subscriptionDto.setPeriodUnit(orderItem.getPeriodUnit());
-		//TODO Poista
-//		SubscriptionDto.setPriceTotal(orderItem.getRowPriceTotal());
-//		SubscriptionDto.setPriceVat(orderItem.getRowPriceVat());
-//		SubscriptionDto.setPriceNet(orderItem.getRowPriceNet());
+		//TODO
+		subscriptionDto.setOrderItemStartDate(orderItem.getStartDate());
 	}
 
 	private boolean canCreateFromOrder(OrderAggregateDto orderAggregateDto) {

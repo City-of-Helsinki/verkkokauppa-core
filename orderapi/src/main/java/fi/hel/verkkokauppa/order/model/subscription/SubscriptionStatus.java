@@ -1,9 +1,8 @@
 package fi.hel.verkkokauppa.order.model.subscription;
 
-public interface Status {
-    public static String NOT_ACTIVE = "not_active";
+public interface SubscriptionStatus {
+    public static String DRAFT = "draft";
     public static String ACTIVE = "active";
-    public static String PAUSED = "paused";
     public static String CANCELLED = "cancelled";
     public static String DONE = "done";
 }
