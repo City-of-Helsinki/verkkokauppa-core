@@ -34,13 +34,6 @@ public class RecurringOrderMappingLogic {
 		dto.setBillingAddress(address);
 	}
 
-	public void mapShippingAddressDataToDto(RecurringOrder entity, RecurringOrderDto dto) {
-		// TODO: add checks
-		AddressDto address = JSON.parseObject(entity.getShippingAddressData(), AddressDto.class);
-		address.setId(entity.getShippingAddressId());
-		dto.setShippingAddress(address);
-	}
-	
 	public void mapMerchantDataToEntity(RecurringOrderDto dto, RecurringOrder entity) {
 		entity.setMerchantName(dto.getMerchant().getName());
 		entity.setMerchantNamespace(dto.getMerchant().getNamespace());
@@ -58,10 +51,4 @@ public class RecurringOrderMappingLogic {
 		}
 	}
 
-	public void mapShippingAddressDataToEntity(RecurringOrderDto dto, RecurringOrder entity) {
-		if (dto.getShippingAddress() != null) {
-			entity.setShippingAddressId(dto.getShippingAddress().getId());
-			entity.setShippingAddressData(JSON.toJSONString(dto.getShippingAddress())); // TODO: ok?
-		}
-	}
 }

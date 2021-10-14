@@ -1,7 +1,11 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
+import fi.hel.verkkokauppa.order.model.recurringorder.Period;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +55,63 @@ public abstract class DummyData {
         orders.add(order3);
 
         return orders;
+    }
+
+    public OrderItem generateDummyOrderItem(Order order) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        return new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "productId",
+                "productName",
+                1,
+                "unit",
+                "100",
+                "100",
+                "100",
+                "0",
+                order.getPriceNet(),
+                order.getPriceVat(),
+                "100",
+                null,
+                null
+        );
+    }
+
+    public OrderItemMeta generateDummyOrderItemMeta(OrderItem orderItem,String ordinal) {
+        String orderItemMetaId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        return new OrderItemMeta(
+                orderItemMetaId,
+                orderItem.getOrderItemId(),
+                orderItem.getOrderId(),
+                "meta key",
+                "meta value",
+                "meta label",
+                "true",
+                ordinal
+        );
+    }
+
+    public List<OrderItem> generateDummyOrderItemList(Order order,int itemCount) {
+        List<OrderItem> orderItems = new ArrayList<>();
+
+        for (int i = 0; i < itemCount; i++) {
+            orderItems.add(generateDummyOrderItem(order));
+        }
+
+        return orderItems;
+    }
+
+
+    public List<OrderItemMeta> generateDummyOrderItemMetaList(List<OrderItem> orderItems) {
+        List<OrderItemMeta> orderItemMetas = new ArrayList<>();
+        for (int i = 0; i < orderItems.size(); i++) {
+            orderItemMetas.add(generateDummyOrderItemMeta(orderItems.get(i),Integer.toString(i)));
+        }
+
+        return orderItemMetas;
     }
 
     public List<OrderAccounting> generateDummyOrderAccountingList() {

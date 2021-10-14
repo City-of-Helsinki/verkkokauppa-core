@@ -23,4 +23,7 @@ public class AccountingExportData {
     @Field(type = FieldType.Text)
     private String xml;
 
+    @Field(type = FieldType.Text)
+    private String exported;
+
 }

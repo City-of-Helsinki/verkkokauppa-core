@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.logic;
 
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderType;
 import org.springframework.stereotype.Component;
@@ -29,9 +30,14 @@ public class OrderTypeLogic {
 
 	public String decideOrderTypeBasedOnItems(List<OrderItemDto> items) {
 		boolean subscriptionItemsFound = (int)items.stream()
-				.filter(item -> item.getPeriodFrequency() != null && item.getPeriodUnit() != null)
+				.filter(OrderTypeLogic::isSubscription)
 				.count() > 0;
 
 		return subscriptionItemsFound ? OrderType.SUBSCRIPTION : OrderType.ORDER;
 	}
+
+	public static boolean isSubscription(SubscriptionItem item) {
+		return item.getPeriodFrequency() != null && item.getPeriodUnit() != null;
+	}
+
 }
