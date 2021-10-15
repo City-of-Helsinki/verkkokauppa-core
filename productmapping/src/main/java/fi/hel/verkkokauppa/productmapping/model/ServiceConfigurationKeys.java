@@ -39,6 +39,8 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_URL = "merchantUrl";
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
 
+    public static String NAMESPACE_API_ACCESS_TOKEN = "namespaceApiAccessToken";
+
 
     public static List<String> getAllConfigurationKeys() {
         List<String> knownKeys = getUnrestrictedConfigurationKeys();
