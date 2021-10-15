@@ -53,18 +53,22 @@ public class OrderItem implements SubscriptionItem, Product {
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime startDate; // TODO: Test for date_optional
 
-    // Subscription field
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    private LocalDateTime billingStartDate; // TODO: Test for date_optional
+
+    // Subscription fields
     @Field(type = FieldType.Text)
     private String periodUnit;
-    // Subscription field
     @Field(type = FieldType.Long)
     private Long periodFrequency;
+    @Field(type = FieldType.Long)
+    private Integer periodCount;
 
     public OrderItem() {}
 
     public OrderItem(String orderItemId, String orderId, String productId, String productName, Integer quantity,
                      String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                     String periodUnit, Long periodFrequency) {
+                     String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
@@ -81,6 +85,8 @@ public class OrderItem implements SubscriptionItem, Product {
         // Subscription fields
         this.periodUnit = periodUnit;
         this.periodFrequency = periodFrequency;
+        this.periodCount = periodCount;
+        this.billingStartDate = billingStartDate;
         this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.SINGLE;
     }
 

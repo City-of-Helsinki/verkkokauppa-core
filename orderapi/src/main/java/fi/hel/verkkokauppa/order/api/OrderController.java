@@ -207,7 +207,9 @@ public class OrderController {
                         item.getPriceVat(),
                         item.getPriceGross(),
                         item.getPeriodUnit(),
-                        item.getPeriodFrequency() //TODO lisää period tms
+                        item.getPeriodFrequency(),
+                        item.getPeriodCount(),
+                        item.getBillingStartDate()
                 );
 
                 if (item.getMeta() != null) {

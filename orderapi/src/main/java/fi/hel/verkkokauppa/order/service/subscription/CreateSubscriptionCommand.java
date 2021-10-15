@@ -51,9 +51,9 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 		subscription.setStatus(SubscriptionStatus.ACTIVE);
 		subscription.setCreatedAt(Instant.now());
 
-		// TODO Check this, should this come from order and not from orderItems!
-		if (subscription.getOrderItemStartDate() == null) {
-			subscription.setOrderItemStartDate(LocalDateTime.now()); // TODO: ok?
+		// This value should come from orderItems!
+		if (subscription.getStartDate() == null) {
+			subscription.setStartDate(LocalDateTime.now()); // TODO: ok?
 		}
 
 		// TODO: end date?

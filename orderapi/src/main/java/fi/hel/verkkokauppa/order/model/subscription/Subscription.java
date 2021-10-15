@@ -57,19 +57,28 @@ public class Subscription extends BaseVersionedEntity implements Serializable, C
 	String user;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime orderItemStartDate;
+	private LocalDateTime startDate;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
 	private LocalDateTime endDate;
+
+	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	private LocalDateTime billingStartDate;
 
 	@Field(type = FieldType.Text)
 	private String periodUnit;
 
 	@Field(type = FieldType.Long)
 	private Long periodFrequency;
+	// If not set, subscription does not end.
+	@Field(type = FieldType.Long)
+	private Integer periodCount;
 
 	@Field(type = FieldType.Text)
 	private String productId;
+
+	@Field(type = FieldType.Text)
+	private String orderItemId;
 
 	@Field(type = FieldType.Text)
 	private String productName;
@@ -77,14 +86,16 @@ public class Subscription extends BaseVersionedEntity implements Serializable, C
 	// Product quantity, not subscription count.
 	@Field(type = FieldType.Integer)
 	private Integer quantity;
+	@Field(type = FieldType.Text)
+	String priceNet;
+	@Field(type = FieldType.Text)
+	String priceVat;
+	@Field(type = FieldType.Text)
+	String priceTotal;
+//	@Field(type = FieldType.Date, format = DateFormat.date)
+//	private LocalDate paidThroughDate;
 
-	@Field(type = FieldType.Integer)
-	private Integer numberOfBillingCycles; // TODO rename?
-
-	@Field(type = FieldType.Date, format = DateFormat.date)
-	private LocalDate paidThroughDate;
-
-	@Field(type = FieldType.Auto) // TODO: ok?
+	@Field(type = FieldType.Auto)
 	private Set<String> relatedOrderIds;
 
 	//	@Field(type = FieldType.Integer)

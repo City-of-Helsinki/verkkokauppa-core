@@ -20,17 +20,10 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private static final long serialVersionUID = 7841002984877186380L;
 
     private String status;
-    private String paymentMethod;
-    private String paymentMethodToken;
-
-    private LocalDateTime orderItemStartDate;
-    private LocalDateTime paymentStartDate;
+    // Date data
+    private LocalDateTime startDate; // (created from orderitems.startDate)
+    private LocalDateTime billingStartDate; // (created from orderitems.billingStartDate)
     private LocalDateTime endDate;
-//    private LocalDateTime nextDate; // TODO needed?
-//    private Integer failureCount; // TODO needed?
-//    private Integer currentBillingCycle; // TODO needed?
-    private Integer numberOfBillingCycles; // TODO needed?
-    private Set<String> relatedOrderIds; // TODO should this be plain orderId?
 
     // User data
     private String user;
@@ -40,11 +33,28 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String customerFirstName;
     private String customerLastName;
     private String customerEmail;
-
     // Product data
     private String productName;
     private String productId;
+    private Integer quantity;
+    private String orderItemId;
+    // Payment data
+    private String paymentMethod;
+    private String paymentMethodToken;
+    // Period data (created from orderitems)
     private String periodUnit;
     private Long periodFrequency;
-    private Integer quantity;
+    private Integer periodCount;
+    // Price data
+    private String priceNet;
+    private String priceVat;
+    private String priceTotal;
+    // TODO subscription_item_metas?
+    // Relations data
+    private Set<String> relatedOrderIds; // "Main" subscription contains all orders created from it.
+
+//    private LocalDateTime nextDate; // TODO needed?
+//    private Integer failureCount; // TODO needed?
+//    private Integer currentBillingCycle; // TODO needed?
+
 }

@@ -4,16 +4,39 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
+import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderType;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class CreateSubscriptionsFromOrderCommand {
+
+	private Logger log = LoggerFactory.getLogger(CreateSubscriptionsFromOrderCommand.class);
+
+	@Autowired
+	private SubscriptionItemMetaTransformer subscriptionItemMetaTransformer;
+
+	@Autowired
+	private SubscriptionItemMetaRepository subscriptionItemMetaRepository;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 
@@ -40,8 +63,7 @@ public class CreateSubscriptionsFromOrderCommand {
 
 			copyOrderFieldsToSubscription(orderAggregateDto.getOrder(), subscriptionDto);
 			copyOrderItemFieldsToSubscription(orderItemDto, subscriptionDto);
-			// TODO refactor? Set billing cycles count
-			subscriptionDto.setNumberOfBillingCycles(orderAggregateDto.getNumberOfBillingCycles());
+			copyOrderItemMetaFieldsToSubscription(orderItemDto, subscriptionDto);
 			String id = createSubscriptionCommand.create(subscriptionDto);
 			idList.add(id);
 		}
@@ -64,14 +86,48 @@ public class CreateSubscriptionsFromOrderCommand {
 	}
 
 	private void copyOrderItemFieldsToSubscription(OrderItemDto orderItem, SubscriptionDto subscriptionDto) {
+		// Order item data
+		subscriptionDto.setOrderItemId(orderItem.getOrderItemId());
+		// Product data
 		subscriptionDto.setProductId(orderItem.getProductId());
 		subscriptionDto.setProductName(orderItem.getProductName());
 		subscriptionDto.setQuantity(orderItem.getQuantity());
+		// Period data
 		subscriptionDto.setPeriodFrequency(orderItem.getPeriodFrequency());
 		subscriptionDto.setPeriodUnit(orderItem.getPeriodUnit());
-		//TODO
-		subscriptionDto.setOrderItemStartDate(orderItem.getStartDate());
+		subscriptionDto.setPeriodCount(orderItem.getPeriodCount());
+		// Price data
+		subscriptionDto.setPriceNet(orderItem.getPriceNet());
+		subscriptionDto.setPriceVat(orderItem.getPriceVat());
+		subscriptionDto.setPriceTotal(orderItem.getRowPriceTotal());
+		// Date data
+		subscriptionDto.setStartDate(orderItem.getStartDate());
+		subscriptionDto.setBillingStartDate(orderItem.getBillingStartDate());
 	}
+
+	private void copyOrderItemMetaFieldsToSubscription(OrderItemDto orderItem, SubscriptionDto subscriptionDto) {
+		if (!orderItem.getMeta().isEmpty()) {
+			orderItem.getMeta().stream().forEach(meta -> {
+				SubscriptionItemMeta subscriptionItemMeta = subscriptionItemMetaTransformer.transformToEntity(meta);
+				SubscriptionItemMeta createdSubscriptionItemMeta = subscriptionItemMetaRepository.save(subscriptionItemMeta);
+				log.debug("created new subscriptionItemMeta " + createdSubscriptionItemMeta.getOrderItemMetaId() + " from createdSubscriptionItemMeta: " + meta.getOrderItemMetaId());
+			});
+		}
+	}
+
+//	        if (!metas.isEmpty()) {
+//		dto.getItems().stream().forEach(item -> {
+//			List<OrderItemMeta> itemMetas = metas.stream()
+//					.filter(meta -> meta.getOrderItemId().equals(item.getOrderItemId()))
+//					.collect(Collectors.toList());
+//
+//			List<OrderItemMetaDto> itemMetaDtos = itemMetas.stream()
+//					.map(itemMeta -> orderItemMetaTransformer.transformToDto(itemMeta))
+//					.collect(Collectors.toList());
+//
+//			item.setMeta(itemMetaDtos);
+//		});
+//	}
 
 	private boolean canCreateFromOrder(OrderAggregateDto orderAggregateDto) {
 		return orderAggregateDto.getOrder().getType().equals(OrderType.SUBSCRIPTION);

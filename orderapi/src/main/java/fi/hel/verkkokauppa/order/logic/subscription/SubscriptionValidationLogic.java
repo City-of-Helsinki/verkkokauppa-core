@@ -33,7 +33,7 @@ public class SubscriptionValidationLogic {
 	public void validateStartDate(SubscriptionDto dto, Errors errors) {
 		final LocalDate now = LocalDate.now();
 
-		if (dto.getOrderItemStartDate() != null && dto.getOrderItemStartDate().isBefore(ChronoLocalDateTime.from(now))) {
+		if (dto.getStartDate() != null && dto.getStartDate().isBefore(ChronoLocalDateTime.from(now))) {
 			errors.reject("error.subscription.invalid-start-date"); // TODO: ok?
 		}
 	}
