@@ -34,8 +34,8 @@ class OrderItemServiceTest {
     void addItem() {
         String orderId = "1";
         doReturn("Success", "Success").when(orderItemRepository).save(new OrderItem());
-        String orderItem1 = orderItemService.addItem(orderId, "productId", "productName", 1, "unit", "rowPriceNet", "rowPriceVat", "rowPriceTotal", "vatPercentage", "priceNet", "priceVat", "priceGross","",0L);
-        String orderItem2 = orderItemService.addItem(orderId, "productId", "productName", 1, "unit", "rowPriceNet", "rowPriceVat", "rowPriceTotal", "vatPercentage", "priceNet", "priceVat", "priceGross","",0L);
+        String orderItem1 = orderItemService.addItem(orderId, "productId", "productName", 1, "unit", "rowPriceNet", "rowPriceVat", "rowPriceTotal", "vatPercentage", "priceNet", "priceVat", "priceGross","",0L,0,null);
+        String orderItem2 = orderItemService.addItem(orderId, "productId", "productName", 1, "unit", "rowPriceNet", "rowPriceVat", "rowPriceTotal", "vatPercentage", "priceNet", "priceVat", "priceGross","",0L,0,null);
         assertNotEquals(orderItem1,orderItem2);
     }
 }

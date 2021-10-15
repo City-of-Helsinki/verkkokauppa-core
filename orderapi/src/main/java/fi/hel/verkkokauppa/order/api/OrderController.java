@@ -53,7 +53,7 @@ public class OrderController {
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
-                                             @RequestParam(value = "user") String user) {
+                                                         @RequestParam(value = "user") String user) {
         try {
             Order order = orderService.createByParams(namespace, user);
             String orderId = order.getOrderId();
@@ -207,7 +207,9 @@ public class OrderController {
                         item.getPriceVat(),
                         item.getPriceGross(),
                         item.getPeriodUnit(),
-                        item.getPeriodFrequency() //TODO lisää period tms
+                        item.getPeriodFrequency(),
+                        item.getPeriodCount(),
+                        item.getBillingStartDate()
                 );
 
                 if (item.getMeta() != null) {

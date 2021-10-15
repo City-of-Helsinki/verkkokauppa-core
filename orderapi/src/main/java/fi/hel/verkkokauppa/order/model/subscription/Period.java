@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.model.recurringorder;
+package fi.hel.verkkokauppa.order.model.subscription;
 
 import java.util.HashSet;
 import java.util.Set;
