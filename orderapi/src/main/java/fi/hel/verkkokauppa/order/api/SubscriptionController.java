@@ -7,7 +7,9 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
@@ -31,6 +33,9 @@ public class SubscriptionController {
 	private final Environment env;
 
 	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
+
+	@Autowired
+	private OrderService orderService;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
@@ -105,6 +110,26 @@ public class SubscriptionController {
 		} catch (Exception e) {
 			log.error("Exception on creating Subscription order from order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
+	@GetMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Set<String>> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
+																	  @RequestParam(value = "userId") String userId) {
+		Order foundOrder = orderService.findByIdValidateByUser(orderId, userId);
+		try {
+			OrderAggregateDto dto = orderService.getOrderWithItems(foundOrder.getOrderId());
+			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
+
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body(idList);
+		} catch (Exception e) {
+			log.error("Exception on creating Subscription order from order", e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-create-subscription-from-order",
+							"Failed to create subscription from order [" + orderId + "]")
+			);
 		}
 	}
 

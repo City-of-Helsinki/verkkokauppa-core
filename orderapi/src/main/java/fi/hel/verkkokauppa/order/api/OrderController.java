@@ -70,7 +70,7 @@ public class OrderController {
     @GetMapping(value = "/order/get", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> getOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
-            findByIdValidateByUser(orderId, userId);
+            orderService.findByIdValidateByUser(orderId, userId);
             return orderAggregateDto(orderId);
 
         } catch (CommonApiException cae) {
@@ -87,7 +87,7 @@ public class OrderController {
     @GetMapping(value = "/order/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> confirmOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
-            Order order = findByIdValidateByUser(orderId, userId);
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             validateCustomerData(order.getCustomerFirstName(), order.getCustomerLastName(), order.getCustomerEmail(), order.getCustomerPhone());
             validateOrderTotalsExist(order);
@@ -115,7 +115,7 @@ public class OrderController {
     @GetMapping(value = "/order/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> cancelOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
         try {
-            Order order = findByIdValidateByUser(orderId, userId);
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             orderService.cancel(order);
             return orderAggregateDto(orderId);
@@ -136,7 +136,7 @@ public class OrderController {
                                                          @RequestParam(value = "customerFirstName") String customerFirstName, @RequestParam(value = "customerLastName") String customerLastName,
                                                          @RequestParam(value = "customerEmail") String customerEmail, @RequestParam(value = "customerPhone") String customerPhone) {
         try {
-            Order order = findByIdValidateByUser(orderId, userId);
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             if (!changesToOrderAllowed(order)) {
                 log.warn("setting customer to order rejected, orderId: " + orderId);
@@ -165,7 +165,7 @@ public class OrderController {
 	public ResponseEntity<OrderAggregateDto> setItems(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId,
                                                       @RequestBody OrderAggregateDto dto) {
         try {
-            Order order = findByIdValidateByUser(orderId, userId);
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             if (!changesToOrderAllowed(order)) {
                 log.warn("setting items to order rejected, orderId: " + orderId);
@@ -209,7 +209,8 @@ public class OrderController {
                         item.getPeriodUnit(),
                         item.getPeriodFrequency(),
                         item.getPeriodCount(),
-                        item.getBillingStartDate()
+                        item.getBillingStartDate(),
+                        item.getStartDate()
                 );
 
                 if (item.getMeta() != null) {
@@ -231,7 +232,7 @@ public class OrderController {
                                                        @RequestParam(value = "priceNet") String priceNet, @RequestParam(value = "priceVat") String priceVat,
                                                        @RequestParam(value = "priceTotal") String priceTotal) {
         try {
-            Order order = findByIdValidateByUser(orderId, userId);
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             if (!changesToOrderAllowed(order)) {
                 log.warn("setting totals to order rejected, orderId: " + orderId);
@@ -282,24 +283,6 @@ public class OrderController {
                     new Error("failed-to-create-order-with-items", "failed to create order with items")
             );
         }
-    }
-
-    private Order findByIdValidateByUser(String orderId, String userId) {
-        Order order = orderService.findById(orderId);
-
-        if (order == null) {
-            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        String orderUserId = order.getUser();
-        if (orderUserId == null || userId == null || !orderUserId.equals(userId)) {
-            log.error("unauthorized attempt to load order, userId does not match");
-            Error error = new Error("order-not-found-from-backend", "order with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        return order;
     }
 
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
