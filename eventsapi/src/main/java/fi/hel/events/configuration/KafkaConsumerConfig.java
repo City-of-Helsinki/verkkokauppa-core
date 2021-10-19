@@ -1,6 +1,8 @@
 package fi.hel.events.configuration;
 
+import fi.hel.verkkokauppa.common.message.OrderMessage;
 import fi.hel.verkkokauppa.common.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.message.SubscriptionMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +49,7 @@ public class KafkaConsumerConfig {
         return factory;
     }
 
-    // PaymentMessage consumer (string key, json value)
+    // PaymentMessage consumer
 
     @Bean
     public ConsumerFactory<String, PaymentMessage> paymentsConsumerFactory() {
@@ -69,5 +71,48 @@ public class KafkaConsumerConfig {
         return factory;
     }
 
+    // SubscriptionMessage consumer
+
+    @Bean
+    public ConsumerFactory<String, SubscriptionMessage> subscriptionsConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "subscriptions");
+
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new JsonDeserializer<>(SubscriptionMessage.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, SubscriptionMessage> subscriptionsKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, SubscriptionMessage> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(subscriptionsConsumerFactory());
+        return factory;
+    }
+
+    // OrderMessage consumer
+
+    @Bean
+    public ConsumerFactory<String, OrderMessage> ordersConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "orders");
+
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new JsonDeserializer<>(OrderMessage.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, OrderMessage> ordersKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, OrderMessage> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(ordersConsumerFactory());
+        return factory;
+    }
 
 }
