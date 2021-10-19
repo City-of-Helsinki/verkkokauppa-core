@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.model;
+package fi.hel.verkkokauppa.common.constants;
 
 public class OrderType {
     public static String ORDER = "order";                   // a single purchase

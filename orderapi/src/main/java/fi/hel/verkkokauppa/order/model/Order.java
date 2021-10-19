@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.model;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import org.springframework.data.annotation.Id;
