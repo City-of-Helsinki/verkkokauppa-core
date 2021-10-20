@@ -38,6 +38,9 @@ public class AccountingExportService {
     @Value("${sap.sftp.server.password}")
     private String sftpServerPassword;
 
+    @Value("${ssh.knowhosts.path}")
+    private String sshKnownHostsPath;
+
     @Autowired
     private AccountingExportDataRepository exportDataRepository;
 
@@ -118,6 +121,8 @@ public class AccountingExportService {
         log.debug("Connecting to server with username [{}]", sftpServerUsername);
         Session jschSession = jsch.getSession(sftpServerUsername, sftpServerUrl);
         jschSession.setPassword(sftpServerPassword);
+
+        jsch.setKnownHosts(sshKnownHostsPath);
 
         jschSession.connect();
         log.info("Connected to the server succesfully");
