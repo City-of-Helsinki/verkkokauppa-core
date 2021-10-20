@@ -62,6 +62,8 @@ public class OnlinePaymentController {
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
 
+			methods = paymentMethodListService.filterPaymentMethodList(request, methods);
+
 			if (methods.length == 0) {
 				log.debug("payment methods not found, namespace: " + namespace);
 				Error error = new Error("payment-methods-not-found-from-backend", "payment methods for namespace[" + namespace + "] not found from backend");
