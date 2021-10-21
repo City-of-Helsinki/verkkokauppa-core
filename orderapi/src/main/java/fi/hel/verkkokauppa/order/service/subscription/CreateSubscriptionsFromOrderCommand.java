@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
-import fi.hel.verkkokauppa.order.model.OrderType;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import org.slf4j.Logger;
