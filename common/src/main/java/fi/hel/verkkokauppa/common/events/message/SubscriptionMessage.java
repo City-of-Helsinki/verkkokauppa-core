@@ -8,16 +8,18 @@ public class SubscriptionMessage implements EventMessage {
     public String namespace;
     public String type;
     public String timestamp;
+    public String payload;
 
     public SubscriptionMessage() {
     }
 
-    public SubscriptionMessage(String subscriptionId, String orderId, String namespace, String type, String timestamp) {
+    public SubscriptionMessage(String subscriptionId, String orderId, String namespace, String type, String timestamp, String payload) {
         this.subscriptionId = subscriptionId;
         this.orderId = orderId;
         this.namespace = namespace;
         this.type = type;
         this.timestamp = timestamp;
+        this.payload = payload;
     }
 
     public String getSubscriptionId() {
@@ -58,5 +60,13 @@ public class SubscriptionMessage implements EventMessage {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 }

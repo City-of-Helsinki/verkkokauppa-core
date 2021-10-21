@@ -8,16 +8,18 @@ public class PaymentMessage implements EventMessage {
     public String namespace;
     public String type;
     public String timestamp;
+    public String payload;
 
     public PaymentMessage() {
     }
 
-    public PaymentMessage(String paymentId, String orderId, String namespace, String type, String timestamp) {
+    public PaymentMessage(String paymentId, String orderId, String namespace, String type, String timestamp, String payload) {
         this.paymentId = paymentId;
         this.orderId = orderId;
         this.namespace = namespace;
         this.type = type;
         this.timestamp = timestamp;
+        this.payload = payload;
     }
 
     public String getPaymentId() {
@@ -58,5 +60,13 @@ public class PaymentMessage implements EventMessage {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 }

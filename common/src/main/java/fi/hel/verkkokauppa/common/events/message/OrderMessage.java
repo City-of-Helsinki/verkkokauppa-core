@@ -7,15 +7,17 @@ public class OrderMessage implements EventMessage {
     public String namespace;
     public String type;
     public String timestamp;
+    public String payload;
 
     public OrderMessage() {
     }
 
-    public OrderMessage(String orderId, String namespace, String type, String timestamp) {
+    public OrderMessage(String orderId, String namespace, String type, String timestamp, String payload) {
         this.orderId = orderId;
         this.namespace = namespace;
         this.type = type;
         this.timestamp = timestamp;
+        this.payload = payload;
     }
 
     public String getOrderId() {
@@ -48,5 +50,13 @@ public class OrderMessage implements EventMessage {
 
     public void setTimestamp(String timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
     }
 }
