@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
@@ -132,13 +133,13 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping(value = "/payment/online/cardToken", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> getPaymentCardToken(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
-													  @RequestParam(value = "userId") String userId) {
+	@GetMapping(value = "/payment/online/cardInfo", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<PaymentCardInfoDto> getPaymentCardInfo(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+																 @RequestParam(value = "userId") String userId) {
 		try {
 			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
 			String paymentToken = payment.getToken();
-			String paymentCardToken = service.getPaymentCardToken(paymentToken);
+			PaymentCardInfoDto paymentCardToken = service.getPaymentCardToken(paymentToken);
 
 			return ResponseEntity.ok().body(paymentCardToken);
 		} catch (CommonApiException cae) {
