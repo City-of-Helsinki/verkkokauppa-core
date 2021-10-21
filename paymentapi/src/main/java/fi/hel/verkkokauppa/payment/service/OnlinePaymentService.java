@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.payment.logic.CardTokenFetcher;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
@@ -173,7 +174,7 @@ public class OnlinePaymentService {
         return payment.get();
     }
 
-    public String getPaymentCardToken(String paymentToken) {
+    public PaymentCardInfoDto getPaymentCardToken(String paymentToken) {
         return cardTokenFetcher.getCardToken(paymentToken);
     }
 
