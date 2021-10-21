@@ -129,7 +129,7 @@ public class SubscriptionControllerTests extends DummyData {
 
         ResponseEntity<OrderAggregateDto> response = orderController.createWithItems(orderAggregateDto);
 
-        OrderDto orderDto = response.getBody().getOrder();
+        OrderDto orderDto = Objects.requireNonNull(response.getBody()).getOrder();
         ResponseEntity<Set<String>> createdSubs = subscriptionController.createSubscriptionsFromOrderId(orderDto.getOrderId(),orderDto.getUser());
 
         // Verify request succeed
