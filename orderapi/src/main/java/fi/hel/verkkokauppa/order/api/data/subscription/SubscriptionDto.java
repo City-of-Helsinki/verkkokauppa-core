@@ -40,6 +40,8 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     // Payment data
     private String paymentMethod;
     private String paymentMethodToken;
+    private Short paymentMethodExpirationYear;
+    private Byte paymentMethodExpirationMonth;
     // Period data (created from orderitems)
     private String periodUnit;
     private Long periodFrequency;

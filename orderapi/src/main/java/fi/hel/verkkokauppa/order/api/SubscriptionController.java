@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
@@ -148,18 +149,20 @@ public class SubscriptionController {
 		}
 	}
 
-	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> setRecurringOrderCardToken(@RequestParam(value = "id") String id, @RequestParam("token") String token) {
+	@PutMapping(value = "/{id}/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> setSubscriptionCardToken(@PathVariable("id") String id, @RequestBody PaymentCardInfoDto dto) {
 		try {
 			String password = env.getRequiredProperty("payment.card_token.encryption.password");
 
 			StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
 			encryptor.setPassword(password);
-			String encryptedToken = encryptor.encrypt(token);
+			String encryptedToken = encryptor.encrypt(dto.getCardToken());
 
-			SubscriptionDto recurringOrder = getSubscriptionQuery.getOne(id);
-			recurringOrder.setPaymentMethodToken(encryptedToken);
-			updateSubscriptionCommand.update(id, recurringOrder);
+			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(id);
+			subscriptionDto.setPaymentMethodToken(encryptedToken);
+			subscriptionDto.setPaymentMethodExpirationYear(dto.getExpYear());
+			subscriptionDto.setPaymentMethodExpirationMonth(dto.getExpMonth());
+			updateSubscriptionCommand.update(id, subscriptionDto);
 
 			return ResponseEntity.ok().build();
 		} catch (Exception e) {
