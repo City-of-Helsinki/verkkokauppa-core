@@ -1,10 +1,14 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlipRow;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingSlipService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class AccountingController {
@@ -25,16 +30,32 @@ public class AccountingController {
     private Logger log = LoggerFactory.getLogger(AccountingController.class);
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private AccountingSlipService accountingSlipService;
 
     @PostMapping(value = "/accounting/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountingSlipDto>> createAccountingData() {
         try {
-            List<AccountingSlipDto> accountingSlips = accountingSlipService.createAccountingData();
+            List<Order> ordersToAccount = IterableUtils.iterableToList(orderRepository.findNotAccounted());
+            Map<String, List<String>> accountingIdsByDate = accountingSlipService.groupAccountingsByDate(ordersToAccount);
+
+            // not handling current date
+            if (accountingIdsByDate == null || accountingIdsByDate.isEmpty()) {
+                log.info("no orders to account");
+                return ResponseEntity.ok().build();
+            }
+
+            List<AccountingSlipDto> accountingSlips = accountingSlipService.createAccountingSlips(accountingIdsByDate);
 
             return ResponseEntity.ok().body(accountingSlips);
-        } catch (CommonApiException cae) {
-            throw cae;
+
+        } catch (JsonProcessingException jpe) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-accounting-export-data-xml", "failed to create accounting export data xml")
+            );
         } catch (Exception e) {
             log.error("creating accounting data failed", e);
             throw new CommonApiException(

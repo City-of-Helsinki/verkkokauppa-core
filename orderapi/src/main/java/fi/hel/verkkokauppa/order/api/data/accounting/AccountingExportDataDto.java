@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
 public class AccountingExportDataDto {
 
@@ -13,13 +14,5 @@ public class AccountingExportDataDto {
     private String timestamp;
 
     private String xml;
-
-    private String exported;
-
-    public AccountingExportDataDto(String accountingSlipId, String timestamp, String xml) {
-        this.accountingSlipId = accountingSlipId;
-        this.timestamp = timestamp;
-        this.xml = xml;
-    }
 
 }
