@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.model.subscription;
 
+import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
@@ -19,7 +20,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Document(indexName = "subscriptions")
-public class Subscription extends BaseVersionedEntity implements Serializable, Customer, IdentifiableUser {
+public class Subscription extends BaseVersionedEntity implements Serializable, Customer, IdentifiableUser, OrderItemSubscriptionFields {
 
 	private static final long serialVersionUID = -8963491435675971922L;
 
@@ -91,7 +92,7 @@ public class Subscription extends BaseVersionedEntity implements Serializable, C
 	@Field(type = FieldType.Text)
 	String priceVat;
 	@Field(type = FieldType.Text)
-	String priceTotal;
+	String priceGross;
 //	@Field(type = FieldType.Date, format = DateFormat.date)
 //	private LocalDate paidThroughDate;
 

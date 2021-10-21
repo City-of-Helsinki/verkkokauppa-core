@@ -4,28 +4,18 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 
-import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
-import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderType;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
-import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
-import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class CreateSubscriptionsFromOrderCommand {
@@ -99,7 +89,7 @@ public class CreateSubscriptionsFromOrderCommand {
 		// Price data
 		subscriptionDto.setPriceNet(orderItem.getPriceNet());
 		subscriptionDto.setPriceVat(orderItem.getPriceVat());
-		subscriptionDto.setPriceTotal(orderItem.getRowPriceTotal());
+		subscriptionDto.setPriceGross(orderItem.getPriceGross());
 		// Date data
 		subscriptionDto.setStartDate(orderItem.getStartDate());
 		subscriptionDto.setBillingStartDate(orderItem.getBillingStartDate());

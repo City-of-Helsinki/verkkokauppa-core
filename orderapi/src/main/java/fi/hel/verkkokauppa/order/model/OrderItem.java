@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.order.model;
 
-import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
+import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Product;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Document(indexName = "orderitems")
 @Getter
 @Setter
-public class OrderItem implements SubscriptionItem, Product {
+public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     @Id
     String orderItemId;

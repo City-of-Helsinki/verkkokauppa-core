@@ -62,6 +62,8 @@ public class OnlinePaymentController {
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
 
+			methods = paymentMethodListService.filterPaymentMethodList(request, methods);
+
 			if (methods.length == 0) {
 				log.debug("payment methods not found, namespace: " + namespace);
 				Error error = new Error("payment-methods-not-found-from-backend", "payment methods for namespace[" + namespace + "] not found from backend");
@@ -131,27 +133,7 @@ public class OnlinePaymentController {
 			);
 		}
 	}
-
-	@GetMapping(value = "/payment/online/cardToken", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> getPaymentCardToken(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
-													  @RequestParam(value = "userId") String userId) {
-		try {
-			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
-			String paymentToken = payment.getToken();
-			String paymentCardToken = service.getPaymentCardToken(paymentToken);
-
-			return ResponseEntity.ok().body(paymentCardToken);
-		} catch (CommonApiException cae) {
-			throw cae;
-		} catch (Exception e) {
-			log.error("getting payment card token failed, orderId: " + orderId, e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-get-payment-card-token", "failed to get payment card token with order id [" + orderId + "]")
-			);
-		}
-	}
-
+	
 	@GetMapping("/payment/online/check-return-url")
 	public ResponseEntity<PaymentReturnDto> checkReturnUrl(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode,
 		@RequestParam(value = "ORDER_NUMBER") String paymentId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {

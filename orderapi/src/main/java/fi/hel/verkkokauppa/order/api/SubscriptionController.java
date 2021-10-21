@@ -4,24 +4,22 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
-import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-
+import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -43,8 +41,6 @@ public class SubscriptionController {
 	private final SearchSubscriptionQuery searchSubscriptionQuery;
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
 	private final CancelSubscriptionCommand cancelSubscriptionCommand;
-	@Autowired
-	private final UpdateSubscriptionCommand updateSubscriptionCommand;
 
 	@Autowired
 	public SubscriptionController(
@@ -53,8 +49,7 @@ public class SubscriptionController {
 			GetSubscriptionQuery getSubscriptionQuery,
 			SearchSubscriptionQuery searchSubscriptionQuery,
 			CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand,
-			CancelSubscriptionCommand cancelSubscriptionCommand,
-			UpdateSubscriptionCommand updateSubscriptionCommand) {
+			CancelSubscriptionCommand cancelSubscriptionCommand) {
 		this.env = env;
 		this.createSubscriptionCommand = createSubscriptionCommand;
 		this.createSubscriptionsFromOrderCommand = createSubscriptionsFromOrderCommand;
@@ -62,7 +57,6 @@ public class SubscriptionController {
 		this.getSubscriptionQuery = getSubscriptionQuery;
 		this.searchSubscriptionQuery = searchSubscriptionQuery;
 		this.cancelSubscriptionCommand = cancelSubscriptionCommand;
-		this.updateSubscriptionCommand = updateSubscriptionCommand;
 	}
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
@@ -141,47 +135,6 @@ public class SubscriptionController {
 		} catch(EntityNotFoundException e) {
 			log.error("Exception on cancelling Subscription order", e);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		}
-	}
-
-	@GetMapping(value = "/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> getSubscriptionCardToken(@RequestParam(value = "id") String id) {
-		try {
-			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(id);
-			String token = subscriptionDto.getPaymentMethodToken();
-
-			return ResponseEntity.ok().body(token);
-		} catch (Exception e) {
-			log.error("getting payment method token from subscription with id [" + id + "] failed", e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-get-payment-method-token-from-subscription",
-							"getting payment method token from subscription with id [" + id + "] failed")
-			);
-		}
-	}
-
-	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> setSubscriptionCardToken(@RequestParam(value = "id") String id, @RequestParam("token") String token) {
-		try {
-			String password = env.getRequiredProperty("payment.card_token.encryption.password");
-
-			StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
-			encryptor.setPassword(password);
-			String encryptedToken = encryptor.encrypt(token);
-
-			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(id);
-			subscriptionDto.setPaymentMethodToken(encryptedToken);
-			updateSubscriptionCommand.update(id, subscriptionDto);
-
-			return ResponseEntity.ok().build();
-		} catch (Exception e) {
-			log.error("setting payment method token for subscription with id [" + id + "] failed", e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-set-payment-method-token-for-subscription",
-							"setting payment method token for subscription with id [" + id + "] failed")
-			);
 		}
 	}
 
