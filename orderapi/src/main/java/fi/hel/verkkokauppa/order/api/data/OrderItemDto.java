@@ -21,16 +21,16 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
     private String rowPriceNet;
     private String rowPriceVat;
     private String rowPriceTotal;
-    private LocalDateTime startDate; // TODO: aika myös?
-    private LocalDateTime billingStartDate; // TODO: aika myös?
     private String vatPercentage;
     private String priceNet;
     private String priceVat;
     private String priceGross;
-
-    private String periodUnit;
+    // Subscription fields
     private Long periodFrequency;
+    private String periodUnit;
     private Integer periodCount;
+    private LocalDateTime startDate;
+    private LocalDateTime billingStartDate;
 
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 
