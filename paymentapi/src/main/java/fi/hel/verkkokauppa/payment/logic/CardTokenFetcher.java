@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.logic;
 
+import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.CheckPaymentStatusRequest;
 import org.helsinki.vismapay.request.paymentmethods.PaymentMethodsRequest;
@@ -21,7 +22,7 @@ public class CardTokenFetcher {
     @Autowired
     private Environment env;
 
-	public String getCardToken(String paymentToken) {
+	public PaymentCardInfoDto getCardToken(String paymentToken) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
 		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
 		String apiVersion = env.getRequiredProperty("payment_transaction_api_version");
@@ -34,7 +35,12 @@ public class CardTokenFetcher {
 		try {
 			PaymentStatusResponse response = responseCF.get();
 			if (response.getResult() == 0) {
-				return response.getSource().getCardToken();
+				PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto();
+				paymentCardInfoDto.setCardToken(response.getSource().getCardToken());
+				paymentCardInfoDto.setExpYear(response.getSource().getExpYear());
+				paymentCardInfoDto.setExpMonth(response.getSource().getExpMonth());
+
+				return paymentCardInfoDto;
 			} else {
 				log.error("card payment token request failed, check application.properties");
 				throw new RuntimeException(buildErrorMsg(response));

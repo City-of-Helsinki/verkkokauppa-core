@@ -53,6 +53,12 @@ public class Subscription extends BaseVersionedEntity implements Serializable, C
 	@Field(type = FieldType.Text)
 	private String paymentMethodToken;
 
+	@Field(type = FieldType.Text)
+	private Short paymentMethodExpirationYear;
+
+	@Field(type = FieldType.Text)
+	private Byte paymentMethodExpirationMonth;
+
 	@Field(type = FieldType.Keyword)
 	String user;
 
