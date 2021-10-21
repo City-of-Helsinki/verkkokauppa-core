@@ -1,6 +1,7 @@
-package fi.hel.events.listener;
+package fi.hel.verkkokauppa.events.listener;
 
-import fi.hel.verkkokauppa.common.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +19,21 @@ public class PaymentMessageListener {
     private Environment env;
 
     @KafkaListener(
-            topics = "PAYMENT_PAID",
+            topics = "payments",
             groupId="payments",
             containerFactory="paymentsKafkaListenerContainerFactory")
     void paymentPaidlistener(PaymentMessage message) {
         log.info("paymentPaidlistener [{}]", message);
-    }
 
-        //TODO check event type from message payload
+        if (EventType.PAYMENT_PAID.equals(message.getType())) {
+            log.info("event type is PAYMENT_PAID");
+            // TODO action
+        }
+
+        String paymentServiceUrl = env.getRequiredProperty("payment.service.url");
+        log.info("payment.service.url is: " + paymentServiceUrl);
+
+    }
 
         //TODO read target url to call from env
 

@@ -1,29 +1,31 @@
-package fi.hel.verkkokauppa.common.message;
+package fi.hel.verkkokauppa.common.events.message;
 
-public class SubscriptionMessage {
-    public String subscriptionId;
+import fi.hel.verkkokauppa.common.events.message.EventMessage;
+
+public class PaymentMessage implements EventMessage {
+    public String paymentId;
     public String orderId;
     public String namespace;
     public String type;
     public String timestamp;
 
-    public SubscriptionMessage() {
+    public PaymentMessage() {
     }
 
-    public SubscriptionMessage(String subscriptionId, String orderId, String namespace, String type, String timestamp) {
-        this.subscriptionId = subscriptionId;
+    public PaymentMessage(String paymentId, String orderId, String namespace, String type, String timestamp) {
+        this.paymentId = paymentId;
         this.orderId = orderId;
         this.namespace = namespace;
         this.type = type;
         this.timestamp = timestamp;
     }
 
-    public String getSubscriptionId() {
-        return subscriptionId;
+    public String getPaymentId() {
+        return paymentId;
     }
 
-    public void setSubscriptionId(String subscriptionId) {
-        this.subscriptionId = subscriptionId;
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
     }
 
     public String getOrderId() {
