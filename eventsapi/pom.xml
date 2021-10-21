@@ -8,14 +8,12 @@
 		<version>2.4.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>fi.hel</groupId>
+
 	<artifactId>events</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>events</name>
 	<description>Kaupunkiyhteinen verkkokauppa, viestinvälityksen kuuntelun api</description>
-	<properties>
-		<java.version>11</java.version>
-	</properties>
+
 	<dependencies>
         <dependency>
             <groupId>fi.hel</groupId>
