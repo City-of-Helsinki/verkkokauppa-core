@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.order.model;
 
-import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
+import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Product;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Document(indexName = "orderitems")
 @Getter
 @Setter
-public class OrderItem implements SubscriptionItem, Product {
+public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     @Id
     String orderItemId;
@@ -68,7 +68,7 @@ public class OrderItem implements SubscriptionItem, Product {
 
     public OrderItem(String orderItemId, String orderId, String productId, String productName, Integer quantity,
                      String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                     String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate) {
+                     String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
@@ -87,6 +87,7 @@ public class OrderItem implements SubscriptionItem, Product {
         this.periodFrequency = periodFrequency;
         this.periodCount = periodCount;
         this.billingStartDate = billingStartDate;
+        this.startDate = startDate;
         this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.SINGLE;
     }
 

@@ -56,9 +56,9 @@ public class SubscriptionControllerTests extends DummyData {
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
     @Test
-    @Ignore
     public void testCreateWithItems() {
         Order order = generateDummyOrder();
+
         order.setNamespace("venepaikat");
         order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, 2);
@@ -66,14 +66,14 @@ public class SubscriptionControllerTests extends DummyData {
         orderItems.get(0).setPeriodUnit(Period.DAILY);
         orderItems.get(0).setPeriodCount(2);
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setPriceGross("124");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
                 .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
 
         ResponseEntity<OrderAggregateDto> response = orderController.createWithItems(orderAggregateDto);
-
-        Objects.requireNonNull(response.getBody()).setPeriodCount(1);
 
         ResponseEntity<Set<String>> createdSubs = subscriptionController.createSubscriptionsFromOrder(response.getBody());
 
@@ -102,7 +102,62 @@ public class SubscriptionControllerTests extends DummyData {
         Assert.assertEquals("productId", subscriptions.get(0).getProductId());
         Assert.assertEquals("productName", subscriptions.get(0).getProductName());
         Assert.assertEquals(1, (int) subscriptions.get(0).getQuantity());
-        Assert.assertEquals("100", subscriptions.get(0).getPriceTotal());
+        Assert.assertEquals("124", subscriptions.get(0).getPriceGross());
+        // New orderItemId should be created from order items.
+        Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
+        // Order metas succesfully copied to subscription_item_metas
+        Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
+    }
+
+    //This test is ignored because uses pure elastic search and not mocks to make testing easier.
+    @Test
+    public void testCreateWithItemsGet() {
+        Order order = generateDummyOrder();
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, 2);
+        orderItems.get(0).setPeriodFrequency(1L);
+        orderItems.get(0).setPeriodUnit(Period.DAILY);
+        orderItems.get(0).setPeriodCount(2);
+        orderItems.get(0).setBillingStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setPriceGross("124");
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        ResponseEntity<OrderAggregateDto> response = orderController.createWithItems(orderAggregateDto);
+
+        OrderDto orderDto = Objects.requireNonNull(response.getBody()).getOrder();
+        ResponseEntity<Set<String>> createdSubs = subscriptionController.createSubscriptionsFromOrderId(orderDto.getOrderId(),orderDto.getUser());
+
+        // Verify request succeed
+        Assert.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
+        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody()).size());
+
+        // Read
+        List<Subscription> subscriptions = subscriptionRepository.findByCustomerEmail(order.getCustomerEmail());
+        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assert.assertEquals(Period.DAILY, subscriptions.get(0).getPeriodUnit());
+
+        Assert.assertEquals("active", subscriptions.get(0).getStatus());
+        Assert.assertEquals("venepaikat", subscriptions.get(0).getNamespace());
+        Assert.assertEquals("dummy_firstname", subscriptions.get(0).getCustomerFirstName());
+        Assert.assertEquals("dummy_lastname", subscriptions.get(0).getCustomerLastName());
+        Assert.assertEquals(order.getCustomerEmail(), subscriptions.get(0).getCustomerEmail());
+        Assert.assertEquals("dummy_user", subscriptions.get(0).getUser());
+        Assert.assertNotNull(subscriptions.get(0).getStartDate());
+        Assert.assertNotNull(subscriptions.get(0).getBillingStartDate());
+        Assert.assertEquals("daily", subscriptions.get(0).getPeriodUnit());
+
+        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assert.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
+
+        Assert.assertEquals("productId", subscriptions.get(0).getProductId());
+        Assert.assertEquals("productName", subscriptions.get(0).getProductName());
+        Assert.assertEquals(1, (int) subscriptions.get(0).getQuantity());
+        Assert.assertEquals("124", subscriptions.get(0).getPriceGross());
         // New orderItemId should be created from order items.
         Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
         // Order metas succesfully copied to subscription_item_metas

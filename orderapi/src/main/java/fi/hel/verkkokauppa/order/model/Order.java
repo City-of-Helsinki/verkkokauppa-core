@@ -64,22 +64,18 @@ public class Order implements Customer, IdentifiableUser {
         this.orderId = orderId;
     }
 
-    @Override
     public String getNamespace() {
         return namespace;
     }
 
-    @Override
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
 
-    @Override
     public String getUser() {
         return user;
     }
 
-    @Override
     public void setUser(String user) {
         this.user = user;
     }

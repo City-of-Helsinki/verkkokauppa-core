@@ -1,13 +1,12 @@
 package fi.hel.verkkokauppa.order.api.data.subscription;
 
+import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import fi.hel.verkkokauppa.order.interfaces.Product;
 import fi.hel.verkkokauppa.shared.model.impl.BaseIdentifiableDto;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -15,7 +14,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class SubscriptionDto extends BaseIdentifiableDto implements Serializable, Customer, IdentifiableUser, Product {
+public class SubscriptionDto extends BaseIdentifiableDto implements Serializable, Customer, IdentifiableUser, Product, OrderItemSubscriptionFields {
 
     private static final long serialVersionUID = 7841002984877186380L;
 
@@ -48,8 +47,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     // Price data
     private String priceNet;
     private String priceVat;
-    private String priceTotal;
-    // TODO subscription_item_metas?
+    private String priceGross;
     // Relations data
     private Set<String> relatedOrderIds; // "Main" subscription contains all orders created from it.
 
