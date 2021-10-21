@@ -12,6 +12,9 @@ trigger:
       - master
       - development
 
+# By default, use self-hosted agents
+pool:
+  vmImage: ubuntu-latest
 
 # Opting out of pull request validation
 pr: none
