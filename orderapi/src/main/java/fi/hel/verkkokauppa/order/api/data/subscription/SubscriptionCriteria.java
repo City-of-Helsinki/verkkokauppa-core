@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api.data.recurringorder;
+package fi.hel.verkkokauppa.order.api.data.subscription;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -9,16 +9,16 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 @Getter
 @Setter
-public class RecurringOrderCriteria implements Serializable {
+public class SubscriptionCriteria implements Serializable {
 
 	private static final long serialVersionUID = -8772317895908567093L;
 
 	@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) // TODO: aika myös?
 	private LocalDate activeAtDate;
 
-	private String customerId;
+	private String customerEmail;
 	private String status;
-	private String merchantNamespace;
+	private String namespace;
 
 	// TODO: 2 x address id?
 }

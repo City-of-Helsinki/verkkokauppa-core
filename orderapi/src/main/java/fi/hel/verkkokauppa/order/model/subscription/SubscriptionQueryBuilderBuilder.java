@@ -1,7 +1,7 @@
-package fi.hel.verkkokauppa.order.model.recurringorder;
+package fi.hel.verkkokauppa.order.model.subscription;
 
 import fi.hel.verkkokauppa.common.util.StringUtils;
-import fi.hel.verkkokauppa.order.api.data.recurringorder.RecurringOrderCriteria;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.shared.service.QueryBuilderBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -9,10 +9,10 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RecurringOrderQueryBuilderBuilder implements QueryBuilderBuilder<RecurringOrderCriteria> {
+public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<SubscriptionCriteria> {
 
 	@Override
-	public QueryBuilder toQueryBuilder(RecurringOrderCriteria criteria) {
+	public QueryBuilder toQueryBuilder(SubscriptionCriteria criteria) {
 		BoolQueryBuilder qb = QueryBuilders.boolQuery();
 
 		if (criteria.getActiveAtDate() != null) {
@@ -24,11 +24,11 @@ public class RecurringOrderQueryBuilderBuilder implements QueryBuilderBuilder<Re
 				&& Period.getAllowedPeriods().contains(criteria.getStatus())) {
 			qb.must(QueryBuilders.termQuery("status", criteria.getStatus()));
 		}
-		if (!StringUtils.isEmpty(criteria.getCustomerId())) {
-			qb.must(QueryBuilders.termQuery("customerId", criteria.getCustomerId()));
+		if (!StringUtils.isEmpty(criteria.getCustomerEmail())) {
+			qb.must(QueryBuilders.termQuery("customerEmail", criteria.getCustomerEmail()));
 		}
-		if (!StringUtils.isEmpty(criteria.getMerchantNamespace())) {
-			qb.must(QueryBuilders.termQuery("merchantNamespace", criteria.getMerchantNamespace()));
+		if (!StringUtils.isEmpty(criteria.getNamespace())) {
+			qb.must(QueryBuilders.termQuery("namespace", criteria.getNamespace()));
 		}
 
 		return qb;

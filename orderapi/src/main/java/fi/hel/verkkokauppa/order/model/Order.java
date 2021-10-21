@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.order.model;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.order.interfaces.Customer;
+import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -9,7 +11,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 
 @Document(indexName = "orders")
-public class Order {
+public class Order implements Customer, IdentifiableUser {
     @Id
     String orderId;
     @Field(type = FieldType.Keyword)

@@ -1,12 +1,12 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,9 @@ public class OrderItemService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
-    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross, String periodUnit, Long periodFrequency) {
+    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit,
+                          String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
+                          String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -40,7 +42,10 @@ public class OrderItemService {
                 priceVat,
                 priceGross,
                 periodUnit,
-                periodFrequency
+                periodFrequency,
+                periodCount,
+                billingStartDate,
+                startDate
         );
         orderItemRepository.save(orderItem);
 

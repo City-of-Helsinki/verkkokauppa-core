@@ -1,31 +1,36 @@
 package fi.hel.verkkokauppa.order.api.data;
 
-import fi.hel.verkkokauppa.common.contracts.SubscriptionItem;
+import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import lombok.Data;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class OrderItemDto implements SubscriptionItem {
+@Getter
+public class OrderItemDto implements OrderItemSubscriptionFields {
 
     private String orderItemId;
     private String orderId;
     private String productId;
     private String productName;
-    private Integer quantity;
     private String unit;
+    private Integer quantity;
     private String rowPriceNet;
     private String rowPriceVat;
     private String rowPriceTotal;
-    private LocalDateTime startDate; // TODO: aika myös?
-    private String periodUnit;
-    private Long periodFrequency;
     private String vatPercentage;
     private String priceNet;
     private String priceVat;
     private String priceGross;
+    // Subscription fields
+    private Long periodFrequency;
+    private String periodUnit;
+    private Integer periodCount;
+    private LocalDateTime startDate;
+    private LocalDateTime billingStartDate;
 
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 
