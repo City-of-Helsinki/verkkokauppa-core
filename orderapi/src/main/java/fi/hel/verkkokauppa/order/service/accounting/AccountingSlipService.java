@@ -1,11 +1,10 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipRowDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
@@ -19,13 +18,11 @@ import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRowRepository;
-import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
@@ -52,9 +49,6 @@ public class AccountingSlipService {
     private OrderItemAccountingService orderItemAccountingService;
 
     @Autowired
-    private AccountingExportDataService accountingExportDataService;
-
-    @Autowired
     private AccountingExportService accountingExportService;
 
     @Autowired
@@ -62,22 +56,6 @@ public class AccountingSlipService {
 
     @Autowired
     private AccountingSlipRowRepository accountingSlipRowRepository;
-
-    @Autowired
-    private OrderRepository orderRepository;
-
-    public List<AccountingSlipDto> createAccountingData() {
-        List<Order> ordersToAccount = IterableUtils.iterableToList(orderRepository.findNotAccounted());
-        Map<String, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
-
-        // not handling current date
-        if (accountingIdsByDate == null || accountingIdsByDate.isEmpty()) {
-            log.info("no orders to account");
-            return new ArrayList<>();
-        }
-
-        return createAccountingSlips(accountingIdsByDate);
-    }
 
     public AccountingSlip getAccountingSlip(String accountingSlipId) {
         Optional<AccountingSlip> mapping = accountingSlipRepository.findById(accountingSlipId);
@@ -126,7 +104,7 @@ public class AccountingSlipService {
         return accountingSlipDto;
     }
 
-    public List<AccountingSlipDto> createAccountingSlips(Map<String, List<String>> accountingIdsByDate) {
+    public List<AccountingSlipDto> createAccountingSlips(Map<String, List<String>> accountingIdsByDate) throws JsonProcessingException {
         List<AccountingSlipDto> accountingSlips = new ArrayList<>();
 
         for (Map.Entry<String, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
@@ -164,7 +142,7 @@ public class AccountingSlipService {
         return map;
     }
 
-    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
+    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) throws JsonProcessingException {
         List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
         String postingDateString = accountingsForDate.getKey();
@@ -209,10 +187,9 @@ public class AccountingSlipService {
             AccountingSlip createdSlip = createAccountingAndRows(accountingSlipDto);
             accountingSlipDtos.add(getAccountingSlipDtoWithRows(createdSlip));
 
-            AccountingExportDataDto accountingExportDataDto = accountingExportDataService.createAccountingExportDataDto(accountingSlipDto);
-            accountingExportService.exportAccountingData(accountingExportDataDto);
-        }
+            accountingExportService.createAccountingExportDataDto(accountingSlipDto);
 
+        }
         accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
 
         return accountingSlipDtos;

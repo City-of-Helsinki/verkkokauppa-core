@@ -5,6 +5,10 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SubscriptionAggregateDto {
-    private Integer periodCount;
+public class PaymentCardInfoDto {
+
+	private String cardToken;
+	private Short expYear;
+	private Byte expMonth;
+
 }

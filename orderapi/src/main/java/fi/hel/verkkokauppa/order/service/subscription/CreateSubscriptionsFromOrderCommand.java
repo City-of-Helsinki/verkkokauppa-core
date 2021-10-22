@@ -1,11 +1,12 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import org.slf4j.Logger;
@@ -88,7 +89,7 @@ public class CreateSubscriptionsFromOrderCommand {
 		// Price data
 		subscriptionDto.setPriceNet(orderItem.getPriceNet());
 		subscriptionDto.setPriceVat(orderItem.getPriceVat());
-		subscriptionDto.setPriceTotal(orderItem.getRowPriceTotal());
+		subscriptionDto.setPriceGross(orderItem.getPriceGross());
 		// Date data
 		subscriptionDto.setStartDate(orderItem.getStartDate());
 		subscriptionDto.setBillingStartDate(orderItem.getBillingStartDate());

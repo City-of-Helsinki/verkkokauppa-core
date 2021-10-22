@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -64,22 +64,18 @@ public class Order implements Customer, IdentifiableUser {
         this.orderId = orderId;
     }
 
-    @Override
     public String getNamespace() {
         return namespace;
     }
 
-    @Override
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
 
-    @Override
     public String getUser() {
         return user;
     }
 
-    @Override
     public void setUser(String user) {
         this.user = user;
     }

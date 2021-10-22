@@ -48,17 +48,13 @@ public class OrderAccountingService {
     }
 
     public List<OrderAccounting> getOrderAccountings(List<String> orderIds) {
-        List<OrderAccounting> accountings = new ArrayList<>();
+        List<OrderAccounting> accountings = orderAccountingRepository.findByOrderIdIn(orderIds);
 
-        for (String orderId : orderIds) {
-            OrderAccounting accounting = orderAccountingRepository.findByOrderId(orderId);
-
-            if (accounting != null)
-                accountings.add(accounting);
-        }
+        if (!accountings.isEmpty())
+            return accountings;
 
         log.debug("order accountings not found, orderIds: " + orderIds);
-        return accountings;
+        return new ArrayList<OrderAccounting>();
     }
 
 }

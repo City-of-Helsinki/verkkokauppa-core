@@ -1,140 +1,165 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
-import com.jcraft.jsch.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
+import fi.hel.verkkokauppa.common.util.IterableUtils;
+import fi.hel.verkkokauppa.order.api.data.accounting.*;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
-import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
+import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountingExportService {
 
-    public static final int RUNNING_NUMBER_LENGTH = 4;
-
-    private Logger log = LoggerFactory.getLogger(AccountingExportService.class);
-
-    @Value("${sap.sftp.server.url}")
-    private String sftpServerUrl;
-
-    @Value("${sap.sftp.server.username}")
-    private String sftpServerUsername;
-
-    @Value("${sap.sftp.server.password}")
-    private String sftpServerPassword;
-
-    @Value("${ssh.knowhosts.path}")
-    private String sshKnownHostsPath;
+    public static final String VAT_LINE_TEXT = "ALV:n osuus";
+    public static final String VAT_LINE_GL_ACCOUNT = "263200";
+    public static final String INCOME_ENTRY_GL_ACCOUNT = "171810";
+    public static final String INCOME_ENTRY_PROFIT_CENTER = "2923000";
 
     @Autowired
     private AccountingExportDataRepository exportDataRepository;
 
-    @Autowired
-    private AccountingSlipService accountingSlipService;
+    private Logger log = LoggerFactory.getLogger(AccountingExportService.class);
 
+    public AccountingExportDataDto createAccountingExportDataDto(AccountingSlipDto accountingSlip) throws JsonProcessingException {
+        List<AccountingSlipRowDto> originalRows = accountingSlip.getRows();
 
-    public void exportAccountingData(AccountingExportDataDto exportData) {
-        String accountingSlipId = exportData.getAccountingSlipId();
-        AccountingSlip accountingSlip = accountingSlipService.getAccountingSlip(accountingSlipId);
-        AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
+        List<AccountingSlipRowDto> separatedRows = separateVatRows(originalRows);
+        addIncomeEntryRow(originalRows, separatedRows, accountingSlip.getHeaderText());
+        accountingSlip.setRows(separatedRows);
 
-        String senderId = accountingSlipDto.getSenderId();
-        String timestamp = exportData.getTimestamp();
-        String filename = constructAccountingExportFileName(senderId, timestamp);
+        String xml = generateAccountingExportXML(accountingSlip);
+        log.debug("generated accounting export data xml successfully");
 
-        export(exportData.getXml(), filename);
+        String postingDate = accountingSlip.getPostingDate();
+        LocalDate postingDateFormatted = LocalDate.parse(postingDate, DateTimeFormatter.BASIC_ISO_DATE);
 
-        markAsExported(exportData);
+        AccountingExportDataDto exportDataDto = new AccountingExportDataDto(
+                accountingSlip.getAccountingSlipId(),
+                postingDateFormatted.toString(),
+                xml
+        );
+
+        createAccountingExportData(exportDataDto);
+        return exportDataDto;
     }
 
-    public String constructAccountingExportFileName(String senderId, String ExportDataTimestamp) {
-        LocalDate localDate = LocalDate.parse(ExportDataTimestamp);
-        int year = localDate.getYear();
-        int count = exportDataRepository.countAllByExportedStartsWith(Integer.toString(year));
+    private List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows) {
+        List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
 
-        int runningNumber = count + 1;
-        String runningNumberFormatted = String.format("%1$" + RUNNING_NUMBER_LENGTH + "s", runningNumber).replace(' ', '0');
+        for (AccountingSlipRowDto originalRow : originalRows) {
+            String baseAmount = originalRow.getBaseAmount();
 
-        return "KP_IN_" + senderId + "_" + runningNumberFormatted + ".xml";
-    }
+            AccountingSlipRowDto row = new AccountingSlipRowDto(originalRow);
+            row.setAmountInDocumentCurrency(baseAmount);
+            row.setBaseAmount(null);
 
-    public void export(String fileContent, String filename) {
-        if (sftpServerUrl == null || sftpServerUrl.isEmpty()) {
-            log.debug("Not exporting file, server url not set");
-            return;
+            AccountingSlipRowDto vatRow = AccountingSlipRowDto.builder()
+                    .taxCode(originalRow.getTaxCode())
+                    .amountInDocumentCurrency(originalRow.getVatAmount())
+                    .baseAmount(baseAmount)
+                    .lineText(VAT_LINE_TEXT)
+                    .build();
+
+            separatedRows.add(row);
+            separatedRows.add(vatRow);
         }
 
-        ChannelSftp channelSftp = ConnectToChannelSftp();
+        return separatedRows;
+    }
 
-        byte[] strToBytes = fileContent.getBytes();
+    private void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
+        double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
 
-        try (InputStream stream = new ByteArrayInputStream(strToBytes)) {
-            channelSftp.put(stream, filename);
-            channelSftp.disconnect();
+        AccountingSlipRowDto incomeEntryRow = AccountingSlipRowDto.builder()
+                .amountInDocumentCurrency(formatIncomeEntrySum(sum))
+                .lineText(lineText)
+                .glAccount(INCOME_ENTRY_GL_ACCOUNT)
+                .profitCenter(INCOME_ENTRY_PROFIT_CENTER)
+                .build();
 
-            log.info("Exported file [" + filename + "] succesfully");
-        } catch (SftpException | IOException e) {
-            log.debug("Failed to export accounting data");
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("export-accounting-data-failed", "Failed to export accounting data. Transfer failed")
-            );
+        rows.add(incomeEntryRow);
+    }
+
+    public String generateAccountingExportXML(AccountingSlipDto accountingSlip) throws JsonProcessingException {
+        XmlMapper mapper = new XmlMapper();
+        mapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
+        mapper.addMixIn(AccountingSlipDto.class, AccountingSlipMixInDto.class);
+        mapper.addMixIn(AccountingSlipRowDto.class, AccountingSlipRowMixInDto.class);
+
+        AccountingSlipWrapperDto wrapper = new AccountingSlipWrapperDto(accountingSlip);
+
+        return mapper.writeValueAsString(wrapper);
+    }
+
+    public AccountingExportData createAccountingExportData(AccountingExportDataDto dto) {
+        AccountingExportData entity = exportDataRepository.save(new AccountingExportDataTransformer().transformToEntity(dto));
+        log.debug("created new accounting export data, timestamp: " + entity.getTimestamp());
+
+        return entity;
+    }
+
+    public AccountingExportData getAccountingExportData(String accountingSlipId) {
+        Optional<AccountingExportData> exportData = exportDataRepository.findById(accountingSlipId);
+
+        if (exportData.isPresent()) {
+            return exportData.get();
         }
 
+        throw new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("accounting-export-data-not-found-from-backend",
+                        "accounting export data with id [" + accountingSlipId + "]  not found from backend")
+        );
     }
 
-    private ChannelSftp ConnectToChannelSftp() {
-        try {
-            ChannelSftp channelSftp = setupJsch();
-            channelSftp.connect();
-            log.info("Connected to the sftp channel succesfully");
+    public List<AccountingExportData> getAccountingExportDataByTimestamp(String timestamp) {
+        List<AccountingExportData> exportData = exportDataRepository.findAllByTimestamp(timestamp);
 
-            return channelSftp;
-        } catch (JSchException e) {
-            log.debug("Failed to export accounting data. Connection to server failed", e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("export-accounting-data-server-connection-failed",
-                            "Failed to export accounting data. Connection to server failed")
-            );
+        if (exportData != null && !exportData.isEmpty()) {
+            return exportData;
         }
+
+        throw new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("accounting-export-data-not-found-from-backend",
+                        "accounting export data with timestamp [" + timestamp + "]  not found from backend")
+        );
     }
 
-    private ChannelSftp setupJsch() throws JSchException {
-        JSch jsch = new JSch();
+    public List<String> getAccountingExportDataTimestamps() {
+        List<AccountingExportData> exportDatas = IterableUtils.iterableToList(exportDataRepository.findAll());
 
-        log.debug("Connecting to server with username [{}]", sftpServerUsername);
-        Session jschSession = jsch.getSession(sftpServerUsername, sftpServerUrl);
-        jschSession.setPassword(sftpServerPassword);
+        if (exportDatas == null || exportDatas.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-        jsch.setKnownHosts(sshKnownHostsPath);
-
-        jschSession.connect();
-        log.info("Connected to the server succesfully");
-
-        return (ChannelSftp) jschSession.openChannel("sftp");
+        return exportDatas.stream()
+                .map(AccountingExportData::getTimestamp)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
-    private void markAsExported(AccountingExportDataDto exportData) {
-        exportData.setExported(DateTimeUtil.getDate());
+    private String formatIncomeEntrySum(Double sum) {
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
-        exportDataRepository.save(new AccountingExportDataTransformer().transformToEntity(exportData));
-        log.debug("marked accounting exported, accounting slip id: " + exportData.getAccountingSlipId());
+        return "+" + decimalFormat.format(-sum).replace(".", ",");
     }
 
 }
