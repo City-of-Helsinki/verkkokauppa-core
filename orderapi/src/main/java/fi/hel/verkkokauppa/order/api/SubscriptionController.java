@@ -133,18 +133,18 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> getRecurringOrderCardToken(@RequestParam(value = "id") String id) {
+	public ResponseEntity<String> getSubscriptionCardToken(@RequestParam(value = "id") String id) {
 		try {
-			SubscriptionDto recurringOrder = getSubscriptionQuery.getOne(id);
-			String token = recurringOrder.getPaymentMethodToken();
+			SubscriptionDto subscription = getSubscriptionQuery.getOne(id);
+			String token = subscription.getPaymentMethodToken();
 
 			return ResponseEntity.ok().body(token);
 		} catch (Exception e) {
-			log.error("getting payment method token from recurring order with id [" + id + "] failed", e);
+			log.error("getting payment method token from subscription with id [" + id + "] failed", e);
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-get-payment-method-token-from-recurring-order",
-							"getting payment method token from recurring order with id [" + id + "] failed")
+					new Error("failed-to-get-payment-method-token-from-subscription",
+							"getting payment method token from subscription with id [" + id + "] failed")
 			);
 		}
 	}
@@ -166,11 +166,11 @@ public class SubscriptionController {
 
 			return ResponseEntity.ok().build();
 		} catch (Exception e) {
-			log.error("setting payment method token for recurring order with id [" + id + "] failed", e);
+			log.error("setting payment method token for subscription with id [" + id + "] failed", e);
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-set-payment-method-token-for-recurring-order",
-							"setting payment method token for recurring order with id [" + id + "] failed")
+					new Error("failed-to-set-payment-method-token-for-subscription",
+							"setting payment method token for subscription with id [" + id + "] failed")
 			);
 		}
 	}
