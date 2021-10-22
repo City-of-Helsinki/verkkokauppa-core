@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
