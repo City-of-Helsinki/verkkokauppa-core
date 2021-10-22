@@ -5,7 +5,8 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
+import fi.hel.verkkokauppa.payment.logic.CardTokenFetcher;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
@@ -24,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -51,6 +51,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private TokenFetcher tokenFetcher;
+
+    @Autowired
+    private CardTokenFetcher cardTokenFetcher;
 
     @Autowired
     private PaymentContextBuilder paymentContextBuilder;
@@ -169,6 +172,10 @@ public class OnlinePaymentService {
         }
 
         return payment.get();
+    }
+
+    public PaymentCardInfoDto getPaymentCardToken(String paymentToken) {
+        return cardTokenFetcher.getCardToken(paymentToken);
     }
 
     private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token, String paymentId) {
