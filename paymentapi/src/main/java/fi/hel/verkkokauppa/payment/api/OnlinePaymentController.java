@@ -1,7 +1,13 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
@@ -36,6 +42,9 @@ public class OnlinePaymentController {
 
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
+
+	@Autowired
+    private SendEventService sendEventService;
 
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -175,11 +184,31 @@ public class OnlinePaymentController {
 	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
 		if (paymentReturnDto.isValid()) {
 			if (paymentReturnDto.isPaymentPaid()) {
-				service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+				Payment payment = service.getPayment(paymentId);
+				// if not already paid earlier
+				if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
+					service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+					triggerPaymentPaidEvent(payment);
+				} else {
+					log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
+				}
 			} else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
 				service.setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
 			}
 		}
+	}
+
+	private void triggerPaymentPaidEvent(Payment payment) {
+		PaymentMessage paymentMessage = new PaymentMessage(
+				payment.getPaymentId(),
+				payment.getOrderId(),
+				payment.getNamespace(),
+				EventType.PAYMENT_PAID,
+				payment.getTimestamp(),
+				"" // custom event payload
+		);
+		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+		log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
 	}
 
 	private Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
