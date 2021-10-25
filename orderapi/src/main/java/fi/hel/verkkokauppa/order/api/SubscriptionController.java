@@ -2,11 +2,16 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
@@ -34,6 +39,9 @@ public class SubscriptionController {
 
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private SendEventService sendEventService;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
@@ -147,4 +155,20 @@ public class SubscriptionController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}*/
+
+
+	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
+		SubscriptionMessage subscriptionMessage = new SubscriptionMessage(
+				subscription.getId(),
+				null, // TODO the paid order that subscription was created from
+				subscription.getNamespace(),
+				EventType.SUBSCRIPTION_CREATED,
+				null, // TODO now or when the payment was paid
+				"" // custom event payload
+		);
+		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
+		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
+	}
+
+
 }
