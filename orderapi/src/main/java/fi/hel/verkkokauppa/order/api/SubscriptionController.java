@@ -158,14 +158,12 @@ public class SubscriptionController {
 
 
 	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
-		SubscriptionMessage subscriptionMessage = new SubscriptionMessage(
-				subscription.getId(),
-				null, // TODO the paid order that subscription was created from
-				subscription.getNamespace(),
-				EventType.SUBSCRIPTION_CREATED,
-				null, // TODO now or when the payment was paid
-				"" // custom event payload
-		);
+		SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+				.eventType(EventType.SUBSCRIPTION_CREATED)
+				.namespace(subscription.getNamespace())
+				.subscriptionId(subscription.getId())
+				.timestamp(subscription.getCreatedAt().toString()) // TODO check format
+				.build();
 		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}

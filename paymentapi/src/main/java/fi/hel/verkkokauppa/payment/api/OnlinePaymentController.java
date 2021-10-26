@@ -199,14 +199,15 @@ public class OnlinePaymentController {
 	}
 
 	private void triggerPaymentPaidEvent(Payment payment) {
-		PaymentMessage paymentMessage = new PaymentMessage(
-				payment.getPaymentId(),
-				payment.getOrderId(),
-				payment.getNamespace(),
-				EventType.PAYMENT_PAID,
-				payment.getTimestamp(),
-				"" // custom event payload
-		);
+		PaymentMessage paymentMessage = PaymentMessage.builder()
+				.eventType(EventType.PAYMENT_PAID)
+				.namespace(payment.getNamespace())
+				.paymentId(payment.getPaymentId())
+				.orderId(payment.getOrderId())
+				.userId(payment.getUserId())
+				.paymentPaidTimestamp(payment.getTimestamp())
+				.orderType(payment.getPaymentType())
+				.build();
 		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
 		log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
 	}
