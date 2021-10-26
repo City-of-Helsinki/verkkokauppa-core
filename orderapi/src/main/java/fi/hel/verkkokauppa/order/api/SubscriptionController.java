@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
@@ -156,6 +157,10 @@ public class SubscriptionController {
 		}
 	}*/
 
+	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
+		return createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+	}
 
 	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
 		SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
