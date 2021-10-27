@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.events.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -32,16 +31,16 @@ public class PaymentMessageListener {
             topics = "payments",
             groupId="payments",
             containerFactory="paymentsKafkaListenerContainerFactory")
-    private void paymentPaidlistener(PaymentMessage message) {
-        log.info("paymentPaidlistener [{}]", message);
+    private void paymentEventlistener(PaymentMessage message) {
+        log.info("paymentEventlistener [{}]", message);
 
         if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
             log.debug("event type is PAYMENT_PAID");
             paymentPaidAction(message);
         }
-        else if (EventType.PAYMENT_CANCELLED.equals(message.getEventType())) {
-            log.debug("event type is PAYMENT_CANCELLED");
-            paymentCancelledAction(message);
+        else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
+            log.debug("event type is PAYMENT_FAILED");
+            paymentFailedAction(message);
         }
     }
 
@@ -61,8 +60,10 @@ public class PaymentMessageListener {
         }
     }
 
-    private void paymentCancelledAction(PaymentMessage message) {
+    private void paymentFailedAction(PaymentMessage message) {
         // TODO action
+        log.debug("TODO no action yet for PAYMENT_FAILED event");
+
     }
 
 
