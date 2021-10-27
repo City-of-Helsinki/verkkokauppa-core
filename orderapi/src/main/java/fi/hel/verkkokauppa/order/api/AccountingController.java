@@ -27,7 +27,7 @@ public class AccountingController {
     @Autowired
     private AccountingSlipService accountingSlipService;
 
-    @PostMapping(value = "/accounting/create", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/accounting/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountingSlipDto>> createAccountingData() {
         try {
             List<AccountingSlipDto> accountingSlips = accountingSlipService.createAccountingData();
