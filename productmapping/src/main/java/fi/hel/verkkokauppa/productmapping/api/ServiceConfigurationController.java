@@ -113,7 +113,7 @@ public class ServiceConfigurationController {
 
 		StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
 		encryptor.setPassword(salt);
-		String encryptedNamespaceAccessToken = encryptor.encrypt(namespace);
+		String encryptedNamespaceAccessToken = encryptor.encrypt(namespaceAccessToken);
 
 		service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_API_ACCESS_TOKEN, encryptedNamespaceAccessToken, true);
 
