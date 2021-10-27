@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionValidationLogic;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.shared.mapper.ObjectMapper;
 import fi.hel.verkkokauppa.shared.service.DefaultCreateEntityCommand;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,6 +22,9 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 
 	private final SubscriptionMappingLogic subscriptionMappingLogic;
 	private final SubscriptionValidationLogic subscriptionValidationLogic;
+
+	@Autowired
+	private SubscriptionService subscriptionService;
 
 	@Autowired
 	public CreateSubscriptionCommand(
@@ -47,9 +50,17 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 	@Override
 	protected void beforeSave(SubscriptionDto dto, Subscription subscription) {
 		super.beforeSave(dto, subscription);
-
 		subscription.setStatus(SubscriptionStatus.ACTIVE);
-		subscription.setCreatedAt(Instant.now());
+		LocalDateTime createdAt = LocalDateTime.now();
+		subscription.setCreatedAt(createdAt);
+		if (subscription.getSubscriptionId() == null) {
+			subscription.setSubscriptionId(subscriptionService.generateSubscriptionId(
+					dto.getNamespace(),
+					dto.getUser(),
+					dto.getOrderItemId(),
+					createdAt.toString()
+			));
+		}
 
 		// This value should come from orderItems!
 		if (subscription.getStartDate() == null) {

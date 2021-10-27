@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.order.interfaces.Product;
 import fi.hel.verkkokauppa.shared.model.impl.BaseIdentifiableDto;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -15,8 +16,7 @@ import java.util.Set;
 @Getter
 @Setter
 public class SubscriptionDto extends BaseIdentifiableDto implements Serializable, Customer, IdentifiableUser, Product, OrderItemSubscriptionFields {
-
-    private static final long serialVersionUID = 7841002984877186380L;
+    private String subscriptionId;
 
     private String status;
     // Date data
