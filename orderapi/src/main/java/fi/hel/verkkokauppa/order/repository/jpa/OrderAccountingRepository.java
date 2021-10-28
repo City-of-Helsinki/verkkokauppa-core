@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface OrderAccountingRepository extends ElasticsearchRepository<OrderAccounting, String> {
 
-    List<OrderAccounting> findByOrderIdIn(List<String> orderIds);
+    OrderAccounting findByOrderId(String orderId);
 
 }
