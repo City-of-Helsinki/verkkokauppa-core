@@ -69,10 +69,12 @@ public class SubscriptionController {
 	}
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
+	public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
-			final SubscriptionDto subscription = getSubscriptionQuery.getOne(id);
+			final SubscriptionDto subscription = getSubscriptionQuery.getOneValidateByUser(id, userId);
 			return ResponseEntity.ok(subscription);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch(EntityNotFoundException e) {
 			log.error("Exception on getting Subscription order", e);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -89,6 +91,8 @@ public class SubscriptionController {
 
 			final List<SubscriptionDto> subscription = searchSubscriptionQuery.searchActive(criteria);
 			return ResponseEntity.ok(subscription);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("Exception on searching Subscription order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -119,13 +123,15 @@ public class SubscriptionController {
 	@GetMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Set<String>> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
 																	  @RequestParam(value = "userId") String userId) {
-		Order foundOrder = orderService.findByIdValidateByUser(orderId, userId);
 		try {
+			Order foundOrder = orderService.findByIdValidateByUser(orderId, userId);
 			OrderAggregateDto dto = orderService.getOrderWithItems(foundOrder.getOrderId());
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
 
 			return ResponseEntity.status(HttpStatus.CREATED)
 					.body(idList);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("Exception on creating Subscription order from order", e);
 			throw new CommonApiException(
@@ -137,12 +143,14 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> getSubscriptionCardToken(@RequestParam(value = "id") String id) {
+	public ResponseEntity<String> getSubscriptionCardToken(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
-			SubscriptionDto subscription = getSubscriptionQuery.getOne(id);
+			SubscriptionDto subscription = getSubscriptionQuery.getOneValidateByUser(id, userId);
 			String token = subscription.getPaymentMethodToken();
 
 			return ResponseEntity.ok().body(token);
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("getting payment method token from subscription with id [" + id + "] failed", e);
 			throw new CommonApiException(
@@ -156,9 +164,10 @@ public class SubscriptionController {
 	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
 		String subscriptionId = dto.getSubscriptionId();
+		String userId = dto.getUser();
 
 		try {
-			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
+			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOneValidateByUser(subscriptionId, userId);
 			PaymentCardInfoDto paymentCardInfoDto = dto.getPaymentCardInfoDto();
 
 			String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
@@ -169,6 +178,8 @@ public class SubscriptionController {
 			updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
 
 			return ResponseEntity.ok().build();
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch (Exception e) {
 			log.error("setting payment method token for subscription with id [" + subscriptionId + "] failed", e);
 			throw new CommonApiException(
@@ -180,10 +191,12 @@ public class SubscriptionController {
 	}
 
 	@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> cancelSubscription(@PathVariable("id") String id) {
+	public ResponseEntity<Void> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
-			cancelSubscriptionCommand.cancel(id);
+			cancelSubscriptionCommand.cancel(id, userId);
 			return ResponseEntity.ok().build();
+		} catch (CommonApiException cae) {
+			throw cae;
 		} catch(EntityNotFoundException e) {
 			log.error("Exception on cancelling Subscription order", e);
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
