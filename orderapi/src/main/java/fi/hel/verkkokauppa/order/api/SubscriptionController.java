@@ -2,6 +2,11 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
@@ -10,6 +15,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
@@ -41,6 +47,9 @@ public class SubscriptionController {
 
 	@Autowired
 	private OrderService orderService;
+
+	@Autowired
+	private SendEventService sendEventService;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
@@ -212,4 +221,22 @@ public class SubscriptionController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}*/
+
+	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
+		return createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+	}
+
+	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
+		SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+				.eventType(EventType.SUBSCRIPTION_CREATED)
+				.namespace(subscription.getNamespace())
+				.subscriptionId(subscription.getId())
+				.timestamp(subscription.getCreatedAt().toString()) // TODO check format
+				.build();
+		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
+		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
+	}
+
+
 }

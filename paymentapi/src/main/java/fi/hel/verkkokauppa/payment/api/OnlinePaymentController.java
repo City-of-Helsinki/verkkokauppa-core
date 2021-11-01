@@ -2,6 +2,11 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
@@ -37,6 +42,9 @@ public class OnlinePaymentController {
 
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
+
+	@Autowired
+    private SendEventService sendEventService;
 
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -194,14 +202,59 @@ public class OnlinePaymentController {
 	}
 
 	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
+		Payment payment = service.getPayment(paymentId);
+
 		if (paymentReturnDto.isValid()) {
 			if (paymentReturnDto.isPaymentPaid()) {
-				service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+				// if not already paid earlier
+				if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
+					service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+					triggerPaymentPaidEvent(payment);
+				} else {
+					log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
+				}
 			} else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
-				service.setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
+				// if not already cancelled earlier
+				if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
+					service.setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
+					triggerPaymentFailedEvent(payment);
+				} else {
+					log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
+				}
+			} else {
+				log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
 			}
 		}
 	}
+
+	private void triggerPaymentPaidEvent(Payment payment) {
+		PaymentMessage paymentMessage = PaymentMessage.builder()
+				.eventType(EventType.PAYMENT_PAID)
+				.namespace(payment.getNamespace())
+				.paymentId(payment.getPaymentId())
+				.orderId(payment.getOrderId())
+				.userId(payment.getUserId())
+				.paymentPaidTimestamp(DateTimeUtil.getDateTime())
+				.orderType(payment.getPaymentType())
+				.build();
+		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+		log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+	}
+
+	private void triggerPaymentFailedEvent(Payment payment) {
+		PaymentMessage paymentMessage = PaymentMessage.builder()
+				.eventType(EventType.PAYMENT_FAILED)
+				.namespace(payment.getNamespace())
+				.paymentId(payment.getPaymentId())
+				.orderId(payment.getOrderId())
+				.userId(payment.getUserId())
+				//.paymentPaidTimestamp(payment.getTimestamp())
+				.orderType(payment.getPaymentType())
+				.build();
+		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+		log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
+	}
+
 
 	private Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
 		Payment payment = service.getPaymentForOrder(orderId);

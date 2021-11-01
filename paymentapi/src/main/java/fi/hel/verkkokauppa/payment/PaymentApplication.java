@@ -7,7 +7,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 
 @SpringBootApplication
 @EnableElasticsearchRepositories
-@ComponentScan({"fi.hel.verkkokauppa.payment", "fi.hel.verkkokauppa.common.elastic", "fi.hel.verkkokauppa.common.error",})
+@ComponentScan({"fi.hel.verkkokauppa.payment", "fi.hel.verkkokauppa.common.elastic", "fi.hel.verkkokauppa.common.error", "fi.hel.verkkokauppa.common.events"})
 public class PaymentApplication {
 
 	public static void main(String[] args) {
