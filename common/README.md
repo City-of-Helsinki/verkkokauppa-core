@@ -41,6 +41,7 @@ add to Spring application class:
 add to application.properties or environment
 
     elasticsearch.service.url=localhost:9200
+    kafka.client.authentication.enabled=true
     elasticsearch.service.user=
     elasticsearch.service.password=
 
