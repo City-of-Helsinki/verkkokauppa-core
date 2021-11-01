@@ -25,7 +25,7 @@ public class PaymentMessageListener {
     void paymentPaidlistener(PaymentMessage message) {
         log.info("paymentPaidlistener [{}]", message);
 
-        if (EventType.PAYMENT_PAID.equals(message.getType())) {
+        if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
             log.info("event type is PAYMENT_PAID");
             // TODO action
         }
