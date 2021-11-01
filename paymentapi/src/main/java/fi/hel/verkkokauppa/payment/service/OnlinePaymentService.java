@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.service;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
@@ -82,8 +83,8 @@ public class OnlinePaymentService {
             );
         }
 
-        boolean isRecurringOrder = order.getType().equals("subscription");
-        String paymentType = isRecurringOrder ? "subscription" : "order";
+        boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
+        String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
 
         PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
