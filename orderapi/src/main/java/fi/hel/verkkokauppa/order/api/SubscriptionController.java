@@ -18,12 +18,7 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionsFromOrderCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.UpdateSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
 import org.slf4j.Logger;
@@ -33,19 +28,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Set;
 
 @RestController
+@Validated
 @RequestMapping(SubscriptionUrlConstants.SUBSCRIPTION_API_ROOT)
 public class SubscriptionController {
 
@@ -122,7 +113,7 @@ public class SubscriptionController {
 	}
 
 	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromOrder(@RequestBody OrderAggregateDto dto) {
+	public ResponseEntity<Set<String>> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
 		try {
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
 
