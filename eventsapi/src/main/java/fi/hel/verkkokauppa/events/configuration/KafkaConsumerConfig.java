@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.security.plain.PlainLoginModule;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,12 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    @Value("${kafka.user}")
+    private String kafkaUser;
+
+    @Value("${kafka.password}")
+    private String kafkaPassword;
+
     // default consumer string key, string value
 
     @Bean
@@ -32,6 +39,11 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        props.put("security.protocol", "SASL_PLAINTEXT");
+        props.put("sasl.mechanism", "PLAIN");
+        props.put("sasl.jaas.config", PlainLoginModule.class.getName() + " required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
+
         return props;
     }
 

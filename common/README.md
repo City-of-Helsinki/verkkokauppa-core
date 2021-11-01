@@ -26,6 +26,8 @@ add to Spring application class:
 add to application.properties or environment
 
     spring.kafka.bootstrap-servers=localhost:9092
+    kafka.user=
+    kafka.password=
 
 ### Connecting to Elasticsearch
 
