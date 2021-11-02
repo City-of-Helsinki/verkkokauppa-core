@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.shared.mapper.ObjectMapper;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.Validator;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Service
 public class UpdateSubscriptionCommand extends DefaultUpdateEntityCommand<Subscription, SubscriptionDto, String> {
@@ -29,6 +31,6 @@ public class UpdateSubscriptionCommand extends DefaultUpdateEntityCommand<Subscr
 	protected void beforeSave(SubscriptionDto dto, Subscription subscription) {
 		super.beforeSave(dto, subscription);
 
-		subscription.setUpdatedAt(Instant.now());
+		subscription.setUpdatedAt(LocalDateTime.now());
 	}
 }
