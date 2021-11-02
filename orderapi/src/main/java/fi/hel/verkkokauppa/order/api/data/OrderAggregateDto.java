@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api.data;
 import lombok.*;
 
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +17,7 @@ public class OrderAggregateDto {
     @NotNull(message = "order required")
     private OrderDto order;
 
-    @NotNull(message = "items required")
+    @Size(min = 1, message = "items required")
     private List<OrderItemDto> items = new ArrayList<>();
 
 }

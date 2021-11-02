@@ -9,5 +9,6 @@ public class UpdatePaymentCardInfoRequest {
 
 	private String subscriptionId;
 	private PaymentCardInfoDto paymentCardInfoDto;
+	private String user;
 
 }

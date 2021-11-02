@@ -25,7 +25,7 @@ public class SubscriptionMessageListener {
     void subscriptionCreatedlistener(SubscriptionMessage message) {
         log.info("subscriptionCreatedlistener [{}]", message);
 
-        if (EventType.SUBSCRIPTION_CREATED.equals(message.getType())) {
+        if (EventType.SUBSCRIPTION_CREATED.equals(message.getEventType())) {
             log.info("event type is SUBSCRIPTION_CREATED");
             // TODO action
         }

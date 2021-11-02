@@ -4,15 +4,18 @@ import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.shared.model.Identifiable;
 import fi.hel.verkkokauppa.shared.model.impl.BaseVersionedEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -20,9 +23,15 @@ import java.util.Set;
 @Getter
 @Setter
 @Document(indexName = "subscriptions")
-public class Subscription extends BaseVersionedEntity implements Serializable, Customer, IdentifiableUser, OrderItemSubscriptionFields {
+public class Subscription implements Identifiable, Customer, IdentifiableUser, OrderItemSubscriptionFields {
+	@Id
+	String subscriptionId;
 
-	private static final long serialVersionUID = -8963491435675971922L;
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	private LocalDateTime createdAt;
+
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	private LocalDateTime updatedAt;
 
 	@Field(type = FieldType.Text) // TODO: keyword?
 	private String status;
@@ -128,5 +137,15 @@ public class Subscription extends BaseVersionedEntity implements Serializable, C
 
 	public void addRelatedOrderId(String id) {
 		relatedOrderIds.add(id);
+	}
+
+	@Override
+	public void setId(String id) {
+		this.subscriptionId = id;
+	}
+
+	@Override
+	public String getId() {
+		return this.subscriptionId;
 	}
 }

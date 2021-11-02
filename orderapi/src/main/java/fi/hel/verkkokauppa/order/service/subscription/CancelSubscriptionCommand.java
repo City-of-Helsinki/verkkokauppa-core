@@ -17,18 +17,21 @@ import java.util.Optional;
 public class CancelSubscriptionCommand extends BaseServiceOperation {
 
 	private final SubscriptionRepository repository;
+	private final GetSubscriptionQuery getSubscriptionQuery;
 
 	@Autowired
 	public CancelSubscriptionCommand(
 			SubscriptionRepository repository,
+			GetSubscriptionQuery getSubscriptionQuery,
 			@Qualifier("beanValidator") Validator validator
 	) {
 		super(validator);
 		this.repository = repository;
+		this.getSubscriptionQuery = getSubscriptionQuery;
 	}
 
-	public void cancel(String id) {
-		final Subscription subscription = initSubscription(id);
+	public void cancel(String id, String userId) {
+		final Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(id, userId);
 
 		checkAbilityToCancelSubscription(subscription);
 		doCancel(subscription);
