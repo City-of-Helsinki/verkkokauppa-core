@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.security.plain.PlainLoginModule;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,8 +46,10 @@ public class KafkaConsumerConfig {
 
         if (kafkaClientAuthenticationEnabled) {
             props.put("security.protocol", "SASL_PLAINTEXT");
-            props.put("sasl.mechanism", "PLAIN");
-            props.put("sasl.jaas.config", PlainLoginModule.class.getName() + " required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
+            props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
+            props.put(SaslConfigs.SASL_JAAS_CONFIG,
+                    "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + kafkaUser
+                            + "\" password=\"" + kafkaPassword + "\";");
         }
 
         return props;
