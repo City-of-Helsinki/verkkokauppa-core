@@ -227,7 +227,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	private void triggerPaymentPaidEvent(Payment payment) {
+	protected void triggerPaymentPaidEvent(Payment payment) {
 		PaymentMessage paymentMessage = PaymentMessage.builder()
 				.eventType(EventType.PAYMENT_PAID)
 				.namespace(payment.getNamespace())

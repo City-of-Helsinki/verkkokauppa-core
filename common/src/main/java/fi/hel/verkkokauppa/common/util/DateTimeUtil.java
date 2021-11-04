@@ -34,5 +34,14 @@ public class DateTimeUtil {
 
         return dateWithCommonFormatting;
     }
-    
+
+    public static LocalDateTime getFormattedDateTime() {
+        return fromFormattedString(getDateTime());
+    }
+
+    public static LocalDateTime fromFormattedString(String localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        return LocalDateTime.parse(localDateTime, formatter);
+    }
+
 }
