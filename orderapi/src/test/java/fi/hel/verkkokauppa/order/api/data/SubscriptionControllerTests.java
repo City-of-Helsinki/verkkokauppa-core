@@ -56,6 +56,7 @@ public class SubscriptionControllerTests extends DummyData {
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
     @Test
+    @Ignore
     public void testCreateWithItems() {
         Order order = generateDummyOrder();
 
