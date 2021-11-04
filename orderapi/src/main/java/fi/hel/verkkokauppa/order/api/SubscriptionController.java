@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -49,7 +50,11 @@ public class SubscriptionController {
 	private OrderService orderService;
 
 	@Autowired
+	private SubscriptionService subscriptionService;
+
+	@Autowired
 	private SendEventService sendEventService;
+
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
@@ -224,7 +229,19 @@ public class SubscriptionController {
 
 	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
-		return createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		afterPaymentEventActions(subscriptionsFromOrderId, message);
+		return subscriptionsFromOrderId;
+	}
+
+	public void afterPaymentEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
+		Objects.requireNonNull(subscriptionsFromOrderId.getBody()).forEach(subscriptionId -> {
+			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
+
+			orderService.setOrderStartAndEndDate(order, subscription, message);
+			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
+		});
 	}
 
 	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
