@@ -64,6 +64,7 @@ public class OnlinePaymentControllerTests {
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     @Test
+    @Ignore
     public void testUpdatePaymentStatus() throws JsonProcessingException, InterruptedException {
         payment = TestPaymentCreator.getDummyPayment("5e9c9784-4856-354b-8e2a-2d89de749249", "dummy_user", "venepaikat");
         //paymentRepository.save(payment);
