@@ -51,7 +51,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String priceVat;
     private String priceGross;
     // Relations data
-    private Set<String> relatedOrderIds; // "Main" subscription contains all orders created from it.
+    private String orderId;
 
 //    private LocalDateTime nextDate; // TODO needed?
 //    private Integer failureCount; // TODO needed?

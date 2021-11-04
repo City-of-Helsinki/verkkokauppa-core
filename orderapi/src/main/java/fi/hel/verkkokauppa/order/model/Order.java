@@ -20,30 +20,43 @@ import java.time.LocalDateTime;
 public class Order implements Customer, IdentifiableUser {
     @Id
     String orderId;
+
+    @Field(type = FieldType.Text)
+    String subscriptionId;
+
     @Field(type = FieldType.Keyword)
     String namespace;
+
     @Field(type = FieldType.Keyword)
     String user;
+
     @Field(type = FieldType.Text)
     String createdAt;
+
     @Field(type = FieldType.Text)
     String status;
+
     @Field(type = FieldType.Text)
     String type;
 
     @Field(type = FieldType.Text)
     String customerFirstName;
+
     @Field(type = FieldType.Text)
     String customerLastName;
+
     @Field(type = FieldType.Text)
     String customerEmail;
+
     @Field(type = FieldType.Text)
     String customerPhone;
 
     @Field(type = FieldType.Text)
     String priceNet;
+
     @Field(type = FieldType.Text)
     String priceVat;
+
     @Field(type = FieldType.Text)
     String priceTotal;
 
