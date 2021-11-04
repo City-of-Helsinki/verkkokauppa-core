@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 @RestController
 public class OnlinePaymentController {
 
@@ -228,13 +230,15 @@ public class OnlinePaymentController {
 	}
 
 	protected void triggerPaymentPaidEvent(Payment payment) {
+		String now = DateTimeUtil.getDateTime();
 		PaymentMessage paymentMessage = PaymentMessage.builder()
 				.eventType(EventType.PAYMENT_PAID)
+				.eventTimestamp(now)
 				.namespace(payment.getNamespace())
 				.paymentId(payment.getPaymentId())
 				.orderId(payment.getOrderId())
 				.userId(payment.getUserId())
-				.paymentPaidTimestamp(DateTimeUtil.getDateTime())
+				.paymentPaidTimestamp(now)
 				.orderType(payment.getPaymentType())
 				.build();
 		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);

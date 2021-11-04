@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PaymentMessage implements EventMessage {
     public String eventType;
+    public String eventTimestamp;
     public String namespace;
 
     public String paymentId;
