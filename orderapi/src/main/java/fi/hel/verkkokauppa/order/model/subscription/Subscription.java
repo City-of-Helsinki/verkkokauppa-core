@@ -27,6 +27,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Id
 	String subscriptionId;
 
+	@Field(type = FieldType.Text)
+	private String orderId;
+
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	private LocalDateTime createdAt;
 
@@ -111,9 +114,6 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 //	@Field(type = FieldType.Date, format = DateFormat.date)
 //	private LocalDate paidThroughDate;
 
-	@Field(type = FieldType.Auto)
-	private Set<String> relatedOrderIds;
-
 	//	@Field(type = FieldType.Integer)
 	//	private Integer failureCount;// TODO needed?
 
@@ -133,10 +133,6 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 //		if (getNextDate() == null) {
 //			setStatus(Status.DONE);
 //		}
-	}
-
-	public void addRelatedOrderId(String id) {
-		relatedOrderIds.add(id);
 	}
 
 	@Override
