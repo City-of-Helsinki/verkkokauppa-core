@@ -29,7 +29,7 @@ public class PaymentMessageListener {
 
     @KafkaListener(
             topics = "payments",
-            groupId="payments",
+            groupId="events-api",
             containerFactory="paymentsKafkaListenerContainerFactory")
     private void paymentEventlistener(PaymentMessage message) {
         log.info("paymentEventlistener [{}]", message);
