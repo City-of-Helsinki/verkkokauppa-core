@@ -38,6 +38,7 @@ public class KafkaProducerConfig {
 
         if (kafkaClientAuthenticationEnabled) {
             props.put("security.protocol", "SASL_PLAINTEXT");
+            props.put(SaslConfigs.SASL_ENABLED_MECHANISMS, "SCRAM-SHA-512");
             props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
             props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
 
