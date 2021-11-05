@@ -36,7 +36,7 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 
         if (kafkaClientAuthenticationEnabled) {
-            props.put("security.protocol", "SASL_PLAINTEXT");
+            props.put("security.protocol", "PLAINTEXT");
             props.put("sasl.mechanism", "PLAIN");
             props.put("sasl.jaas.config", PlainLoginModule.class.getName() + " required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
         }
