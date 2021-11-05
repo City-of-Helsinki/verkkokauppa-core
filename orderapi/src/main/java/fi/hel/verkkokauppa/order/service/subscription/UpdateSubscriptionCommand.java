@@ -31,6 +31,6 @@ public class UpdateSubscriptionCommand extends DefaultUpdateEntityCommand<Subscr
 	protected void beforeSave(SubscriptionDto dto, Subscription subscription) {
 		super.beforeSave(dto, subscription);
 
-		subscription.setUpdatedAt(LocalDateTime.now());
+		subscription.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 	}
 }

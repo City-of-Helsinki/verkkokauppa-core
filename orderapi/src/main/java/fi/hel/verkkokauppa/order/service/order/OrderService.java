@@ -2,15 +2,18 @@ package fi.hel.verkkokauppa.order.service.order;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
+import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,6 +45,8 @@ public class OrderService {
     @Autowired
     private OrderTransformerUtils orderTransformerUtils;
 
+    @Autowired
+    private NextDateCalculator nextDateCalculator;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -179,5 +186,29 @@ public class OrderService {
         }
 
         return order;
+    }
+
+    /**
+     * Order start date = Subscription end date or
+     * if the Subscription end date does not exist then the time of payment
+     */
+    public void setOrderStartAndEndDate(Order order, Subscription subscription, PaymentMessage message) {
+
+        LocalDateTime startDate;
+        if (subscription.getEndDate() == null) {
+            startDate = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
+        } else {
+            startDate = subscription.getEndDate();
+        }
+
+        order.setStartDate(startDate);
+
+        // Order end date = start date + subscription cycle eg month
+        order.setEndDate(nextDateCalculator.calculateNextDateTime(
+                startDate,
+                subscription.getPeriodUnit(),
+                subscription.getPeriodFrequency())
+        );
+        orderRepository.save(order);
     }
 }
