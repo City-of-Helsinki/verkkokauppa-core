@@ -8,6 +8,8 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.common.util.IterableUtils;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
@@ -224,7 +226,30 @@ public class SubscriptionController {
 
 	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
-		return createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		ResponseEntity<Set<String>> response = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+
+		Set<String> subscriptionIds = response.getBody();
+
+		if (IterableUtils.isNotEmpty(subscriptionIds)) {
+			for (String subscriptionId : subscriptionIds) {
+				updateCardInfoToSubscription(subscriptionId, message);
+			}
+		}
+
+		return response;
+	}
+
+	private void updateCardInfoToSubscription(String subscriptionId, PaymentMessage message) {
+		if (StringUtils.isNotEmpty(message.getCardToken())) {
+			PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
+					message.getCardToken(),
+					message.getCardTokenExpYear(),
+					message.getCardTokenExpMonth()
+			);
+
+			UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
+			setSubscriptionCardToken(request);
+		}
 	}
 
 	private void triggerSubscriptionCreatedEvent(Subscription subscription) {

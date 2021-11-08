@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -228,15 +229,27 @@ public class OnlinePaymentController {
 	}
 
 	private void triggerPaymentPaidEvent(Payment payment) {
-		PaymentMessage paymentMessage = PaymentMessage.builder()
+		PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
 				.eventType(EventType.PAYMENT_PAID)
 				.namespace(payment.getNamespace())
 				.paymentId(payment.getPaymentId())
 				.orderId(payment.getOrderId())
 				.userId(payment.getUserId())
 				.paymentPaidTimestamp(DateTimeUtil.getDateTime())
-				.orderType(payment.getPaymentType())
-				.build();
+				.orderType(payment.getPaymentType());
+
+		if (PaymentType.CREDIT_CARDS.equalsIgnoreCase(payment.getPaymentMethod())) {
+			PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId()).getBody();
+
+			if (paymentCardInfo != null) {
+				paymentMessageBuilder
+						.cardToken(paymentCardInfo.getCardToken())
+						.cardTokenExpYear(paymentCardInfo.getExpYear())
+						.cardTokenExpMonth(paymentCardInfo.getExpMonth());
+			}
+		}
+
+		PaymentMessage paymentMessage = paymentMessageBuilder.build();
 		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
 		log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
 	}
