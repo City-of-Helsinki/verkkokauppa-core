@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.events.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -9,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 
@@ -31,16 +34,21 @@ public class PaymentMessageListener {
             topics = "payments",
             groupId="events-api",
             containerFactory="paymentsKafkaListenerContainerFactory")
-    private void paymentEventlistener(PaymentMessage message) {
-        log.info("paymentEventlistener [{}]", message);
+    private void paymentEventlistener(String jsonMessage) {
+        try {
+            log.info("paymentEventlistener [{}]", jsonMessage);
+            PaymentMessage message = objectMapper.readValue(jsonMessage, PaymentMessage.class);
 
-        if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
-            log.debug("event type is PAYMENT_PAID");
-            paymentPaidAction(message);
-        }
-        else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
-            log.debug("event type is PAYMENT_FAILED");
-            paymentFailedAction(message);
+            if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
+                log.debug("event type is PAYMENT_PAID");
+                paymentPaidAction(message);
+            }
+            else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
+                log.debug("event type is PAYMENT_FAILED");
+                paymentFailedAction(message);
+            }
+        } catch (Exception e) {
+            log.error("handling listened payments event failed, jsonMessage: " + jsonMessage, e);
         }
     }
 
