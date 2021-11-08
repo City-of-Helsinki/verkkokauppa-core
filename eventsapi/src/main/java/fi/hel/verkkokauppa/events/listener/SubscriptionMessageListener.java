@@ -33,7 +33,7 @@ public class SubscriptionMessageListener {
             topics = "subscriptions",
             groupId="events-api",
             containerFactory="subscriptionsKafkaListenerContainerFactory")
-    void subscriptionCreatedlistener(String jsonMessage) {
+    void subscriptionEventlistener(String jsonMessage) {
         try {
             log.info("subscriptionCreatedlistener [{}]", jsonMessage);
             SubscriptionMessage message = objectMapper.readValue(jsonMessage, SubscriptionMessage.class);
