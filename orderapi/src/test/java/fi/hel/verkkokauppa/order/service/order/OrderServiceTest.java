@@ -41,8 +41,6 @@ class OrderServiceTest extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private NextDateCalculator nextDateCalculator;
     private Order foundOrder;
     private Subscription foundSubscription;
 
