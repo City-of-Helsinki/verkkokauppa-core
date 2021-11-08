@@ -121,12 +121,12 @@ public class SubscriptionController {
 	}
 
 	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
+	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
 		try {
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
+			SubscriptionIdsDto idListDto = SubscriptionIdsDto.builder().subscriptionIds(idList).build();
 
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(idList);
+			return ResponseEntity.status(HttpStatus.CREATED).body(idListDto);
 		} catch (Exception e) {
 			log.error("Exception on creating Subscription order from order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -134,15 +134,15 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
+	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
 																	  @RequestParam(value = "userId") String userId) {
 		try {
 			Order foundOrder = orderService.findByIdValidateByUser(orderId, userId);
 			OrderAggregateDto dto = orderService.getOrderWithItems(foundOrder.getOrderId());
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
+			SubscriptionIdsDto idListDto = SubscriptionIdsDto.builder().subscriptionIds(idList).build();
 
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(idList);
+			return ResponseEntity.status(HttpStatus.CREATED).body(idListDto);
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
@@ -237,14 +237,13 @@ public class SubscriptionController {
 	public ResponseEntity<SubscriptionIdsDto> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
 		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 
-		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
-		afterPaymentPaidEventActions(subscriptionsFromOrderId, message);
-		SubscriptionIdsDto dto = SubscriptionIdsDto.builder().subscriptionIds(subscriptionsFromOrderId.getBody()).build();
+		SubscriptionIdsDto dto = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId()).getBody();
+		afterPaymentPaidEventActions(dto.getSubscriptionIds(), message);
 		return ResponseEntity.ok().body(dto);
 	}
 
-	public void afterPaymentPaidEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
-		Objects.requireNonNull(subscriptionsFromOrderId.getBody()).forEach(subscriptionId -> {
+	public void afterPaymentPaidEventActions(Set<String> subscriptionsFromOrderId, PaymentMessage message) {
+		Objects.requireNonNull(subscriptionsFromOrderId).forEach(subscriptionId -> {
 			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
 
