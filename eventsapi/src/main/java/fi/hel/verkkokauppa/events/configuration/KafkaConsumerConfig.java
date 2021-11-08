@@ -75,12 +75,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, PaymentMessage> paymentsConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "payments");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(PaymentMessage.class));
     }
@@ -97,12 +93,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, SubscriptionMessage> subscriptionsConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "subscriptions");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(SubscriptionMessage.class));
     }
@@ -119,12 +111,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, OrderMessage> ordersConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "orders");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(OrderMessage.class));
     }

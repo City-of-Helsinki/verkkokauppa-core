@@ -20,7 +20,7 @@ public class SubscriptionMessageListener {
 
     @KafkaListener(
             topics = "subscriptions",
-            groupId="subscriptions",
+            groupId="events-api",
             containerFactory="subscriptionsKafkaListenerContainerFactory")
     void subscriptionCreatedlistener(SubscriptionMessage message) {
         log.info("subscriptionCreatedlistener [{}]", message);
