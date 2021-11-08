@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.events.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
@@ -54,18 +55,34 @@ public class PaymentMessageListener {
 
     private void paymentPaidAction(PaymentMessage message) {
         try {
-            //read target url to call from env
-            String url = env.getRequiredProperty("subscription.service.url");
-            log.debug("subscription.service.url is: " + url);
+            String orderType = message.getOrderType();
 
-            //format payload, message to json string conversion
-            String body = objectMapper.writeValueAsString(message);
-
-            //send to target url
-            restServiceClient.makePostCall(url, body);
+            if (OrderType.SUBSCRIPTION.equals(orderType)) {
+                callSubscriptionApi(message);
+            } else if (OrderType.ORDER.equals(orderType)) {
+                callOrderApi(message);
+            }
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
         }
+    }
+
+    private void callSubscriptionApi(PaymentMessage message) throws Exception {
+        //read target url to call from env
+        String service = env.getRequiredProperty("order.service.url");
+        String path = "/subscription/create-from-payment-event";
+        String url = service + path;
+        log.debug("create subscription from payment message url: " + url);
+
+        //format payload, message to json string conversion
+        String body = objectMapper.writeValueAsString(message);
+
+        //send to target url
+        restServiceClient.makePostCall(url, body);
+    }
+
+    private void callOrderApi(PaymentMessage message) throws Exception {
+        // TODO
     }
 
     private void paymentFailedAction(PaymentMessage message) {
