@@ -8,7 +8,6 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
-import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
@@ -179,6 +178,10 @@ public class SubscriptionController {
 
 	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
+		return setSubscriptionCardTokenInternal(dto, true);
+	}
+
+	private ResponseEntity<Void> setSubscriptionCardTokenInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
 		String subscriptionId = dto.getSubscriptionId();
 		String userId = dto.getUser();
 
@@ -186,9 +189,13 @@ public class SubscriptionController {
 			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOneValidateByUser(subscriptionId, userId);
 			PaymentCardInfoDto paymentCardInfoDto = dto.getPaymentCardInfoDto();
 
-			String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
+			if (encryptToken) {
+				String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
+				subscriptionDto.setPaymentMethodToken(encryptedToken);
+			} else {
+				subscriptionDto.setPaymentMethodToken(paymentCardInfoDto.getCardToken());
+			}
 
-			subscriptionDto.setPaymentMethodToken(encryptedToken);
 			subscriptionDto.setPaymentMethodExpirationYear(paymentCardInfoDto.getExpYear());
 			subscriptionDto.setPaymentMethodExpirationMonth(paymentCardInfoDto.getExpMonth());
 			updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
@@ -249,15 +256,16 @@ public class SubscriptionController {
 	}
 
 	private void updateCardInfoToSubscription(String subscriptionId, PaymentMessage message) {
-		if (StringUtils.isNotEmpty(message.getCardToken())) {
+		if (StringUtils.isNotEmpty(message.getEncryptedCardToken())) {
 			PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
-					message.getCardToken(),
+					message.getEncryptedCardToken(),
 					message.getCardTokenExpYear(),
 					message.getCardTokenExpMonth()
 			);
 
 			UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
-			setSubscriptionCardToken(request);
+			// Token is already encrypted in message
+			setSubscriptionCardTokenInternal(request, false);
 		}
 	}
 

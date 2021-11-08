@@ -20,7 +20,7 @@ public class PaymentMessage implements EventMessage {
     public String paymentPaidTimestamp;
     public String orderType;
 
-    public String cardToken;
+    public String encryptedCardToken;
     public Short cardTokenExpYear;
     public Byte cardTokenExpMonth;
 

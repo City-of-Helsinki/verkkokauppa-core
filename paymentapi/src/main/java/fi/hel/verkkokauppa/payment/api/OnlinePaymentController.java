@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
@@ -21,6 +22,7 @@ import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,14 +32,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
-
 @RestController
 public class OnlinePaymentController {
 
 	private Logger log = LoggerFactory.getLogger(OnlinePaymentController.class);
 
-    @Autowired
+	@Value("${payment.card_token.encryption.password}")
+	private String cardTokenEncryptionPassword;
+
+	@Autowired
     private OnlinePaymentService service;
 
 	@Autowired
@@ -247,8 +250,10 @@ public class OnlinePaymentController {
 			PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId()).getBody();
 
 			if (paymentCardInfo != null) {
+				String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfo.getCardToken(), cardTokenEncryptionPassword);
+
 				paymentMessageBuilder
-						.cardToken(paymentCardInfo.getCardToken())
+						.encryptedCardToken(encryptedToken)
 						.cardTokenExpYear(paymentCardInfo.getExpYear())
 						.cardTokenExpMonth(paymentCardInfo.getExpMonth());
 			}
