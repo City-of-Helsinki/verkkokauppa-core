@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.common.events.message;
 
-import fi.hel.verkkokauppa.common.events.message.EventMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +19,9 @@ public class PaymentMessage implements EventMessage {
     public String userId;
     public String paymentPaidTimestamp;
     public String orderType;
+
+    public String encryptedCardToken;
+    public Short cardTokenExpYear;
+    public Byte cardTokenExpMonth;
 
 }
