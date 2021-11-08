@@ -7,13 +7,11 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
+import fi.hel.verkkokauppa.order.api.data.subscription.*;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -226,24 +224,26 @@ public class SubscriptionController {
 		}
 	}
 
-	/*@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> updateSubscriptionOrder(@PathVariable("id") String id, @RequestBody SubscriptionOrderDto dto) {
-		try {
-			updateSubscriptionOrderCommand.update(id, dto);
-			return ResponseEntity.ok().build();
-		} catch(EntityNotFoundException e) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		}
-	}*/
 
-	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
-		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
-		afterPaymentEventActions(subscriptionsFromOrderId, message);
-		return subscriptionsFromOrderId;
+	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+
+		// TODO
+		return null;
 	}
 
-	public void afterPaymentEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
+	@PostMapping(value = "/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<SubscriptionIdsDto> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
+		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+
+		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		afterPaymentPaidEventActions(subscriptionsFromOrderId, message);
+		SubscriptionIdsDto dto = SubscriptionIdsDto.builder().subscriptionIds(subscriptionsFromOrderId.getBody()).build();
+		return ResponseEntity.ok().body(dto);
+	}
+
+	public void afterPaymentPaidEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
 		Objects.requireNonNull(subscriptionsFromOrderId.getBody()).forEach(subscriptionId -> {
 			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
@@ -252,6 +252,8 @@ public class SubscriptionController {
 			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
 
 			updateCardInfoToSubscription(subscriptionId, message);
+
+			triggerSubscriptionCreatedEvent(subscription);
 		});
 	}
 
@@ -274,7 +276,7 @@ public class SubscriptionController {
 				.eventType(EventType.SUBSCRIPTION_CREATED)
 				.namespace(subscription.getNamespace())
 				.subscriptionId(subscription.getId())
-				.timestamp(subscription.getCreatedAt().toString()) // TODO check format
+				.timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
 				.build();
 		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
