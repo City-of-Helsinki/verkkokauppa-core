@@ -1,9 +1,34 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
-import java.lang.reflect.Field;
-import java.util.List;
+import fi.hel.verkkokauppa.order.api.OrderController;
+import fi.hel.verkkokauppa.order.api.SubscriptionController;
+import fi.hel.verkkokauppa.order.api.data.DummyData;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
-public class TestUtils {
+import java.lang.reflect.Field;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+@Component
+public class TestUtils extends DummyData{
+
+    @Autowired
+    private OrderTransformerUtils orderTransformerUtils;
+
+    @Autowired
+    private OrderController orderController;
+
+    @Autowired
+    private SubscriptionController subscriptionController;
 
     /**
      * Exclude field names by providing the field name as a string.
@@ -37,5 +62,29 @@ public class TestUtils {
             }
         }
         return false;
+    }
+
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount){
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.get(0).setPeriodFrequency(periodFrequency);
+        orderItems.get(0).setPeriodUnit(periodUnit);
+        orderItems.get(0).setPeriodCount(periodCount);
+        orderItems.get(0).setBillingStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setPriceGross("124");
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<Set<String>> createSubscriptions(ResponseEntity<OrderAggregateDto> response){
+        return subscriptionController.createSubscriptionsFromOrder(response.getBody());
     }
 }

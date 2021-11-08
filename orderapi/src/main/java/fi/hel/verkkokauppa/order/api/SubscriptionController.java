@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -51,7 +52,11 @@ public class SubscriptionController {
 	private OrderService orderService;
 
 	@Autowired
+	private SubscriptionService subscriptionService;
+
+	@Autowired
 	private SendEventService sendEventService;
+
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
@@ -226,17 +231,21 @@ public class SubscriptionController {
 
 	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
-		ResponseEntity<Set<String>> response = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
+		afterPaymentEventActions(subscriptionsFromOrderId, message);
+		return subscriptionsFromOrderId;
+	}
 
-		Set<String> subscriptionIds = response.getBody();
+	public void afterPaymentEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
+		Objects.requireNonNull(subscriptionsFromOrderId.getBody()).forEach(subscriptionId -> {
+			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
 
-		if (IterableUtils.isNotEmpty(subscriptionIds)) {
-			for (String subscriptionId : subscriptionIds) {
-				updateCardInfoToSubscription(subscriptionId, message);
-			}
-		}
+			orderService.setOrderStartAndEndDate(order, subscription, message);
+			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
 
-		return response;
+			updateCardInfoToSubscription(subscriptionId, message);
+		});
 	}
 
 	private void updateCardInfoToSubscription(String subscriptionId, PaymentMessage message) {
@@ -262,6 +271,5 @@ public class SubscriptionController {
 		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}
-
 
 }
