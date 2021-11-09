@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -84,7 +85,7 @@ public class TestUtils extends DummyData{
         return orderController.createWithItems(orderAggregateDto);
     }
 
-    public ResponseEntity<Set<String>> createSubscriptions(ResponseEntity<OrderAggregateDto> response){
+    public ResponseEntity<SubscriptionIdsDto> createSubscriptions(ResponseEntity<OrderAggregateDto> response){
         return subscriptionController.createSubscriptionsFromOrder(response.getBody());
     }
 }
