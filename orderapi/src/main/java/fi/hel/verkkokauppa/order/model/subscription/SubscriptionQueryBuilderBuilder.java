@@ -31,6 +31,11 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 			qb.must(QueryBuilders.termQuery("namespace", criteria.getNamespace()));
 		}
 
+		if (criteria.getEndDateBefore() != null) {
+			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("endDate").lt(criteria.getEndDateBefore());
+			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
+		}
+
 		return qb;
 	}
 }

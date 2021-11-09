@@ -31,6 +31,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -44,6 +45,8 @@ public class SubscriptionController {
 	private String cardTokenEncryptionPassword;
 
 	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
+
+	public static final int SUBSCRIPTION_RENEWAL_CHECK_THRESHOLD_DAYS = 7;
 
 	@Autowired
 	private OrderService orderService;
@@ -228,8 +231,24 @@ public class SubscriptionController {
 	public ResponseEntity<Void> checkRenewals() {
 		log.debug("Checking renewals...");
 
-		// TODO
+		List<SubscriptionDto> renewableSubscriptions = getRenewableSubscriptions();
+
 		return null;
+	}
+
+	private List<SubscriptionDto> getRenewableSubscriptions() {
+		LocalDate currentDate = LocalDate.now();
+		LocalDate validityCheckDate = currentDate.plusDays(SUBSCRIPTION_RENEWAL_CHECK_THRESHOLD_DAYS);
+		log.debug("validityCheckDate: {}", validityCheckDate);
+
+		SubscriptionCriteria criteria = new SubscriptionCriteria();
+		criteria.setStatus(SubscriptionStatus.ACTIVE);
+		criteria.setEndDateBefore(validityCheckDate);
+
+		final List<SubscriptionDto> subscriptions = searchSubscriptionQuery.searchActive(criteria);
+		log.debug("renewable subscriptions: {}", subscriptions);
+
+		return subscriptions;
 	}
 
 	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
