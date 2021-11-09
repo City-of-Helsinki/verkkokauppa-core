@@ -115,6 +115,7 @@ public class SubscriptionControllerTests extends DummyData {
         Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
         // Order metas succesfully copied to subscription_item_metas
         Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
+        Assert.assertEquals(subscriptions.get(0).getOrderId(), Objects.requireNonNull(response.getBody()).getOrder().getOrderId());
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
