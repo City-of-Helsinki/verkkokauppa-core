@@ -224,6 +224,13 @@ public class SubscriptionController {
 		}
 	}
 
+	@GetMapping(value = "/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> checkRenewals() {
+		log.debug("Checking renewals...");
+
+		// TODO
+		return null;
+	}
 
 	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
