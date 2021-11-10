@@ -50,6 +50,9 @@ public class SubscriptionController {
 	@Value("${subscription.renewal.check.threshold.days}")
 	private int subscriptionRenewalCheckThresholdDays;
 
+	@Value("${subscription.renewal.batch.sleep.millis}")
+	private int subscriptionRenewalBatchSleepMillis;
+
 	@Autowired
 	private OrderService orderService;
 
@@ -233,7 +236,7 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> checkRenewals() {
+	public ResponseEntity<Void> checkRenewals() {
 		log.debug("Checking renewals...");
 
 		List<SubscriptionDto> renewableSubscriptions = getRenewableSubscriptions();
@@ -248,8 +251,22 @@ public class SubscriptionController {
 			return ResponseEntity.ok().build();
 		} else {
 			log.warn("all subscription renewal requests not processed yet, not creating new requests");
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("old requests not processed yet");
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
+	}
+
+	@GetMapping(value = "/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> startProcessingRenewals() {
+		while(renewalService.renewalRequestsExist()) {
+			try {
+				renewalService.batchProcessNextRenewalRequests();
+				Thread.sleep(subscriptionRenewalBatchSleepMillis);
+			} catch (InterruptedException e) {
+				log.error("processing subscription renewals interrupted", e);
+			}
+		}
+
+		return ResponseEntity.ok().build();
 	}
 
 	private List<SubscriptionDto> getRenewableSubscriptions() {

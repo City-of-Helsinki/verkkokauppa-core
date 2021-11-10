@@ -30,9 +30,6 @@ public class SubscriptionRenewalService {
     @Value("${subscription.renewal.batch.size}")
     private int subscriptionRenewalBatchSize;
 
-    @Value("${subscription.renewal.batch.sleep.millis}")
-    private int subscriptionRenewalBatchSleepMillis;
-
     @Autowired
     private SubscriptionRenewalRequestRepository requestRepository;
 
@@ -92,15 +89,13 @@ public class SubscriptionRenewalService {
         processRepository.deleteAll();
     }
 
-    public void batchProcessNextRenewalRequests() throws InterruptedException {
+    public void batchProcessNextRenewalRequests() {
+        log.debug("processing next renewal requests");
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(1, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         if (requests != null) {
             requests.getContent().forEach(request -> {
                 triggerSubscriptionRenewalEvent(request.getId());
             });
-
-            Thread.sleep(subscriptionRenewalBatchSleepMillis);
-            batchProcessNextRenewalRequests();
         }
     }
 
