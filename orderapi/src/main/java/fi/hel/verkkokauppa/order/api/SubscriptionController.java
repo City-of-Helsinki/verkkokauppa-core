@@ -42,13 +42,13 @@ import java.util.Set;
 @Validated
 @RequestMapping(SubscriptionUrlConstants.SUBSCRIPTION_API_ROOT)
 public class SubscriptionController {
+	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
 
 	@Value("${payment.card_token.encryption.password}")
 	private String cardTokenEncryptionPassword;
 
-	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
-
-	public static final int SUBSCRIPTION_RENEWAL_CHECK_THRESHOLD_DAYS = 7;
+	@Value("${subscription.renewal.check.threshold.days}")
+	private int subscriptionRenewalCheckThresholdDays;
 
 	@Autowired
 	private OrderService orderService;
@@ -254,7 +254,7 @@ public class SubscriptionController {
 
 	private List<SubscriptionDto> getRenewableSubscriptions() {
 		LocalDate currentDate = LocalDate.now();
-		LocalDate validityCheckDate = currentDate.plusDays(SUBSCRIPTION_RENEWAL_CHECK_THRESHOLD_DAYS);
+		LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
 		log.debug("validityCheckDate: {}", validityCheckDate);
 
 		SubscriptionCriteria criteria = new SubscriptionCriteria();
@@ -276,6 +276,21 @@ public class SubscriptionController {
 				updateSubscriptionCommand.update(subscriptionId, subscription);
 			}
 		}
+	}
+
+	@PostMapping(value = "/renewal-requested-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) {
+		log.debug("subscription-api received SUBSCRIPTION_RENEWAL_REQUESTED event for subscriptionId: " + message.getSubscriptionId());
+		String subscriptionId = message.getSubscriptionId();
+
+		if (renewalService.startRenewingSubscription(subscriptionId)) {
+
+			// TODO do the actual renewal
+
+			renewalService.finishRenewingSubscription(subscriptionId);
+		}
+
+		return ResponseEntity.ok().build();
 	}
 
 	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)

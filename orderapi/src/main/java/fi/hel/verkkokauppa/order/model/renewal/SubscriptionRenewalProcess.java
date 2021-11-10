@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.model.renewal;
 
+import fi.hel.verkkokauppa.shared.model.Identifiable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,9 +18,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(indexName = "subscription_renewal_processes")
-public class SubscriptionRenewalProcess {
+public class SubscriptionRenewalProcess implements Identifiable {
     @Id
-    private String subscriptionId;
+    private String id;
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime processingStarted;
 
