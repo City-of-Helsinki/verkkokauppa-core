@@ -20,8 +20,7 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 
-		if (!StringUtils.isEmpty(criteria.getStatus())
-				&& Period.getAllowedPeriods().contains(criteria.getStatus())) {
+		if (!StringUtils.isEmpty(criteria.getStatus())) {
 			qb.must(QueryBuilders.termQuery("status", criteria.getStatus()));
 		}
 		if (!StringUtils.isEmpty(criteria.getCustomerEmail())) {

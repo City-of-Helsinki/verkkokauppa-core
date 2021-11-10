@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -232,6 +233,11 @@ public class SubscriptionController {
 		log.debug("Checking renewals...");
 
 		List<SubscriptionDto> renewableSubscriptions = getRenewableSubscriptions();
+		cancelExpiredSubscriptions(renewableSubscriptions);
+		// No need to further handle expired ones
+		renewableSubscriptions.removeIf(s -> s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
+
+		log.debug("renewable subscriptions: {}", renewableSubscriptions);
 
 		return null;
 	}
@@ -245,10 +251,21 @@ public class SubscriptionController {
 		criteria.setStatus(SubscriptionStatus.ACTIVE);
 		criteria.setEndDateBefore(validityCheckDate);
 
-		final List<SubscriptionDto> subscriptions = searchSubscriptionQuery.searchActive(criteria);
-		log.debug("renewable subscriptions: {}", subscriptions);
+		return searchSubscriptionQuery.searchActive(criteria);
+	}
 
-		return subscriptions;
+	private void cancelExpiredSubscriptions(List<SubscriptionDto> subscriptions) {
+		for (SubscriptionDto subscription : subscriptions) {
+			LocalDateTime endDate = subscription.getEndDate();
+
+			if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
+				String subscriptionId = subscription.getSubscriptionId();
+				log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
+
+				subscription.setStatus(SubscriptionStatus.CANCELLED);
+				updateSubscriptionCommand.update(subscriptionId, subscription);
+			}
+		}
 	}
 
 	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
