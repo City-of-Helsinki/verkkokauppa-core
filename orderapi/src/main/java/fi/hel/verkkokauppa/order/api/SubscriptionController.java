@@ -17,6 +17,7 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
@@ -57,6 +58,9 @@ public class SubscriptionController {
 
 	@Autowired
 	private SendEventService sendEventService;
+
+	@Autowired
+	private SubscriptionRenewalService renewalService;
 
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
@@ -229,17 +233,23 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> checkRenewals() {
+	public ResponseEntity<String> checkRenewals() {
 		log.debug("Checking renewals...");
 
 		List<SubscriptionDto> renewableSubscriptions = getRenewableSubscriptions();
 		cancelExpiredSubscriptions(renewableSubscriptions);
 		// No need to further handle expired ones
 		renewableSubscriptions.removeIf(s -> s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
+		log.debug("renewable subscriptions size: {}", renewableSubscriptions.size());
 
-		log.debug("renewable subscriptions: {}", renewableSubscriptions);
-
-		return null;
+		if (!renewalService.renewalRequestsExist()) {
+			log.debug("creating new subscription renewal requests");
+			renewalService.createRenewalRequests(renewableSubscriptions);
+			return ResponseEntity.ok().build();
+		} else {
+			log.warn("all subscription renewal requests not processed yet, not creating new requests");
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("old requests not processed yet");
+		}
 	}
 
 	private List<SubscriptionDto> getRenewableSubscriptions() {
