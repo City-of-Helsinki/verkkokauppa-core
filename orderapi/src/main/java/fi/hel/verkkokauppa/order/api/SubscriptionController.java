@@ -290,7 +290,7 @@ public class SubscriptionController {
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}
 
-	@PostMapping(value = "/subscription/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
 
 		try {
