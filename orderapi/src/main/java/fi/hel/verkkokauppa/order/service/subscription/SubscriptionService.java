@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -28,6 +29,11 @@ public class SubscriptionService {
         subscription.setEndDate(order.getEndDate());
         // Set Updated at to current time and date.
         subscription.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+        subscriptionRepository.save(subscription);
+    }
+
+    public void setPaymentMethodCreditCards(Subscription subscription) {
+        subscription.setPaymentMethod(PaymentType.CREDIT_CARDS);
         subscriptionRepository.save(subscription);
     }
 }
