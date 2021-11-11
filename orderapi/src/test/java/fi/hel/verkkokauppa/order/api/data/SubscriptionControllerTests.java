@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.data;
 
 import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -82,11 +83,11 @@ public class SubscriptionControllerTests extends DummyData {
 
         ResponseEntity<OrderAggregateDto> response = orderController.createWithItems(orderAggregateDto);
 
-        ResponseEntity<Set<String>> createdSubs = subscriptionController.createSubscriptionsFromOrder(response.getBody());
+        ResponseEntity<SubscriptionIdsDto> createdSubs = subscriptionController.createSubscriptionsFromOrder(response.getBody());
 
         // Verify request succeed
         Assert.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
-        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody()).size());
+        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
 
         // Read
         List<Subscription> subscriptions = subscriptionRepository.findByCustomerEmail(order.getCustomerEmail());
@@ -114,6 +115,7 @@ public class SubscriptionControllerTests extends DummyData {
         Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
         // Order metas succesfully copied to subscription_item_metas
         Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
+        Assert.assertEquals(subscriptions.get(0).getOrderId(), Objects.requireNonNull(response.getBody()).getOrder().getOrderId());
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
@@ -137,11 +139,11 @@ public class SubscriptionControllerTests extends DummyData {
         ResponseEntity<OrderAggregateDto> response = orderController.createWithItems(orderAggregateDto);
 
         OrderDto orderDto = Objects.requireNonNull(response.getBody()).getOrder();
-        ResponseEntity<Set<String>> createdSubs = subscriptionController.createSubscriptionsFromOrderId(orderDto.getOrderId(),orderDto.getUser());
+        ResponseEntity<SubscriptionIdsDto> createdSubs = subscriptionController.createSubscriptionsFromOrderId(orderDto.getOrderId(),orderDto.getUser());
 
         // Verify request succeed
         Assert.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
-        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody()).size());
+        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
 
         // Read
         List<Subscription> subscriptions = subscriptionRepository.findByCustomerEmail(order.getCustomerEmail());

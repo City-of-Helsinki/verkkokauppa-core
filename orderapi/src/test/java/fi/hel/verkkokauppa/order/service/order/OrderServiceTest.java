@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.order;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
@@ -41,8 +42,6 @@ class OrderServiceTest extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private NextDateCalculator nextDateCalculator;
     private Order foundOrder;
     private Subscription foundSubscription;
 
@@ -54,9 +53,9 @@ class OrderServiceTest extends TestUtils {
 //    @Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
-        ResponseEntity<Set<String>> subscriptionIds = createSubscriptions(orderResponse);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
         Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
-        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody()).iterator().next());
+        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
         PaymentMessage message = new PaymentMessage();
         String paymentPaidTimestamp = DateTimeUtil.getDateTime();
         message.setPaymentPaidTimestamp(paymentPaidTimestamp);

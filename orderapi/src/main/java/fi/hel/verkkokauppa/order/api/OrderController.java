@@ -2,10 +2,12 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 
@@ -283,6 +285,22 @@ public class OrderController {
                     new Error("failed-to-create-order-with-items", "failed to create order with items")
             );
         }
+    }
+
+    @PostMapping(value = "/order/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+        log.debug("order-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+
+        // TODO
+        return null;
+    }
+
+    @PostMapping(value = "/order/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
+        log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+
+        // TODO
+        return null;
     }
 
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {

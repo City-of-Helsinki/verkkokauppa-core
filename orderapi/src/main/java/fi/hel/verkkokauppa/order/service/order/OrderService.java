@@ -211,4 +211,10 @@ public class OrderService {
         );
         orderRepository.save(order);
     }
+
+    public void linkToSubscription(String orderId, String userId, String subscriptionId) {
+        Order order = findByIdValidateByUser(orderId, userId);
+        order.setSubscriptionId(subscriptionId);
+        orderRepository.save(order);
+    }
 }
