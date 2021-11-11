@@ -1,8 +1,9 @@
-package fi.hel.verkkokauppa.productmapping.service;
+package fi.hel.verkkokauppa.productmapping.service.serviceMapping;
 
 import java.util.Arrays;
 import java.util.List;
 
+import fi.hel.verkkokauppa.productmapping.repository.serviceMapping.ServiceMappingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 
-import fi.hel.verkkokauppa.productmapping.model.ServiceMapping;
+import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceMapping;
 
 
 @Component

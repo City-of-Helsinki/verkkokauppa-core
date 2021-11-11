@@ -8,7 +8,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 
 @SpringBootApplication
 @EnableElasticsearchRepositories(basePackages = "fi.hel.verkkokauppa.order.repository.jpa", repositoryBaseClass = BaseRepositoryImpl.class)
-@ComponentScan({"fi.hel.verkkokauppa.common.elastic", "fi.hel.verkkokauppa.common.error", "fi.hel.verkkokauppa.common.events", "fi.hel.verkkokauppa.order"})
+@ComponentScan({"fi.hel.verkkokauppa.common.elastic", "fi.hel.verkkokauppa.common.error", "fi.hel.verkkokauppa.common.events", "fi.hel.verkkokauppa.common.rest", "fi.hel.verkkokauppa.order"})
 public class OrderapiApplication {
 
 	public static void main(String[] args) {

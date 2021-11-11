@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.productmapping.model;
+package fi.hel.verkkokauppa.productmapping.model.product;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;

@@ -5,6 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
+/**
+ * Configures product and serviceConfiguration and serviceMappings
+ */
 @SpringBootApplication
 @EnableElasticsearchRepositories
 @ComponentScan({"fi.hel.verkkokauppa.productmapping", "fi.hel.verkkokauppa.common"})

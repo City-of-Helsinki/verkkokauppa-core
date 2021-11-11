@@ -37,10 +37,37 @@ public class PaymentMessageListener {
         if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
             log.debug("event type is PAYMENT_PAID");
             paymentPaidAction(message);
+            orderWebHookAction(message);
         }
         else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
             log.debug("event type is PAYMENT_FAILED");
             paymentFailedAction(message);
+        }
+    }
+
+    protected void orderWebHookAction(PaymentMessage message) {
+        try {
+            //read target url to call from env
+            String url = env.getRequiredProperty("order.service.url");
+            String path = "/order/payment-paid-webhook";
+            log.debug("order.service.url is: " + url);
+            log.debug("path is: " + path);
+
+            //format payload, message to json string conversion
+            PaymentMessage toCustomer = PaymentMessage.builder()
+                    .eventType(message.getEventType())
+                    .eventTimestamp(message.getEventTimestamp())
+                    .paymentId(message.getPaymentId())
+                    .orderId(message.getOrderId())
+                    .namespace(message.getNamespace())
+                    .paymentPaidTimestamp(message.getPaymentPaidTimestamp())
+                    .build();
+            String body = objectMapper.writeValueAsString(message);
+
+            //send to target url
+            restServiceClient.makePostCall(url + path, body);
+        } catch (Exception e) {
+            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
         }
     }
 
