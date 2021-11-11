@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.security.plain.PlainLoginModule;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,8 +46,9 @@ public class KafkaConsumerConfig {
 
         if (kafkaClientAuthenticationEnabled) {
             props.put("security.protocol", "SASL_PLAINTEXT");
-            props.put("sasl.mechanism", "PLAIN");
-            props.put("sasl.jaas.config", PlainLoginModule.class.getName() + " required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
+            props.put(SaslConfigs.SASL_ENABLED_MECHANISMS, "SCRAM-SHA-512");
+            props.put(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + kafkaUser + "\" password=\"" + kafkaPassword + "\";");
         }
 
         return props;
@@ -69,12 +71,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, PaymentMessage> paymentsConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "payments");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(PaymentMessage.class));
     }
@@ -91,12 +89,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, SubscriptionMessage> subscriptionsConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "subscriptions");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(SubscriptionMessage.class));
     }
@@ -113,12 +107,8 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, OrderMessage> ordersConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "orders");
-
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                consumerConfigs(),
                 new StringDeserializer(),
                 new JsonDeserializer<>(OrderMessage.class));
     }

@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -7,12 +8,14 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
+import fi.hel.verkkokauppa.order.api.data.subscription.*;
 import fi.hel.verkkokauppa.order.constants.SubscriptionUrlConstants;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -63,6 +66,9 @@ public class SubscriptionController {
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
 	private final CancelSubscriptionCommand cancelSubscriptionCommand;
 	private final UpdateSubscriptionCommand updateSubscriptionCommand;
+
+	@Autowired
+	private RestWebHookService restWebHookService;
 
 	@Autowired
 	public SubscriptionController(
@@ -122,12 +128,12 @@ public class SubscriptionController {
 	}
 
 	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
+	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
 		try {
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
+			SubscriptionIdsDto idListDto = SubscriptionIdsDto.builder().subscriptionIds(idList).build();
 
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(idList);
+			return ResponseEntity.status(HttpStatus.CREATED).body(idListDto);
 		} catch (Exception e) {
 			log.error("Exception on creating Subscription order from order", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -135,15 +141,15 @@ public class SubscriptionController {
 	}
 
 	@GetMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
+	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
 																	  @RequestParam(value = "userId") String userId) {
 		try {
 			Order foundOrder = orderService.findByIdValidateByUser(orderId, userId);
 			OrderAggregateDto dto = orderService.getOrderWithItems(foundOrder.getOrderId());
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
+			SubscriptionIdsDto idListDto = SubscriptionIdsDto.builder().subscriptionIds(idList).build();
 
-			return ResponseEntity.status(HttpStatus.CREATED)
-					.body(idList);
+			return ResponseEntity.status(HttpStatus.CREATED).body(idListDto);
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
@@ -177,6 +183,10 @@ public class SubscriptionController {
 
 	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
+		return setSubscriptionCardTokenInternal(dto, true);
+	}
+
+	private ResponseEntity<Void> setSubscriptionCardTokenInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
 		String subscriptionId = dto.getSubscriptionId();
 		String userId = dto.getUser();
 
@@ -184,9 +194,13 @@ public class SubscriptionController {
 			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOneValidateByUser(subscriptionId, userId);
 			PaymentCardInfoDto paymentCardInfoDto = dto.getPaymentCardInfoDto();
 
-			String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
+			if (encryptToken) {
+				String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
+				subscriptionDto.setPaymentMethodToken(encryptedToken);
+			} else {
+				subscriptionDto.setPaymentMethodToken(paymentCardInfoDto.getCardToken());
+			}
 
-			subscriptionDto.setPaymentMethodToken(encryptedToken);
 			subscriptionDto.setPaymentMethodExpirationYear(paymentCardInfoDto.getExpYear());
 			subscriptionDto.setPaymentMethodExpirationMonth(paymentCardInfoDto.getExpMonth());
 			updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
@@ -217,31 +231,52 @@ public class SubscriptionController {
 		}
 	}
 
-	/*@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> updateSubscriptionOrder(@PathVariable("id") String id, @RequestBody SubscriptionOrderDto dto) {
-		try {
-			updateSubscriptionOrderCommand.update(id, dto);
-			return ResponseEntity.ok().build();
-		} catch(EntityNotFoundException e) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		}
-	}*/
 
-	@PostMapping(value = "/create-from-payment-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Set<String>> createSubscriptionsFromPaymentEvent(@RequestBody PaymentMessage message) {
-		ResponseEntity<Set<String>> subscriptionsFromOrderId = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId());
-		afterPaymentEventActions(subscriptionsFromOrderId, message);
-		return subscriptionsFromOrderId;
+	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+
+		// TODO
+		return null;
 	}
 
-	public void afterPaymentEventActions(ResponseEntity<Set<String>> subscriptionsFromOrderId, PaymentMessage message) {
-		Objects.requireNonNull(subscriptionsFromOrderId.getBody()).forEach(subscriptionId -> {
+	@PostMapping(value = "/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<SubscriptionIdsDto> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
+		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+
+		SubscriptionIdsDto dto = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId()).getBody();
+		afterPaymentPaidEventActions(dto.getSubscriptionIds(), message);
+		return ResponseEntity.ok().body(dto);
+	}
+
+	public void afterPaymentPaidEventActions(Set<String> subscriptionsFromOrderId, PaymentMessage message) {
+		Objects.requireNonNull(subscriptionsFromOrderId).forEach(subscriptionId -> {
 			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
 
 			orderService.setOrderStartAndEndDate(order, subscription, message);
 			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
+
+			// All subscriptions have payment type "creditcards" for now
+			subscriptionService.setPaymentMethodCreditCards(subscription);
+			updateCardInfoToSubscription(subscriptionId, message);
+
+			triggerSubscriptionCreatedEvent(subscription);
 		});
+	}
+
+	private void updateCardInfoToSubscription(String subscriptionId, PaymentMessage message) {
+		if (StringUtils.isNotEmpty(message.getEncryptedCardToken())) {
+			PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
+					message.getEncryptedCardToken(),
+					message.getCardTokenExpYear(),
+					message.getCardTokenExpMonth()
+			);
+
+			UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
+			// Token is already encrypted in message
+			setSubscriptionCardTokenInternal(request, false);
+		}
 	}
 
 	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
@@ -249,11 +284,29 @@ public class SubscriptionController {
 				.eventType(EventType.SUBSCRIPTION_CREATED)
 				.namespace(subscription.getNamespace())
 				.subscriptionId(subscription.getId())
-				.timestamp(subscription.getCreatedAt().toString()) // TODO check format
+				.timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
 				.build();
 		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}
 
+	@PostMapping(value = "/subscription/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
 
+		try {
+			// This row validates that message contains authorization to order.
+			orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+
+			restWebHookService.setNamespace(message.getNamespace());
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), "MERCHANT_PAYMENT_WEBHOOK_URL");
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+			);
+		}
+	}
 }

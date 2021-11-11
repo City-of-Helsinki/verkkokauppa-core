@@ -12,6 +12,7 @@ import javax.validation.constraints.NotBlank;
 public class OrderDto {
 
     private String orderId;
+    private String subscriptionId;
     private String namespace;
     private String user;
     private String createdAt;
