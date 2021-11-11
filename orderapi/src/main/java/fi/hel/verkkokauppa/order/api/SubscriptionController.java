@@ -335,6 +335,8 @@ public class SubscriptionController {
 			orderService.setOrderStartAndEndDate(order, subscription, message);
 			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
 
+			// All subscriptions have payment type "creditcards" for now
+			subscriptionService.setPaymentMethodCreditCards(subscription);
 			updateCardInfoToSubscription(subscriptionId, message);
 
 			triggerSubscriptionCreatedEvent(subscription);
