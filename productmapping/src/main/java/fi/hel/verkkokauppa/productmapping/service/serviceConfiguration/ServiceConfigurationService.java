@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.productmapping.repository.serviceConfiguration.ServiceConfigurationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfiguration;
-import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfigurationKeys;
+
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 
 @Component
@@ -25,7 +26,6 @@ public class ServiceConfigurationService {
     
     @Autowired
     private ServiceConfigurationRepository serviceConfigurationRepository;
-
 
     public List<ServiceConfiguration> findBy(String namespace) {
         List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndRestricted(namespace, false);

@@ -17,16 +17,16 @@ import java.util.Map;
 public class KafkaProducerConfig {
 
     // add to your application.properties spring.kafka.bootstrap-servers=localhost:9092
-    @Value("${spring.kafka.bootstrap-servers}")
+    @Value("${spring.kafka.bootstrap-servers:#{null}}")
     private String bootstrapServers;
 
-    @Value("${kafka.client.authentication.enabled}")
+    @Value("${kafka.client.authentication.enabled:#{false}}")
     private Boolean kafkaClientAuthenticationEnabled;
 
-    @Value("${kafka.user}")
+    @Value("${kafka.user:#{null}}")
     private String kafkaUser;
 
-    @Value("${kafka.password}")
+    @Value("${kafka.password:#{null}}")
     private String kafkaPassword;
 
     @Bean

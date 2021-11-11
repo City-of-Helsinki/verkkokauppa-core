@@ -1,8 +1,11 @@
-package fi.hel.verkkokauppa.productmapping.model.serviceConfiguration;
+package fi.hel.verkkokauppa.common.configuration;
+
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 
+@Component
 public class ServiceConfigurationKeys {
 
     //

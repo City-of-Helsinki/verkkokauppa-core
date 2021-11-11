@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -334,7 +335,7 @@ public class OrderController {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
             restWebHookService.setNamespace(message.getNamespace());
-            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), "MERCHANT_PAYMENT_WEBHOOK_URL");
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
 
         } catch (CommonApiException cae) {
             throw cae;

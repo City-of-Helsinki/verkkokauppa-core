@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfigurationBatchDto;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
@@ -14,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfiguration;
-import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfigurationKeys;
+
 import fi.hel.verkkokauppa.productmapping.service.serviceConfiguration.ServiceConfigurationService;
 
 @RestController

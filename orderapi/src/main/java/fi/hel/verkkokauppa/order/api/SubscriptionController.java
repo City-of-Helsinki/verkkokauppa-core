@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -298,7 +299,7 @@ public class SubscriptionController {
 			orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
 			restWebHookService.setNamespace(message.getNamespace());
-			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), "MERCHANT_PAYMENT_WEBHOOK_URL");
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
