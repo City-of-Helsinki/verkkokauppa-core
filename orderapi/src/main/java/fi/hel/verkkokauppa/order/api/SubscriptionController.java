@@ -40,18 +40,11 @@ import java.util.Set;
 
 @RestController
 @Validated
-@RequestMapping(SubscriptionUrlConstants.SUBSCRIPTION_API_ROOT)
 public class SubscriptionController {
 	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
 
 	@Value("${payment.card_token.encryption.password}")
 	private String cardTokenEncryptionPassword;
-
-	@Value("${subscription.renewal.check.threshold.days}")
-	private int subscriptionRenewalCheckThresholdDays;
-
-	@Value("${subscription.renewal.batch.sleep.millis}")
-	private int subscriptionRenewalBatchSleepMillis;
 
 	@Autowired
 	private OrderService orderService;
@@ -62,12 +55,7 @@ public class SubscriptionController {
 	@Autowired
 	private SendEventService sendEventService;
 
-	@Autowired
-	private SubscriptionRenewalService renewalService;
-
-
 	private final CreateSubscriptionCommand createSubscriptionCommand;
-	//private final UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand;
 	private final GetSubscriptionQuery getSubscriptionQuery;
 	private final SearchSubscriptionQuery searchSubscriptionQuery;
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
@@ -77,7 +65,6 @@ public class SubscriptionController {
 	@Autowired
 	public SubscriptionController(
 			CreateSubscriptionCommand createSubscriptionCommand,
-			//UpdateSubscriptionOrderCommand updateSubscriptionOrderCommand,
 			GetSubscriptionQuery getSubscriptionQuery,
 			SearchSubscriptionQuery searchSubscriptionQuery,
 			CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand,
@@ -85,14 +72,14 @@ public class SubscriptionController {
 			UpdateSubscriptionCommand updateSubscriptionCommand) {
 		this.createSubscriptionCommand = createSubscriptionCommand;
 		this.createSubscriptionsFromOrderCommand = createSubscriptionsFromOrderCommand;
-		//this.updateSubscriptionOrderCommand = updateSubscriptionOrderCommand;
 		this.getSubscriptionQuery = getSubscriptionQuery;
 		this.searchSubscriptionQuery = searchSubscriptionQuery;
 		this.cancelSubscriptionCommand = cancelSubscriptionCommand;
 		this.updateSubscriptionCommand = updateSubscriptionCommand;
 	}
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+	// TODO refactor path to indicate what is about to happen
+    @GetMapping(value = "/subscription", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
 			final SubscriptionDto subscription = getSubscriptionQuery.getOneValidateByUser(id, userId);
@@ -105,7 +92,30 @@ public class SubscriptionController {
 		}
 	}
 
-	@PostMapping(value = "/search/active", produces = MediaType.APPLICATION_JSON_VALUE)
+	// TODO refactor path to indicate what is about to happen
+	@PostMapping(value = "/subscription", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<IdWrapper> createSubscription(@RequestBody SubscriptionDto dto) {
+		final String id = createSubscriptionCommand.create(dto);
+
+		return ResponseEntity.status(HttpStatus.CREATED)
+				.body(new IdWrapper(id));
+	}
+
+	// TODO refactor path to indicate what is about to happen
+	@PutMapping(value = "/subscription", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
+		try {
+			cancelSubscriptionCommand.cancel(id, userId);
+			return ResponseEntity.ok().build();
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch(EntityNotFoundException e) {
+			log.error("Exception on cancelling Subscription order", e);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+	}
+
+	@PostMapping(value = "/subscription/search/active", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<SubscriptionDto>> searchActive(
 			@RequestBody SubscriptionCriteria criteria
 	) {
@@ -123,15 +133,7 @@ public class SubscriptionController {
 		}
 	}
 
-	@PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<IdWrapper> createSubscription(@RequestBody SubscriptionDto dto) {
-		final String id = createSubscriptionCommand.create(dto);
-
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new IdWrapper(id));
-	}
-
-	@PostMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/subscription/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrder(@Valid @RequestBody OrderAggregateDto dto) {
 		try {
 			Set<String> idList = createSubscriptionsFromOrderCommand.createFromOrder(dto);
@@ -144,7 +146,7 @@ public class SubscriptionController {
 		}
 	}
 
-	@GetMapping(value = "/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/subscription/create-from-order", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<SubscriptionIdsDto> createSubscriptionsFromOrderId(@RequestParam(value = "orderId") String orderId,
 																	  @RequestParam(value = "userId") String userId) {
 		try {
@@ -166,7 +168,7 @@ public class SubscriptionController {
 		}
 	}
 
-	@GetMapping(value = "/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/subscription/get-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> getSubscriptionCardToken(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
 			SubscriptionDto subscription = getSubscriptionQuery.getOneValidateByUser(id, userId);
@@ -185,7 +187,7 @@ public class SubscriptionController {
 		}
 	}
 
-	@PutMapping(value = "/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PutMapping(value = "/subscription/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
 		return setSubscriptionCardTokenInternal(dto, true);
 	}
@@ -222,95 +224,7 @@ public class SubscriptionController {
 		}
 	}
 
-	@PutMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
-		try {
-			cancelSubscriptionCommand.cancel(id, userId);
-			return ResponseEntity.ok().build();
-		} catch (CommonApiException cae) {
-			throw cae;
-		} catch(EntityNotFoundException e) {
-			log.error("Exception on cancelling Subscription order", e);
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		}
-	}
-
-	@GetMapping(value = "/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> checkRenewals() {
-		log.debug("Checking renewals...");
-
-		List<SubscriptionDto> renewableSubscriptions = getRenewableSubscriptions();
-		cancelExpiredSubscriptions(renewableSubscriptions);
-		// No need to further handle expired ones
-		renewableSubscriptions.removeIf(s -> s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
-		log.debug("renewable subscriptions size: {}", renewableSubscriptions.size());
-
-		if (!renewalService.renewalRequestsExist()) {
-			log.debug("creating new subscription renewal requests");
-			renewalService.createRenewalRequests(renewableSubscriptions);
-			return ResponseEntity.ok().build();
-		} else {
-			log.warn("all subscription renewal requests not processed yet, not creating new requests");
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-		}
-	}
-
-	@GetMapping(value = "/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> startProcessingRenewals() {
-		while(renewalService.renewalRequestsExist()) {
-			try {
-				renewalService.batchProcessNextRenewalRequests();
-				Thread.sleep(subscriptionRenewalBatchSleepMillis);
-			} catch (InterruptedException e) {
-				log.error("processing subscription renewals interrupted", e);
-			}
-		}
-
-		return ResponseEntity.ok().build();
-	}
-
-	private List<SubscriptionDto> getRenewableSubscriptions() {
-		LocalDate currentDate = LocalDate.now();
-		LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
-		log.debug("validityCheckDate: {}", validityCheckDate);
-
-		SubscriptionCriteria criteria = new SubscriptionCriteria();
-		criteria.setStatus(SubscriptionStatus.ACTIVE);
-		criteria.setEndDateBefore(validityCheckDate);
-
-		return searchSubscriptionQuery.searchActive(criteria);
-	}
-
-	private void cancelExpiredSubscriptions(List<SubscriptionDto> subscriptions) {
-		for (SubscriptionDto subscription : subscriptions) {
-			LocalDateTime endDate = subscription.getEndDate();
-
-			if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
-				String subscriptionId = subscription.getSubscriptionId();
-				log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
-
-				subscription.setStatus(SubscriptionStatus.CANCELLED);
-				updateSubscriptionCommand.update(subscriptionId, subscription);
-			}
-		}
-	}
-
-	@PostMapping(value = "/renewal-requested-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) {
-		log.debug("subscription-api received SUBSCRIPTION_RENEWAL_REQUESTED event for subscriptionId: " + message.getSubscriptionId());
-		String subscriptionId = message.getSubscriptionId();
-
-		if (renewalService.startRenewingSubscription(subscriptionId)) {
-
-			// TODO do the actual renewal
-
-			renewalService.finishRenewingSubscription(subscriptionId);
-		}
-
-		return ResponseEntity.ok().build();
-	}
-
-	@PostMapping(value = "/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 
@@ -318,7 +232,7 @@ public class SubscriptionController {
 		return null;
 	}
 
-	@PostMapping(value = "/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/subscription/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<SubscriptionIdsDto> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
 		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 

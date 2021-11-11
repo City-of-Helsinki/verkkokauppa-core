@@ -69,7 +69,7 @@ public class SubscriptionMessageListener {
 
     private void subscriptionRenewalRequestedAction(SubscriptionMessage message) {
         try {
-            String url = orderServiceUrl + "/subscription/renewal-requested-event";
+            String url = orderServiceUrl + "/subscription-admin/renewal-requested-event";
             callApi(message, url);
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
