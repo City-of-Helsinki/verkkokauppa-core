@@ -77,6 +77,12 @@ public class SubscriptionAdminController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping(value = "/subscription-admin/clear-renewal-requests", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> clearRenewalRequests() {
+        renewalService.clearAll();
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping(value = "/subscription-admin/renewal-requested-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) {
         log.debug("subscription-api received SUBSCRIPTION_RENEWAL_REQUESTED event for subscriptionId: " + message.getSubscriptionId());
