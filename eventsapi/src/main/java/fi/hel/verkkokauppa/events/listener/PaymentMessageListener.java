@@ -51,8 +51,6 @@ public class PaymentMessageListener {
 
     protected void orderPaidWebHookAction(PaymentMessage message) {
         try {
-//            PaymentMessage toCustomer = createCustomerWebHookPaymentMessage(message);
-//            String body = objectMapper.writeValueAsString(toCustomer);
             callOrderApi(message,
                     "/order/payment-paid-webhook",
                     "/subscription/payment-paid-webhook");
