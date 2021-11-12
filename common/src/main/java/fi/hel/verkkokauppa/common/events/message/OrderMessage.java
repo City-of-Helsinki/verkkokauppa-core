@@ -28,4 +28,8 @@ public class OrderMessage implements EventMessage {
 
     public String cardToken;
 
+    public String isSubscriptionRenewalOrder;
+    public String subscriptionId;
+    public String userId;
+
 }
