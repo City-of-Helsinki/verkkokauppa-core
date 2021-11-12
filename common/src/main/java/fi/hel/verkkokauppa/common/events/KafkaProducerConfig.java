@@ -20,7 +20,7 @@ public class KafkaProducerConfig {
     @Value("${spring.kafka.bootstrap-servers:#{null}}")
     private String bootstrapServers;
 
-    @Value("${kafka.client.authentication.enabled:#{false}}")
+    @Value("${kafka.client.authentication.enabled:#{true}}")
     private Boolean kafkaClientAuthenticationEnabled;
 
     @Value("${kafka.user:#{null}}")
