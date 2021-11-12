@@ -16,6 +16,7 @@ import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,10 @@ public class OrderController {
 
     @Autowired
     private RestWebHookService restWebHookService;
+
+    @Autowired
+    private SubscriptionService subscriptionService;
+
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -300,7 +305,8 @@ public class OrderController {
     public ResponseEntity<String> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
         log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 
-        // TODO
+        subscriptionService.afterRenewalPaymentPaidEventActions(message);
+
         return null;
     }
 

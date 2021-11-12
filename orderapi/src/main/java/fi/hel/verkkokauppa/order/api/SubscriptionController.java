@@ -56,17 +56,11 @@ import java.util.Set;
 public class SubscriptionController {
 	private Logger log = LoggerFactory.getLogger(SubscriptionController.class);
 
-	@Value("${payment.card_token.encryption.password}")
-	private String cardTokenEncryptionPassword;
-
 	@Autowired
 	private OrderService orderService;
 
 	@Autowired
 	private SubscriptionService subscriptionService;
-
-	@Autowired
-	private SendEventService sendEventService;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	private final GetSubscriptionQuery getSubscriptionQuery;
@@ -205,40 +199,9 @@ public class SubscriptionController {
 
 	@PutMapping(value = "/subscription/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
-		return setSubscriptionCardTokenInternal(dto, true);
+		return subscriptionService.setSubscriptionCardTokenInternal(dto, true);
 	}
 
-	private ResponseEntity<Void> setSubscriptionCardTokenInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
-		String subscriptionId = dto.getSubscriptionId();
-		String userId = dto.getUser();
-
-		try {
-			SubscriptionDto subscriptionDto = getSubscriptionQuery.getOneValidateByUser(subscriptionId, userId);
-			PaymentCardInfoDto paymentCardInfoDto = dto.getPaymentCardInfoDto();
-
-			if (encryptToken) {
-				String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfoDto.getCardToken(), cardTokenEncryptionPassword);
-				subscriptionDto.setPaymentMethodToken(encryptedToken);
-			} else {
-				subscriptionDto.setPaymentMethodToken(paymentCardInfoDto.getCardToken());
-			}
-
-			subscriptionDto.setPaymentMethodExpirationYear(paymentCardInfoDto.getExpYear());
-			subscriptionDto.setPaymentMethodExpirationMonth(paymentCardInfoDto.getExpMonth());
-			updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
-
-			return ResponseEntity.ok().build();
-		} catch (CommonApiException cae) {
-			throw cae;
-		} catch (Exception e) {
-			log.error("setting payment method token for subscription with id [" + subscriptionId + "] failed", e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-set-payment-method-token-for-subscription",
-							"setting payment method token for subscription with id [" + subscriptionId + "] failed")
-			);
-		}
-	}
 
 	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
@@ -253,49 +216,8 @@ public class SubscriptionController {
 		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 
 		SubscriptionIdsDto dto = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId()).getBody();
-		afterPaymentPaidEventActions(dto.getSubscriptionIds(), message);
+		subscriptionService.afterFirstPaymentPaidEventActions(dto.getSubscriptionIds(), message);
 		return ResponseEntity.ok().body(dto);
-	}
-
-	public void afterPaymentPaidEventActions(Set<String> subscriptionsFromOrderId, PaymentMessage message) {
-		Objects.requireNonNull(subscriptionsFromOrderId).forEach(subscriptionId -> {
-			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, message.getUserId());
-
-			orderService.setOrderStartAndEndDate(order, subscription, message);
-			subscriptionService.setSubscriptionEndDateFromOrder(order, subscription);
-
-			// All subscriptions have payment type "creditcards" for now
-			subscriptionService.setPaymentMethodCreditCards(subscription);
-			updateCardInfoToSubscription(subscriptionId, message);
-
-			triggerSubscriptionCreatedEvent(subscription);
-		});
-	}
-
-	private void updateCardInfoToSubscription(String subscriptionId, PaymentMessage message) {
-		if (StringUtils.isNotEmpty(message.getEncryptedCardToken())) {
-			PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
-					message.getEncryptedCardToken(),
-					message.getCardTokenExpYear(),
-					message.getCardTokenExpMonth()
-			);
-
-			UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
-			// Token is already encrypted in message
-			setSubscriptionCardTokenInternal(request, false);
-		}
-	}
-
-	private void triggerSubscriptionCreatedEvent(Subscription subscription) {
-		SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
-				.eventType(EventType.SUBSCRIPTION_CREATED)
-				.namespace(subscription.getNamespace())
-				.subscriptionId(subscription.getId())
-				.timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
-				.build();
-		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
-		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}
 
 	@PostMapping(value = "/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
