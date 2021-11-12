@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.productmapping.api;
+package fi.hel.verkkokauppa.productmapping.api.product;
 
 import java.util.List;
 
@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.hel.verkkokauppa.productmapping.model.ProductMapping;
-import fi.hel.verkkokauppa.productmapping.service.ProductMappingService;
+import fi.hel.verkkokauppa.productmapping.model.product.ProductMapping;
+import fi.hel.verkkokauppa.productmapping.service.product.ProductMappingService;
 
 @RestController
 public class ProductMappingController {

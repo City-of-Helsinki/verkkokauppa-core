@@ -1,37 +1,31 @@
 package fi.hel.verkkokauppa.order.api;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
-
-import java.math.BigDecimal;
-
-import javax.validation.ConstraintViolationException;
-
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
+import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
-import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import javax.validation.ConstraintViolationException;
+import java.math.BigDecimal;
 
 @RestController
 public class OrderController {
@@ -52,6 +46,10 @@ public class OrderController {
 
 	@Autowired
     private CommonBeanValidationService commonBeanValidationService;
+
+	@Autowired
+    private RestWebHookService restWebHookService;
+
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -328,6 +326,26 @@ public class OrderController {
 
         commonBeanValidationService.validateInput(totalsDto);
         return totalsDto;
+    }
+
+    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
+
+        try {
+            // This row validates that message contains authorization to order.
+            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            restWebHookService.setNamespace(message.getNamespace());
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
     }
 
     private boolean changesToOrderAllowed(Order order) {

@@ -24,4 +24,15 @@ public class PaymentMessage implements EventMessage {
     public Short cardTokenExpYear;
     public Byte cardTokenExpMonth;
 
+    public PaymentMessage toCustomerWebHook(){
+        return PaymentMessage.builder()
+                .eventType(this.getEventType())
+                .eventTimestamp(this.getEventTimestamp())
+                .paymentId(this.getPaymentId())
+                .orderId(this.getOrderId())
+                .namespace(this.getNamespace())
+                .paymentPaidTimestamp(this.getPaymentPaidTimestamp())
+                .build();
+    }
+
 }
