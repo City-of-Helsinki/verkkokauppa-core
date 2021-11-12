@@ -64,6 +64,7 @@ public class SubscriptionController {
 	private final GetSubscriptionQuery getSubscriptionQuery;
 	private final SearchSubscriptionQuery searchSubscriptionQuery;
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
+	private final CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
 	private final CancelSubscriptionCommand cancelSubscriptionCommand;
 	private final UpdateSubscriptionCommand updateSubscriptionCommand;
 
@@ -74,10 +75,12 @@ public class SubscriptionController {
 			GetSubscriptionQuery getSubscriptionQuery,
 			SearchSubscriptionQuery searchSubscriptionQuery,
 			CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand,
+			CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand,
 			CancelSubscriptionCommand cancelSubscriptionCommand,
 			UpdateSubscriptionCommand updateSubscriptionCommand) {
 		this.createSubscriptionCommand = createSubscriptionCommand;
 		this.createSubscriptionsFromOrderCommand = createSubscriptionsFromOrderCommand;
+		this.createOrderFromSubscriptionCommand = createOrderFromSubscriptionCommand;
 		//this.updateSubscriptionOrderCommand = updateSubscriptionOrderCommand;
 		this.getSubscriptionQuery = getSubscriptionQuery;
 		this.searchSubscriptionQuery = searchSubscriptionQuery;

@@ -3,11 +3,14 @@ package fi.hel.verkkokauppa.payment.service;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.payment.logic.CardTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.CardTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.ChargeCardTokenLogic;
 import fi.hel.verkkokauppa.payment.logic.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
@@ -20,6 +23,7 @@ import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import org.helsinki.vismapay.VismaPayClient;
+import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,13 +52,19 @@ public class OnlinePaymentService {
     private PaymentItemRepository paymentItemRepository;
 
     @Autowired
-    private PaymentTokenPayloadBuilder payloadBuilder;
+    private PaymentTokenPayloadBuilder paymentTokenPayloadBuilder;
 
     @Autowired
     private TokenFetcher tokenFetcher;
 
     @Autowired
     private CardTokenFetcher cardTokenFetcher;
+
+    @Autowired
+    private ChargeCardTokenLogic chargeCardTokenLogic;
+
+    @Autowired
+    private CardTokenPayloadBuilder cardTokenPayloadBuilder;
 
     @Autowired
     private PaymentContextBuilder paymentContextBuilder;
@@ -88,7 +98,7 @@ public class OnlinePaymentService {
 
         PaymentContext context = paymentContextBuilder.buildFor(namespace);
 
-        ChargeRequest.PaymentTokenPayload tokenRequestPayload = payloadBuilder.buildFor(dto, context);
+        ChargeRequest.PaymentTokenPayload tokenRequestPayload = paymentTokenPayloadBuilder.buildFor(dto, context);
         log.debug("tokenRequestPayload: " + tokenRequestPayload);
 
         String paymentId = tokenRequestPayload.getOrderNumber();
@@ -246,4 +256,12 @@ public class OnlinePaymentService {
 
         payerRepository.save(payer);
     }
+
+    public void chargeCardToken(ChargeCardTokenRequestDataDto request) {
+        PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
+        ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
+
+        chargeCardTokenLogic.chargeCardToken(payload);
+    }
+
 }

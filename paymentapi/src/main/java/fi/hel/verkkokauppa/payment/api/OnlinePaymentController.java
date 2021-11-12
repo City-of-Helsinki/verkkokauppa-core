@@ -1,14 +1,17 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
@@ -205,6 +208,35 @@ public class OnlinePaymentController {
 					new Error("failed-to-check-payment-return-response", "failed to check payment return response")
 			);
 		}
+	}
+
+	@PostMapping(value = "/payment/order-created-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> orderCreatedEventCallback(@RequestBody OrderMessage message) {
+		log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
+
+		// TODO Check the right to purchase
+
+		Payment paymentForOrder = service.getPaymentForOrder(message.getOrderId());
+
+		if (paymentForOrder == null) {
+			if (message.orderType.equalsIgnoreCase(OrderType.SUBSCRIPTION) && message.getCardToken() != null) {
+				ChargeCardTokenRequestDataDto request = new ChargeCardTokenRequestDataDto(
+						message.getNamespace(),
+						message.getOrderId(),
+						message.getOrderItemId(),
+						message.getProductName(),
+						message.getProductQuantity(),
+						message.getPriceTotal(),
+						message.getPriceNet(),
+						message.getVatPercentage(),
+						message.getCardToken()
+				);
+
+				service.chargeCardToken(request);
+			}
+		}
+
+		return ResponseEntity.ok().build();
 	}
 
 	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
