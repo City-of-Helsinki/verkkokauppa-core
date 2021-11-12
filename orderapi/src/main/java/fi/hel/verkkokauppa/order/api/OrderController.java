@@ -1,32 +1,21 @@
 package fi.hel.verkkokauppa.order.api;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.events.EventType;
-import fi.hel.verkkokauppa.common.events.SendEventService;
-import fi.hel.verkkokauppa.common.events.TopicName;
-import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
-import fi.hel.verkkokauppa.common.util.StringUtils;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
-import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.validation.ConstraintViolationException;
-
-import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
+import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +28,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
-import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import javax.validation.ConstraintViolationException;
+import java.math.BigDecimal;
 
 @RestController
 public class OrderController {
@@ -66,18 +52,7 @@ public class OrderController {
     private CommonBeanValidationService commonBeanValidationService;
 
     @Autowired
-    private SendEventService sendEventService;
-
-    private final GetSubscriptionQuery getSubscriptionQuery;
-    private final CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
-
-    @Autowired
-    public OrderController(
-            GetSubscriptionQuery getSubscriptionQuery,
-            CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand) {
-        this.getSubscriptionQuery = getSubscriptionQuery;
-        this.createOrderFromSubscriptionCommand = createOrderFromSubscriptionCommand;
-    }
+    private RestWebHookService restWebHookService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -329,14 +304,6 @@ public class OrderController {
         return null;
     }
 
-    private String renewSubscription(String subscriptionId) {
-        final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
-        String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-
-        triggerOrderCreatedEvent(orderService.findById(orderId));
-        return orderId;
-    }
-
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         return orderService.orderAggregateDto(orderId);
     }
@@ -364,41 +331,30 @@ public class OrderController {
         return totalsDto;
     }
 
+    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
+
+        try {
+            // This row validates that message contains authorization to order.
+            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            restWebHookService.setNamespace(message.getNamespace());
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
+    }
+
     private boolean changesToOrderAllowed(Order order) {
         boolean changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
         log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
         return changesToOrderAllowed;
     }
 
-    private void triggerOrderCreatedEvent(Order order) {
-        OrderMessage.OrderMessageBuilder orderMessageBuilder = OrderMessage.builder()
-                .eventType(EventType.ORDER_CREATED)
-                .namespace(order.getNamespace())
-                .orderId(order.getOrderId())
-                .timestamp(order.getCreatedAt())
-                .orderType(order.getType())
-                .priceTotal(order.getPriceTotal())
-                .priceNet(order.getPriceNet());
-
-        if (order.getType().equalsIgnoreCase(OrderType.SUBSCRIPTION) && StringUtils.isNotEmpty(order.getSubscriptionId())) {
-            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId());
-            String paymentMethodToken = subscription.getPaymentMethodToken();
-
-            List<OrderItem> orderitems = orderItemService.findByOrderId(order.getOrderId());
-            OrderItem orderItem = orderitems.get(0); // orders created from subscription have only one item
-
-            orderMessageBuilder
-                    .cardToken(paymentMethodToken)
-                    .orderItemId(orderItem.getOrderItemId())
-                    .vatPercentage(orderItem.getVatPercentage())
-                    .productName(orderItem.getProductName())
-                    .productQuantity(orderItem.getQuantity().toString());
-        }
-
-        OrderMessage orderMessage = orderMessageBuilder.build();
-        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
-        log.debug("triggered event ORDER_CREATED for orderId: " + order.getOrderId());
-    }
-
-    
 }
