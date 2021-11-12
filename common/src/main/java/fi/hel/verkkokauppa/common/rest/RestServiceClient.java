@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.common.rest;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,9 +12,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriUtils;
 import reactor.netty.http.client.HttpClient;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 
@@ -32,6 +36,12 @@ public class RestServiceClient {
         WebClient client = getClient();
         JSONObject response = postQueryJsonService(client, url, body);
         return response;
+    }
+
+
+    public void makeVoidPostCall(String url, String body) {
+        WebClient client = getClient();
+        postVoidQueryJsonService(client, url, body);
     }
 
     public WebClient getClient() {
@@ -63,6 +73,16 @@ public class RestServiceClient {
         return jsonObject;
     }
 
+    public JSONArray queryJsonArrayService(WebClient client, String url) {
+        String jsonResponse = client.get()
+                .uri(UriUtils.encode(url, StandardCharsets.UTF_8))
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        return new JSONArray(jsonResponse);
+    }
+
     public JSONObject postQueryJsonService(WebClient client, String url, String body) {
         String jsonResponse = client.post()
                 .uri(url)
@@ -74,6 +94,16 @@ public class RestServiceClient {
         JSONObject jsonObject = new JSONObject(jsonResponse);
 
         return jsonObject;
+    }
+
+    public void postVoidQueryJsonService(WebClient client, String url, String body) {
+        client.post()
+                .uri(url)
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
     }
 
 }

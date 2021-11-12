@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.mockproductmanagement.api;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -19,6 +20,8 @@ public class MockServiceConfigurationController {
     @GetMapping("/mockserviceconfiguration/asukaspysakointi/terms_of_use")
     public String getMockTermsOfUseUrlAP() { return "asukaspysakointi mock terms of use url"; }
 
+    @PostMapping("/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook")
+    public String getMerchantPaymentWebhookUrlAP() { return "asukaspysakointi mock merchantPaymentWebhookUrl"; }
 
     @GetMapping("/mockserviceconfiguration/tilavaraus/return_url")
     public String getMockPaymentReturnUrlTV() { return "tilavaraus mock payment return url"; }

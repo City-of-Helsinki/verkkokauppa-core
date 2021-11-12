@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.events.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -10,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 
@@ -31,11 +27,10 @@ public class PaymentMessageListener {
     @Value("${order.service.url}")
     private String orderServiceUrl;
 
-
     @KafkaListener(
             topics = "payments",
-            groupId="events-api",
-            containerFactory="paymentsKafkaListenerContainerFactory")
+            groupId = "events-api",
+            containerFactory = "paymentsKafkaListenerContainerFactory")
     private void paymentEventlistener(String jsonMessage) {
         try {
             log.info("paymentEventlistener [{}]", jsonMessage);
@@ -44,8 +39,8 @@ public class PaymentMessageListener {
             if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
                 log.debug("event type is PAYMENT_PAID");
                 paymentPaidAction(message);
-            }
-            else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
+                orderPaidWebHookAction(message);
+            } else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
                 log.debug("event type is PAYMENT_FAILED");
                 paymentFailedAction(message);
             }
@@ -54,17 +49,32 @@ public class PaymentMessageListener {
         }
     }
 
+    protected void orderPaidWebHookAction(PaymentMessage message) {
+        try {
+            callOrderApi(message,
+                    "/order/payment-paid-webhook",
+                    "/subscription/payment-paid-webhook");
+        } catch (Exception e) {
+            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
+        }
+    }
+
+    private void callOrderApi(PaymentMessage message, String orderPath, String subscriptionPath) throws Exception {
+        String orderType = message.getOrderType();
+        if (OrderType.SUBSCRIPTION.equals(orderType)) {
+            String url = orderServiceUrl + subscriptionPath;
+            callApi(message, url);
+        } else if (OrderType.ORDER.equals(orderType)) {
+            String url = orderServiceUrl + orderPath;
+            callApi(message, url);
+        }
+    }
+
     private void paymentPaidAction(PaymentMessage message) {
         try {
-            String orderType = message.getOrderType();
-
-            if (OrderType.SUBSCRIPTION.equals(orderType)) {
-                String url = orderServiceUrl + "/subscription/payment-paid-event";
-                callApi(message, url);
-            } else if (OrderType.ORDER.equals(orderType)) {
-                String url = orderServiceUrl + "/order/payment-paid-event";
-                callApi(message, url);
-            }
+            callOrderApi(message,
+                    "/order/payment-paid-event",
+                    "/subscription/payment-paid-event");
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
         }
@@ -72,15 +82,9 @@ public class PaymentMessageListener {
 
     private void paymentFailedAction(PaymentMessage message) {
         try {
-            String orderType = message.getOrderType();
-
-            if (OrderType.SUBSCRIPTION.equals(orderType)) {
-                String url = orderServiceUrl + "/subscription/payment-failed-event";
-                callApi(message, url);
-            } else if (OrderType.ORDER.equals(orderType)) {
-                String url = orderServiceUrl + "/order/payment-failed-event";
-                callApi(message, url);
-            }
+            callOrderApi(message,
+                    "/order/payment-failed-event",
+                    "/subscription/payment-failed-event");
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
         }

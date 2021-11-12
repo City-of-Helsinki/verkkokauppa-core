@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.productmapping.api;
+package fi.hel.verkkokauppa.productmapping.api.serviceConfiguration;
 
 import java.util.List;
 
@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.hel.verkkokauppa.productmapping.model.ServiceMapping;
-import fi.hel.verkkokauppa.productmapping.service.ServiceMappingService;
+import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceMapping;
+import fi.hel.verkkokauppa.productmapping.service.serviceMapping.ServiceMappingService;
 
 @RestController
 public class ServiceMappingController {

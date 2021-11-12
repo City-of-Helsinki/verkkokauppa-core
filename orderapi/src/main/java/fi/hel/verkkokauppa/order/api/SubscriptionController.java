@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -7,6 +9,9 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
@@ -61,6 +66,9 @@ public class SubscriptionController {
 	private final CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
 	private final CancelSubscriptionCommand cancelSubscriptionCommand;
 	private final UpdateSubscriptionCommand updateSubscriptionCommand;
+
+	@Autowired
+	private RestWebHookService restWebHookService;
 
 	@Autowired
 	public SubscriptionController(
@@ -282,4 +290,23 @@ public class SubscriptionController {
 		log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
 	}
 
+	@PostMapping(value = "/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
+
+		try {
+			// This row validates that message contains authorization to order.
+			orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+
+			restWebHookService.setNamespace(message.getNamespace());
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+			);
+		}
+	}
 }

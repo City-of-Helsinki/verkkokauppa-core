@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.productmapping.model;
+package fi.hel.verkkokauppa.productmapping.model.serviceConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
