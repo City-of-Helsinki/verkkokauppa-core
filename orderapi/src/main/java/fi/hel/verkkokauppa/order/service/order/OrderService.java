@@ -232,9 +232,9 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void triggerOrderCreatedEvent(Order order) {
+    public void triggerOrderCreatedEvent(Order order, String eventType) {
         OrderMessage.OrderMessageBuilder orderMessageBuilder = OrderMessage.builder()
-                .eventType(EventType.ORDER_CREATED)
+                .eventType(eventType)
                 .namespace(order.getNamespace())
                 .orderId(order.getOrderId())
                 .timestamp(order.getCreatedAt())
@@ -242,7 +242,7 @@ public class OrderService {
                 .priceTotal(order.getPriceTotal())
                 .priceNet(order.getPriceNet());
 
-        if (order.getType().equalsIgnoreCase(OrderType.SUBSCRIPTION) && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+        if (StringUtils.isNotEmpty(order.getSubscriptionId())) {
             SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId());
             String paymentMethodToken = subscription.getPaymentMethodToken();
 
@@ -254,12 +254,15 @@ public class OrderService {
                     .orderItemId(orderItem.getOrderItemId())
                     .vatPercentage(orderItem.getVatPercentage())
                     .productName(orderItem.getProductName())
-                    .productQuantity(orderItem.getQuantity().toString());
+                    .productQuantity(orderItem.getQuantity().toString())
+                    .isSubscriptionRenewalOrder(Boolean.TRUE.toString())
+                    .subscriptionId(order.getSubscriptionId())
+                    .userId(order.getUser());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
-        log.debug("triggered event ORDER_CREATED for orderId: " + order.getOrderId());
+        log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
     }
 
 }

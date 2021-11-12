@@ -40,9 +40,6 @@ public class OnlinePaymentController {
 
 	private Logger log = LoggerFactory.getLogger(OnlinePaymentController.class);
 
-	@Value("${payment.card_token.encryption.password}")
-	private String cardTokenEncryptionPassword;
-
 	@Autowired
     private OnlinePaymentService service;
 
@@ -51,9 +48,6 @@ public class OnlinePaymentController {
 
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
-
-	@Autowired
-    private SendEventService sendEventService;
 
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -104,7 +98,7 @@ public class OnlinePaymentController {
 	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 														  @RequestParam(value = "userId") String userId) {
 		try {
-			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
 			return ResponseEntity.status(HttpStatus.OK).body(payment);
 		} catch (CommonApiException cae) {
 			throw cae;
@@ -121,7 +115,7 @@ public class OnlinePaymentController {
 	public ResponseEntity<String> getPaymentUrl(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 												@RequestParam(value = "userId") String userId) {
 		try {
-			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
 			String paymentUrl = service.getPaymentUrl(payment);
 			return ResponseEntity.status(HttpStatus.OK).body(paymentUrl);
 		} catch (CommonApiException cae) {
@@ -139,7 +133,7 @@ public class OnlinePaymentController {
 	public ResponseEntity<String> getPaymentStatus(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 												   @RequestParam(value = "userId") String userId) {
 		try {
-			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
 			return ResponseEntity.status(HttpStatus.OK).body(payment.getStatus());
 		} catch (CommonApiException cae) {
 			throw cae;
@@ -156,7 +150,7 @@ public class OnlinePaymentController {
 	public ResponseEntity<PaymentCardInfoDto> getPaymentCardInfo(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 																 @RequestParam(value = "userId") String userId) {
 		try {
-			Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
 			String paymentToken = payment.getToken();
 			PaymentCardInfoDto paymentCardToken = service.getPaymentCardToken(paymentToken);
 
@@ -176,27 +170,9 @@ public class OnlinePaymentController {
 	public ResponseEntity<PaymentReturnDto> checkReturnUrl(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode,
 		@RequestParam(value = "ORDER_NUMBER") String paymentId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
 		try {
-			boolean isValid = false;
-			boolean isPaymentPaid = false;
-			boolean canRetry = false;
-
-			isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, paymentId, settled, incidentId);
-
-			if (isValid) {
-				if ("0".equals(returnCode) && "1".equals(settled)) {
-					isPaymentPaid = true;
-					canRetry = false;
-				} else {
-					isPaymentPaid = false;
-					// returnCode 4 = "Transaction status could not be updated after customer returned from a payment facilitator's web page. Please use the merchant UI to resolve the payment status."
-					if (!"4".equals(returnCode)) {
-						canRetry = true;
-					}
-				}
-			}
-
-			PaymentReturnDto paymentReturnDto = new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
-			updatePaymentStatus(paymentId, paymentReturnDto);
+			boolean isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, paymentId, settled, incidentId);
+			PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(isValid, returnCode, settled);
+			service.updatePaymentStatus(paymentId, paymentReturnDto);
 
 			return ResponseEntity.status(HttpStatus.OK).body(paymentReturnDto);
 		} catch (CommonApiException cae) {
@@ -210,119 +186,5 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@PostMapping(value = "/payment/order-created-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> orderCreatedEventCallback(@RequestBody OrderMessage message) {
-		log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
-
-		// TODO Check the right to purchase
-
-		Payment paymentForOrder = service.getPaymentForOrder(message.getOrderId());
-
-		if (paymentForOrder == null) {
-			if (message.orderType.equalsIgnoreCase(OrderType.SUBSCRIPTION) && message.getCardToken() != null) {
-				ChargeCardTokenRequestDataDto request = new ChargeCardTokenRequestDataDto(
-						message.getNamespace(),
-						message.getOrderId(),
-						message.getOrderItemId(),
-						message.getProductName(),
-						message.getProductQuantity(),
-						message.getPriceTotal(),
-						message.getPriceNet(),
-						message.getVatPercentage(),
-						message.getCardToken()
-				);
-
-				service.chargeCardToken(request);
-			}
-		}
-
-		return ResponseEntity.ok().build();
-	}
-
-	private void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
-		Payment payment = service.getPayment(paymentId);
-
-		if (paymentReturnDto.isValid()) {
-			if (paymentReturnDto.isPaymentPaid()) {
-				// if not already paid earlier
-				if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
-					service.setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
-					triggerPaymentPaidEvent(payment);
-				} else {
-					log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
-				}
-			} else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
-				// if not already cancelled earlier
-				if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
-					service.setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
-					triggerPaymentFailedEvent(payment);
-				} else {
-					log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
-				}
-			} else {
-				log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
-			}
-		}
-	}
-
-	protected void triggerPaymentPaidEvent(Payment payment) {
-		String now = DateTimeUtil.getDateTime();
-
-		PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
-				.eventType(EventType.PAYMENT_PAID)
-				.eventTimestamp(now)
-				.namespace(payment.getNamespace())
-				.paymentId(payment.getPaymentId())
-				.orderId(payment.getOrderId())
-				.userId(payment.getUserId())
-				.paymentPaidTimestamp(now)
-				.orderType(payment.getPaymentType());
-
-		if (PaymentType.CREDIT_CARDS.equalsIgnoreCase(payment.getPaymentMethod())) {
-			PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId()).getBody();
-
-			if (paymentCardInfo != null) {
-				String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfo.getCardToken(), cardTokenEncryptionPassword);
-
-				paymentMessageBuilder
-						.encryptedCardToken(encryptedToken)
-						.cardTokenExpYear(paymentCardInfo.getExpYear())
-						.cardTokenExpMonth(paymentCardInfo.getExpMonth());
-			}
-		}
-
-		PaymentMessage paymentMessage = paymentMessageBuilder.build();
-
-		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-		log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
-	}
-
-	private void triggerPaymentFailedEvent(Payment payment) {
-		PaymentMessage paymentMessage = PaymentMessage.builder()
-				.eventType(EventType.PAYMENT_FAILED)
-				.namespace(payment.getNamespace())
-				.paymentId(payment.getPaymentId())
-				.orderId(payment.getOrderId())
-				.userId(payment.getUserId())
-				//.paymentPaidTimestamp(payment.getTimestamp())
-				.orderType(payment.getPaymentType())
-				.build();
-		sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-		log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
-	}
-
-
-	private Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
-		Payment payment = service.getPaymentForOrder(orderId);
-
-		String paymentUserId = payment.getUserId();
-		if (!paymentUserId.equals(userId)) {
-			log.error("unauthorized attempt to load payment, userId does not match");
-			Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
-			throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-		}
-
-		return payment;
-	}
 
 }

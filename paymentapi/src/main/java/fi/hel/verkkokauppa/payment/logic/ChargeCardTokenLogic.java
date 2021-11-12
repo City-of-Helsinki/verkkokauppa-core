@@ -20,7 +20,7 @@ public class ChargeCardTokenLogic {
     @Autowired
     private Environment env;
 
-	public String chargeCardToken(ChargeCardTokenRequest.CardTokenPayload payload) {
+	public ChargeCardTokenResponse chargeCardToken(ChargeCardTokenRequest.CardTokenPayload payload) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
 		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
 		String apiVersion = env.getRequiredProperty("payment_transaction_api_version");
@@ -34,7 +34,7 @@ public class ChargeCardTokenLogic {
 		try {
 			ChargeCardTokenResponse response = responseCF.get();
 			if (response.getResult() == 0) {
-				return response.getSettled().toString();
+				return response;
 			} else {
 				log.error("card token charge request failed, check application.properties");
 				throw new RuntimeException(buildErrorMsg(response));

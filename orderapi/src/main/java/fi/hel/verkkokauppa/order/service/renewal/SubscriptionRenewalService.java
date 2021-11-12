@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalProcess;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalRequest;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalProcessRepository;
@@ -54,8 +55,8 @@ public class SubscriptionRenewalService {
     public String renewSubscription(String subscriptionId) {
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
         String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-
-        orderService.triggerOrderCreatedEvent(orderService.findById(orderId));
+        Order order = orderService.findById(orderId);
+        orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
 
         return orderId;
     }

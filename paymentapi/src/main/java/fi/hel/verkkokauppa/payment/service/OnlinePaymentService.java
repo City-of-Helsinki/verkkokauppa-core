@@ -1,20 +1,18 @@
 package fi.hel.verkkokauppa.payment.service;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
-import fi.hel.verkkokauppa.payment.logic.CardTokenFetcher;
-import fi.hel.verkkokauppa.payment.logic.CardTokenPayloadBuilder;
-import fi.hel.verkkokauppa.payment.logic.ChargeCardTokenLogic;
-import fi.hel.verkkokauppa.payment.logic.PaymentContext;
-import fi.hel.verkkokauppa.payment.logic.PaymentContextBuilder;
-import fi.hel.verkkokauppa.payment.logic.PaymentTokenPayloadBuilder;
-import fi.hel.verkkokauppa.payment.logic.TokenFetcher;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.payment.api.data.*;
+import fi.hel.verkkokauppa.payment.logic.*;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -25,9 +23,11 @@ import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
+import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -68,6 +68,13 @@ public class OnlinePaymentService {
 
     @Autowired
     private PaymentContextBuilder paymentContextBuilder;
+
+    @Autowired
+    private SendEventService sendEventService;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
+
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
         OrderDto order = dto.getOrder().getOrder();
@@ -136,11 +143,8 @@ public class OnlinePaymentService {
             return paidPayment;
         else if (payablePayment != null)
             return payablePayment;
-        else {
-            log.debug("no returnable payment, orderId: " + orderId);
-            Error error = new Error("payment-not-found-from-backend", "paid or payable payment with order id [" + orderId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
+        else
+            return null;
     }
 
     // payment precedence selection from KYV-186
@@ -257,11 +261,147 @@ public class OnlinePaymentService {
         payerRepository.save(payer);
     }
 
-    public void chargeCardToken(ChargeCardTokenRequestDataDto request) {
+    public Payment createSubscriptionRenewalPayment(OrderMessage message) {
+
+        String paymentId = PaymentUtil.generatePaymentOrderNumber(message.getOrderId());
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+
+        String namespace = message.getNamespace();
+
+        Payment payment = new Payment();
+        payment.setPaymentId(paymentId);
+        payment.setNamespace(message.getNamespace());
+        payment.setOrderId(message.getOrderId());
+        payment.setUserId(message.getUserId());
+        payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
+        payment.setTimestamp(sdf.format(timestamp));
+        payment.setPaymentType(OrderType.SUBSCRIPTION);
+        payment.setStatus(PaymentStatus.CREATED);
+        payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
+        payment.setTaxAmount(new BigDecimal(message.getVatPercentage()));
+        payment.setTotal(new BigDecimal(message.getPriceTotal()));
+        paymentRepository.save(payment);
+
+        OrderItemDto item = new OrderItemDto();
+        item.setOrderItemId(message.getOrderItemId());
+        item.setProductName(message.getProductName());
+        item.setQuantity(Integer.parseInt(message.getProductQuantity()));
+        item.setRowPriceTotal(new BigDecimal(message.getPriceTotal()));
+        item.setRowPriceNet(new BigDecimal(message.getPriceNet()));
+        item.setVatPercentage(message.getVatPercentage());
+        createPaymentItem(item, paymentId, message.getOrderId());
+
+        log.debug("created subscription renewal payment for namespace: " + namespace + " with paymentId: " + paymentId);
+
+        return payment;
+    }
+
+    public ChargeCardTokenResponse chargeCardToken(ChargeCardTokenRequestDataDto request) {
         PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
         ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
 
-        chargeCardTokenLogic.chargeCardToken(payload);
+        return chargeCardTokenLogic.chargeCardToken(payload);
+    }
+
+    public PaymentCardInfoDto getPaymentCardInfo(String namespace, String orderId, String userId) {
+        Payment payment = findByIdValidateByUser(namespace, orderId, userId);
+        String paymentToken = payment.getToken();
+        PaymentCardInfoDto paymentCardToken = getPaymentCardToken(paymentToken);
+
+        return paymentCardToken;
+    }
+
+    public void triggerPaymentPaidEvent(Payment payment) {
+        String now = DateTimeUtil.getDateTime();
+
+        PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
+                .eventType(EventType.PAYMENT_PAID)
+                .eventTimestamp(now)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .paymentPaidTimestamp(now)
+                .orderType(payment.getPaymentType());
+
+        if (PaymentType.CREDIT_CARDS.equalsIgnoreCase(payment.getPaymentMethod())) {
+            PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId());
+
+            if (paymentCardInfo != null) {
+                String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfo.getCardToken(), cardTokenEncryptionPassword);
+
+                paymentMessageBuilder
+                        .encryptedCardToken(encryptedToken)
+                        .cardTokenExpYear(paymentCardInfo.getExpYear())
+                        .cardTokenExpMonth(paymentCardInfo.getExpMonth());
+            }
+        }
+
+        PaymentMessage paymentMessage = paymentMessageBuilder.build();
+
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+    }
+
+    public void triggerPaymentFailedEvent(Payment payment) {
+        PaymentMessage paymentMessage = PaymentMessage.builder()
+                .eventType(EventType.PAYMENT_FAILED)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                //.paymentPaidTimestamp(payment.getTimestamp())
+                .orderType(payment.getPaymentType())
+                .build();
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
+    }
+
+
+    public Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
+        Payment payment = getPaymentForOrder(orderId);
+        if (payment == null) {
+            log.debug("no returnable payment, orderId: " + orderId);
+            Error error = new Error("payment-not-found-from-backend", "paid or payable payment with order id [" + orderId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        String paymentUserId = payment.getUserId();
+        if (!paymentUserId.equals(userId)) {
+            log.error("unauthorized attempt to load payment, userId does not match");
+            Error error = new Error("payment-not-found-from-backend", "payment with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return payment;
+    }
+
+    public void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
+        Payment payment = getPayment(paymentId);
+
+        if (paymentReturnDto.isValid()) {
+            if (paymentReturnDto.isPaymentPaid()) {
+                // if not already paid earlier
+                if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
+                    setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
+                    triggerPaymentPaidEvent(payment);
+                } else {
+                    log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
+                }
+            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
+                // if not already cancelled earlier
+                if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
+                    setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
+                    triggerPaymentFailedEvent(payment);
+                } else {
+                    log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
+                }
+            } else {
+                log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
+            }
+        }
     }
 
 }

@@ -55,7 +55,7 @@ public class CreateOrderFromSubscriptionCommand {
 		String user = subscriptionDto.getUser();
 
 		Order order = orderService.createByParams(namespace, user);
-		order.setType(OrderType.SUBSCRIPTION);
+		order.setType(OrderType.ORDER);
 
 		copyCustomerInfoFromSubscription(subscriptionDto, order);
 		orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());

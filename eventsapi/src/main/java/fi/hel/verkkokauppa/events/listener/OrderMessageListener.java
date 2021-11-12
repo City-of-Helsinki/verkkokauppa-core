@@ -41,22 +41,18 @@ public class OrderMessageListener {
             log.info("orderCreatedlistener [{}]", jsonMessage);
             OrderMessage message = objectMapper.readValue(jsonMessage, OrderMessage.class);
 
-            if (EventType.ORDER_CREATED.equals(message.getEventType())) {
-                log.info("event type is ORDER_CREATED");
-                orderCreatedAction(message);
+            if (EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED.equals(message.getEventType())) {
+                log.info("event type is SUBSCRIPTION_RENEWAL_ORDER_CREATED");
+                subscriptionRenewalOrderCreatedAction(message);
             }
-
-            String paymentServiceUrl = env.getRequiredProperty("payment.service.url");
-            log.info("payment.service.url is: " + paymentServiceUrl);
-
         } catch (Exception e) {
             log.error("handling listened orders event failed, jsonMessage: " + jsonMessage, e);
         }
     }
 
-    private void orderCreatedAction(OrderMessage message) {
+    private void subscriptionRenewalOrderCreatedAction(OrderMessage message) {
         try {
-            String url = paymentServiceUrl + "/payment/order-created-event";
+            String url = paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
             callApi(message, url);
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
@@ -67,6 +63,6 @@ public class OrderMessageListener {
         //format payload, message to json string conversion
         String body = objectMapper.writeValueAsString(message);
         //send to target url
-        restServiceClient.makePostCall(url, body);
+        restServiceClient.makeVoidPostCall(url, body);
     }
 }
