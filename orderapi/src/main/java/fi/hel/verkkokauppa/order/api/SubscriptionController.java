@@ -220,7 +220,7 @@ public class SubscriptionController {
 		return ResponseEntity.ok().body(dto);
 	}
 
-	@PostMapping(value = "/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/subscription/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
 
 		try {
