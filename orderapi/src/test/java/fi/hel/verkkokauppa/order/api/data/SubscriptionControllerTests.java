@@ -1,7 +1,9 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -11,6 +13,8 @@ import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -57,14 +61,20 @@ public class SubscriptionControllerTests extends DummyData {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
+
+    @Autowired
+    private GetSubscriptionQuery getSubscriptionQuery;
+
     @Test
     public void assertTrue(){
         Assertions.assertTrue(true);
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-//    @Test
-    public void testCreateWithItems() {
+    //@Test
+    public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
@@ -116,6 +126,12 @@ public class SubscriptionControllerTests extends DummyData {
         // Order metas succesfully copied to subscription_item_metas
         Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
         Assert.assertEquals(subscriptions.get(0).getOrderId(), Objects.requireNonNull(response.getBody()).getOrder().getOrderId());
+
+        // These checks if order can be purchased. KYV-233 and KYV-393
+        SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptions.get(0).getSubscriptionId());
+        String createdOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+        Assert.assertNotNull(createdOrderFromSubscription);
+
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.

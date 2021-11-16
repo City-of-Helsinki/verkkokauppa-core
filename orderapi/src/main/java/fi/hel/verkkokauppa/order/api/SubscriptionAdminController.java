@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -84,7 +85,7 @@ public class SubscriptionAdminController {
     }
 
     @PostMapping(value = "/subscription-admin/renewal-requested-event", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) {
+    public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) throws JsonProcessingException {
         log.debug("subscription-api received SUBSCRIPTION_RENEWAL_REQUESTED event for subscriptionId: " + message.getSubscriptionId());
         String subscriptionId = message.getSubscriptionId();
 

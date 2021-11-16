@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.renewal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
@@ -52,11 +53,13 @@ public class SubscriptionRenewalService {
     @Autowired
     private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
 
-    public String renewSubscription(String subscriptionId) {
+    public String renewSubscription(String subscriptionId) throws JsonProcessingException {
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
         String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        Order order = orderService.findById(orderId);
-        orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
+        if (orderId != null) {
+            Order order = orderService.findById(orderId);
+            orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
+        }
 
         return orderId;
     }

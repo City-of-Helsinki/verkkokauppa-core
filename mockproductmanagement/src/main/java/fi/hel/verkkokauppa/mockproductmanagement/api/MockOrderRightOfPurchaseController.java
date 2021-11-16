@@ -12,11 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("mock/**/order/")
 public class MockOrderRightOfPurchaseController {
     private Logger log = LoggerFactory.getLogger(MockOrderRightOfPurchaseController.class);
 
-    @PostMapping("right-of-purchase")
+    @PostMapping("mock/**/order/right-of-purchase")
     public ResponseEntity<OrderRightOfPurchaseResponse> getOrderRightOfPurchase(@RequestBody String data) {
         try {
             JSONObject orderRightOfPurchaseRequest = new JSONObject(data);

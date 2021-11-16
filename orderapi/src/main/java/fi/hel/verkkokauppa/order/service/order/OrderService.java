@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
@@ -22,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,9 @@ public class OrderService {
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
+
+    @Autowired
+    private OrderRightOfPurchaseService orderRightOfPurchaseService;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -263,6 +268,14 @@ public class OrderService {
         OrderMessage orderMessage = orderMessageBuilder.build();
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
         log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
+    }
+
+    public boolean validateRightOfPurchase(String orderId, String user, String namespace) throws JsonProcessingException {
+        Order order = findByIdValidateByUser(orderId, user);
+        orderRightOfPurchaseService.setNamespace(namespace);
+        OrderAggregateDto dto = getOrderWithItems(order.getOrderId());
+        ResponseEntity<Boolean> canPurchase = orderRightOfPurchaseService.canPurchase(dto);
+        return Boolean.TRUE.equals(canPurchase.getBody());
     }
 
 }

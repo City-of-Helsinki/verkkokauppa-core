@@ -78,7 +78,7 @@ public class ServiceConfigurationService {
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/backend/asukaspysakointi/order/right-of-purchase", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", true),
 
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
@@ -96,7 +96,7 @@ public class ServiceConfigurationService {
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/merchant_payment_webhook", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", true),
-                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/backend/venepaikat/order/right-of-purchase", true)
+                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", true)
 
                 );
 
