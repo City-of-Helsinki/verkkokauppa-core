@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -160,6 +161,34 @@ public class SubscriptionService {
                             "setting payment method token for subscription with id [" + subscriptionId + "] failed")
             );
         }
+    }
+
+    public Subscription findByIdValidateByUser(String subscriptionId, String userId) {
+        Subscription subscription = findById(subscriptionId);
+
+        if (subscription == null) {
+            Error error = new Error("subscription-not-found-from-backend", "subscription with id [" + subscriptionId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        String subscriptionUserId = subscription.getUser();
+        if (subscriptionUserId == null || userId == null || !subscriptionUserId.equals(userId)) {
+            log.error("unauthorized attempt to load subscription, userId does not match");
+            Error error = new Error("subscription-not-found-from-backend", "subscription with subscription id [" + subscriptionId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return subscription;
+    }
+
+    public Subscription findById(String subscriptionId) {
+        Optional<Subscription> mapping = subscriptionRepository.findById(subscriptionId);
+
+        if (mapping.isPresent())
+            return mapping.get();
+
+        log.warn("subscription not found, orderId: " + subscriptionId);
+        return null;
     }
 
 }
