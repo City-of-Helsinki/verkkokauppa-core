@@ -29,13 +29,21 @@ public class RestServiceClient {
     public JSONObject makeGetCall(String url) {
         WebClient client = getClient();
         JSONObject response = queryJsonService(client, url);
-        return response;
+        if (response == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(response);
+        }
     }
 
     public JSONObject makePostCall(String url, String body) {
         WebClient client = getClient();
         JSONObject response = postQueryJsonService(client, url, body);
-        return response;
+        if (response == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(response);
+        }
     }
 
 
@@ -68,19 +76,12 @@ public class RestServiceClient {
                 .bodyToMono(String.class)
                 .block();
 
-        JSONObject jsonObject = new JSONObject(jsonResponse);
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
 
-        return jsonObject;
-    }
-
-    public JSONArray queryJsonArrayService(WebClient client, String url) {
-        String jsonResponse = client.get()
-                .uri(UriUtils.encode(url, StandardCharsets.UTF_8))
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-
-        return new JSONArray(jsonResponse);
     }
 
     public JSONObject postQueryJsonService(WebClient client, String url, String body) {
@@ -91,9 +92,11 @@ public class RestServiceClient {
                 .bodyToMono(String.class)
                 .block();
 
-        JSONObject jsonObject = new JSONObject(jsonResponse);
-
-        return jsonObject;
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
     }
 
     public void postVoidQueryJsonService(WebClient client, String url, String body) {
