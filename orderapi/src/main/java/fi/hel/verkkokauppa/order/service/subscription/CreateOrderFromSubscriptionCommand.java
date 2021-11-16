@@ -108,6 +108,7 @@ public class CreateOrderFromSubscriptionCommand {
 		if (!subscriptionMeta.isEmpty()) {
 			subscriptionMeta.forEach(meta -> {
 				OrderItemMetaDto orderItemMeta = new OrderItemMetaDto(
+						null,
 						orderItemId,
 						orderId,
 						meta.getKey(),

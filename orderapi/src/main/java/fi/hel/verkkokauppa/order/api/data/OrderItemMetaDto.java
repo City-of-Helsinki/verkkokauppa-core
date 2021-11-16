@@ -1,8 +1,14 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderItemMetaDto {
 
     // generated or enriched
@@ -16,20 +22,6 @@ public class OrderItemMetaDto {
     private String label;
     private String visibleInCheckout;
     private String ordinal;
-
-    public OrderItemMetaDto() {
-    }
-
-    public OrderItemMetaDto(String orderItemId, String orderId, String key, String value, String label,
-                            String visibleInCheckout, String ordinal) {
-        this.orderItemId = orderItemId;
-        this.orderId = orderId;
-        this.key = key;
-        this.value = value;
-        this.label = label;
-        this.visibleInCheckout = visibleInCheckout;
-        this.ordinal = ordinal;
-    }
 
 }
 

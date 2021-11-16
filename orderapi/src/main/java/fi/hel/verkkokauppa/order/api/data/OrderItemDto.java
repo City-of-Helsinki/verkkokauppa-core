@@ -1,15 +1,16 @@
 package fi.hel.verkkokauppa.order.api.data;
 
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
-import lombok.Data;
-import lombok.Getter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderItemDto implements OrderItemSubscriptionFields {
 
     private String orderItemId;
