@@ -31,5 +31,13 @@ public class CommonServiceConfigurationClient {
         return namespaceServiceConfiguration.optString("configurationValue", null);
     }
 
+    public String getPublicServiceConfigurationValue(String namespace, String key) {
+        String serviceMappingUrl = serviceConfigurationUrl + "public/get?namespace=" + namespace + "&key=" + key;
+        JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), serviceMappingUrl);
+        log.debug("namespaceServiceConfiguration: " + namespaceServiceConfiguration);
+
+        return namespaceServiceConfiguration.optString("configurationValue", null);
+    }
+
 }
     
