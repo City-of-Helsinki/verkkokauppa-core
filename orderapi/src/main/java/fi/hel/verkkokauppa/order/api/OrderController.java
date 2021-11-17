@@ -17,6 +17,7 @@ import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,8 @@ public class OrderController {
     @Autowired
     private SubscriptionService subscriptionService;
 
+	@Autowired
+    private OrderRightOfPurchaseService orderRightOfPurchaseService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -93,7 +96,7 @@ public class OrderController {
             );
         }
     }
-    
+
     @GetMapping(value = "/order/get-by-subscription", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderAggregateDto>> getOrdersBySubscription(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "userId") String userId) {
         try {
@@ -155,6 +158,25 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-cancel-order", "failed to cancel order with id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order/right-of-purchase", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Boolean> rightOfPurchaseOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
+        try {
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
+            orderRightOfPurchaseService.setNamespace(order.getNamespace());
+            OrderAggregateDto dto = orderService.getOrderWithItems(orderId);
+            return orderRightOfPurchaseService.canPurchase(dto);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("right of purchase order failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-cancel-order", "failed to check right of purchase order id [" + orderId + "]")
             );
         }
     }
