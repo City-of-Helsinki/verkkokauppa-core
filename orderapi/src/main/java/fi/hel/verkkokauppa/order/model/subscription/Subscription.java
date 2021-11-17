@@ -36,6 +36,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	private LocalDateTime updatedAt;
 
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	private LocalDateTime cancelledAt;
+
 	@Field(type = FieldType.Text) // TODO: keyword?
 	private String status;
 
@@ -105,12 +108,22 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	// Product quantity, not subscription count.
 	@Field(type = FieldType.Integer)
 	private Integer quantity;
+
+	@Field(type = FieldType.Text)
+	String unit;
+
+	@Field(type = FieldType.Text)
+	String vatPercentage;
+
 	@Field(type = FieldType.Text)
 	String priceNet;
+
 	@Field(type = FieldType.Text)
 	String priceVat;
+
 	@Field(type = FieldType.Text)
 	String priceGross;
+
 //	@Field(type = FieldType.Date, format = DateFormat.date)
 //	private LocalDate paidThroughDate;
 

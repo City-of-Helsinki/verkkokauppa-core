@@ -68,7 +68,7 @@ public class OnlinePaymentControllerTests {
     public void testUpdatePaymentStatus() throws JsonProcessingException, InterruptedException {
         payment = TestPaymentCreator.getDummyPayment("5e9c9784-4856-354b-8e2a-2d89de749249", "dummy_user", "venepaikat");
         //paymentRepository.save(payment);
-        onlinePaymentController.triggerPaymentPaidEvent(payment);
+        onlinePaymentService.triggerPaymentPaidEvent(payment);
         Boolean bool = kafkaTestConsumer.getLatch().await(10000, TimeUnit.MILLISECONDS);
         ConsumerRecord<?, ?> record = kafkaTestConsumer.getPayload();
         assertEquals(kafkaTestConsumer.getLatch().getCount(), 0L);

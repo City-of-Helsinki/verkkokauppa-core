@@ -20,5 +20,7 @@ public class SubscriptionCriteria implements Serializable {
 	private String status;
 	private String namespace;
 
+	private LocalDate endDateBefore;
+
 	// TODO: 2 x address id?
 }

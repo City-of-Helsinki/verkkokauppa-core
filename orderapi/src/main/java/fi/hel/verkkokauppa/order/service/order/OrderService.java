@@ -1,12 +1,20 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.error.ErrorModel;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -15,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,8 +33,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -47,6 +58,12 @@ public class OrderService {
 
     @Autowired
     private NextDateCalculator nextDateCalculator;
+
+    @Autowired
+    private SendEventService sendEventService;
+
+    @Autowired
+    private GetSubscriptionQuery getSubscriptionQuery;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -217,4 +234,50 @@ public class OrderService {
         order.setSubscriptionId(subscriptionId);
         orderRepository.save(order);
     }
+
+    public void triggerOrderCreatedEvent(Order order, String eventType) {
+        OrderMessage.OrderMessageBuilder orderMessageBuilder = OrderMessage.builder()
+                .eventType(eventType)
+                .namespace(order.getNamespace())
+                .orderId(order.getOrderId())
+                .timestamp(order.getCreatedAt())
+                .orderType(order.getType())
+                .priceTotal(order.getPriceTotal())
+                .priceNet(order.getPriceNet());
+
+        if (StringUtils.isNotEmpty(order.getSubscriptionId())) {
+            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId());
+            String paymentMethodToken = subscription.getPaymentMethodToken();
+
+            List<OrderItem> orderitems = orderItemService.findByOrderId(order.getOrderId());
+            OrderItem orderItem = orderitems.get(0); // orders created from subscription have only one item
+
+            orderMessageBuilder
+                    .cardToken(paymentMethodToken)
+                    .orderItemId(orderItem.getOrderItemId())
+                    .vatPercentage(orderItem.getVatPercentage())
+                    .productName(orderItem.getProductName())
+                    .productQuantity(orderItem.getQuantity().toString())
+                    .isSubscriptionRenewalOrder(Boolean.TRUE.toString())
+                    .subscriptionId(order.getSubscriptionId())
+                    .userId(order.getUser());
+        }
+
+        OrderMessage orderMessage = orderMessageBuilder.build();
+        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
+        log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
+    }
+
+    public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
+        List<String> orderIds = orderRepository.findOrderIdBySubscriptionId(subscriptionId);
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(orderId -> getOrderWithItems(orderId))
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
+    }
+
 }

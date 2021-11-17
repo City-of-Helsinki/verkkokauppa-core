@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.events.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -10,6 +11,7 @@ import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -29,6 +31,10 @@ public class SubscriptionMessageListener {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Value("${order.service.url}")
+    private String orderServiceUrl;
+
+
     @KafkaListener(
             topics = "subscriptions",
             groupId="events-api",
@@ -40,15 +46,41 @@ public class SubscriptionMessageListener {
 
             if (EventType.SUBSCRIPTION_CREATED.equals(message.getEventType())) {
                 log.info("event type is SUBSCRIPTION_CREATED");
-                // TODO action
+                subscriptionCreatedAction(message);
+            } else if (EventType.SUBSCRIPTION_CANCELLED.equals(message.getEventType())) {
+                log.info("event type is SUBSCRIPTION_CANCELLED");
+                subscriptionCancelledAction(message);
+            } else if (EventType.SUBSCRIPTION_RENEWAL_REQUESTED.equals(message.getEventType())) {
+                log.info("event type is SUBSCRIPTION_RENEWAL_REQUESTED");
+                subscriptionRenewalRequestedAction(message);
             }
-
-            String orderServiceUrl = env.getRequiredProperty("order.service.url");
-            log.info("order.service.url is: " + orderServiceUrl);
-
         } catch (Exception e) {
             log.error("handling listened subscriptions event failed, jsonMessage: " + jsonMessage, e);
         }
+    }
+
+    private void subscriptionCreatedAction(SubscriptionMessage message) {
+        // TODO action
+    }
+
+    private void subscriptionCancelledAction(SubscriptionMessage message) {
+        // TODO action
+    }
+
+    private void subscriptionRenewalRequestedAction(SubscriptionMessage message) {
+        try {
+            String url = orderServiceUrl + "/subscription-admin/renewal-requested-event";
+            callApi(message, url);
+        } catch (Exception e) {
+            log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
+        }
+    }
+
+    private void callApi(SubscriptionMessage message, String url) throws Exception {
+        //format payload, message to json string conversion
+        String body = objectMapper.writeValueAsString(message);
+        //send to target url
+        restServiceClient.makeVoidPostCall(url, body);
     }
 
 }

@@ -20,8 +20,7 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 
-		if (!StringUtils.isEmpty(criteria.getStatus())
-				&& Period.getAllowedPeriods().contains(criteria.getStatus())) {
+		if (!StringUtils.isEmpty(criteria.getStatus())) {
 			qb.must(QueryBuilders.termQuery("status", criteria.getStatus()));
 		}
 		if (!StringUtils.isEmpty(criteria.getCustomerEmail())) {
@@ -29,6 +28,11 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 		}
 		if (!StringUtils.isEmpty(criteria.getNamespace())) {
 			qb.must(QueryBuilders.termQuery("namespace", criteria.getNamespace()));
+		}
+
+		if (criteria.getEndDateBefore() != null) {
+			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("endDate").lt(criteria.getEndDateBefore());
+			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 
 		return qb;

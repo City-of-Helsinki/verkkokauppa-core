@@ -36,6 +36,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String productName;
     private String productId;
     private Integer quantity;
+    private String unit;
     private String orderItemId;
     // Payment data
     private String paymentMethod;
@@ -47,6 +48,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private Long periodFrequency;
     private Integer periodCount;
     // Price data
+    private String vatPercentage;
     private String priceNet;
     private String priceVat;
     private String priceGross;

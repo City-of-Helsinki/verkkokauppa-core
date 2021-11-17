@@ -12,10 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SubscriptionMessage implements EventMessage {
-    public String eventType;
-    public String namespace;
+    String eventType;
+    String namespace;
 
-    public String subscriptionId;
-    public String timestamp;
+    String subscriptionId;
+    String timestamp;
+
+    String cancellationCause;
 
 }

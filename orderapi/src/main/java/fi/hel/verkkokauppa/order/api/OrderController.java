@@ -17,16 +17,22 @@ import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
+import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 public class OrderController {
@@ -48,8 +54,11 @@ public class OrderController {
 	@Autowired
     private CommonBeanValidationService commonBeanValidationService;
 
-	@Autowired
+    @Autowired
     private RestWebHookService restWebHookService;
+
+    @Autowired
+    private SubscriptionService subscriptionService;
 
 	@Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
@@ -83,6 +92,24 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order/get-by-subscription", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<OrderAggregateDto>> getOrdersBySubscription(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "userId") String userId) {
+        try {
+            subscriptionService.findByIdValidateByUser(subscriptionId, userId);
+            List<OrderAggregateDto> subscriptionOrders = orderService.findBySubscription(subscriptionId);
+            return ResponseEntity.ok(subscriptionOrders);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting orders failed, subscriptionId: " + subscriptionId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-orders", "failed to get orders with subscriptionId [" + subscriptionId + "]")
             );
         }
     }
@@ -319,8 +346,29 @@ public class OrderController {
     public ResponseEntity<String> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
         log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 
-        // TODO
+        subscriptionService.afterRenewalPaymentPaidEventActions(message);
+
         return null;
+    }
+
+    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
+
+        try {
+            // This row validates that message contains authorization to order.
+            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            restWebHookService.setNamespace(message.getNamespace());
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
     }
 
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
@@ -350,31 +398,10 @@ public class OrderController {
         return totalsDto;
     }
 
-    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
-
-        try {
-            // This row validates that message contains authorization to order.
-            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-            restWebHookService.setNamespace(message.getNamespace());
-            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
-
-        } catch (CommonApiException cae) {
-            throw cae;
-        } catch (Exception e) {
-            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
-            );
-        }
-    }
-
     private boolean changesToOrderAllowed(Order order) {
         boolean changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
         log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
         return changesToOrderAllowed;
     }
 
-    
 }
