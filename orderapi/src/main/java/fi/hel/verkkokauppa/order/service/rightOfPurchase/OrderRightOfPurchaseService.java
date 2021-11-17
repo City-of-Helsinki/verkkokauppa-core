@@ -61,7 +61,7 @@ public class OrderRightOfPurchaseService {
         // The Backend returns TRUE
         // by default if the ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE service configuration is not
         // defined in the service configuration.
-        if (!isActive() || !hasOrderRightOfPurchaseUrl()) {
+        if (noRightOfPurchaseLimitationsDefined()) {
             return ResponseEntity.ok().body(true);
         }
 
@@ -97,6 +97,10 @@ public class OrderRightOfPurchaseService {
         }
 
         return ResponseEntity.ok().body(true);
+    }
+
+    private boolean noRightOfPurchaseLimitationsDefined() {
+        return !isActive() || !hasOrderRightOfPurchaseUrl();
     }
 
     public ResponseEntity<Boolean> validateResponse(OrderItemDto orderItemDto, OrderRightOfPurchaseResponse response) {
