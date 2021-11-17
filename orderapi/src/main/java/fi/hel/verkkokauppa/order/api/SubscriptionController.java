@@ -3,23 +3,16 @@ package fi.hel.verkkokauppa.order.api;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.events.EventType;
-import fi.hel.verkkokauppa.common.events.SendEventService;
-import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.EncryptorUtil;
-import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
@@ -34,7 +27,6 @@ import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +40,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 @RestController
@@ -111,11 +102,10 @@ public class SubscriptionController {
 				.body(new IdWrapper(id));
 	}
 
-	// TODO refactor path to indicate what is about to happen
-	@PutMapping(value = "/subscription", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/subscription/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
-			cancelSubscriptionCommand.cancel(id, userId);
+			cancelSubscriptionCommand.cancel(id, userId, SubscriptionCancellationCause.CUSTOMER_CANCELLED);
 			return ResponseEntity.ok().build();
 		} catch (CommonApiException cae) {
 			throw cae;
