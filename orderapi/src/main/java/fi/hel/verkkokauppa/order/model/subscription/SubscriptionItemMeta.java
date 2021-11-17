@@ -14,6 +14,8 @@ public class SubscriptionItemMeta {
     String orderItemId;
     @Field(type = FieldType.Keyword)
     String orderId;
+    @Field(type = FieldType.Keyword)
+    String subscriptionId;
 
     @Field(type = FieldType.Keyword)
     String key;
@@ -29,8 +31,8 @@ public class SubscriptionItemMeta {
     public SubscriptionItemMeta() {
     }
 
-    public SubscriptionItemMeta(String orderItemMetaId, String orderItemId, String orderId, String key, String value, String label,
-                                String visibleInCheckout, String ordinal) {
+    public SubscriptionItemMeta(String orderItemMetaId, String orderItemId, String orderId, String subscriptionId, String key, String value,
+                                String label, String visibleInCheckout, String ordinal) {
         this.orderItemMetaId = orderItemMetaId;
         this.orderItemId = orderItemId;
         this.orderId = orderId;
@@ -104,5 +106,12 @@ public class SubscriptionItemMeta {
     public void setOrderId(String orderId) {
         this.orderId = orderId;
     }
-    
+
+    public String getSubscriptionId() {
+        return subscriptionId;
+    }
+
+    public void setSubscriptionId(String subscriptionId) {
+        this.subscriptionId = subscriptionId;
+    }
 }

@@ -58,8 +58,8 @@ public class CreateSubscriptionsFromOrderCommand {
 			OrderDto orderDto = orderAggregateDto.getOrder();
 			copyOrderFieldsToSubscription(orderDto, subscriptionDto);
 			copyOrderItemFieldsToSubscription(orderItemDto, subscriptionDto);
-			copyOrderItemMetaFieldsToSubscription(orderItemDto, subscriptionDto);
 			String id = createSubscriptionCommand.create(subscriptionDto);
+			copyOrderItemMetaFieldsToSubscription(orderItemDto, id);
 
 			orderService.linkToSubscription(orderDto.getOrderId(), orderDto.getUser(), id);
 			idList.add(id);
@@ -89,11 +89,13 @@ public class CreateSubscriptionsFromOrderCommand {
 		subscriptionDto.setProductId(orderItem.getProductId());
 		subscriptionDto.setProductName(orderItem.getProductName());
 		subscriptionDto.setQuantity(orderItem.getQuantity());
+		subscriptionDto.setUnit(orderItem.getUnit());
 		// Period data
 		subscriptionDto.setPeriodFrequency(orderItem.getPeriodFrequency());
 		subscriptionDto.setPeriodUnit(orderItem.getPeriodUnit());
 		subscriptionDto.setPeriodCount(orderItem.getPeriodCount());
 		// Price data
+		subscriptionDto.setVatPercentage(orderItem.getVatPercentage());
 		subscriptionDto.setPriceNet(orderItem.getPriceNet());
 		subscriptionDto.setPriceVat(orderItem.getPriceVat());
 		subscriptionDto.setPriceGross(orderItem.getPriceGross());
@@ -102,10 +104,11 @@ public class CreateSubscriptionsFromOrderCommand {
 		subscriptionDto.setBillingStartDate(orderItem.getBillingStartDate());
 	}
 
-	private void copyOrderItemMetaFieldsToSubscription(OrderItemDto orderItem, SubscriptionDto subscriptionDto) {
+	private void copyOrderItemMetaFieldsToSubscription(OrderItemDto orderItem, String subscriptionId) {
 		if (!orderItem.getMeta().isEmpty()) {
-			orderItem.getMeta().stream().forEach(meta -> {
+			orderItem.getMeta().forEach(meta -> {
 				SubscriptionItemMeta subscriptionItemMeta = subscriptionItemMetaTransformer.transformToEntity(meta);
+				subscriptionItemMeta.setSubscriptionId(subscriptionId);
 				SubscriptionItemMeta createdSubscriptionItemMeta = subscriptionItemMetaRepository.save(subscriptionItemMeta);
 				log.debug("created new subscriptionItemMeta " + createdSubscriptionItemMeta.getOrderItemMetaId() + " from createdSubscriptionItemMeta: " + meta.getOrderItemMetaId());
 			});

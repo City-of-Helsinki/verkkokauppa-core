@@ -22,13 +22,13 @@ public class PaymentTokenPayloadBuilder {
 	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto, PaymentContext context) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
 		OrderDto order = dto.getOrder().getOrder();
-		String paymentOrderNumber = generatePaymentOrderNumber(order.getOrderId());
+		String paymentOrderNumber = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
 
 		assignPaymentMethod(payload, dto, context);
 		assignCustomer(payload, order);
 		assignProducts(payload, dto, context);
 
-		payload.setAmount((convertToCents(new BigDecimal(dto.getOrder().getOrder().getPriceTotal()))).toBigInteger())
+		payload.setAmount((PaymentUtil.convertToCents(new BigDecimal(dto.getOrder().getOrder().getPriceTotal()))).toBigInteger())
 				.setOrderNumber(paymentOrderNumber)
 				.setCurrency(context.getDefaultCurrency());
 		return payload;
@@ -66,27 +66,14 @@ public class PaymentTokenPayloadBuilder {
 					.setType(ProductType.TYPE_PRODUCT)
 					.setTitle(item.getProductName())
 					.setCount(item.getQuantity())
-					.setPretaxPrice(convertToCents(item.getPriceNet()))
+					.setPretaxPrice(PaymentUtil.convertToCents(item.getPriceNet()))
 					.setTax(Integer.valueOf(item.getVatPercentage()))
-					.setPrice(convertToCents(item.getPriceGross()))
+					.setPrice(PaymentUtil.convertToCents(item.getPriceGross()))
 					.setMerchantId(context.getMerchantId())
 					.setCp(context.getCp());
 
 			payload.addProduct(product);
 		}
-	}
-
-	private BigDecimal convertToCents(BigDecimal input) {
-		BigDecimal multiplier = BigDecimal.valueOf(100L);
-		return input.multiply(multiplier);
-	}
-
-	private String generatePaymentOrderNumber(String orderId) {
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-		String currentMinute = sdf.format(timestamp);
-
-		return orderId + "_at_" + currentMinute;
 	}
 
 }

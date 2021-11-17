@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.logic;
 
+import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import org.helsinki.vismapay.util.ReturnDataAuthCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,24 @@ public class PaymentReturnValidator {
             log.debug("payment validation failed, orderNumber: " + orderNumber);
 			return false;
 		}
+	}
+
+	public PaymentReturnDto validateReturnValues(boolean isValid, String returnCode, String settled) {
+		boolean isPaymentPaid = false;
+		boolean canRetry = false;
+
+		if ("0".equals(returnCode) && "1".equals(settled)) {
+			isPaymentPaid = true;
+			canRetry = false;
+		} else {
+			isPaymentPaid = false;
+			// returnCode 4 = "Transaction status could not be updated after customer returned from a payment facilitator's web page. Please use the merchant UI to resolve the payment status."
+			if (!"4".equals(returnCode)) {
+				canRetry = true;
+			}
+		}
+
+		return new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
 	}
 
     private String buildAuthCodeFromReturnData(String returnCode, String orderNumber, String settled, String incidentId) {
