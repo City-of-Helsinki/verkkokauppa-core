@@ -32,4 +32,14 @@ public class OrderMessage implements EventMessage {
     public String subscriptionId;
     public String userId;
 
+    public OrderMessage toCustomerWebhook() {
+        return OrderMessage
+                .builder()
+                .namespace(this.namespace)
+                .orderId(this.orderId)
+                .timestamp(this.timestamp)
+                .eventType(this.eventType)
+                .build();
+    }
+
 }

@@ -43,6 +43,8 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
     // Merchant webhooks [KYV-350]
     public static String MERCHANT_PAYMENT_WEBHOOK_URL = "merchantPaymentWebhookUrl";
+    // Order webhook [KYV-409]
+    public static String MERCHANT_ORDER_WEBHOOK_URL = "merchantOrderWebhookUrl";
 
     public static String NAMESPACE_API_ACCESS_TOKEN = "namespaceApiAccessToken";
 
@@ -65,7 +67,7 @@ public class ServiceConfigurationKeys {
     public static List<String> getRestrictedConfigurationKeys() {
         return Arrays.asList(PAYMENT_API_VERSION, PAYMENT_API_KEY, PAYMENT_CURRENCY, PAYMENT_TYPE, PAYMENT_REGISTER_CARD_TOKEN,
                 PAYMENT_RETURN_URL, PAYMENT_NOTIFICATION_URL, PAYMENT_LANGUAGE, PAYMENT_SUBMERCHANT_ID, PAYMENT_CP, MERCHANT_PAYMENT_WEBHOOK_URL,
-                ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, ORDER_RIGHT_OF_PURCHASE_URL
+                ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, ORDER_RIGHT_OF_PURCHASE_URL, MERCHANT_ORDER_WEBHOOK_URL
                 );
     }
 
