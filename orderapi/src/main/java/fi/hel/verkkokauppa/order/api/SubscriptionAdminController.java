@@ -4,10 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
+import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.UpdateSubscriptionCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class SubscriptionAdminController {
     private SearchSubscriptionQuery searchSubscriptionQuery;
 
     @Autowired
-    private UpdateSubscriptionCommand updateSubscriptionCommand;
+    private CancelSubscriptionCommand cancelSubscriptionCommand;
 
     @Autowired
     private SubscriptionRenewalService renewalService;
@@ -116,9 +117,7 @@ public class SubscriptionAdminController {
             if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
                 String subscriptionId = subscription.getSubscriptionId();
                 log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
-
-                subscription.setStatus(SubscriptionStatus.CANCELLED);
-                updateSubscriptionCommand.update(subscriptionId, subscription);
+                cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
             }
         }
     }

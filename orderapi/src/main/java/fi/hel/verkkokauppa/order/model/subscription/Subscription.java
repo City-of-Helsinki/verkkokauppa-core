@@ -36,6 +36,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	private LocalDateTime updatedAt;
 
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	private LocalDateTime cancelledAt;
+
 	@Field(type = FieldType.Text) // TODO: keyword?
 	private String status;
 

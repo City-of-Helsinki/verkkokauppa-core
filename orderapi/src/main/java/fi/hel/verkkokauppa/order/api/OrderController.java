@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 public class OrderController {
@@ -91,6 +92,24 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
+            );
+        }
+    }
+    
+    @GetMapping(value = "/order/get-by-subscription", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<OrderAggregateDto>> getOrdersBySubscription(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "userId") String userId) {
+        try {
+            subscriptionService.findByIdValidateByUser(subscriptionId, userId);
+            List<OrderAggregateDto> subscriptionOrders = orderService.findBySubscription(subscriptionId);
+            return ResponseEntity.ok(subscriptionOrders);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting orders failed, subscriptionId: " + subscriptionId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-orders", "failed to get orders with subscriptionId [" + subscriptionId + "]")
             );
         }
     }
@@ -332,6 +351,26 @@ public class OrderController {
         return null;
     }
 
+    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
+
+        try {
+            // This row validates that message contains authorization to order.
+            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            restWebHookService.setNamespace(message.getNamespace());
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
+    }
+
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         return orderService.orderAggregateDto(orderId);
     }
@@ -357,26 +396,6 @@ public class OrderController {
 
         commonBeanValidationService.validateInput(totalsDto);
         return totalsDto;
-    }
-
-    @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
-
-        try {
-            // This row validates that message contains authorization to order.
-            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-            restWebHookService.setNamespace(message.getNamespace());
-            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
-
-        } catch (CommonApiException cae) {
-            throw cae;
-        } catch (Exception e) {
-            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
-            );
-        }
     }
 
     private boolean changesToOrderAllowed(Order order) {
