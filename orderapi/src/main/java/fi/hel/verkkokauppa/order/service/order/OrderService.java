@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.order;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.error.ErrorModel;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
@@ -32,8 +33,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -263,6 +266,18 @@ public class OrderService {
         OrderMessage orderMessage = orderMessageBuilder.build();
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
         log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
+    }
+
+    public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
+        List<String> orderIds = orderRepository.findOrderIdBySubscriptionId(subscriptionId);
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(orderId -> getOrderWithItems(orderId))
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
     }
 
 }

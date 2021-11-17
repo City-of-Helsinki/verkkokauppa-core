@@ -19,4 +19,6 @@ public interface OrderRepository extends ElasticsearchRepository<Order, String> 
         return search(qb);
     }
 
+    List<String> findOrderIdBySubscriptionId(String subscriptionId);
+
 }
