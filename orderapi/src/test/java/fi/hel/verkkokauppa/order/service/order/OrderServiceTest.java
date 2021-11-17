@@ -70,4 +70,12 @@ class OrderServiceTest extends TestUtils {
         }
     }
 
+    //@Test
+    void cancelOrder() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        order.ifPresent(value -> orderService.cancel(value));
+    }
+
 }

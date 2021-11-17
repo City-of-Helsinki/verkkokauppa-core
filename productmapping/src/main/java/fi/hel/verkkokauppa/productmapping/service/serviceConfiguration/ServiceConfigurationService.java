@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.productmapping.repository.serviceConfiguration.Servic
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -23,9 +24,13 @@ public class ServiceConfigurationService {
 
     @Autowired
     private Environment env;
-    
+
     @Autowired
     private ServiceConfigurationRepository serviceConfigurationRepository;
+
+    // https://webhook.site/ To create custom unique webhook test url, makes webhook testing easier
+    @Value("${webhook.url:#{null}}")
+    private String webHookUrl;
 
     public List<ServiceConfiguration> findBy(String namespace) {
         List<ServiceConfiguration> configurations = serviceConfigurationRepository.findByNamespaceAndRestricted(namespace, false);
@@ -64,8 +69,8 @@ public class ServiceConfigurationService {
         List<ServiceConfiguration> entities = Arrays.asList(
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_API_KEY, "asukaspysakointi_mock_api_key", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "asukaspysakointi_mock_encryption_key", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/return_url", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/notification_url", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/return_url", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/notification_url", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_NAME, "asukaspysäköinti", false),
@@ -74,14 +79,16 @@ public class ServiceConfigurationService {
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_EMAIL, "asukas@pysäköinti.fi", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/url", false),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/url", false),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
+                // Webhooks
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", true),
 
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
-                createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/return_url", true),
-                createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/notification_url", true),
+                createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/return_url", true),
+                createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/notification_url", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_NAME, "venepaikat", false),
@@ -90,10 +97,13 @@ public class ServiceConfigurationService {
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_EMAIL, "vene@paikat.fi", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/url", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/merchant_payment_webhook", true)
-                );
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/url", false),
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/terms_of_use", false),
+                // Webhooks
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", true),
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", true)
+
+        );
 
         serviceConfigurationRepository.saveAll(entities);
         log.debug("initialized service configurations mock data");
