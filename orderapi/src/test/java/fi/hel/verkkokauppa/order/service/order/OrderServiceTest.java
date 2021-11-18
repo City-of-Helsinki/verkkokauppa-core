@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.order;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -10,6 +11,8 @@ import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +45,12 @@ class OrderServiceTest extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
+
+    @Autowired
+    private GetSubscriptionQuery getSubscriptionQuery;
+
     private Order foundOrder;
     private Subscription foundSubscription;
 
@@ -50,7 +59,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-//    @Test
+    @Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -67,6 +76,35 @@ class OrderServiceTest extends TestUtils {
             Assertions.assertEquals(foundOrder.getStartDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp));
             // End date = startDate plus periodFrequency and period eq. daily/monthly/yearly.
             Assertions.assertEquals(foundOrder.getEndDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp).plus(1, ChronoUnit.DAYS));
+        }
+    }
+
+    @Test
+    void createFromSubscription() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
+        PaymentMessage message = new PaymentMessage();
+        String paymentPaidTimestamp = DateTimeUtil.getDateTime();
+        message.setPaymentPaidTimestamp(paymentPaidTimestamp);
+        if (order.isPresent() && subscription.isPresent()) {
+            foundOrder = order.get();
+            foundSubscription = subscription.get();
+            orderService.setOrderStartAndEndDate(foundOrder, foundSubscription, message);
+
+            Assertions.assertEquals(foundOrder.getStartDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp));
+            // End date = startDate plus periodFrequency and period eq. daily/monthly/yearly.
+            Assertions.assertEquals(foundOrder.getEndDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp).plus(1, ChronoUnit.DAYS));
+
+            // "Payment paid"
+            SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(foundSubscription.getSubscriptionId());
+            String created = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+
+            // Created 2
+            SubscriptionDto subscriptionDto1 = getSubscriptionQuery.getOne(foundSubscription.getSubscriptionId());
+            String created1 = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto1);
+
         }
     }
 
