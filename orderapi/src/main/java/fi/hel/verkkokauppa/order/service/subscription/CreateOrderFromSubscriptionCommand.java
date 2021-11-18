@@ -2,16 +2,12 @@ package fi.hel.verkkokauppa.order.service.subscription;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.util.StringUtils;
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
-import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.common.util.ListUtil;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
@@ -20,13 +16,15 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class CreateOrderFromSubscriptionCommand {
@@ -63,11 +61,18 @@ public class CreateOrderFromSubscriptionCommand {
 		// TODO create check for duplications!
 		// Tarkista uusinta orderin olemassa olo ennen uuden uusinta orderin luontia
 		try {
-            Order oldOrder = orderService.findByIdValidateByUser(subscriptionDto.getOrderId(), user);
-            Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(),user);
 
-			if (oldOrder.getSubscriptionId() != null && oldOrder.getOrderId() != null) {
-//				return null;
+			List<OrderAggregateDto> orders = orderService.findBySubscription(subscriptionDto.getSubscriptionId());
+			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+			Optional<OrderAggregateDto> last = ListUtil.last(orders);
+			if (last.isPresent()) {
+				Order lastOrder = orderService.findById(last.get().getOrder().getOrderId());
+				// order endDate greater than current subscription endDate
+				// or subsciptionEndDate = Order endDate
+				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+					return lastOrder.getOrderId();
+				}
 			}
 		} catch (CommonApiException e) {
 			//
@@ -90,6 +95,18 @@ public class CreateOrderFromSubscriptionCommand {
 		orderService.linkToSubscription(orderId, order.getUser(), subscriptionDto.getSubscriptionId());
 
 		return orderId;
+	}
+
+	private boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
+		LocalDateTime subscriptionEndDate = subscription.getEndDate();
+		LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
+
+		if (subscriptionEndDate == null || lastOrderEndDate == null) {
+			return false;
+		}
+
+		return lastOrderEndDate.isAfter(subscriptionEndDate) || lastOrderEndDate.isEqual(subscriptionEndDate);
+
 	}
 
 	private void copyCustomerInfoFromSubscription(SubscriptionDto subscriptionDto, Order order) {

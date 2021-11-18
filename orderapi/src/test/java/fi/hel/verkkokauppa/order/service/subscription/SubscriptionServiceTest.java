@@ -31,19 +31,10 @@ class SubscriptionServiceTest extends TestUtils {
     private SubscriptionService subscriptionService;
 
     @Autowired
-    private OrderService orderService;
-
-    @Autowired
     private SubscriptionRepository subscriptionRepository;
 
     @Autowired
     private OrderRepository orderRepository;
-
-    @Autowired
-    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
-
-    @Autowired
-    private GetSubscriptionQuery getSubscriptionQuery;
 
     private Order foundOrder;
     private Subscription foundSubscription;

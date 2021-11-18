@@ -97,7 +97,7 @@ public class SubscriptionAdminController {
         return ResponseEntity.ok().build();
     }
 
-    private List<SubscriptionDto> getRenewableSubscriptions() {
+    public List<SubscriptionDto> getRenewableSubscriptions() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
         log.debug("validityCheckDate: {}", validityCheckDate);

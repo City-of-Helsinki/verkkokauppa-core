@@ -269,10 +269,10 @@ public class OrderService {
     }
 
     public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
-        List<String> orderIds = orderRepository.findOrderIdBySubscriptionId(subscriptionId);
+        List<Order> orderIds = orderRepository.findOrderIdBySubscriptionId(subscriptionId);
 
         List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
-                .map(orderId -> getOrderWithItems(orderId))
+                .map(order -> getOrderWithItems(order.getOrderId()))
                 .distinct()
                 .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
                 .collect(Collectors.toList());
