@@ -189,7 +189,21 @@ public class OrderService {
     public void cancel(Order order ) {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+        triggerOrderCancelledEvent(order);
         log.debug("canceled order, orderId: " + order.getOrderId());
+    }
+
+    public void triggerOrderCancelledEvent(Order order){
+        OrderMessage orderMessage = OrderMessage.builder()
+                .eventType(EventType.ORDER_CANCELLED)
+                .namespace(order.getNamespace())
+                .orderId(order.getOrderId())
+                .userId(order.getUser())
+                .timestamp(DateTimeUtil.getDateTime())
+                .build();
+
+        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
+        log.debug("triggered event " + EventType.ORDER_CANCELLED + " for orderId: " + order.getOrderId());
     }
 
     public Order findByIdValidateByUser(String orderId, String userId) {
