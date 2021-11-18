@@ -86,7 +86,7 @@ public class SubscriptionAdminController {
     }
 
     @PostMapping(value = "/subscription-admin/renewal-requested-event", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) throws JsonProcessingException {
+    public ResponseEntity<Void> subscriptionRenewalRequestedEventCallback(@RequestBody SubscriptionMessage message) {
         log.debug("subscription-api received SUBSCRIPTION_RENEWAL_REQUESTED event for subscriptionId: " + message.getSubscriptionId());
         String subscriptionId = message.getSubscriptionId();
 

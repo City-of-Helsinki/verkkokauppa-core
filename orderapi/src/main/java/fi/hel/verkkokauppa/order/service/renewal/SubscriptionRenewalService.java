@@ -53,7 +53,7 @@ public class SubscriptionRenewalService {
     @Autowired
     private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
 
-    public String renewSubscription(String subscriptionId) throws JsonProcessingException {
+    public String renewSubscription(String subscriptionId) {
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
         String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
         if (orderId != null) {

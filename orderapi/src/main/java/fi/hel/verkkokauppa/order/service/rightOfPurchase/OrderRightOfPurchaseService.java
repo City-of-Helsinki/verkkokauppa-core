@@ -57,7 +57,7 @@ public class OrderRightOfPurchaseService {
         );
     }
 
-    public ResponseEntity<Boolean> canPurchase(OrderAggregateDto order) throws JsonProcessingException {
+    public ResponseEntity<Boolean> canPurchase(OrderAggregateDto order) {
         // The Backend returns TRUE
         // by default if the ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE service configuration is not
         // defined in the service configuration.
@@ -88,7 +88,14 @@ public class OrderRightOfPurchaseService {
                     body
             );
 
-            OrderRightOfPurchaseResponse canPurchaseResponse = objectMapper.readValue(response.toString(), OrderRightOfPurchaseResponse.class);
+            OrderRightOfPurchaseResponse canPurchaseResponse = null;
+            try {
+                canPurchaseResponse = objectMapper.readValue(response.toString(), OrderRightOfPurchaseResponse.class);
+            } catch (JsonProcessingException e) {
+                // Return false if invalid json processing.
+                log.error("can-purchase-response-json-error [" + orderItemDto.getOrderItemId() + "] json-processing-failed {}", e);
+                return ResponseEntity.ok().body(false);
+            }
 
             ResponseEntity<Boolean> validateResponse = validateResponse(orderItemDto, canPurchaseResponse);
             if (validateResponse != null && Boolean.FALSE.equals(validateResponse.getBody())) {

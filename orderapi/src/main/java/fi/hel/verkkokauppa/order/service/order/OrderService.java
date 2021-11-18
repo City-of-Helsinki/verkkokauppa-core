@@ -285,7 +285,7 @@ public class OrderService {
         return subscriptionOrders;
     }
 
-    public boolean validateRightOfPurchase(String orderId, String user, String namespace) throws JsonProcessingException {
+    public boolean validateRightOfPurchase(String orderId, String user, String namespace) {
         Order order = findByIdValidateByUser(orderId, user);
         orderRightOfPurchaseService.setNamespace(namespace);
         OrderAggregateDto dto = getOrderWithItems(order.getOrderId());

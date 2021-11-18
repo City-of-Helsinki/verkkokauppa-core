@@ -49,7 +49,7 @@ public class CreateOrderFromSubscriptionCommand {
 	@Autowired
 	private SubscriptionItemMetaRepository subscriptionItemMetaRepository;
 
-	public String createFromSubscription(SubscriptionDto subscriptionDto) throws JsonProcessingException {
+	public String createFromSubscription(SubscriptionDto subscriptionDto) {
 		String namespace = subscriptionDto.getNamespace();
 		String user = subscriptionDto.getUser();
 
