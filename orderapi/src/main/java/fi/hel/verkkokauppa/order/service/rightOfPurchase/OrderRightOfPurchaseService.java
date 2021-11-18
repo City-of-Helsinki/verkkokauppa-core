@@ -39,7 +39,7 @@ public class OrderRightOfPurchaseService {
 
     public boolean isActive() {
         return StringUtils.isNotEmpty(
-                configurationClient.getRestrictedServiceConfigurationValue(
+                configurationClient.getPublicServiceConfigurationValue(
                         namespace,
                         ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE
                 )
@@ -51,7 +51,7 @@ public class OrderRightOfPurchaseService {
     }
 
     public String getOrderRightOfPurchaseUrl() {
-        return configurationClient.getRestrictedServiceConfigurationValue(
+        return configurationClient.getPublicServiceConfigurationValue(
                 namespace,
                 ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL
         );
