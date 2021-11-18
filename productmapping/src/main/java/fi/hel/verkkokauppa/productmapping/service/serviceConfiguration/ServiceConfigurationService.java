@@ -70,7 +70,7 @@ public class ServiceConfigurationService {
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_API_KEY, "asukaspysakointi_mock_api_key", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "asukaspysakointi_mock_encryption_key", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/return_url", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/notification_url", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/notification_url", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_NAME, "asukaspysäköinti", false),
@@ -81,11 +81,11 @@ public class ServiceConfigurationService {
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/url", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/backend/asukaspysakointi/order/right-of-purchase", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", false),
                  // Webhooks
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", true),
-                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", true),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", false),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", false),
 
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
@@ -101,11 +101,11 @@ public class ServiceConfigurationService {
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/url", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", true),
-                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/backend/venepaikat/order/right-of-purchase", true),
+                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+                createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
                 // Webhooks
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", true),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", true)
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false)
 
         );
 

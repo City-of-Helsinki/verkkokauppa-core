@@ -1,15 +1,12 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
-import fi.hel.verkkokauppa.order.api.data.OrderDto;
-import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.SubscriptionItemMetaTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -17,9 +14,11 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,6 +52,13 @@ public class CreateOrderFromSubscriptionCommand {
 	public String createFromSubscription(SubscriptionDto subscriptionDto) {
 		String namespace = subscriptionDto.getNamespace();
 		String user = subscriptionDto.getUser();
+
+		boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+		// Returns null orderId if subscription right of purchase is false.
+		if (!hasRightToPurchase) {
+			log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+			return null;
+		}
 
 		Order order = orderService.createByParams(namespace, user);
 		order.setType(OrderType.ORDER);
