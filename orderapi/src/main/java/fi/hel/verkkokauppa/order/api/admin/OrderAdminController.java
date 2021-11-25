@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api;
+package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;

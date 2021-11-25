@@ -1,15 +1,13 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.error.ErrorModel;
-import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
@@ -32,7 +30,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -218,6 +215,11 @@ public class OrderService {
             startDate = subscription.getEndDate();
         }
 
+        setStartDateAndCalculateNextEndDate(order, subscription, startDate);
+        orderRepository.save(order);
+    }
+
+    public void setStartDateAndCalculateNextEndDate(Order order, Subscription subscription, LocalDateTime startDate) {
         order.setStartDate(startDate);
 
         // Order end date = start date + subscription cycle eg month
@@ -226,7 +228,6 @@ public class OrderService {
                 subscription.getPeriodUnit(),
                 subscription.getPeriodFrequency())
         );
-        orderRepository.save(order);
     }
 
     public void linkToSubscription(String orderId, String userId, String subscriptionId) {
@@ -280,4 +281,10 @@ public class OrderService {
         return subscriptionOrders;
     }
 
+    public Order getLatestOrderWithSubscriptionId(String subscriptionId) {
+        List<OrderAggregateDto> orders = findBySubscription(subscriptionId);
+
+        Optional<OrderAggregateDto> last = ListUtil.last(orders);
+        return last.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
+    }
 }

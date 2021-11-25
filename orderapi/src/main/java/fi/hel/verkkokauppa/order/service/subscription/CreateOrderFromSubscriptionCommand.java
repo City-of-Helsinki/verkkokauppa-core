@@ -2,8 +2,6 @@ package fi.hel.verkkokauppa.order.service.subscription;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.util.ListUtil;
-import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
@@ -23,8 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class CreateOrderFromSubscriptionCommand {
@@ -62,12 +58,9 @@ public class CreateOrderFromSubscriptionCommand {
 		// Tarkista uusinta orderin olemassa olo ennen uuden uusinta orderin luontia
 		try {
 
-			List<OrderAggregateDto> orders = orderService.findBySubscription(subscriptionDto.getSubscriptionId());
 			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
-
-			Optional<OrderAggregateDto> last = ListUtil.last(orders);
-			if (last.isPresent()) {
-				Order lastOrder = orderService.findById(last.get().getOrder().getOrderId());
+			Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionDto.getSubscriptionId());
+			if (lastOrder != null) {
 				// order endDate greater than current subscription endDate
 				// or subsciptionEndDate = Order endDate
 				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
@@ -81,7 +74,9 @@ public class CreateOrderFromSubscriptionCommand {
 
 		Order order = orderService.createByParams(namespace, user);
 		order.setType(OrderType.ORDER);
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
 
+		orderService.setStartDateAndCalculateNextEndDate(order, subscription, subscription.getEndDate());
 		copyCustomerInfoFromSubscription(subscriptionDto, order);
 		orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());
 
@@ -97,16 +92,17 @@ public class CreateOrderFromSubscriptionCommand {
 		return orderId;
 	}
 
-	private boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
+	public boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
 		LocalDateTime subscriptionEndDate = subscription.getEndDate();
 		LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
-
+		// Prevents NPO
 		if (subscriptionEndDate == null || lastOrderEndDate == null) {
 			return false;
 		}
 
-		return lastOrderEndDate.isAfter(subscriptionEndDate) || lastOrderEndDate.isEqual(subscriptionEndDate);
-
+		// order endDate greater than current subscription endDate (isAfter)
+		// OR subscriptionEndDate = last order endDate
+		return lastOrderEndDate.isAfter(subscriptionEndDate) || subscriptionEndDate.isEqual(lastOrderEndDate);
 	}
 
 	private void copyCustomerInfoFromSubscription(SubscriptionDto subscriptionDto, Order order) {
@@ -131,9 +127,9 @@ public class CreateOrderFromSubscriptionCommand {
 				subscriptionDto.getPriceNet(),
 				subscriptionDto.getPriceVat(),
 				subscriptionDto.getPriceGross(),
-				subscriptionDto.getPeriodUnit(),
-				subscriptionDto.getPeriodFrequency(),
-				subscriptionDto.getPeriodCount(),
+				null,
+				null,
+				null,
 				subscriptionDto.getBillingStartDate(),
 				subscriptionDto.getEndDate()
 		);

@@ -1,14 +1,12 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.SubscriptionAdminController;
+import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
-import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -20,8 +18,6 @@ import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionsFromOrd
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import org.junit.Ignore;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +56,7 @@ class OrderServiceTest extends TestUtils {
     private SubscriptionController subscriptionController;
 
     @Autowired
-    private CreateSubscriptionsFromOrderCommand createSubscriptionsFromOrderCommand;
+    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
@@ -74,7 +70,7 @@ class OrderServiceTest extends TestUtils {
     private Subscription foundSubscription;
 
     @Test
-    public void assertTrue(){
+    public void assertTrue() {
         Assertions.assertTrue(true);
     }
 
@@ -105,47 +101,57 @@ class OrderServiceTest extends TestUtils {
         Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
         Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
         PaymentMessage message = new PaymentMessage();
+
         String paymentPaidTimestamp = DateTimeUtil.getDateTime();
+        // 24.11.2021
         message.setPaymentPaidTimestamp(paymentPaidTimestamp);
         if (order.isPresent() && subscription.isPresent()) {
+
             foundOrder = order.get();
             foundSubscription = subscription.get();
-            orderService.setOrderStartAndEndDate(foundOrder, foundSubscription, message);
-
-            Assertions.assertEquals(foundOrder.getStartDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp));
-            // End date = startDate plus periodFrequency and period eq. daily/monthly/yearly.
-            Assertions.assertEquals(foundOrder.getEndDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp).plus(1, ChronoUnit.DAYS));
-
-            subscriptionService.setSubscriptionEndDateFromOrder(foundOrder, foundSubscription);
+            message.setOrderId(foundOrder.getOrderId());
+            message.setUserId(foundOrder.getUser());
+            // PAYMENT PAID
+            // startDate 24.11.2021 and endDate 25.11.2021
+            subscriptionService.afterFirstPaymentPaidEventActions(Set.of(foundSubscription.getSubscriptionId()), message);
+            // PAYMENT PAID
+            // Same end dates
 
             String noUpdate = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
-            Assertions.assertEquals(noUpdate, foundOrder.getOrderId(),"Subscription renewal does not renew subscription if no payment paid");
+            Assertions.assertEquals(noUpdate, foundOrder.getOrderId(), "No renewal if has active order");
 
-            // set orderEndDate is -1 days from paymentPaidTimestamp
-            message.setPaymentPaidTimestamp(DateTimeUtil.fromFormattedString(paymentPaidTimestamp).minus(4, ChronoUnit.DAYS).toString());
-            foundSubscription.setEndDate(DateTimeUtil.fromFormattedString(paymentPaidTimestamp).minus(4, ChronoUnit.DAYS));
-            orderService.setOrderStartAndEndDate(foundOrder,foundSubscription,message);
+            // order endDate greater than current subscription endDate (isAfter)
+            // OR subscriptionEndDate = last order endDate
+            // startDate 21.11.2021 and endDate 22.11.2021
+            orderService.setStartDateAndCalculateNextEndDate(foundOrder, foundSubscription, DateTimeUtil.getFormattedDateTime().minus(3, ChronoUnit.DAYS));
+            orderRepository.save(foundOrder);
+            // startDate 21.11.2021 and endDate 22.11.2021
 
             String created = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
-            Assertions.assertNotEquals(created, foundOrder.getOrderId(),"Subscription renewal does not renew subscription if payment is paid");
 
+            foundSubscription = subscriptionRepository.findById(foundSubscription.getSubscriptionId()).get();
+            Assertions.assertFalse(createOrderFromSubscriptionCommand.hasActiveSubscriptionOrder(foundSubscription, foundOrder));
+            Assertions.assertNotEquals(created, foundOrder.getOrderId(), "Subscription renewal does not renew subscription if payment is paid");
+
+            //TODO startDate 21.11.2021 and endDate 22.11.2021
             log.info(foundSubscription.getSubscriptionId());
-
+            foundSubscription = subscriptionRepository.findById(foundSubscription.getSubscriptionId()).get();
             Order createdOrderFromSubscription = orderService.findById(created);
             // TODO Should these have some values or not?
-            Assertions.assertNull(createdOrderFromSubscription.getEndDate());
-            Assertions.assertNull(createdOrderFromSubscription.getStartDate());
 
-            List<SubscriptionDto> isFound = subscriptionAdminController
-                    .getRenewableSubscriptions()
-                    .stream()
-                    .filter(subscriptionDto ->
-                            Objects.equals(subscriptionDto.getSubscriptionId(), created))
-                    .collect(Collectors.toList());
-            Assertions.assertEquals(0, isFound.size());
-//            OrderAggregateDto orderAggregateDto = orderService.getOrderWithItems(created);
-//            Set<String> subscriptionsFromOrder = createSubscriptionsFromOrderCommand.createFromOrder(orderAggregateDto);
-//            Assertions.assertEquals(1, subscriptionsFromOrder.size());
+            // Tries again -> Should return active order
+            String created2 = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
+            Assertions.assertEquals(created, created2);
+
+            // Tries again -> Should return active order
+            String created3 = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
+            Assertions.assertEquals(created2, created3);
+            // Update fields
+            foundSubscription = getSubscriptionQuery.findByIdValidateByUser(foundSubscription.getSubscriptionId(),foundSubscription.getUser());
+            foundOrder = orderService.findById(foundOrder.getOrderId());
+
+            Order lastOrder = orderService.getLatestOrderWithSubscriptionId(foundSubscription.getSubscriptionId());
+            Assertions.assertTrue(createOrderFromSubscriptionCommand.hasActiveSubscriptionOrder(foundSubscription, lastOrder));
         }
     }
 

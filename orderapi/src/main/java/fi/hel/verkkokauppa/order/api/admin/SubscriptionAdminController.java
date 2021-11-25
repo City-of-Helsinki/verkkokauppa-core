@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api;
+package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
