@@ -207,6 +207,12 @@ public class OrderService {
     }
 
     public Order findByIdValidateByUser(String orderId, String userId) {
+        if (StringUtils.isEmpty(orderId) || StringUtils.isEmpty(userId)) {
+            log.error("unauthorized attempt to load order, orderId or userId missing");
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
         Order order = findById(orderId);
 
         if (order == null) {
