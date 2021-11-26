@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
@@ -337,19 +338,56 @@ public class OrderController {
 
     @PostMapping(value = "/order/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
-        log.debug("order-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+        try {
+            log.debug("order-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 
-        // TODO
-        return null;
+            Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+
+            // a single order which has subscription id means subscription renewal
+            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId());
+                // TODO subscription renewal order payment failed callback action
+            } else {
+                log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
+                // TODO single order payment failed callback action
+            }
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment paid event callback for order failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("payment-paid-event-callback-for-order-failed", "Payment paid event callback for order failed")
+            );
+        }
+
+        return ResponseEntity.ok("");
     }
 
     @PostMapping(value = "/order/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
-        log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+        try {
+            log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+            Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-        subscriptionService.afterRenewalPaymentPaidEventActions(message);
+            // a single order which has subscription id means subscription renewal
+            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+                subscriptionService.afterRenewalPaymentPaidEventActions(message, order);
+            } else {
+                log.debug("payment-paid-event callback, orderId: " + order.getOrderId());
+                // TODO single order payment paid callback action
+            }
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment paid event callback for order failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("payment-paid-event-callback-for-order-failed", "Payment paid event callback for order failed")
+            );
+        }
 
-        return null;
+        return ResponseEntity.ok("");
     }
 
     @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)

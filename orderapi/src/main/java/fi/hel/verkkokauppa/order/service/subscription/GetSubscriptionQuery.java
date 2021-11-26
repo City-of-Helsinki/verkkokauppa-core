@@ -52,11 +52,19 @@ public class GetSubscriptionQuery extends DefaultGetEntityQuery<Subscription, Su
 	}
 
 	public Subscription findByIdValidateByUser(String id, String userId) {
+		if (StringUtils.isEmpty(id) || StringUtils.isEmpty(userId)) {
+			log.error("unauthorized attempt to load subscription, subscriptionId or userId missing");
+			Error error = new Error("subscription-not-found-from-backend", "subscription with id [" + id + "] and user id ["+ userId +"] not found from backend");
+			throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+		}
+
 		Optional<Subscription> subscription = this.getRepository().findById(id);
+
 		if (subscription.isEmpty()) {
 			Error error = new Error("subscription-not-found-from-backend", "subscription with id [" + id + "] and user id ["+ userId +"] not found from backend");
 			throw new CommonApiException(HttpStatus.NOT_FOUND, error);
 		}
+
 		String subscriptionUserId = subscription.get().getUser();
 		if (subscriptionUserId == null || !subscriptionUserId.equals(userId)) {
 			log.error("unauthorized attempt to load subscription, userId does not match");
