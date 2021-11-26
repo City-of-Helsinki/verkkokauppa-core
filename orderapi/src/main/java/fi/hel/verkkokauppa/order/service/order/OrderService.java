@@ -284,7 +284,7 @@ public class OrderService {
     public Order getLatestOrderWithSubscriptionId(String subscriptionId) {
         List<OrderAggregateDto> orders = findBySubscription(subscriptionId);
 
-        Optional<OrderAggregateDto> last = ListUtil.last(orders);
-        return last.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
+        Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
+        return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
 }

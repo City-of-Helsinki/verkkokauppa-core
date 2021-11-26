@@ -133,17 +133,14 @@ class OrderServiceTest extends TestUtils {
             Assertions.assertFalse(createOrderFromSubscriptionCommand.hasActiveSubscriptionOrder(foundSubscription, foundOrder));
             Assertions.assertNotEquals(created, foundOrder.getOrderId(), "Subscription renewal does not renew subscription if payment is paid");
 
-            //TODO startDate 21.11.2021 and endDate 22.11.2021
             log.info(foundSubscription.getSubscriptionId());
             foundSubscription = subscriptionRepository.findById(foundSubscription.getSubscriptionId()).get();
-            Order createdOrderFromSubscription = orderService.findById(created);
-            // TODO Should these have some values or not?
-
-            // Tries again -> Should return active order
+            
+            // Tries again 1 -> Should return active order
             String created2 = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
             Assertions.assertEquals(created, created2);
 
-            // Tries again -> Should return active order
+            // Tries again 2 -> Should return active order
             String created3 = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
             Assertions.assertEquals(created2, created3);
             // Update fields
