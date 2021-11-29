@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
@@ -63,6 +64,9 @@ public class SubscriptionControllerTests extends DummyData {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private OrderService orderService;
+
 
     @Test
     public void assertTrue(){
@@ -70,7 +74,7 @@ public class SubscriptionControllerTests extends DummyData {
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-    @Test
+    //@Test
     public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
         orderRepository.delete(order);
@@ -131,9 +135,9 @@ public class SubscriptionControllerTests extends DummyData {
         // This should create link to subscription
         String createdOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
         Assertions.assertNotNull(createdOrderFromSubscription);
-        // Duplicate subscription check should return null!
+        // Duplicate subscription check should return currently active order id!
         String createdDuplicatedOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        Assertions.assertNull(createdDuplicatedOrderFromSubscription,"asd");
+        Assertions.assertEquals(createdDuplicatedOrderFromSubscription, orderService.getLatestOrderWithSubscriptionId(subscriptionDto.getSubscriptionId()).getOrderId() );
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
