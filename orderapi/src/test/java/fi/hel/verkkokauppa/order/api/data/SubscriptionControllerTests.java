@@ -132,13 +132,7 @@ public class SubscriptionControllerTests extends DummyData {
 
         // These checks if order can be purchased. KYV-233 and KYV-393
         SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptions.get(0).getSubscriptionId());
-        // This should create link to subscription
-        String createdOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        Assertions.assertNotNull(createdOrderFromSubscription);
-        // Duplicate subscription check should return currently active order id!
-        String createdDuplicatedOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        Assertions.assertEquals(createdDuplicatedOrderFromSubscription, orderService.getLatestOrderWithSubscriptionId(subscriptionDto.getSubscriptionId()).getOrderId() );
-    }
+     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
 //    @Test
