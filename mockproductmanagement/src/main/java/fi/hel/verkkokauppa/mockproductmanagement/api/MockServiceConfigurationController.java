@@ -1,12 +1,13 @@
 package fi.hel.verkkokauppa.mockproductmanagement.api;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 public class MockServiceConfigurationController {
+    private Logger log = LoggerFactory.getLogger(MockServiceConfigurationController.class);
     // AP = asukaspysakointi
     // TV = tilavaraus
     // VP = venepaikat
@@ -42,4 +43,9 @@ public class MockServiceConfigurationController {
     @GetMapping("/mockserviceconfiguration/venepaikat/terms_of_use")
     public String getMockTermsOfUseUrlVP() { return "venepaikat mock terms of use url"; }
 
+    @PostMapping("/mockserviceconfiguration/{namespace}/merchant_order_webhook")
+    public String getMerchantOrderWebhookUrl(@PathVariable String namespace, @RequestBody String body) {
+        log.info(body);
+        return namespace + " mock merchantOrderWebhookUrl";
+    }
 }

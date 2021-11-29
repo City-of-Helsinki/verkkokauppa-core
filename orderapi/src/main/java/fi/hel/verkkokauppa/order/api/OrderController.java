@@ -3,8 +3,10 @@ package fi.hel.verkkokauppa.order.api;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
@@ -16,6 +18,7 @@ import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +62,8 @@ public class OrderController {
     @Autowired
     private SubscriptionService subscriptionService;
 
+	@Autowired
+    private OrderRightOfPurchaseService orderRightOfPurchaseService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -92,7 +97,7 @@ public class OrderController {
             );
         }
     }
-    
+
     @GetMapping(value = "/order/get-by-subscription", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderAggregateDto>> getOrdersBySubscription(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "userId") String userId) {
         try {
@@ -154,6 +159,25 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-cancel-order", "failed to cancel order with id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order/right-of-purchase", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Boolean> rightOfPurchaseOrder(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "userId") String userId) {
+        try {
+            Order order = orderService.findByIdValidateByUser(orderId, userId);
+            orderRightOfPurchaseService.setNamespace(order.getNamespace());
+            OrderAggregateDto dto = orderService.getOrderWithItems(orderId);
+            return orderRightOfPurchaseService.canPurchase(dto);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("right of purchase order failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-cancel-order", "failed to check right of purchase order id [" + orderId + "]")
             );
         }
     }
@@ -314,19 +338,56 @@ public class OrderController {
 
     @PostMapping(value = "/order/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
-        log.debug("order-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+        try {
+            log.debug("order-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 
-        // TODO
-        return null;
+            Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+
+            // a single order which has subscription id means subscription renewal
+            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId());
+                // TODO subscription renewal order payment failed callback action
+            } else {
+                log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
+                // TODO single order payment failed callback action
+            }
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment paid event callback for order failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("payment-paid-event-callback-for-order-failed", "Payment paid event callback for order failed")
+            );
+        }
+
+        return ResponseEntity.ok("");
     }
 
     @PostMapping(value = "/order/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> paymentPaidEventCallback(@RequestBody PaymentMessage message) {
-        log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+        try {
+            log.debug("order-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
+            Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-        subscriptionService.afterRenewalPaymentPaidEventActions(message);
+            // a single order which has subscription id means subscription renewal
+            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+                subscriptionService.afterRenewalPaymentPaidEventActions(message, order);
+            } else {
+                log.debug("payment-paid-event callback, orderId: " + order.getOrderId());
+                // TODO single order payment paid callback action
+            }
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment paid event callback for order failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("payment-paid-event-callback-for-order-failed", "Payment paid event callback for order failed")
+            );
+        }
 
-        return null;
+        return ResponseEntity.ok("");
     }
 
     @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -345,6 +406,26 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
+    }
+
+    @PostMapping(value = "/order/order-cancelled-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> orderCancelledWebhook(@RequestBody OrderMessage message) {
+
+        try {
+            // This row validates that message contains authorization to order.
+            orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            restWebHookService.setNamespace(message.getNamespace());
+            return restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("sending webhook data failed, orderId: " + message.getOrderId(), e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-send-order-cancelled-event", "failed to call order cancelled webhook for order with id [" + message.getOrderId() + "]")
             );
         }
     }

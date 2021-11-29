@@ -1,8 +1,9 @@
 package fi.hel.verkkokauppa.backend.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import fi.hel.verkkokauppa.mockproductmanagement.api.MockAvailability;
+import fi.hel.verkkokauppa.mockproductmanagement.api.MockPrice;
+import fi.hel.verkkokauppa.mockproductmanagement.api.MockProduct;
+import fi.hel.verkkokauppa.mockproductmanagement.api.MockRightOfPurchase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -11,10 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.hel.verkkokauppa.mockproductmanagement.api.MockAvailability;
-import fi.hel.verkkokauppa.mockproductmanagement.api.MockPrice;
-import fi.hel.verkkokauppa.mockproductmanagement.api.MockProduct;
-import fi.hel.verkkokauppa.mockproductmanagement.api.MockRightOfPurchase;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @RestController

@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -14,9 +16,11 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -70,6 +74,13 @@ public class CreateOrderFromSubscriptionCommand {
 		} catch (CommonApiException e) {
 			//
 			log.info(String.valueOf(e));
+		}
+
+		boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+		// Returns null orderId if subscription right of purchase is false.
+		if (!hasRightToPurchase) {
+			log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+			return null;
 		}
 
 		Order order = orderService.createByParams(namespace, user);

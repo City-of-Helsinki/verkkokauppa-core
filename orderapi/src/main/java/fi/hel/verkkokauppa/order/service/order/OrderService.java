@@ -1,7 +1,10 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
@@ -21,6 +24,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +65,9 @@ public class OrderService {
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
+
+    @Autowired
+    private OrderRightOfPurchaseService orderRightOfPurchaseService;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -181,10 +188,30 @@ public class OrderService {
     public void cancel(Order order ) {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+        triggerOrderCancelledEvent(order);
         log.debug("canceled order, orderId: " + order.getOrderId());
     }
 
+    public void triggerOrderCancelledEvent(Order order){
+        OrderMessage orderMessage = OrderMessage.builder()
+                .eventType(EventType.ORDER_CANCELLED)
+                .namespace(order.getNamespace())
+                .orderId(order.getOrderId())
+                .userId(order.getUser())
+                .timestamp(DateTimeUtil.getDateTime())
+                .build();
+
+        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
+        log.debug("triggered event " + EventType.ORDER_CANCELLED + " for orderId: " + order.getOrderId());
+    }
+
     public Order findByIdValidateByUser(String orderId, String userId) {
+        if (StringUtils.isEmpty(orderId) || StringUtils.isEmpty(userId)) {
+            log.error("unauthorized attempt to load order, orderId or userId missing");
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
         Order order = findById(orderId);
 
         if (order == null) {
@@ -279,6 +306,14 @@ public class OrderService {
                 .collect(Collectors.toList());
 
         return subscriptionOrders;
+    }
+
+    public boolean validateRightOfPurchase(String orderId, String user, String namespace) {
+        Order order = findByIdValidateByUser(orderId, user);
+        orderRightOfPurchaseService.setNamespace(namespace);
+        OrderAggregateDto dto = getOrderWithItems(order.getOrderId());
+        ResponseEntity<Boolean> canPurchase = orderRightOfPurchaseService.canPurchase(dto);
+        return Boolean.TRUE.equals(canPurchase.getBody());
     }
 
     public Order getLatestOrderWithSubscriptionId(String subscriptionId) {

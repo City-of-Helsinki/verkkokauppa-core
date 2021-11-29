@@ -34,7 +34,7 @@ public class RestWebHookService {
             return ResponseEntity.notFound().build();
         }
 
-        String webhookUrl = configurations.getRestrictedServiceConfigurationValue(namespace, webHookConfigurationKey);
+        String webhookUrl = configurations.getPublicServiceConfigurationValue(namespace, webHookConfigurationKey);
 
         if (webhookUrl == null || webhookUrl.isEmpty()) {
             return ResponseEntity.notFound().build();

@@ -74,7 +74,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-    @Test
+    //@Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -94,7 +94,15 @@ class OrderServiceTest extends TestUtils {
         }
     }
 
-    @Test
+    //@Test
+    void cancelOrder() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        order.ifPresent(value -> orderService.cancel(value));
+    }
+
+    //@Test
     void createFromSubscription() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -135,7 +143,7 @@ class OrderServiceTest extends TestUtils {
 
             log.info(foundSubscription.getSubscriptionId());
             foundSubscription = subscriptionRepository.findById(foundSubscription.getSubscriptionId()).get();
-            
+
             // Tries again 1 -> Should return active order
             String created2 = subscriptionRenewalService.renewSubscription(foundSubscription.getSubscriptionId());
             Assertions.assertEquals(created, created2);

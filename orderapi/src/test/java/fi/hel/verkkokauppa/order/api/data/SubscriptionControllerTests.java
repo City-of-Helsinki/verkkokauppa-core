@@ -16,7 +16,8 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-
+import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;

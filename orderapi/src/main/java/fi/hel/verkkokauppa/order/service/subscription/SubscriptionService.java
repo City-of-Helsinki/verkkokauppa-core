@@ -94,10 +94,10 @@ public class SubscriptionService {
         });
     }
 
-    public void afterRenewalPaymentPaidEventActions(PaymentMessage message) {
+    public void afterRenewalPaymentPaidEventActions(PaymentMessage message, Order order) {
+        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+
         if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
-            Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-            Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
             setSubscriptionEndDateFromOrder(order, subscription);
             log.debug("subscription renewal paid, updated subscription end date");
         } else {
@@ -164,6 +164,12 @@ public class SubscriptionService {
     }
 
     public Subscription findByIdValidateByUser(String subscriptionId, String userId) {
+        if (StringUtils.isEmpty(subscriptionId) || StringUtils.isEmpty(userId)) {
+            log.error("unauthorized attempt to load subscription, subscriptionId or userId missing");
+            Error error = new Error("subscription-not-found-from-backend", "subscription with id [" + subscriptionId + "] and user id ["+ userId +"] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
         Subscription subscription = findById(subscriptionId);
 
         if (subscription == null) {
