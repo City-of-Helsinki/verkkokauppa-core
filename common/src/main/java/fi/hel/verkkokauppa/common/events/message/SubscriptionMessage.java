@@ -20,4 +20,13 @@ public class SubscriptionMessage implements EventMessage {
 
     String cancellationCause;
 
+    public SubscriptionMessage toCustomerWebHook(){
+        return SubscriptionMessage.builder()
+                .subscriptionId(this.getSubscriptionId())
+                .namespace(this.getNamespace())
+                .eventType(this.getEventType())
+                .cancellationCause(this.getCancellationCause())
+                .timestamp(this.getTimestamp())
+                .build();
+    }
 }

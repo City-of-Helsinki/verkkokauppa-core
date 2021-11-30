@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
@@ -228,6 +229,22 @@ public class SubscriptionController {
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
 					new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+			);
+		}
+	}
+
+	@PostMapping(value = "/subscription/subscription-cancelled-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> subscriptionCancelledWebhook(@RequestBody SubscriptionMessage message) {
+		try {
+			restWebHookService.setNamespace(message.getNamespace());
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("sending webhook data failed, subscriptionId: " + message.getSubscriptionId(), e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-call-subscription-cancelled-webhook", "failed to call subscription cancelled webhook for order with id [" + message.getSubscriptionId() + "]")
 			);
 		}
 	}

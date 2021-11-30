@@ -64,12 +64,16 @@ public class SubscriptionMessageListener {
     }
 
     private void subscriptionCancelledAction(SubscriptionMessage message) {
-        // TODO action
+        callOrderApiWithPath(message, "/subscription/subscription-cancelled-webhook");
     }
 
     private void subscriptionRenewalRequestedAction(SubscriptionMessage message) {
+        callOrderApiWithPath(message, "/subscription-admin/renewal-requested-event");
+    }
+
+    private void callOrderApiWithPath(SubscriptionMessage message, String path) {
         try {
-            String url = orderServiceUrl + "/subscription-admin/renewal-requested-event";
+            String url = orderServiceUrl + path;
             callApi(message, url);
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);

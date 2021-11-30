@@ -86,6 +86,7 @@ public class ServiceConfigurationService {
                  // Webhooks
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", false),
                 createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", false),
+                createByParams("asukaspysakointi", ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_subscription_webhook", false),
 
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
                 createByParams("venepaikat", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
@@ -105,7 +106,8 @@ public class ServiceConfigurationService {
                 createByParams("venepaikat", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
                 // Webhooks
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false)
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false),
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_subscription_webhook", false)
 
         );
 
