@@ -244,7 +244,7 @@ public class SubscriptionController {
 			log.error("sending webhook data failed, subscriptionId: " + message.getSubscriptionId(), e);
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-call-subscription-cancelled-webhook", "failed to call subscription cancelled webhook for order with id [" + message.getSubscriptionId() + "]")
+					new Error("failed-to-call-subscription-cancelled-webhook", "failed to call subscription cancelled webhook for subscription with id [" + message.getSubscriptionId() + "]")
 			);
 		}
 	}
