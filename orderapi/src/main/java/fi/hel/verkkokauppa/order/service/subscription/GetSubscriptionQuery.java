@@ -34,7 +34,7 @@ public class GetSubscriptionQuery extends DefaultGetEntityQuery<Subscription, Su
 	}
 
 	@Override
-	protected SubscriptionDto mapToDto(Subscription entity) {
+	public SubscriptionDto mapToDto(Subscription entity) {
 		final SubscriptionDto dto = super.mapToDto(entity);
 
 		decryptPaymentMethodToken(dto);
