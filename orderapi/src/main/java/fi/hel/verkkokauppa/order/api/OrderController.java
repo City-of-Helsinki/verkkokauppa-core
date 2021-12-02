@@ -396,8 +396,7 @@ public class OrderController {
         try {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-            restWebHookService.setNamespace(message.getNamespace());
-            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+            return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, message.getNamespace());
 
         } catch (CommonApiException cae) {
             throw cae;
@@ -416,9 +415,7 @@ public class OrderController {
         try {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-            restWebHookService.setNamespace(message.getNamespace());
-            return restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL);
-
+            return restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {

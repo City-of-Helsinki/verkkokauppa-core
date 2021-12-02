@@ -217,9 +217,7 @@ public class SubscriptionController {
 		try {
 			// This row validates that message contains authorization to order.
 			orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
-
-			restWebHookService.setNamespace(message.getNamespace());
-			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL);
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, message.getNamespace());
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
@@ -234,8 +232,7 @@ public class SubscriptionController {
 	@PostMapping(value = "/subscription/subscription-cancelled-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> subscriptionCancelledWebhook(@RequestBody SubscriptionMessage message) {
 		try {
-			restWebHookService.setNamespace(message.getNamespace());
-			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL);
+			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, message.getNamespace());
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {

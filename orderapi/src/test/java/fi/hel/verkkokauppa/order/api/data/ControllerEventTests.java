@@ -94,7 +94,7 @@ public class ControllerEventTests {
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     // [KYV-405]
-//    @Test
+    @Test
     public void testSendSubscriptionCancelledEvent() {
         SubscriptionMessage message = SubscriptionMessage.builder()
                 .subscriptionId("1234")

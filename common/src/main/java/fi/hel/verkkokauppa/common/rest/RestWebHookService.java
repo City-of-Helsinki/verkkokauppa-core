@@ -23,12 +23,10 @@ public class RestWebHookService {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    private String namespace;
-
+    
     private String webHookUrl;
 
-    public ResponseEntity<Void> postCallWebHook(Object object, String webHookConfigurationKey) throws JsonProcessingException {
+    public ResponseEntity<Void> postCallWebHook(Object object, String webHookConfigurationKey, String namespace) throws JsonProcessingException {
 
         if (namespace == null || namespace.isEmpty()) {
             return ResponseEntity.notFound().build();
