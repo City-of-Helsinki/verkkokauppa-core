@@ -103,10 +103,10 @@ public class SubscriptionController {
 	}
 
 	@PostMapping(value = "/subscription/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Void> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
+	public ResponseEntity<SubscriptionDto> cancelSubscription(@RequestParam(value = "id") String id, @RequestParam(value = "userId") String userId) {
 		try {
-			cancelSubscriptionCommand.cancel(id, userId, SubscriptionCancellationCause.CUSTOMER_CANCELLED);
-			return ResponseEntity.ok().build();
+			final Subscription subscription = cancelSubscriptionCommand.cancel(id, userId, SubscriptionCancellationCause.CUSTOMER_CANCELLED);
+			return ResponseEntity.ok(getSubscriptionQuery.mapToDto(subscription));
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch(EntityNotFoundException e) {
