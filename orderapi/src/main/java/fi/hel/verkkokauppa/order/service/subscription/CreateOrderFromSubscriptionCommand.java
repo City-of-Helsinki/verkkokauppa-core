@@ -60,20 +60,12 @@ public class CreateOrderFromSubscriptionCommand {
 		String user = subscriptionDto.getUser();
 		// TODO create check for duplications!
 		// Tarkista uusinta orderin olemassa olo ennen uuden uusinta orderin luontia
-		try {
+		String subscriptionId = subscriptionDto.getSubscriptionId();
 
-			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
-			Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionDto.getSubscriptionId());
-			if (lastOrder != null) {
-				// order endDate greater than current subscription endDate
-				// or subsciptionEndDate = Order endDate
-				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
-					return lastOrder.getOrderId();
-				}
-			}
-		} catch (CommonApiException e) {
-			//
-			log.info(String.valueOf(e));
+		String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
+
+		if (activeOrderFromSubscription != null) {
+			return activeOrderFromSubscription;
 		}
 
 		boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
@@ -103,6 +95,26 @@ public class CreateOrderFromSubscriptionCommand {
 		return orderId;
 	}
 
+	public String hasDuplicateOrder(String subscriptionId, String user) {
+		try {
+
+			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
+			Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionId);
+			if (lastOrder != null) {
+				// order endDate greater than current subscription endDate
+				// or subsciptionEndDate = Order endDate
+				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+					return lastOrder.getOrderId();
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			//
+			log.info(String.valueOf(e));
+			return null;
+		}
+	}
+
 	public boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
 		LocalDateTime subscriptionEndDate = subscription.getEndDate();
 		LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
@@ -113,7 +125,7 @@ public class CreateOrderFromSubscriptionCommand {
 
 		// order endDate greater than current subscription endDate (isAfter)
 		// OR subscriptionEndDate = last order endDate
-		return lastOrderEndDate.isAfter(subscriptionEndDate) || subscriptionEndDate.isEqual(lastOrderEndDate);
+		return lastOrderEndDate.isAfter(subscriptionEndDate);
 	}
 
 	private void copyCustomerInfoFromSubscription(SubscriptionDto subscriptionDto, Order order) {

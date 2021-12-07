@@ -286,7 +286,7 @@ public class OrderService {
                     .vatPercentage(orderItem.getVatPercentage())
                     .productName(orderItem.getProductName())
                     .productQuantity(orderItem.getQuantity().toString())
-                    .isSubscriptionRenewalOrder(Boolean.TRUE.toString())
+                    .isSubscriptionRenewalOrder(true)
                     .subscriptionId(order.getSubscriptionId())
                     .userId(order.getUser());
         }
