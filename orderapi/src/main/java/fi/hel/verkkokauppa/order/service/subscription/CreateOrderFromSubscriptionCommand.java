@@ -58,8 +58,7 @@ public class CreateOrderFromSubscriptionCommand {
 	public String createFromSubscription(SubscriptionDto subscriptionDto) {
 		String namespace = subscriptionDto.getNamespace();
 		String user = subscriptionDto.getUser();
-		// TODO create check for duplications!
-		// Tarkista uusinta orderin olemassa olo ennen uuden uusinta orderin luontia
+
 		String subscriptionId = subscriptionDto.getSubscriptionId();
 
 		String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
