@@ -1,7 +1,5 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -297,7 +295,7 @@ public class OrderService {
     }
 
     public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
-        List<Order> orderIds = orderRepository.findOrderIdBySubscriptionId(subscriptionId);
+        List<Order> orderIds = orderRepository.findOrdersBySubscriptionId(subscriptionId);
 
         List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
                 .map(order -> getOrderWithItems(order.getOrderId()))

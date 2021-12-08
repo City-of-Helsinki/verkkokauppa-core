@@ -101,7 +101,6 @@ public class CreateOrderFromSubscriptionCommand {
 			Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionId);
 			if (lastOrder != null) {
 				// order endDate greater than current subscription endDate
-				// or subsciptionEndDate = Order endDate
 				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
 					return lastOrder.getOrderId();
 				}
@@ -123,7 +122,6 @@ public class CreateOrderFromSubscriptionCommand {
 		}
 
 		// order endDate greater than current subscription endDate (isAfter)
-		// OR subscriptionEndDate = last order endDate
 		return lastOrderEndDate.isAfter(subscriptionEndDate);
 	}
 
