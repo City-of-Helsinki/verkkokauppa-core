@@ -1,12 +1,14 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
@@ -48,8 +50,23 @@ class SubscriptionServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-//    @Test
+    @Test
     void setOrderStartAndEndDate() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
+
+        if (order.isPresent() && subscription.isPresent()) {
+            foundOrder = order.get();
+            foundSubscription = subscription.get();
+            subscriptionService.setSubscriptionEndDateFromOrder(foundOrder, foundSubscription);
+            Assertions.assertEquals(foundSubscription.getEndDate(), foundOrder.getEndDate());
+        }
+    }
+
+    @Test
+    void createFromSubscription() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
         Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());

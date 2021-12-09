@@ -49,6 +49,7 @@ public class PaymentAdminController {
 
     @PostMapping(value = "/payment-admin/subscription-renewal-order-created-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> orderCreatedEventCallback(@RequestBody OrderMessage message) {
+
         try {
             log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
 

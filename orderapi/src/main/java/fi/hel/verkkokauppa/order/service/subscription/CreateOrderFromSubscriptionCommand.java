@@ -3,10 +3,12 @@ package fi.hel.verkkokauppa.order.service.subscription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -49,9 +52,20 @@ public class CreateOrderFromSubscriptionCommand {
 	@Autowired
 	private SubscriptionItemMetaRepository subscriptionItemMetaRepository;
 
+	@Autowired
+	private GetSubscriptionQuery getSubscriptionQuery;
+
 	public String createFromSubscription(SubscriptionDto subscriptionDto) {
 		String namespace = subscriptionDto.getNamespace();
 		String user = subscriptionDto.getUser();
+
+		String subscriptionId = subscriptionDto.getSubscriptionId();
+
+		String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
+
+		if (activeOrderFromSubscription != null) {
+			return activeOrderFromSubscription;
+		}
 
 		boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
 		// Returns null orderId if subscription right of purchase is false.
@@ -62,7 +76,9 @@ public class CreateOrderFromSubscriptionCommand {
 
 		Order order = orderService.createByParams(namespace, user);
 		order.setType(OrderType.ORDER);
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
 
+		orderService.setStartDateAndCalculateNextEndDate(order, subscription, subscription.getEndDate());
 		copyCustomerInfoFromSubscription(subscriptionDto, order);
 		orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());
 
@@ -76,6 +92,37 @@ public class CreateOrderFromSubscriptionCommand {
 		orderService.linkToSubscription(orderId, order.getUser(), subscriptionDto.getSubscriptionId());
 
 		return orderId;
+	}
+
+	public String hasDuplicateOrder(String subscriptionId, String user) {
+		try {
+
+			Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
+			Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionId);
+			if (lastOrder != null) {
+				// order endDate greater than current subscription endDate
+				if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+					return lastOrder.getOrderId();
+				}
+			}
+			return null;
+		} catch (Exception e) {
+			//
+			log.info(String.valueOf(e));
+			return null;
+		}
+	}
+
+	public boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
+		LocalDateTime subscriptionEndDate = subscription.getEndDate();
+		LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
+		// Prevents NPO
+		if (subscriptionEndDate == null || lastOrderEndDate == null) {
+			return false;
+		}
+
+		// order endDate greater than current subscription endDate (isAfter)
+		return lastOrderEndDate.isAfter(subscriptionEndDate);
 	}
 
 	private void copyCustomerInfoFromSubscription(SubscriptionDto subscriptionDto, Order order) {
@@ -100,9 +147,9 @@ public class CreateOrderFromSubscriptionCommand {
 				subscriptionDto.getPriceNet(),
 				subscriptionDto.getPriceVat(),
 				subscriptionDto.getPriceGross(),
-				subscriptionDto.getPeriodUnit(),
-				subscriptionDto.getPeriodFrequency(),
-				subscriptionDto.getPeriodCount(),
+				null,
+				null,
+				null,
 				subscriptionDto.getBillingStartDate(),
 				subscriptionDto.getEndDate()
 		);

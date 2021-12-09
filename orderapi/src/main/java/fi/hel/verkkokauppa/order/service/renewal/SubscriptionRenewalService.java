@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Component
@@ -56,7 +57,8 @@ public class SubscriptionRenewalService {
     public String renewSubscription(String subscriptionId) {
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
         String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        if (orderId != null) {
+        // If order ids matches prevents sending renewal order created event.
+        if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
             Order order = orderService.findById(orderId);
             orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
         }
@@ -116,6 +118,7 @@ public class SubscriptionRenewalService {
     public void batchProcessNextRenewalRequests() {
         log.debug("processing next renewal requests");
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(1, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
+        log.debug("renewal requests {}", requests);
         if (requests != null) {
             requests.getContent().forEach(request -> {
                 triggerSubscriptionRenewalEvent(request.getId());

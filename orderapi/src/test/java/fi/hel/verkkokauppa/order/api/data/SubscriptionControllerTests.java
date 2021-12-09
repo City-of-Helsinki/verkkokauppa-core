@@ -11,11 +11,14 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import org.junit.Assert;
+import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -36,15 +39,6 @@ import java.util.UUID;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 public class SubscriptionControllerTests extends DummyData {
-
-//    @InjectMocks
-//    private AccountingSlipService accountingSlipService;
-//
-//    @Mock
-//    private OrderAccountingService mockOrderAccountingService;
-//
-//    @Mock
-//    private OrderItemAccountingService mockOrderItemAccountingService;
 
     @Autowired
     private SubscriptionItemMetaRepository subscriptionItemMetaRepository;
@@ -67,6 +61,13 @@ public class SubscriptionControllerTests extends DummyData {
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private OrderService orderService;
+
+
     @Test
     public void assertTrue(){
         Assertions.assertTrue(true);
@@ -76,6 +77,7 @@ public class SubscriptionControllerTests extends DummyData {
     //@Test
     public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
+        orderRepository.delete(order);
 
         order.setNamespace("venepaikat");
         order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
@@ -96,43 +98,41 @@ public class SubscriptionControllerTests extends DummyData {
         ResponseEntity<SubscriptionIdsDto> createdSubs = subscriptionController.createSubscriptionsFromOrder(response.getBody());
 
         // Verify request succeed
-        Assert.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
-        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
+        Assertions.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
+        Assertions.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
 
         // Read
         List<Subscription> subscriptions = subscriptionRepository.findByCustomerEmail(order.getCustomerEmail());
-        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
-        Assert.assertEquals(Period.DAILY, subscriptions.get(0).getPeriodUnit());
+        Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assertions.assertEquals(Period.DAILY, subscriptions.get(0).getPeriodUnit());
 
-        Assert.assertEquals("active", subscriptions.get(0).getStatus());
-        Assert.assertEquals("venepaikat", subscriptions.get(0).getNamespace());
-        Assert.assertEquals("dummy_firstname", subscriptions.get(0).getCustomerFirstName());
-        Assert.assertEquals("dummy_lastname", subscriptions.get(0).getCustomerLastName());
-        Assert.assertEquals(order.getCustomerEmail(), subscriptions.get(0).getCustomerEmail());
-        Assert.assertEquals("dummy_user", subscriptions.get(0).getUser());
-        Assert.assertNotNull(subscriptions.get(0).getStartDate());
-        Assert.assertNotNull(subscriptions.get(0).getBillingStartDate());
-        Assert.assertEquals("daily", subscriptions.get(0).getPeriodUnit());
+        Assertions.assertEquals("active", subscriptions.get(0).getStatus());
+        Assertions.assertEquals("venepaikat", subscriptions.get(0).getNamespace());
+        Assertions.assertEquals("dummy_firstname", subscriptions.get(0).getCustomerFirstName());
+        Assertions.assertEquals("dummy_lastname", subscriptions.get(0).getCustomerLastName());
+        Assertions.assertEquals(order.getCustomerEmail(), subscriptions.get(0).getCustomerEmail());
+        Assertions.assertEquals("dummy_user", subscriptions.get(0).getUser());
+        Assertions.assertNotNull(subscriptions.get(0).getStartDate());
+        Assertions.assertNotNull(subscriptions.get(0).getBillingStartDate());
+        Assertions.assertEquals("daily", subscriptions.get(0).getPeriodUnit());
 
-        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
-        Assert.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
+        Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assertions.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
 
-        Assert.assertEquals("productId", subscriptions.get(0).getProductId());
-        Assert.assertEquals("productName", subscriptions.get(0).getProductName());
-        Assert.assertEquals(1, (int) subscriptions.get(0).getQuantity());
-        Assert.assertEquals("124", subscriptions.get(0).getPriceGross());
+        Assertions.assertEquals("productId", subscriptions.get(0).getProductId());
+        Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
+        Assertions.assertEquals(1, (int) subscriptions.get(0).getQuantity());
+        Assertions.assertEquals("124", subscriptions.get(0).getPriceGross());
         // New orderItemId should be created from order items.
-        Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
+        Assertions.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
         // Order metas succesfully copied to subscription_item_metas
-        Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
-        Assert.assertEquals(subscriptions.get(0).getOrderId(), Objects.requireNonNull(response.getBody()).getOrder().getOrderId());
+        Assertions.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
+        Assertions.assertEquals(subscriptions.get(0).getOrderId(), Objects.requireNonNull(response.getBody()).getOrder().getOrderId());
+
 
         // These checks if order can be purchased. KYV-233 and KYV-393
         SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptions.get(0).getSubscriptionId());
-        String createdOrderFromSubscription = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        Assert.assertNotNull(createdOrderFromSubscription);
-
-    }
+     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
 //    @Test
@@ -158,35 +158,35 @@ public class SubscriptionControllerTests extends DummyData {
         ResponseEntity<SubscriptionIdsDto> createdSubs = subscriptionController.createSubscriptionsFromOrderId(orderDto.getOrderId(),orderDto.getUser());
 
         // Verify request succeed
-        Assert.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
-        Assert.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
+        Assertions.assertEquals(HttpStatus.CREATED.value(), createdSubs.getStatusCodeValue());
+        Assertions.assertEquals(1, Objects.requireNonNull(createdSubs.getBody().getSubscriptionIds()).size());
 
         // Read
         List<Subscription> subscriptions = subscriptionRepository.findByCustomerEmail(order.getCustomerEmail());
-        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
-        Assert.assertEquals(Period.DAILY, subscriptions.get(0).getPeriodUnit());
+        Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assertions.assertEquals(Period.DAILY, subscriptions.get(0).getPeriodUnit());
 
-        Assert.assertEquals("active", subscriptions.get(0).getStatus());
-        Assert.assertEquals("venepaikat", subscriptions.get(0).getNamespace());
-        Assert.assertEquals("dummy_firstname", subscriptions.get(0).getCustomerFirstName());
-        Assert.assertEquals("dummy_lastname", subscriptions.get(0).getCustomerLastName());
-        Assert.assertEquals(order.getCustomerEmail(), subscriptions.get(0).getCustomerEmail());
-        Assert.assertEquals("dummy_user", subscriptions.get(0).getUser());
-        Assert.assertNotNull(subscriptions.get(0).getStartDate());
-        Assert.assertNotNull(subscriptions.get(0).getBillingStartDate());
-        Assert.assertEquals("daily", subscriptions.get(0).getPeriodUnit());
+        Assertions.assertEquals("active", subscriptions.get(0).getStatus());
+        Assertions.assertEquals("venepaikat", subscriptions.get(0).getNamespace());
+        Assertions.assertEquals("dummy_firstname", subscriptions.get(0).getCustomerFirstName());
+        Assertions.assertEquals("dummy_lastname", subscriptions.get(0).getCustomerLastName());
+        Assertions.assertEquals(order.getCustomerEmail(), subscriptions.get(0).getCustomerEmail());
+        Assertions.assertEquals("dummy_user", subscriptions.get(0).getUser());
+        Assertions.assertNotNull(subscriptions.get(0).getStartDate());
+        Assertions.assertNotNull(subscriptions.get(0).getBillingStartDate());
+        Assertions.assertEquals("daily", subscriptions.get(0).getPeriodUnit());
 
-        Assert.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
-        Assert.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
+        Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
+        Assertions.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
 
-        Assert.assertEquals("productId", subscriptions.get(0).getProductId());
-        Assert.assertEquals("productName", subscriptions.get(0).getProductName());
-        Assert.assertEquals(1, (int) subscriptions.get(0).getQuantity());
-        Assert.assertEquals("124", subscriptions.get(0).getPriceGross());
+        Assertions.assertEquals("productId", subscriptions.get(0).getProductId());
+        Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
+        Assertions.assertEquals(1, (int) subscriptions.get(0).getQuantity());
+        Assertions.assertEquals("124", subscriptions.get(0).getPriceGross());
         // New orderItemId should be created from order items.
-        Assert.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
+        Assertions.assertNotEquals(orderItems.get(0).getOrderItemId(), subscriptions.get(0).getOrderItemId());
         // Order metas succesfully copied to subscription_item_metas
-        Assert.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
+        Assertions.assertEquals(1, subscriptionItemMetaRepository.findByOrderItemId(subscriptions.get(0).getOrderItemId()).size());
     }
 
 }

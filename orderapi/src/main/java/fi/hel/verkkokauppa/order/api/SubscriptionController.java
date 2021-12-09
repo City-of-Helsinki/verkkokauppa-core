@@ -207,6 +207,7 @@ public class SubscriptionController {
 		log.debug("subscription-api received PAYMENT_PAID event for paymentId: " + message.getPaymentId());
 
 		SubscriptionIdsDto dto = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId()).getBody();
+		// TODO Method invocation 'getSubscriptionIds' may produce 'NullPointerException'
 		subscriptionService.afterFirstPaymentPaidEventActions(dto.getSubscriptionIds(), message);
 		return ResponseEntity.ok().body(dto);
 	}
