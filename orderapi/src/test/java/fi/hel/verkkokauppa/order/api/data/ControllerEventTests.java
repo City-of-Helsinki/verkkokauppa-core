@@ -50,11 +50,9 @@ public class ControllerEventTests {
     @Autowired
     private SendEventService sendEventService;
 
-    @Mock
-    Environment env;
 
     // add to your application.properties spring.kafka.bootstrap-servers=localhost:9092
-    @Value("${spring.kafka.bootstrap-servers}")
+    @Value("${spring.kafka.bootstrap-servers:#{null}}")
     private String bootstrapServers;
 
     @Before
