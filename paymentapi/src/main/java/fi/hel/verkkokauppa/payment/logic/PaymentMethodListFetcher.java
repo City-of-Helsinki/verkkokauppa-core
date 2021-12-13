@@ -39,6 +39,7 @@ public class PaymentMethodListFetcher {
 				return response.getPaymentMethods();
 			} else {
 				log.error("payment methods request failed, check application.properties");
+				log.debug("Visma PaymentMethodListFetcher error response {}", response);
 				throw new RuntimeException(
 						"Unable to get the payment methods for the merchant. " +
 						"Please check that api key and private key are correct."

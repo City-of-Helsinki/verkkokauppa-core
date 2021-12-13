@@ -43,6 +43,7 @@ public class CardTokenFetcher {
 				return paymentCardInfoDto;
 			} else {
 				log.error("card payment token request failed, check application.properties");
+				log.debug("Visma getCardToken error response {}", response);
 				throw new RuntimeException(buildErrorMsg(response));
 			}
 		} catch (InterruptedException | ExecutionException e) {

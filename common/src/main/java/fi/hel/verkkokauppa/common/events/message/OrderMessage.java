@@ -24,6 +24,7 @@ public class OrderMessage implements EventMessage {
 
     public String priceTotal;
     public String priceNet;
+    public String priceVat;
     public String vatPercentage;
 
     public String cardToken;
