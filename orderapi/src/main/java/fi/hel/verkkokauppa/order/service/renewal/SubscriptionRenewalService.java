@@ -117,7 +117,7 @@ public class SubscriptionRenewalService {
 
     public void batchProcessNextRenewalRequests() {
         log.debug("processing next renewal requests");
-        Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(1, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
+        Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(0, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         log.debug("renewal requests {}", requests);
         if (requests != null) {
             requests.getContent().forEach(request -> {
