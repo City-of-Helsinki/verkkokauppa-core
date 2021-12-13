@@ -280,7 +280,7 @@ public class OnlinePaymentService {
         payment.setPaymentType(OrderType.SUBSCRIPTION);
         payment.setStatus(PaymentStatus.CREATED);
         payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
-        payment.setTaxAmount(new BigDecimal(message.getVatPercentage()));
+        payment.setTaxAmount(new BigDecimal(message.getPriceVat()));
         payment.setTotal(new BigDecimal(message.getPriceTotal()));
         paymentRepository.save(payment);
 

@@ -269,7 +269,8 @@ public class OrderService {
                 .timestamp(order.getCreatedAt())
                 .orderType(order.getType())
                 .priceTotal(order.getPriceTotal())
-                .priceNet(order.getPriceNet());
+                .priceNet(order.getPriceNet())
+                .priceVat(order.getPriceVat());
 
         if (StringUtils.isNotEmpty(order.getSubscriptionId())) {
             SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId());

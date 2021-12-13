@@ -68,6 +68,7 @@ public class PaymentAdminController {
                             message.getProductQuantity(),
                             message.getPriceTotal(),
                             message.getPriceNet(),
+                            message.getPriceVat(),
                             message.getVatPercentage(),
                             message.getCardToken()
                     );
