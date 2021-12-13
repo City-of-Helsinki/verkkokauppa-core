@@ -37,6 +37,7 @@ public class ChargeCardTokenLogic {
 				return response;
 			} else {
 				log.error("card token charge request failed, check application.properties");
+				log.debug("Visma chargeCardToken error response {}", response);
 				throw new RuntimeException(buildErrorMsg(response));
 			}
 		} catch (InterruptedException | ExecutionException e) {

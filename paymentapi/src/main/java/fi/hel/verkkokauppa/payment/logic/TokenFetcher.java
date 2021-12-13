@@ -36,6 +36,7 @@ public class TokenFetcher {
 				return response.getToken();
 			} else {
 				log.error("payment token request failed, check application.properties");
+				log.debug("Visma getToken error response {}", response);
 				throw new RuntimeException(buildErrorMsg(response));
 			}
 		} catch (InterruptedException | ExecutionException e) {
