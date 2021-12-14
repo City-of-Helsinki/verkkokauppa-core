@@ -301,7 +301,7 @@ public class OnlinePaymentService {
     public ChargeCardTokenResponse chargeCardToken(ChargeCardTokenRequestDataDto request) {
         PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
         ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
-
+        log.debug("ChargeCardTokenRequest payload: {}",payload);
         return chargeCardTokenLogic.chargeCardToken(payload);
     }
 
@@ -415,11 +415,7 @@ public class OnlinePaymentService {
                 message.getPriceNet(),
                 message.getPriceVat(),
                 message.getVatPercentage(),
-                getDecryptedCardToken(message.getCardToken())
+                message.getCardToken()
         );
-    }
-
-    private String getDecryptedCardToken(String cardToken) {
-        return EncryptorUtil.decryptValue(cardToken, cardTokenEncryptionPassword);
     }
 }

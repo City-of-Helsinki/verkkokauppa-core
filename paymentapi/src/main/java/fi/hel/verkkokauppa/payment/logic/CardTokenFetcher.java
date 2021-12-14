@@ -29,8 +29,12 @@ public class CardTokenFetcher {
 
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
+		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(buildPayloadFor(paymentToken));
+		// TODO remove later?
+		log.debug("CheckPaymentStatusRequest request : {}", request);
+
 		CompletableFuture<PaymentStatusResponse> responseCF =
-				client.sendRequest(new CheckPaymentStatusRequest(buildPayloadFor(paymentToken)));
+				client.sendRequest(request);
 
 		try {
 			PaymentStatusResponse response = responseCF.get();
