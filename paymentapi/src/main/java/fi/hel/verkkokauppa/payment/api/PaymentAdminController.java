@@ -48,7 +48,8 @@ public class PaymentAdminController {
 
     @PostMapping(value = "/payment-admin/subscription-renewal-order-created-event", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> orderCreatedEventCallback(@RequestBody OrderMessage message) {
-
+        // TODO remove later?
+        log.debug("orderCreatedEventCallback OrderMessage: {}", message);
         try {
             log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
 
@@ -69,6 +70,8 @@ public class PaymentAdminController {
                                 chargeCardTokenResponse.getResult().toString(),
                                 chargeCardTokenResponse.getSettled().toString());
                         service.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
+                        // TODO remove later?
+                        log.debug("paymentReturnDto {}", paymentReturnDto);
                     } catch (Exception e) {
                         log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
                         service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true,false,false));
