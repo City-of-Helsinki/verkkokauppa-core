@@ -404,4 +404,22 @@ public class OnlinePaymentService {
         }
     }
 
+    public ChargeCardTokenRequestDataDto createChargeCardTokenRequestDataDto(OrderMessage message) {
+        return new ChargeCardTokenRequestDataDto(
+                message.getNamespace(),
+                message.getOrderId(),
+                message.getOrderItemId(),
+                message.getProductName(),
+                message.getProductQuantity(),
+                message.getPriceTotal(),
+                message.getPriceNet(),
+                message.getPriceVat(),
+                message.getVatPercentage(),
+                getDecryptedCardToken(message.getCardToken())
+        );
+    }
+
+    private String getDecryptedCardToken(String cardToken) {
+        return EncryptorUtil.decryptValue(cardToken, cardTokenEncryptionPassword);
+    }
 }
