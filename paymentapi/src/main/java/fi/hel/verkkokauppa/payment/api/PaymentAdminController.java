@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
@@ -60,18 +59,7 @@ public class PaymentAdminController {
                 if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.getCardToken() != null) {
                     Payment payment = service.createSubscriptionRenewalPayment(message);
 
-                    ChargeCardTokenRequestDataDto request = new ChargeCardTokenRequestDataDto(
-                            message.getNamespace(),
-                            message.getOrderId(),
-                            message.getOrderItemId(),
-                            message.getProductName(),
-                            message.getProductQuantity(),
-                            message.getPriceTotal(),
-                            message.getPriceNet(),
-                            message.getPriceVat(),
-                            message.getVatPercentage(),
-                            message.getCardToken()
-                    );
+                    ChargeCardTokenRequestDataDto request = service.createChargeCardTokenRequestDataDto(message);
 
                     try {
                         ChargeCardTokenResponse chargeCardTokenResponse = service.chargeCardToken(request);
