@@ -8,6 +8,9 @@
         <version>2.4.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+    <properties>
+        <log4j2.version>2.16.0</log4j2.version>
+    </properties>
 
     <artifactId>payment</artifactId>
     <version>0.0.1-SNAPSHOT</version>
