@@ -68,13 +68,14 @@ public class PaymentAdminController {
                         PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(
                                 true,
                                 chargeCardTokenResponse.getResult().toString(),
-                                chargeCardTokenResponse.getSettled().toString());
+                                chargeCardTokenResponse.getSettled().toString()
+                        );
                         service.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
                         // TODO remove later?
                         log.debug("paymentReturnDto {}", paymentReturnDto);
                     } catch (Exception e) {
                         log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                        service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true,false,false));
+                        service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true,false,false,false));
                     }
                 } else {
                     log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());

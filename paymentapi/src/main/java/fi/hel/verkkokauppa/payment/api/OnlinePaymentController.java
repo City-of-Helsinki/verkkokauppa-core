@@ -11,12 +11,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
-import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
+import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
@@ -34,6 +29,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 public class OnlinePaymentController {
@@ -65,6 +63,44 @@ public class OnlinePaymentController {
 			);
 		}
 	}
+
+	@PostMapping(value = "/payment/online/create/card-renewal-payment", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Payment> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
+		try {
+
+			Payment payment = service.getPaymentRequestDataForCardRenewal(dto);
+			return ResponseEntity.status(HttpStatus.CREATED).body(payment);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("creating payment or card-renewal-payment failed", e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-create-payment", "failed to create payment")
+			);
+		}
+	}
+
+	@GetMapping(value = "/payment/online/visma/get", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Payment> getVismaPaymentRequest(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+														  @RequestParam(value = "userId") String userId) {
+		try {
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
+
+			// TODO haku
+			return ResponseEntity.status(HttpStatus.OK).body(payment);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("getting payment failed, orderId: " + orderId, e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
+			);
+		}
+	}
+
+
 
 	@PostMapping(value = "/payment/online/get-available-methods", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {

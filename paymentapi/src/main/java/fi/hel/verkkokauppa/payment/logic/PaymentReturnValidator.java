@@ -29,22 +29,35 @@ public class PaymentReturnValidator {
 	public PaymentReturnDto validateReturnValues(boolean isValid, String returnCode, String settled) {
 		boolean isPaymentPaid = false;
 		boolean canRetry = false;
+		boolean isAuthorized = false;
 
-		if ("0".equals(returnCode) && "1".equals(settled)) {
+		if (isSuccesfull(returnCode) && isSettled(settled)) {
 			isPaymentPaid = true;
-			canRetry = false;
+		} else if (isSuccesfull(returnCode) && isAuthorized(settled)){
+			isAuthorized = true;
 		} else {
-			isPaymentPaid = false;
 			// returnCode 4 = "Transaction status could not be updated after customer returned from a payment facilitator's web page. Please use the merchant UI to resolve the payment status."
 			if (!"4".equals(returnCode)) {
 				canRetry = true;
 			}
 		}
 
-		return new PaymentReturnDto(isValid, isPaymentPaid, canRetry);
+		return new PaymentReturnDto(isValid, isPaymentPaid, canRetry, isAuthorized);
 	}
 
-    private String buildAuthCodeFromReturnData(String returnCode, String orderNumber, String settled, String incidentId) {
+	private boolean isSettled(String settled) {
+		return "1".equals(settled);
+	}
+
+	private boolean isAuthorized(String settled) {
+		return "0".equals(settled);
+	}
+
+	private boolean isSuccesfull(String returnCode) {
+		return "0".equals(returnCode);
+	}
+
+	private String buildAuthCodeFromReturnData(String returnCode, String orderNumber, String settled, String incidentId) {
         String encryptionKey = env.getRequiredProperty("payment_encryption_key");
 
 		ReturnDataAuthCodeBuilder builder = new ReturnDataAuthCodeBuilder(

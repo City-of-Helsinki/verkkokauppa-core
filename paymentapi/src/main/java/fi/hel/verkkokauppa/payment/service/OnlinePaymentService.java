@@ -11,8 +11,10 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.*;
+import fi.hel.verkkokauppa.payment.logic.payload.PaymentOnlyChargeCardPayloadBuilder;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -23,6 +25,7 @@ import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
+import org.helsinki.vismapay.request.payment.GetPaymentRequest;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,6 +57,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private PaymentTokenPayloadBuilder paymentTokenPayloadBuilder;
+
+    @Autowired
+    private PaymentOnlyChargeCardPayloadBuilder onlyChargeCardPayloadBuilder;
 
     @Autowired
     private TokenFetcher tokenFetcher;
@@ -83,22 +90,9 @@ public class OnlinePaymentService {
         String orderStatus = order.getStatus();
         String userId = order.getUser();
 
-        // check order status, can only create payment for confirmed orders
-        if (!"confirmed".equals(orderStatus)) {
-            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
-            throw new CommonApiException(
-                    HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
-            );
-        }
+        isValidOrderStatusToCreatePayment(orderId, orderStatus);
 
-        if (userId == null || userId.isEmpty()) {
-            log.warn("creating payment without user rejected, orderId: " + orderId);
-            throw new CommonApiException(
-                    HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
-            );
-        }
+        isValidUserToCreatePayment(orderId, userId);
 
         boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
         String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
@@ -118,6 +112,57 @@ public class OnlinePaymentService {
 
         return payment;
     }
+
+    public Payment getPaymentRequestDataForCardRenewal(GetPaymentRequestDataDto dto) {
+        // Gets orderDto from order wrapper
+        OrderDto order = dto.getOrder().getOrder();
+        String namespace = order.getNamespace();
+        String orderId = order.getOrderId();
+        String orderStatus = order.getStatus();
+        String userId = order.getUser();
+
+        isValidOrderStatusToCreatePayment(orderId, orderStatus);
+
+        isValidUserToCreatePayment(orderId, userId);
+
+        PaymentContext context = paymentContextBuilder.buildFor(namespace);
+
+        ChargeRequest.PaymentTokenPayload tokenRequestPayload = onlyChargeCardPayloadBuilder.buildFor(dto, context);
+        log.debug("tokenRequestPayload: " + tokenRequestPayload);
+
+        String paymentId = tokenRequestPayload.getOrderNumber();
+        String token = tokenFetcher.getToken(tokenRequestPayload);
+        String paymentType = PaymentType.CARD_RENEWAL;
+
+        Payment payment = createPayment(dto, paymentType, token, paymentId);
+        if (payment.getPaymentId() == null) {
+            throw new RuntimeException("Didn't manage to create payment.");
+        }
+
+        return payment;
+    }
+
+    private void isValidUserToCreatePayment(String orderId, String userId) {
+        if (userId == null || userId.isEmpty()) {
+            log.warn("creating payment without user rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
+            );
+        }
+    }
+
+    private void isValidOrderStatusToCreatePayment(String orderId, String orderStatus) {
+        // check order status, can only create payment for confirmed orders
+        if (!"confirmed".equals(orderStatus)) {
+            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
+            );
+        }
+    }
+
 
     public String getPaymentUrl(String token) {
         return VismaPayClient.API_URL + "/token/" + token; 
@@ -418,4 +463,24 @@ public class OnlinePaymentService {
                 message.getCardToken()
         );
     }
+
+    public OrderItemDto getCardRenewalOrderItem(String orderId){
+        int chargeAmount = 1;
+        OrderItemDto orderItemDto = new OrderItemDto();
+        orderItemDto.setOrderItemId(UUIDGenerator.generateType4UUID().toString());
+        orderItemDto.setOrderId(orderId);
+        orderItemDto.setProductId(UUIDGenerator.generateType4UUID().toString());
+        orderItemDto.setProductName("card_renewal");
+        orderItemDto.setQuantity(chargeAmount);
+        orderItemDto.setUnit("pcs");
+        orderItemDto.setRowPriceNet(new BigDecimal(chargeAmount));
+        orderItemDto.setRowPriceVat(new BigDecimal(0));
+        orderItemDto.setRowPriceTotal(new BigDecimal(chargeAmount));
+        orderItemDto.setVatPercentage("0");
+        orderItemDto.setPriceNet(new BigDecimal(chargeAmount));
+        orderItemDto.setPriceVat(new BigDecimal(0));
+        orderItemDto.setPriceGross(new BigDecimal(chargeAmount));
+        return orderItemDto;
+    }
+
 }
