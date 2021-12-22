@@ -1,5 +1,8 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
+import lombok.Getter;
+
+@Getter
 public class PaymentReturnDto {
     private boolean isValid;        // checksum ok
     private boolean isAuthorized;   // payment only authorized.

@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.logic.visma.VismaAuth;
 import fi.hel.verkkokauppa.payment.logic.visma.VismaGetPaymentRequest;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
@@ -15,6 +16,14 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.assertj.core.api.Assertions;
+import org.helsinki.vismapay.VismaPayClient;
+import org.helsinki.vismapay.model.payment.Product;
+import org.helsinki.vismapay.request.payment.CancelPaymentRequest;
+import org.helsinki.vismapay.request.payment.CardTokenRequest;
+import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
+import org.helsinki.vismapay.response.VismaPayResponse;
+import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.helsinki.vismapay.response.payment.PaymentDetailsResponse;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,9 +41,11 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -71,6 +82,9 @@ public class OnlinePaymentControllerTests {
     Environment env;
 
     private Payment payment;
+
+    @Autowired
+    private VismaAuth vismaAuth;
 
     // add to your application.properties spring.kafka.bootstrap-servers=localhost:9092
     @Value("${spring.kafka.bootstrap-servers}")
@@ -109,7 +123,7 @@ public class OnlinePaymentControllerTests {
 
 
     @Test
-    public void testCreateCardRenewalPayment() throws IOException {
+    public void testCreateCardRenewalPayment() throws IOException, InterruptedException, ExecutionException {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
 
         OrderDto orderDto = new OrderDto();
@@ -147,20 +161,19 @@ public class OnlinePaymentControllerTests {
         //TESTING
         paymentId = "1234_at_20211220-105922";
 
+
         PaymentDetailsResponse getPaymentDetails = vismaPayment.getPaymentDetails(
                 paymentId
         );
-        // Create refund using visma pay
-/*        Current status of the payment. Possible values are:
-        Value	Explanation
-        0	Incoming - payment is still in progress.
-        1	Authorized - payment has been authorized but it hasn't been captured.
-        2	Authorization failed - payment was not completed succesfully or it was declined.
-        3	Validation failed - payment has failed due to validation error.
-        4	Settled - payment has been completed succesfully.
-        5	Paid - payment has been completed succesfully and it has been paid to the merchant.
-        14	Reversed - authorization of a transaction has been canceled.
-        15	Forwarded Paid - payment has been completed succesfully and it will be paid to the merchant by the provider of the payment method.*/
 
+        assertEquals(getPaymentDetails.getPayment().getAmount(),new BigDecimal("100"));
+//        assertEquals(getPaymentDetails.getPayment().getStatus(),(short)0);
+        // Cancel payment
+        CancelPaymentRequest.CancelPaymentPayload cancelPaymentPayload = new CancelPaymentRequest.CancelPaymentPayload();
+        cancelPaymentPayload.setOrderNumber(paymentId);
+        CompletableFuture<VismaPayResponse> responseCF = vismaAuth.getClient().sendRequest(
+                new CancelPaymentRequest(cancelPaymentPayload)
+        );
+        assertEquals(responseCF.get().getResult(),0, "Cancel to payment is not working.");
     }
 }

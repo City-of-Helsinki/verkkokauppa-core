@@ -25,7 +25,6 @@ import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
-import org.helsinki.vismapay.request.payment.GetPaymentRequest;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +36,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -405,6 +403,22 @@ public class OnlinePaymentService {
     }
 
 
+    public void triggerPaymentCardRenewalEvent(Payment payment) {
+        PaymentMessage paymentMessage = PaymentMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .encryptedCardToken(payment.getToken()) // TODO Is this token  encrypted
+                //.paymentPaidTimestamp(payment.getTimestamp())
+                .orderType(payment.getPaymentType())
+                .build();
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
+    }
+
+
     public Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
         Payment payment = getPaymentForOrder(orderId);
         if (payment == null) {
@@ -443,6 +457,8 @@ public class OnlinePaymentService {
                 } else {
                     log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
                 }
+            } else if (!paymentReturnDto.isPaymentPaid() && paymentReturnDto.isAuthorized()){
+                triggerPaymentCardRenewalEvent(payment);
             } else {
                 log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
             }
