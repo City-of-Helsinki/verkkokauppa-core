@@ -59,8 +59,7 @@ public class CardTokenFetcher {
 	private CheckPaymentStatusRequest.PaymentStatusPayload buildPayloadFor(String paymentId) {
 		CheckPaymentStatusRequest.PaymentStatusPayload payload
 				= new CheckPaymentStatusRequest.PaymentStatusPayload();
-//		payload.setOrderNumber(paymentId);
-		payload.setOrderNumber("6372174a-e009-3175-9ab0-0d7b3233fdfa_at_20211216-070010");
+		payload.setOrderNumber(paymentId);
 		return payload;
 	}
 
