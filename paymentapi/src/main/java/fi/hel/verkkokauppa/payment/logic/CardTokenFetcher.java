@@ -22,14 +22,14 @@ public class CardTokenFetcher {
     @Autowired
     private Environment env;
 
-	public PaymentCardInfoDto getCardToken(String paymentToken) {
+	public PaymentCardInfoDto getCardToken(String paymentId) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
 		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
 		String apiVersion = env.getRequiredProperty("payment_transaction_api_version");
 
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
-		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(buildPayloadFor(paymentToken));
+		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(buildPayloadFor(paymentId));
 		// TODO remove later?
 		log.debug("CheckPaymentStatusRequest request : {}", request);
 
@@ -56,10 +56,11 @@ public class CardTokenFetcher {
 		}
 	}
 
-	private CheckPaymentStatusRequest.PaymentStatusPayload buildPayloadFor(String paymentToken) {
+	private CheckPaymentStatusRequest.PaymentStatusPayload buildPayloadFor(String paymentId) {
 		CheckPaymentStatusRequest.PaymentStatusPayload payload
 				= new CheckPaymentStatusRequest.PaymentStatusPayload();
-		payload.setToken(paymentToken);
+//		payload.setOrderNumber(paymentId);
+		payload.setOrderNumber("6372174a-e009-3175-9ab0-0d7b3233fdfa_at_20211216-070010");
 		return payload;
 	}
 
