@@ -151,8 +151,8 @@ public class OnlinePaymentController {
 																 @RequestParam(value = "userId") String userId) {
 		try {
 			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
-			String paymentToken = payment.getToken();
-			PaymentCardInfoDto paymentCardToken = service.getPaymentCardToken(paymentToken);
+			String paymentId = payment.getPaymentId();
+			PaymentCardInfoDto paymentCardToken = service.getPaymentCardToken(paymentId);
 
 			return ResponseEntity.ok().body(paymentCardToken);
 		} catch (CommonApiException cae) {
