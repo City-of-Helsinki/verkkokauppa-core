@@ -1,8 +1,10 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.builder;
 
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
+import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
 import org.helsinki.vismapay.model.payment.Customer;
 import org.helsinki.vismapay.model.payment.PaymentMethod;
 import org.helsinki.vismapay.model.payment.Product;
@@ -11,10 +13,6 @@ import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 
 @Component
 public class PaymentTokenPayloadBuilder {

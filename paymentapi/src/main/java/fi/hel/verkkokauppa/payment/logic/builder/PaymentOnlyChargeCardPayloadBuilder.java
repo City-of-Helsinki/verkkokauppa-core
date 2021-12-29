@@ -1,10 +1,9 @@
-package fi.hel.verkkokauppa.payment.logic.payload;
+package fi.hel.verkkokauppa.payment.logic.builder;
 
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.logic.PaymentContext;
-import fi.hel.verkkokauppa.payment.logic.PaymentUtil;
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
+import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
 import org.helsinki.vismapay.model.payment.Customer;
 import org.helsinki.vismapay.model.payment.PaymentMethod;
 import org.helsinki.vismapay.model.payment.Product;
@@ -27,7 +26,7 @@ public class PaymentOnlyChargeCardPayloadBuilder {
 		assignCustomer(payload, order);
 		assignProducts(payload, context);
 
-		payload.setAmount((PaymentUtil.convertToCents(new BigDecimal(1))).toBigInteger())
+		payload.setAmount(PaymentUtil.eurosToBigInteger(1))
 				.setOrderNumber(paymentOrderNumber)
 				.setCurrency(context.getDefaultCurrency());
 		return payload;

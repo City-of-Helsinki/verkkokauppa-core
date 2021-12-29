@@ -1,26 +1,15 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
-import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.events.EventType;
-import fi.hel.verkkokauppa.common.events.SendEventService;
-import fi.hel.verkkokauppa.common.events.TopicName;
-import fi.hel.verkkokauppa.common.events.message.OrderMessage;
-import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.payment.api.data.*;
-import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
-import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 public class OnlinePaymentController {
@@ -57,23 +43,6 @@ public class OnlinePaymentController {
 			throw cae;
 		} catch (Exception e) {
 			log.error("creating payment or chargerequest failed", e);
-			throw new CommonApiException(
-					HttpStatus.INTERNAL_SERVER_ERROR,
-					new Error("failed-to-create-payment", "failed to create payment")
-			);
-		}
-	}
-
-	@PostMapping(value = "/payment/online/create/card-renewal-payment", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Payment> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
-		try {
-
-			Payment payment = service.getPaymentRequestDataForCardRenewal(dto);
-			return ResponseEntity.status(HttpStatus.CREATED).body(payment);
-		} catch (CommonApiException cae) {
-			throw cae;
-		} catch (Exception e) {
-			log.error("creating payment or card-renewal-payment failed", e);
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
 					new Error("failed-to-create-payment", "failed to create payment")

@@ -13,8 +13,15 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.*;
-import fi.hel.verkkokauppa.payment.logic.*;
-import fi.hel.verkkokauppa.payment.logic.payload.PaymentOnlyChargeCardPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.CardTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentContextBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentOnlyChargeCardPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
+import fi.hel.verkkokauppa.payment.logic.fetcher.CardTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.fetcher.ChargeCardTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -37,6 +44,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -60,13 +68,13 @@ public class OnlinePaymentService {
     private PaymentOnlyChargeCardPayloadBuilder onlyChargeCardPayloadBuilder;
 
     @Autowired
-    private TokenFetcher tokenFetcher;
+    private PaymentTokenFetcher paymentTokenFetcher;
 
     @Autowired
     private CardTokenFetcher cardTokenFetcher;
 
     @Autowired
-    private ChargeCardTokenLogic chargeCardTokenLogic;
+    private ChargeCardTokenFetcher chargeCardTokenFetcher;
 
     @Autowired
     private CardTokenPayloadBuilder cardTokenPayloadBuilder;
@@ -101,7 +109,7 @@ public class OnlinePaymentService {
         log.debug("tokenRequestPayload: " + tokenRequestPayload);
 
         String paymentId = tokenRequestPayload.getOrderNumber();
-        String token = tokenFetcher.getToken(tokenRequestPayload);
+        String token = paymentTokenFetcher.getToken(tokenRequestPayload);
 
         Payment payment = createPayment(dto, paymentType, token, paymentId);
         if (payment.getPaymentId() == null) {
@@ -129,7 +137,7 @@ public class OnlinePaymentService {
         log.debug("tokenRequestPayload: " + tokenRequestPayload);
 
         String paymentId = tokenRequestPayload.getOrderNumber();
-        String token = tokenFetcher.getToken(tokenRequestPayload);
+        String token = paymentTokenFetcher.getToken(tokenRequestPayload);
         String paymentType = PaymentType.CARD_RENEWAL;
 
         Payment payment = createPayment(dto, paymentType, token, paymentId);
@@ -188,6 +196,14 @@ public class OnlinePaymentService {
             return payablePayment;
         else
             return null;
+    }
+
+    public List<Payment> getPaymentsForOrder(String orderId, String namepace) {
+        return paymentRepository.findByNamespaceAndOrderId(namepace,orderId);
+    }
+
+    public List<Payment> getPaymentsWithNamespaceAndOrderIdAndStatus(String orderId, String namepace, String status) {
+        return paymentRepository.findByNamespaceAndOrderIdAndStatus(namepace, orderId, status);
     }
 
     // payment precedence selection from KYV-186
@@ -345,7 +361,7 @@ public class OnlinePaymentService {
         PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
         ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
         log.debug("ChargeCardTokenRequest payload: {}",payload);
-        return chargeCardTokenLogic.chargeCardToken(payload);
+        return chargeCardTokenFetcher.chargeCardToken(payload);
     }
 
     public PaymentCardInfoDto getPaymentCardInfo(String namespace, String orderId, String userId) {
@@ -449,7 +465,7 @@ public class OnlinePaymentService {
                 } else {
                     log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
                 }
-            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
+            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry() && !Objects.equals(payment.getPaymentType(), PaymentType.CARD_RENEWAL)) {
                 // if not already cancelled earlier
                 if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
                     setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
@@ -457,8 +473,14 @@ public class OnlinePaymentService {
                 } else {
                     log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
                 }
-            } else if (!paymentReturnDto.isPaymentPaid() && paymentReturnDto.isAuthorized()){
-                triggerPaymentCardRenewalEvent(payment);
+            } else if (!paymentReturnDto.isPaymentPaid() && paymentReturnDto.isAuthorized() && Objects.equals(payment.getPaymentType(), PaymentType.CARD_RENEWAL)){
+                // if not already authorized earlier
+                if (!PaymentStatus.AUTHORIZED.equals(payment.getStatus())) {
+                    setPaymentStatus(paymentId, PaymentStatus.AUTHORIZED);
+                    triggerPaymentCardRenewalEvent(payment);
+                } else {
+                    log.debug("not triggering events, payment authorized earlier, paymentId: " + paymentId);
+                }
             } else {
                 log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
             }

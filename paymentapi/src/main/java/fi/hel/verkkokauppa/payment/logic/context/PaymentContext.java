@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.context;
 
 public class PaymentContext {
     private String namespace;

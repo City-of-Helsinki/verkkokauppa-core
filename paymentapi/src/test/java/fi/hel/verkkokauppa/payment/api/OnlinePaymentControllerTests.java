@@ -8,22 +8,17 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.visma.VismaAuth;
-import fi.hel.verkkokauppa.payment.logic.visma.VismaGetPaymentRequest;
+import fi.hel.verkkokauppa.payment.logic.fetcher.GetPaymentRequestFetcher;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.assertj.core.api.Assertions;
-import org.helsinki.vismapay.VismaPayClient;
-import org.helsinki.vismapay.model.payment.Product;
-import org.helsinki.vismapay.request.payment.CancelPaymentRequest;
-import org.helsinki.vismapay.request.payment.CardTokenRequest;
-import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
+import org.helsinki.vismapay.request.payment.CapturePaymentRequest;
 import org.helsinki.vismapay.response.VismaPayResponse;
-import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.helsinki.vismapay.response.payment.PaymentDetailsResponse;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -42,7 +37,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -62,7 +56,7 @@ public class OnlinePaymentControllerTests {
     private final Logger log = LoggerFactory.getLogger(OnlinePaymentControllerTests.class);
 
     @Autowired
-    private OnlinePaymentController onlinePaymentController;
+    private PaymentAdminController paymentAdminController;
     @Autowired
     private OnlinePaymentService onlinePaymentService;
 
@@ -76,7 +70,9 @@ public class OnlinePaymentControllerTests {
     private KafkaTestConsumer kafkaTestConsumer;
 
     @Autowired
-    private VismaGetPaymentRequest vismaPayment;
+    private GetPaymentRequestFetcher vismaPayment;
+    @Autowired
+    private CancelPaymentFetcher cancelPaymentFetcher;
 
     @Mock
     Environment env;
@@ -123,6 +119,7 @@ public class OnlinePaymentControllerTests {
 
 
     @Test
+    @Ignore
     public void testCreateCardRenewalPayment() throws IOException, InterruptedException, ExecutionException {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
 
@@ -151,7 +148,7 @@ public class OnlinePaymentControllerTests {
         order.setItems(items);
         paymentRequestDataDto.setOrder(order);
 
-        ResponseEntity<Payment> paymentResponseEntity = onlinePaymentController.createCardRenewalPayment(paymentRequestDataDto);
+        ResponseEntity<Payment> paymentResponseEntity = paymentAdminController.createCardRenewalPayment(paymentRequestDataDto);
 
         Payment payment = paymentResponseEntity.getBody();
 
@@ -159,7 +156,7 @@ public class OnlinePaymentControllerTests {
         log.debug(paymentUrl);
         String paymentId = Objects.requireNonNull(payment).getPaymentId();
         //TESTING
-        paymentId = "1234_at_20211220-105922";
+//        paymentId = "1234_at_20211220-105922";
 
 
         PaymentDetailsResponse getPaymentDetails = vismaPayment.getPaymentDetails(
@@ -167,13 +164,9 @@ public class OnlinePaymentControllerTests {
         );
 
         assertEquals(getPaymentDetails.getPayment().getAmount(),new BigDecimal("100"));
-//        assertEquals(getPaymentDetails.getPayment().getStatus(),(short)0);
+        assertEquals(getPaymentDetails.getPayment().getStatus(),(short)0);
         // Cancel payment
-        CancelPaymentRequest.CancelPaymentPayload cancelPaymentPayload = new CancelPaymentRequest.CancelPaymentPayload();
-        cancelPaymentPayload.setOrderNumber(paymentId);
-        CompletableFuture<VismaPayResponse> responseCF = vismaAuth.getClient().sendRequest(
-                new CancelPaymentRequest(cancelPaymentPayload)
-        );
-        assertEquals(responseCF.get().getResult(),0, "Cancel to payment is not working.");
+        //VismaPayResponse responseCF2 = cancelPaymentFetcher.cancelPayment(paymentId);
+        //assertEquals(responseCF2.getResult(),0, "Cancel to payment is not working.");
     }
 }

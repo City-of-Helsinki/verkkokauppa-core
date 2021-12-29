@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.validation;
 
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import org.helsinki.vismapay.util.ReturnDataAuthCodeBuilder;

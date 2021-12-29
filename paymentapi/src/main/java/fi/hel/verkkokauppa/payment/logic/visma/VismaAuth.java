@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class VismaAuth {
-    
-    private Logger log = LoggerFactory.getLogger(VismaAuth.class);
 
     @Autowired
     private Environment env;
