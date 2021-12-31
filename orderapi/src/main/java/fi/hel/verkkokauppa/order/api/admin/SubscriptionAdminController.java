@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
@@ -9,6 +10,7 @@ import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
+import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +18,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -43,6 +43,9 @@ public class SubscriptionAdminController {
 
     @Autowired
     private SubscriptionRenewalService renewalService;
+
+    @Autowired
+    private SubscriptionItemMetaService subscriptionItemMetaService;
 
 
     @GetMapping(value = "/subscription-admin/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -96,6 +99,18 @@ public class SubscriptionAdminController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<OrderItemMetaDto>> setItemMeta(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "orderItemId") String orderItemId, @RequestBody List<OrderItemMetaDto> meta) {
+        subscriptionItemMetaService.removeItemMetas(orderItemId);
+
+        List<OrderItemMetaDto> setMeta = new ArrayList<>();
+        meta.forEach(m -> {
+            m = subscriptionItemMetaService.addItemMeta(m, subscriptionId);
+            setMeta.add(m);
+        });
+        return ResponseEntity.ok().body(setMeta);
     }
 
     public List<SubscriptionDto> getRenewableSubscriptions() {
