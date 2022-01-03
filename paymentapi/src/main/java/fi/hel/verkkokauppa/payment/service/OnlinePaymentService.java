@@ -404,7 +404,7 @@ public class OnlinePaymentService {
         }
     }
 
-    public ChargeCardTokenRequestDataDto createChargeCardTokenRequestDataDto(OrderMessage message) {
+    public ChargeCardTokenRequestDataDto createChargeCardTokenRequestDataDto(OrderMessage message, String paymentId) {
         return new ChargeCardTokenRequestDataDto(
                 message.getNamespace(),
                 message.getOrderId(),
@@ -415,7 +415,8 @@ public class OnlinePaymentService {
                 message.getPriceNet(),
                 message.getPriceVat(),
                 message.getVatPercentage(),
-                message.getCardToken()
+                message.getCardToken(),
+                paymentId
         );
     }
 }

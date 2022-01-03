@@ -17,5 +17,6 @@ public class ChargeCardTokenRequestDataDto {
 	public String priceVat;
 	public String vatPercentage;
 	public String cardToken;
+	public String paymentId;
 
 }

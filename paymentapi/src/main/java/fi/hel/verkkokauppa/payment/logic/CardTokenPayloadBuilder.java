@@ -20,8 +20,7 @@ public class CardTokenPayloadBuilder {
 	public ChargeCardTokenRequest.CardTokenPayload buildFor(PaymentContext context, ChargeCardTokenRequestDataDto request ) {
 		ChargeCardTokenRequest.CardTokenPayload payload = new ChargeCardTokenRequest.CardTokenPayload();
 
-		String paymentOrderNumber = PaymentUtil.generatePaymentOrderNumber(request.getOrderId());
-		payload.setOrderNumber(paymentOrderNumber);
+		payload.setOrderNumber(request.getPaymentId());
 		payload.setAmount(PaymentUtil.convertToCents(new BigDecimal(request.getPriceTotal())).toBigInteger());
 		payload.setCurrency(context.getDefaultCurrency());
 		payload.setCardToken(request.getCardToken());
