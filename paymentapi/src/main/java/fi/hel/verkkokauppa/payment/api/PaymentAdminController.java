@@ -128,11 +128,12 @@ public class PaymentAdminController {
     }
 
     @PostMapping(value = "/payment-admin/online/create/card-renewal-payment", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Payment> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
+    public ResponseEntity<String> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
         try {
 
             Payment payment = service.getPaymentRequestDataForCardRenewal(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(payment);
+            String vismaPaymentUrl = service.getPaymentUrl(payment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(vismaPaymentUrl);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {

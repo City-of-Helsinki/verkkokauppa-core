@@ -42,9 +42,6 @@ public class PaymentOnlyChargeCardPayloadBuilder {
 				.setRegisterCardToken(true)
 				.setOverrideAutoSettlement(1); // 1	Auto settlement is disabled and the payment is only authorized (katevaraus)
 
-		if (dto.getPaymentMethod() != null && !dto.getPaymentMethod().isEmpty()) {
-			paymentMethod.setSelected(new String[] { dto.getPaymentMethod() });
-		}
 		payload.setPaymentMethod(paymentMethod);
 	}
 

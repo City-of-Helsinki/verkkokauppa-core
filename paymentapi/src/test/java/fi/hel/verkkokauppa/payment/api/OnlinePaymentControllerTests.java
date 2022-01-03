@@ -12,6 +12,7 @@ import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.visma.VismaAuth;
 import fi.hel.verkkokauppa.payment.logic.fetcher.GetPaymentRequestFetcher;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
@@ -124,7 +125,7 @@ public class OnlinePaymentControllerTests {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
 
         OrderDto orderDto = new OrderDto();
-        String orderId = "1234";
+        String orderId = UUID.randomUUID().toString();
         orderDto.setOrderId(orderId);
         orderDto.setNamespace("venepaikat");
         orderDto.setUser("dummy_user");
@@ -148,13 +149,13 @@ public class OnlinePaymentControllerTests {
         order.setItems(items);
         paymentRequestDataDto.setOrder(order);
 
-        ResponseEntity<Payment> paymentResponseEntity = paymentAdminController.createCardRenewalPayment(paymentRequestDataDto);
+        ResponseEntity<String> paymentUrl = paymentAdminController.createCardRenewalPayment(paymentRequestDataDto);
 
-        Payment payment = paymentResponseEntity.getBody();
+        ResponseEntity<List<Payment>> payments = paymentAdminController.getPayments(orderId, order.getOrder().getNamespace(), PaymentStatus.AUTHORIZED);
 
-        String paymentUrl = onlinePaymentService.getPaymentUrl(payment.getToken());
-        log.debug(paymentUrl);
-        String paymentId = Objects.requireNonNull(payment).getPaymentId();
+        log.debug(paymentUrl.getBody());
+
+        String paymentId = Objects.requireNonNull(payments.getBody()).get(0).getPaymentId();
         //TESTING
 //        paymentId = "1234_at_20211220-105922";
 
