@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.logic;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.helsinki.vismapay.response.payment.ChargeResponse;
@@ -16,7 +18,8 @@ import java.util.concurrent.ExecutionException;
 public class TokenFetcher {
     
     private Logger log = LoggerFactory.getLogger(TokenFetcher.class);
-
+	@Autowired
+	private ObjectMapper mapper;
     @Autowired
     private Environment env;
 
@@ -27,8 +30,16 @@ public class TokenFetcher {
 
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
+		ChargeRequest request = new ChargeRequest(payload);
+		// TODO remove later?
+		try {
+			log.debug("getToken ChargeRequest request : {}", mapper.writeValueAsString(payload));
+		} catch (JsonProcessingException e) {
+			log.error(e.getMessage());
+		}
+
 		CompletableFuture<ChargeResponse> responseCF =
-				client.sendRequest(new ChargeRequest(payload));
+				client.sendRequest(request);
 
 		try {
 			ChargeResponse response = responseCF.get();
