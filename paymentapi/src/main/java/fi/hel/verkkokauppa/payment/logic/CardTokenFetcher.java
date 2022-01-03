@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.logic;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.CheckPaymentStatusRequest;
@@ -18,7 +20,8 @@ import java.util.concurrent.ExecutionException;
 public class CardTokenFetcher {
     
     private Logger log = LoggerFactory.getLogger(CardTokenFetcher.class);
-
+	@Autowired
+    private ObjectMapper mapper;
     @Autowired
     private Environment env;
 
@@ -29,9 +32,14 @@ public class CardTokenFetcher {
 
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
-		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(buildPayloadFor(paymentId));
+		CheckPaymentStatusRequest.PaymentStatusPayload payload = buildPayloadFor(paymentId);
+		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(payload);
 		// TODO remove later?
-		log.debug("CheckPaymentStatusRequest request : {}", request);
+		try {
+			log.debug("getCardToken CheckPaymentStatusRequest request : {}", mapper.writeValueAsString(payload));
+		} catch (JsonProcessingException e) {
+			log.error(e.getMessage());
+		}
 
 		CompletableFuture<PaymentStatusResponse> responseCF =
 				client.sendRequest(request);
