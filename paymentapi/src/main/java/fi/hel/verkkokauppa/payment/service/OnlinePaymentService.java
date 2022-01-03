@@ -248,8 +248,8 @@ public class OnlinePaymentService {
         return payment.get();
     }
 
-    public PaymentCardInfoDto getPaymentCardToken(String paymentToken) {
-        return cardTokenFetcher.getCardToken(paymentToken);
+    public PaymentCardInfoDto getPaymentCardToken(String paymentId) {
+        return cardTokenFetcher.getCardToken(paymentId);
     }
 
     private Payment createPayment(GetPaymentRequestDataDto dto, String type, String token, String paymentId) {
@@ -366,8 +366,8 @@ public class OnlinePaymentService {
 
     public PaymentCardInfoDto getPaymentCardInfo(String namespace, String orderId, String userId) {
         Payment payment = findByIdValidateByUser(namespace, orderId, userId);
-        String paymentToken = payment.getToken();
-        PaymentCardInfoDto paymentCardToken = getPaymentCardToken(paymentToken);
+        String paymentId = payment.getPaymentId();
+        PaymentCardInfoDto paymentCardToken = getPaymentCardToken(paymentId);
 
         return paymentCardToken;
     }

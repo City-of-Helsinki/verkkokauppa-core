@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.logic.fetcher;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.CheckPaymentStatusRequest;
@@ -17,20 +19,26 @@ import java.util.concurrent.ExecutionException;
 public class CardTokenFetcher {
     
     private Logger log = LoggerFactory.getLogger(CardTokenFetcher.class);
-
+	@Autowired
+    private ObjectMapper mapper;
     @Autowired
     private Environment env;
 
-	public PaymentCardInfoDto getCardToken(String paymentToken) {
+	public PaymentCardInfoDto getCardToken(String paymentId) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
 		String encryptionKey = env.getRequiredProperty("payment_encryption_key");
 		String apiVersion = env.getRequiredProperty("payment_transaction_api_version");
 
 		VismaPayClient client = new VismaPayClient(apiKey, encryptionKey, apiVersion);
 
-		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(buildPayloadFor(paymentToken));
+		CheckPaymentStatusRequest.PaymentStatusPayload payload = buildPayloadFor(paymentId);
+		CheckPaymentStatusRequest request = new CheckPaymentStatusRequest(payload);
 		// TODO remove later?
-		log.debug("CheckPaymentStatusRequest request : {}", request);
+		try {
+			log.debug("getCardToken CheckPaymentStatusRequest request : {}", mapper.writeValueAsString(payload));
+		} catch (JsonProcessingException e) {
+			log.error(e.getMessage());
+		}
 
 		CompletableFuture<PaymentStatusResponse> responseCF =
 				client.sendRequest(request);
@@ -55,10 +63,10 @@ public class CardTokenFetcher {
 		}
 	}
 
-	private CheckPaymentStatusRequest.PaymentStatusPayload buildPayloadFor(String paymentToken) {
+	private CheckPaymentStatusRequest.PaymentStatusPayload buildPayloadFor(String paymentId) {
 		CheckPaymentStatusRequest.PaymentStatusPayload payload
 				= new CheckPaymentStatusRequest.PaymentStatusPayload();
-		payload.setToken(paymentToken);
+		payload.setOrderNumber(paymentId);
 		return payload;
 	}
 
