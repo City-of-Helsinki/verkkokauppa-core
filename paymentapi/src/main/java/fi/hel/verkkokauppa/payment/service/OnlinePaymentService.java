@@ -277,7 +277,7 @@ public class OnlinePaymentService {
         payment.setUserId(message.getUserId());
         payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
         payment.setTimestamp(sdf.format(timestamp));
-        payment.setPaymentType(OrderType.SUBSCRIPTION);
+        payment.setPaymentType(OrderType.ORDER);
         payment.setStatus(PaymentStatus.CREATED);
         payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(message.getPriceVat()));
