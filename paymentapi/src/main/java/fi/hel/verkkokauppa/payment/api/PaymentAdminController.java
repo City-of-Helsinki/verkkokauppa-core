@@ -60,7 +60,7 @@ public class PaymentAdminController {
                 if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.getCardToken() != null) {
                     Payment payment = service.createSubscriptionRenewalPayment(message);
 
-                    ChargeCardTokenRequestDataDto request = service.createChargeCardTokenRequestDataDto(message);
+                    ChargeCardTokenRequestDataDto request = service.createChargeCardTokenRequestDataDto(message, payment.getPaymentId());
 
                     try {
                         ChargeCardTokenResponse chargeCardTokenResponse = service.chargeCardToken(request);
