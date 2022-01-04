@@ -18,6 +18,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -130,6 +132,18 @@ public class SubscriptionService {
         log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
     }
 
+    public void triggerSubscriptionRenewValidationFailedEvent(Subscription subscription) {
+        SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_RENEW_VALIDATION_FAILED)
+                .namespace(subscription.getNamespace())
+                .subscriptionId(subscription.getId())
+                .cancellationCause(SubscriptionCancellationCause.EXPIRED)
+                .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
+                .build();
+        sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
+        log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
+    }
+
 
     public ResponseEntity<Void> setSubscriptionCardTokenInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
         String subscriptionId = dto.getSubscriptionId();
@@ -197,4 +211,26 @@ public class SubscriptionService {
         return null;
     }
 
+    public boolean isCardExpired(Subscription subscription) {
+        Short expirationYear = subscription.getPaymentMethodExpirationYear();
+        Byte expirationMonth = subscription.getPaymentMethodExpirationMonth();
+
+        if (expirationYear != null && expirationMonth != null) {
+            LocalDate cardExpirationDate = LocalDate.of(
+                    Integer.valueOf(expirationYear),
+                    Integer.valueOf(expirationMonth),
+                    1
+            );
+            LocalDate now = LocalDate.now();
+
+            LocalDate today = LocalDate.of(
+                    now.getYear(),
+                    now.getMonth(),
+                    1
+            );
+
+            return cardExpirationDate.isBefore(today);
+        }
+        return false;
+    }
 }

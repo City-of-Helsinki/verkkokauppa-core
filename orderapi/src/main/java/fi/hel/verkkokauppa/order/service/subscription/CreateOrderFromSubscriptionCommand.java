@@ -1,9 +1,6 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
-import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
@@ -16,11 +13,9 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,6 +28,8 @@ public class CreateOrderFromSubscriptionCommand {
 
 	@Autowired
 	private OrderService orderService;
+	@Autowired
+	private SubscriptionService subscriptionService;
 
 	@Autowired
 	private OrderItemService orderItemService;
@@ -67,6 +64,14 @@ public class CreateOrderFromSubscriptionCommand {
 			return activeOrderFromSubscription;
 		}
 
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+		// Returns null orderId if subscription card is expired
+		if (subscriptionService.isCardExpired(subscription)) {
+			subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
+			return null;
+		}
+
 		boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
 		// Returns null orderId if subscription right of purchase is false.
 		if (!hasRightToPurchase) {
@@ -76,7 +81,6 @@ public class CreateOrderFromSubscriptionCommand {
 
 		Order order = orderService.createByParams(namespace, user);
 		order.setType(OrderType.ORDER);
-		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
 
 		orderService.setStartDateAndCalculateNextEndDate(order, subscription, subscription.getEndDate());
 		copyCustomerInfoFromSubscription(subscriptionDto, order);
