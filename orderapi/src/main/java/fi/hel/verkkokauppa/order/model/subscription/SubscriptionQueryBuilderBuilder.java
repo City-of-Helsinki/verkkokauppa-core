@@ -17,7 +17,7 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 
 		if (criteria.getActiveAtDate() != null) {
 			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("nextDate").gte(criteria.getActiveAtDate());
-			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
+			qb.must(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 
 		if (!StringUtils.isEmpty(criteria.getStatus())) {
@@ -32,7 +32,7 @@ public class SubscriptionQueryBuilderBuilder implements QueryBuilderBuilder<Subs
 
 		if (criteria.getEndDateBefore() != null) {
 			QueryBuilder rangeQuery = QueryBuilders.rangeQuery("endDate").lt(criteria.getEndDateBefore());
-			qb.should(QueryBuilders.boolQuery().should(rangeQuery));
+			qb.must(QueryBuilders.boolQuery().should(rangeQuery));
 		}
 
 		return qb;
