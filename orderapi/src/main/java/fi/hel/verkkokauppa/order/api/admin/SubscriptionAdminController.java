@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -107,6 +107,10 @@ public class SubscriptionAdminController {
 
         List<OrderItemMetaDto> setMeta = new ArrayList<>();
         meta.forEach(m -> {
+            m.setOrderItemId(orderItemId);
+            if (m.getOrderItemMetaId() == null) {
+                m.setOrderItemMetaId(UUIDGenerator.generateType4UUID().toString());
+            }
             m = subscriptionItemMetaService.addItemMeta(m, subscriptionId);
             setMeta.add(m);
         });
