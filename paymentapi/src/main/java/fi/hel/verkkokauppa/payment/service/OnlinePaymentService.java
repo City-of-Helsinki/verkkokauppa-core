@@ -419,19 +419,22 @@ public class OnlinePaymentService {
     }
 
 
-    public void triggerPaymentCardRenewalEvent(Payment payment) {
+    public void triggerPaymentCardRenewalEvent(Payment payment, PaymentCardInfoDto cardInfo) {
+        String encryptedCardToken = EncryptorUtil.encryptValue(cardInfo.getCardToken(), cardTokenEncryptionPassword);
         PaymentMessage paymentMessage = PaymentMessage.builder()
                 .eventType(EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED)
                 .namespace(payment.getNamespace())
                 .paymentId(payment.getPaymentId())
                 .orderId(payment.getOrderId())
                 .userId(payment.getUserId())
-                .encryptedCardToken(payment.getToken()) // TODO Is this token  encrypted
-                //.paymentPaidTimestamp(payment.getTimestamp())
-                .orderType(payment.getPaymentType())
+                .paymentPaidTimestamp(payment.getTimestamp())
+                .orderType(OrderType.SUBSCRIPTION)
+                .encryptedCardToken(encryptedCardToken) // Encrypted, from dto
+                .cardTokenExpMonth(cardInfo.getExpMonth())
+                .cardTokenExpYear(cardInfo.getExpYear())
                 .build();
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-        log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
+        log.debug("triggered event {} for paymentId: {}", EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED, payment.getPaymentId());
     }
 
 
@@ -477,7 +480,9 @@ public class OnlinePaymentService {
                 // if not already authorized earlier
                 if (!PaymentStatus.AUTHORIZED.equals(payment.getStatus())) {
                     setPaymentStatus(paymentId, PaymentStatus.AUTHORIZED);
-                    triggerPaymentCardRenewalEvent(payment);
+
+                    PaymentCardInfoDto cardInfo = getPaymentCardToken(paymentId);
+                    triggerPaymentCardRenewalEvent(payment, cardInfo);
                 } else {
                     log.debug("not triggering events, payment authorized earlier, paymentId: " + paymentId);
                 }

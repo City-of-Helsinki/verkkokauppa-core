@@ -140,7 +140,7 @@ public class PaymentAdminController {
             log.error("creating payment or card-renewal-payment failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-create-payment", "failed to create payment")
+                    new Error("failed-to-create-card-renewal-payment", "failed to create card renewal payment")
             );
         }
     }

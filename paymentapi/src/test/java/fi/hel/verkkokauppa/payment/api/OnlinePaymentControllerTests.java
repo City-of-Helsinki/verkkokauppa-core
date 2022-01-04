@@ -139,7 +139,7 @@ public class OnlinePaymentControllerTests {
         orderDto.setPriceVat("0");
         // Sets total price to be 1 eur
         orderDto.setPriceTotal("1");
-                OrderWrapper order = new OrderWrapper();
+        OrderWrapper order = new OrderWrapper();
         order.setOrder(orderDto);
 
         List<OrderItemDto> items = new ArrayList<>();
@@ -164,8 +164,8 @@ public class OnlinePaymentControllerTests {
                 paymentId
         );
 
-        assertEquals(getPaymentDetails.getPayment().getAmount(),new BigDecimal("100"));
-        assertEquals(getPaymentDetails.getPayment().getStatus(),(short)0);
+        assertEquals(getPaymentDetails.getPayment().getAmount(), new BigDecimal("100"));
+        assertEquals(getPaymentDetails.getPayment().getStatus(), (short) 0);
         // Cancel payment
         //VismaPayResponse responseCF2 = cancelPaymentFetcher.cancelPayment(paymentId);
         //assertEquals(responseCF2.getResult(),0, "Cancel to payment is not working.");
