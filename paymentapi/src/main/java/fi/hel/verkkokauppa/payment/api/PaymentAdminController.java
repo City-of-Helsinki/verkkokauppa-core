@@ -63,7 +63,7 @@ public class PaymentAdminController {
                     ChargeCardTokenRequestDataDto request = service.createChargeCardTokenRequestDataDto(message, payment.getPaymentId());
 
                     try {
-                        ChargeCardTokenResponse chargeCardTokenResponse = service.chargeCardToken(request);
+                        ChargeCardTokenResponse chargeCardTokenResponse = service.chargeCardToken(request,payment);
 
                         PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(
                                 true,

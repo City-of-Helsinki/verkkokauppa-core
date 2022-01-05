@@ -298,11 +298,11 @@ public class OnlinePaymentService {
         return payment;
     }
 
-    public ChargeCardTokenResponse chargeCardToken(ChargeCardTokenRequestDataDto request) {
+    public ChargeCardTokenResponse chargeCardToken(ChargeCardTokenRequestDataDto request, Payment payment) {
         PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
         ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
         log.debug("ChargeCardTokenRequest payload: {}",payload);
-        return chargeCardTokenLogic.chargeCardToken(payload);
+        return chargeCardTokenLogic.chargeCardToken(payload, payment);
     }
 
     public PaymentCardInfoDto getPaymentCardInfo(String namespace, String orderId, String userId) {
