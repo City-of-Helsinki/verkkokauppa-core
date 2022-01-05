@@ -53,6 +53,7 @@ public class ServiceConfigurationKeys {
     // Order right of purchase [KYV-233]
     public static String ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE = "orderRightOfPurchaseIsActive";
     public static String ORDER_RIGHT_OF_PURCHASE_URL = "orderRightOfPurchaseUrl";
+    public static String SUBSCRIPTION_PRICE_URL = "subscriptionPriceUrl";
 
 
     public static List<String> getAllConfigurationKeys() {
