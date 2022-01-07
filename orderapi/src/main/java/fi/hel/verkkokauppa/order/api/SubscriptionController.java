@@ -196,20 +196,22 @@ public class SubscriptionController {
 
 
 	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+	public ResponseEntity<Boolean> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+		boolean updated = Boolean.FALSE;
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
 		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
-		if (subscription.getEndDate().isAfter(LocalDateTime.now())) {
+		if (subscription.getEndDate().isAfter(LocalDateTime.now())){
+			updated = Boolean.TRUE;
 			cancelSubscriptionCommand.cancel(
 					subscription.getSubscriptionId(),
 					subscription.getUser(),
 					SubscriptionCancellationCause.EXPIRED
 			);
 		}
-		// TODO
-		return null;
+
+		return ResponseEntity.ok(updated);
 	}
 
 	@PostMapping(value = "/subscription/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
