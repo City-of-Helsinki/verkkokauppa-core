@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.data.subscription;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @AllArgsConstructor

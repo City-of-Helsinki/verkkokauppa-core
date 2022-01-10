@@ -35,14 +35,14 @@ public class PaymentMessageListener {
         try {
             log.info("paymentEventlistener [{}]", jsonMessage);
             PaymentMessage message = objectMapper.readValue(jsonMessage, PaymentMessage.class);
-
+            log.debug("event type is {}", message.getEventType());
             if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
-                log.debug("event type is PAYMENT_PAID");
                 paymentPaidAction(message);
                 orderPaidWebHookAction(message);
             } else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
-                log.debug("event type is PAYMENT_FAILED");
                 paymentFailedAction(message);
+            } else if (EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED.equals(message.getEventType())) {
+                paymentCardRenewalAction(message);
             }
         } catch (Exception e) {
             log.error("handling listened payments event failed, jsonMessage: " + jsonMessage, e);
@@ -87,6 +87,14 @@ public class PaymentMessageListener {
                     "/subscription/payment-failed-event");
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
+        }
+    }
+
+    private void paymentCardRenewalAction(PaymentMessage message) {
+        try {
+            callApi(message, orderServiceUrl + "/subscription/payment-update-card");
+        } catch (Exception e) {
+            log.error("failed action after receiving event, eventType: {}", message.getEventType(), e);
         }
     }
 

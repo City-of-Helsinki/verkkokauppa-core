@@ -12,7 +12,6 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.data.subscription.PaymentCardInfoDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
@@ -117,7 +116,7 @@ public class SubscriptionService {
 
             UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
             // Token is already encrypted in message
-            setSubscriptionCardTokenInternal(request, false);
+            setSubscriptionCardInfoInternal(request, false);
         }
     }
 
@@ -145,7 +144,7 @@ public class SubscriptionService {
     }
 
 
-    public ResponseEntity<Void> setSubscriptionCardTokenInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
+    public ResponseEntity<Void> setSubscriptionCardInfoInternal(UpdatePaymentCardInfoRequest dto, boolean encryptToken) {
         String subscriptionId = dto.getSubscriptionId();
         String userId = dto.getUser();
 
@@ -209,6 +208,14 @@ public class SubscriptionService {
 
         log.warn("subscription not found, orderId: " + subscriptionId);
         return null;
+    }
+
+    public UpdatePaymentCardInfoRequest getUpdatePaymentCardInfoRequest(String subscriptionId, PaymentMessage message) {
+        return new UpdatePaymentCardInfoRequest(
+                subscriptionId,
+                PaymentCardInfoDto.fromPaymentMessage(message),
+                message.getUserId()
+        );
     }
 
     public boolean isCardExpired(Subscription subscription) {

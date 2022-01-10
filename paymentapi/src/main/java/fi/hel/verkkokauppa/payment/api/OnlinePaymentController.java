@@ -1,31 +1,15 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import fi.hel.verkkokauppa.common.constants.OrderType;
-import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.events.EventType;
-import fi.hel.verkkokauppa.common.events.SendEventService;
-import fi.hel.verkkokauppa.common.events.TopicName;
-import fi.hel.verkkokauppa.common.events.message.OrderMessage;
-import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.EncryptorUtil;
-import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.api.data.*;
+import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
-import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +49,27 @@ public class OnlinePaymentController {
 			);
 		}
 	}
+
+	@GetMapping(value = "/payment/online/visma/get", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Payment> getVismaPaymentRequest(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
+														  @RequestParam(value = "userId") String userId) {
+		try {
+			Payment payment = service.findByIdValidateByUser(namespace, orderId, userId);
+
+			// TODO haku
+			return ResponseEntity.status(HttpStatus.OK).body(payment);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("getting payment failed, orderId: " + orderId, e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
+			);
+		}
+	}
+
+
 
 	@PostMapping(value = "/payment/online/get-available-methods", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {
