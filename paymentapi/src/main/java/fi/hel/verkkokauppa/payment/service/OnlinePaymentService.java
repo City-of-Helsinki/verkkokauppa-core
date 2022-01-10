@@ -11,8 +11,17 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.*;
-import fi.hel.verkkokauppa.payment.logic.*;
+import fi.hel.verkkokauppa.payment.logic.builder.CardTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentContextBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentOnlyChargeCardPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.builder.PaymentTokenPayloadBuilder;
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
+import fi.hel.verkkokauppa.payment.logic.fetcher.CardTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.fetcher.ChargeCardTokenFetcher;
+import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentTokenFetcher;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -35,6 +44,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -55,13 +65,16 @@ public class OnlinePaymentService {
     private PaymentTokenPayloadBuilder paymentTokenPayloadBuilder;
 
     @Autowired
-    private TokenFetcher tokenFetcher;
+    private PaymentOnlyChargeCardPayloadBuilder onlyChargeCardPayloadBuilder;
+
+    @Autowired
+    private PaymentTokenFetcher paymentTokenFetcher;
 
     @Autowired
     private CardTokenFetcher cardTokenFetcher;
 
     @Autowired
-    private ChargeCardTokenLogic chargeCardTokenLogic;
+    private ChargeCardTokenFetcher chargeCardTokenFetcher;
 
     @Autowired
     private CardTokenPayloadBuilder cardTokenPayloadBuilder;
@@ -83,22 +96,9 @@ public class OnlinePaymentService {
         String orderStatus = order.getStatus();
         String userId = order.getUser();
 
-        // check order status, can only create payment for confirmed orders
-        if (!"confirmed".equals(orderStatus)) {
-            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
-            throw new CommonApiException(
-                    HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
-            );
-        }
+        isValidOrderStatusToCreatePayment(orderId, orderStatus);
 
-        if (userId == null || userId.isEmpty()) {
-            log.warn("creating payment without user rejected, orderId: " + orderId);
-            throw new CommonApiException(
-                    HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
-            );
-        }
+        isValidUserToCreatePayment(orderId, userId);
 
         boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
         String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
@@ -109,7 +109,7 @@ public class OnlinePaymentService {
         log.debug("tokenRequestPayload: " + tokenRequestPayload);
 
         String paymentId = tokenRequestPayload.getOrderNumber();
-        String token = tokenFetcher.getToken(tokenRequestPayload);
+        String token = paymentTokenFetcher.getToken(tokenRequestPayload);
 
         Payment payment = createPayment(dto, paymentType, token, paymentId);
         if (payment.getPaymentId() == null) {
@@ -118,6 +118,57 @@ public class OnlinePaymentService {
 
         return payment;
     }
+
+    public Payment getPaymentRequestDataForCardRenewal(GetPaymentRequestDataDto dto) {
+        // Gets orderDto from order wrapper
+        OrderDto order = dto.getOrder().getOrder();
+        String namespace = order.getNamespace();
+        String orderId = order.getOrderId();
+        String orderStatus = order.getStatus();
+        String userId = order.getUser();
+
+        isValidOrderStatusToCreatePayment(orderId, orderStatus);
+
+        isValidUserToCreatePayment(orderId, userId);
+
+        PaymentContext context = paymentContextBuilder.buildFor(namespace);
+
+        ChargeRequest.PaymentTokenPayload tokenRequestPayload = onlyChargeCardPayloadBuilder.buildFor(dto, context);
+        log.debug("tokenRequestPayload: " + tokenRequestPayload);
+
+        String paymentId = tokenRequestPayload.getOrderNumber();
+        String token = paymentTokenFetcher.getToken(tokenRequestPayload);
+        String paymentType = PaymentType.CARD_RENEWAL;
+
+        Payment payment = createPayment(dto, paymentType, token, paymentId);
+        if (payment.getPaymentId() == null) {
+            throw new RuntimeException("Didn't manage to create payment.");
+        }
+
+        return payment;
+    }
+
+    private void isValidUserToCreatePayment(String orderId, String userId) {
+        if (userId == null || userId.isEmpty()) {
+            log.warn("creating payment without user rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
+            );
+        }
+    }
+
+    private void isValidOrderStatusToCreatePayment(String orderId, String orderStatus) {
+        // check order status, can only create payment for confirmed orders
+        if (!"confirmed".equals(orderStatus)) {
+            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
+            );
+        }
+    }
+
 
     public String getPaymentUrl(String token) {
         return VismaPayClient.API_URL + "/token/" + token; 
@@ -145,6 +196,14 @@ public class OnlinePaymentService {
             return payablePayment;
         else
             return null;
+    }
+
+    public List<Payment> getPaymentsForOrder(String orderId, String namepace) {
+        return paymentRepository.findByNamespaceAndOrderId(namepace,orderId);
+    }
+
+    public List<Payment> getPaymentsWithNamespaceAndOrderIdAndStatus(String orderId, String namepace, String status) {
+        return paymentRepository.findByNamespaceAndOrderIdAndStatus(namepace, orderId, status);
     }
 
     // payment precedence selection from KYV-186
@@ -302,7 +361,7 @@ public class OnlinePaymentService {
         PaymentContext context = paymentContextBuilder.buildFor(request.getNamespace());
         ChargeCardTokenRequest.CardTokenPayload payload = cardTokenPayloadBuilder.buildFor(context, request);
         log.debug("ChargeCardTokenRequest payload: {}",payload);
-        return chargeCardTokenLogic.chargeCardToken(payload);
+        return chargeCardTokenFetcher.chargeCardToken(payload);
     }
 
     public PaymentCardInfoDto getPaymentCardInfo(String namespace, String orderId, String userId) {
@@ -360,6 +419,25 @@ public class OnlinePaymentService {
     }
 
 
+    public void triggerPaymentCardRenewalEvent(Payment payment, PaymentCardInfoDto cardInfo) {
+        String encryptedCardToken = EncryptorUtil.encryptValue(cardInfo.getCardToken(), cardTokenEncryptionPassword);
+        PaymentMessage paymentMessage = PaymentMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .paymentPaidTimestamp(payment.getTimestamp())
+                .orderType(OrderType.SUBSCRIPTION)
+                .encryptedCardToken(encryptedCardToken) // Encrypted, from dto
+                .cardTokenExpMonth(cardInfo.getExpMonth())
+                .cardTokenExpYear(cardInfo.getExpYear())
+                .build();
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event {} for paymentId: {}", EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED, payment.getPaymentId());
+    }
+
+
     public Payment findByIdValidateByUser(String namespace, String orderId, String userId) {
         Payment payment = getPaymentForOrder(orderId);
         if (payment == null) {
@@ -390,13 +468,23 @@ public class OnlinePaymentService {
                 } else {
                     log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
                 }
-            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
+            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry() && !Objects.equals(payment.getPaymentType(), PaymentType.CARD_RENEWAL)) {
                 // if not already cancelled earlier
                 if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
                     setPaymentStatus(paymentId, PaymentStatus.CANCELLED);
                     triggerPaymentFailedEvent(payment);
                 } else {
                     log.debug("not triggering events, payment cancelled earlier, paymentId: " + paymentId);
+                }
+            } else if (!paymentReturnDto.isPaymentPaid() && paymentReturnDto.isAuthorized() && Objects.equals(payment.getPaymentType(), PaymentType.CARD_RENEWAL)){
+                // if not already authorized earlier
+                if (!PaymentStatus.AUTHORIZED.equals(payment.getStatus())) {
+                    setPaymentStatus(paymentId, PaymentStatus.AUTHORIZED);
+
+                    PaymentCardInfoDto cardInfo = getPaymentCardToken(paymentId);
+                    triggerPaymentCardRenewalEvent(payment, cardInfo);
+                } else {
+                    log.debug("not triggering events, payment authorized earlier, paymentId: " + paymentId);
                 }
             } else {
                 log.debug("not triggering events, payment not paid but can be retried, paymentId: " + paymentId);
@@ -419,4 +507,24 @@ public class OnlinePaymentService {
                 paymentId
         );
     }
+
+    public OrderItemDto getCardRenewalOrderItem(String orderId){
+        int chargeAmount = 1;
+        OrderItemDto orderItemDto = new OrderItemDto();
+        orderItemDto.setOrderItemId(UUIDGenerator.generateType4UUID().toString());
+        orderItemDto.setOrderId(orderId);
+        orderItemDto.setProductId(UUIDGenerator.generateType4UUID().toString());
+        orderItemDto.setProductName("card_renewal");
+        orderItemDto.setQuantity(chargeAmount);
+        orderItemDto.setUnit("pcs");
+        orderItemDto.setRowPriceNet(new BigDecimal(chargeAmount));
+        orderItemDto.setRowPriceVat(new BigDecimal(0));
+        orderItemDto.setRowPriceTotal(new BigDecimal(chargeAmount));
+        orderItemDto.setVatPercentage("0");
+        orderItemDto.setPriceNet(new BigDecimal(chargeAmount));
+        orderItemDto.setPriceVat(new BigDecimal(0));
+        orderItemDto.setPriceGross(new BigDecimal(chargeAmount));
+        return orderItemDto;
+    }
+
 }

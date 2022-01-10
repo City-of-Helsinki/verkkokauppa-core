@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.fetcher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,9 +15,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Component
-public class TokenFetcher {
+public class PaymentTokenFetcher {
     
-    private Logger log = LoggerFactory.getLogger(TokenFetcher.class);
+    private Logger log = LoggerFactory.getLogger(PaymentTokenFetcher.class);
 	@Autowired
 	private ObjectMapper mapper;
     @Autowired

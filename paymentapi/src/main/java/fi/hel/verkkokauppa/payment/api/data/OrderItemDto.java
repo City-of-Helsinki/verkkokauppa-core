@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+
 import java.math.BigDecimal;
 
 public class OrderItemDto {
@@ -105,4 +107,7 @@ public class OrderItemDto {
 	public BigDecimal getPriceGross() { return priceGross; }
 
 	public void setPriceGross(BigDecimal priceGross) { this.priceGross = priceGross; }
+
+
+
 }
