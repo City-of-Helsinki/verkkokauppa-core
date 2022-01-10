@@ -1,5 +1,6 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.builder;
 
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

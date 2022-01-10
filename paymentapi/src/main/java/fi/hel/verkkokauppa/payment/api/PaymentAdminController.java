@@ -4,11 +4,14 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
+import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.logic.PaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
+import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +21,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class PaymentAdminController {
 
@@ -25,6 +30,8 @@ public class PaymentAdminController {
 
     @Autowired
     private OnlinePaymentService service;
+    @Autowired
+    private CancelPaymentFetcher cancelPaymentFetcher;
 
     @Autowired
     private PaymentReturnValidator paymentReturnValidator;
@@ -42,6 +49,31 @@ public class PaymentAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/payment-admin/online/list", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Payment>> getPayments(@RequestParam(value = "orderId") String orderId,
+                                                     @RequestParam(value = "namespace") String namespace,
+                                                     @RequestParam(value = "paymentStatus", required = false) String paymentStatus
+    ) {
+        try {
+            List<Payment> payments;
+            if (paymentStatus != null) {
+                payments = service.getPaymentsWithNamespaceAndOrderIdAndStatus(orderId, namespace, paymentStatus);
+            } else {
+                payments = service.getPaymentsForOrder(orderId, namespace);
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(payments);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting payments failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-payments", "failed to get payments with order id [" + orderId + "]")
             );
         }
     }
@@ -68,13 +100,14 @@ public class PaymentAdminController {
                         PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(
                                 true,
                                 chargeCardTokenResponse.getResult().toString(),
-                                chargeCardTokenResponse.getSettled().toString());
+                                chargeCardTokenResponse.getSettled().toString()
+                        );
                         service.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
                         // TODO remove later?
                         log.debug("paymentReturnDto {}", paymentReturnDto);
                     } catch (Exception e) {
                         log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                        service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true,false,false));
+                        service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false));
                     }
                 } else {
                     log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());
@@ -90,6 +123,41 @@ public class PaymentAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("subscription-renewal-payment-failed", "subscription renewal payment failed")
+            );
+        }
+    }
+
+    @PostMapping(value = "/payment-admin/online/create/card-renewal-payment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
+        try {
+
+            Payment payment = service.getPaymentRequestDataForCardRenewal(dto);
+            String vismaPaymentUrl = service.getPaymentUrl(payment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(vismaPaymentUrl);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("creating payment or card-renewal-payment failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-card-renewal-payment", "failed to create card renewal payment")
+            );
+        }
+    }
+
+    @GetMapping(value = "/payment-admin/online/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<VismaPayResponse> cancelPayment(@RequestParam(value = "paymentId") String paymentId) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    cancelPaymentFetcher.cancelPayment(paymentId)
+            );
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("creating payment or card-renewal-payment failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-payment", "failed to create payment")
             );
         }
     }

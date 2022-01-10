@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.fetcher;
 
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;

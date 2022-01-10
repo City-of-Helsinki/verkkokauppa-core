@@ -1,11 +1,10 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.fetcher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentCardInfoDto;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.CheckPaymentStatusRequest;
-import org.helsinki.vismapay.request.paymentmethods.PaymentMethodsRequest;
 import org.helsinki.vismapay.response.payment.PaymentStatusResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

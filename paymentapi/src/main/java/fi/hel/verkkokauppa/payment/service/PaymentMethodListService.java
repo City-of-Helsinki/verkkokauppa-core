@@ -8,7 +8,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodFilter;
-import fi.hel.verkkokauppa.payment.logic.PaymentMethodListFetcher;
+import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentMethodListFetcher;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
