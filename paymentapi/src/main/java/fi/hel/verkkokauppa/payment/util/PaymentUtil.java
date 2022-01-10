@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic.util;
+package fi.hel.verkkokauppa.payment.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

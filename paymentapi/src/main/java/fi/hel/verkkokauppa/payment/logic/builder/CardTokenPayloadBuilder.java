@@ -2,7 +2,7 @@ package fi.hel.verkkokauppa.payment.logic.builder;
 
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
-import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.vismapay.model.payment.Initiator;
 import org.helsinki.vismapay.model.payment.Product;
 import org.helsinki.vismapay.model.payment.ProductType;

@@ -4,7 +4,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
-import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.vismapay.model.payment.Customer;
 import org.helsinki.vismapay.model.payment.PaymentMethod;
 import org.helsinki.vismapay.model.payment.Product;

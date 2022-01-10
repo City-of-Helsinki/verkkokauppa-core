@@ -55,25 +55,24 @@ public class CancelPaymentFetcher extends BaseFetcher {
 		if (response == null) {
 			throw new IllegalArgumentException("Response can't be null.");
 		}
+		switch (response.getResult()) {
+			case 1:
+				log.debug("Cancel request for paymentId: {} result code was {} Validation Error", paymentId, response.getResult());
+				break;
+			case 2:
+				log.debug("Cancel request for paymentId: {} result code was {} Payment cannot be cancelled. Payment is not in \"Authorized\" -state.", paymentId, response.getResult());
+				break;
+			case 3:
+				log.debug("Cancel request for paymentId: {} result code was {} Transaction for given order_number was not found.", paymentId, response.getResult());
+				break;
+			case 10:
+				log.debug("Cancel request for paymentId: {} result code was {} Maintenance break.", paymentId, response.getResult());
+				break;
+			default:
+				log.debug("Cancel request for paymentId: {} result code was {}", paymentId, response.getResult());
+				break;
+		}
 		if (isSuccessResponse(response)) {
-			switch (response.getResult()) {
-				case 1:
-					log.debug("Cancel request for paymentId: {} result code was {} Validation Error", paymentId, response.getResult());
-					break;
-				case 2:
-					log.debug("Cancel request for paymentId: {} result code was {} Payment cannot be cancelled. Payment is not in \"Authorized\" -state.", paymentId, response.getResult());
-					break;
-				case 3:
-					log.debug("Cancel request for paymentId: {} result code was {} Transaction for given order_number was not found.", paymentId, response.getResult());
-					break;
-				case 10:
-					log.debug("Cancel request for paymentId: {} result code was {} Maintenance break.", paymentId, response.getResult());
-					break;
-				default:
-					log.debug("Cancel request for paymentId: {} result code was {}", paymentId, response.getResult());
-					break;
-			}
-
 			return errorMsg + "Please check that api key and private key are correct.";
 		}
 

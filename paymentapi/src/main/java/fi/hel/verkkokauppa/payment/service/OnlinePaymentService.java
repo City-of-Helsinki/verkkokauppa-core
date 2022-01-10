@@ -21,7 +21,7 @@ import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CardTokenFetcher;
 import fi.hel.verkkokauppa.payment.logic.fetcher.ChargeCardTokenFetcher;
 import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentTokenFetcher;
-import fi.hel.verkkokauppa.payment.logic.util.PaymentUtil;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
