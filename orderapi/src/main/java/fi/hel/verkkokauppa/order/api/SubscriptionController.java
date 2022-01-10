@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -192,11 +193,22 @@ public class SubscriptionController {
 
 
 	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+	public ResponseEntity<Boolean> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+		boolean updated = Boolean.FALSE;
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-		// TODO
-		return null;
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+		if (subscription.getEndDate().isAfter(LocalDateTime.now())){
+			updated = Boolean.TRUE;
+			cancelSubscriptionCommand.cancel(
+					subscription.getSubscriptionId(),
+					subscription.getUser(),
+					SubscriptionCancellationCause.EXPIRED
+			);
+		}
+
+		return ResponseEntity.ok(updated);
 	}
 
 	@PostMapping(value = "/subscription/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)

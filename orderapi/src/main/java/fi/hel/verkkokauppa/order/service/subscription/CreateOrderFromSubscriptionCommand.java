@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -52,6 +53,9 @@ public class CreateOrderFromSubscriptionCommand {
 	@Autowired
 	private GetSubscriptionQuery getSubscriptionQuery;
 
+	@Autowired
+	private CancelSubscriptionCommand cancelSubscriptionCommand;
+
 	public String createFromSubscription(SubscriptionDto subscriptionDto) {
 		String namespace = subscriptionDto.getNamespace();
 		String user = subscriptionDto.getUser();
@@ -76,6 +80,7 @@ public class CreateOrderFromSubscriptionCommand {
 		// Returns null orderId if subscription right of purchase is false.
 		if (!hasRightToPurchase) {
 			log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+			cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
 			return null;
 		}
 
