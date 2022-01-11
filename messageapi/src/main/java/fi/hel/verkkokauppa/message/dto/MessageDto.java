@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import javax.validation.constraints.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *  sähköpostin lähettäjän,
@@ -17,7 +19,7 @@ import javax.validation.constraints.*;
 @Data
 public class MessageDto extends BaseDto {
     @NotEmpty
-    private String orderId;
+    private String id;
 
     private String sender;
 
@@ -31,15 +33,19 @@ public class MessageDto extends BaseDto {
     @NotBlank
     private String body;
 
-    public MessageDto(String orderId, String receiver, String header, String body) {
-        this.orderId = orderId;
+    @NotNull
+    private Map<String, String> attachments;
+
+    public MessageDto(String id, String receiver, String header, String body) {
+        this.id = id;
         this.receiver = receiver;
         this.header = header;
         this.body = body;
+        this.attachments = new HashMap<>();
     }
 
-    public String getOrderId() {
-        return orderId;
+    public String getId() {
+        return id;
     }
 
     public String getSender() {
@@ -57,4 +63,6 @@ public class MessageDto extends BaseDto {
     public String getBody() {
         return body;
     }
+
+    public Map<String, String> getAttachments() { return attachments; }
 }
