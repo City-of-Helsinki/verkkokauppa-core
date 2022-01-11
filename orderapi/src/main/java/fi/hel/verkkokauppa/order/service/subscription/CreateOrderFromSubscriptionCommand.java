@@ -8,7 +8,7 @@ import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.outbound.SubscriptionPriceResultDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
-import fi.hel.verkkokauppa.order.api.request.rightOfPurchase.SubscriptionPriceRequest;
+import fi.hel.verkkokauppa.order.api.request.subscription.SubscriptionPriceRequest;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;

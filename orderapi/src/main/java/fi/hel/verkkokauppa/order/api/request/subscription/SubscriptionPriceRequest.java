@@ -1,6 +1,5 @@
-package fi.hel.verkkokauppa.order.api.request.rightOfPurchase;
+package fi.hel.verkkokauppa.order.api.request.subscription;
 
-import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import lombok.Data;
 
 @Data
