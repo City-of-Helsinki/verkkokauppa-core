@@ -12,5 +12,6 @@ public interface PaymentRepository extends ElasticsearchRepository<Payment, Stri
 
     List<Payment> findByOrderId(String orderId);
     List<Payment> findByNamespaceAndOrderId(String namespace, String orderId);
+    List<Payment> findByNamespaceAndOrderIdAndStatus(String namespace, String orderId, String status);
 
 }

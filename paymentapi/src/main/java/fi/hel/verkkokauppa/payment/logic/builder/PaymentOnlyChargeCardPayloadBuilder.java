@@ -1,8 +1,9 @@
-package fi.hel.verkkokauppa.payment.logic;
+package fi.hel.verkkokauppa.payment.logic.builder;
 
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.vismapay.model.payment.Customer;
 import org.helsinki.vismapay.model.payment.PaymentMethod;
 import org.helsinki.vismapay.model.payment.Product;
@@ -11,13 +12,10 @@ import org.helsinki.vismapay.request.payment.ChargeRequest;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.UUID;
 
 @Component
-public class PaymentTokenPayloadBuilder {
+public class PaymentOnlyChargeCardPayloadBuilder {
 
 	public ChargeRequest.PaymentTokenPayload buildFor(GetPaymentRequestDataDto dto, PaymentContext context) {
 		ChargeRequest.PaymentTokenPayload payload = new ChargeRequest.PaymentTokenPayload();
@@ -26,27 +24,24 @@ public class PaymentTokenPayloadBuilder {
 
 		assignPaymentMethod(payload, dto, context);
 		assignCustomer(payload, order);
-		assignProducts(payload, dto, context);
+		assignProducts(payload, context);
 
-		payload.setAmount((PaymentUtil.convertToCents(new BigDecimal(dto.getOrder().getOrder().getPriceTotal()))).toBigInteger())
+		payload.setAmount(PaymentUtil.eurosToBigInteger(1))
 				.setOrderNumber(paymentOrderNumber)
 				.setCurrency(context.getDefaultCurrency());
 		return payload;
 	}
 
 	private void assignPaymentMethod(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto, PaymentContext context) {
-		boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals("subscription");
 
 		PaymentMethod paymentMethod = new PaymentMethod();
 		paymentMethod.setType(PaymentMethod.TYPE_EPAYMENT)
 				.setReturnUrl(context.getReturnUrl())
 				.setNotifyUrl(context.getNotifyUrl())
 				.setLang(dto.getLanguage() != null ? dto.getLanguage() : context.getDefaultLanguage())
-				.setRegisterCardToken(isRecurringOrder);
+				.setRegisterCardToken(true)
+				.setOverrideAutoSettlement(1); // 1	Auto settlement is disabled and the payment is only authorized (katevaraus)
 
-		if (dto.getPaymentMethod() != null && !dto.getPaymentMethod().isEmpty()) {
-			paymentMethod.setSelected(new String[] { dto.getPaymentMethod() });
-		}
 		payload.setPaymentMethod(paymentMethod);
 	}
 
@@ -59,21 +54,21 @@ public class PaymentTokenPayloadBuilder {
 		payload.setCustomer(customer);
 	}
 
-	private void assignProducts(ChargeRequest.PaymentTokenPayload payload, GetPaymentRequestDataDto dto, PaymentContext context) {
-		for (OrderItemDto item : dto.getOrder().getItems()) {
-			Product product = new Product();
-			product.setId(item.getOrderItemId())
-					.setType(ProductType.TYPE_PRODUCT)
-					.setTitle(item.getProductName())
-					.setCount(item.getQuantity())
-					.setPretaxPrice(PaymentUtil.convertToCents(item.getPriceNet()))
-					.setTax(Integer.valueOf(item.getVatPercentage()))
-					.setPrice(PaymentUtil.convertToCents(item.getPriceGross()))
-					.setMerchantId(context.getMerchantId())
-					.setCp(context.getCp());
+	private void assignProducts(ChargeRequest.PaymentTokenPayload payload, PaymentContext context) {
 
-			payload.addProduct(product);
-		}
+		Product product = new Product();
+		product.setId(UUID.randomUUID().toString())
+				.setType(ProductType.TYPE_PRODUCT)
+				.setTitle("card_renewal")
+				.setCount(1)
+				.setPretaxPrice(PaymentUtil.convertToCents(new BigDecimal(1)))
+				.setTax(0)
+				.setPrice(PaymentUtil.convertToCents(new BigDecimal(1)))
+				.setMerchantId(context.getMerchantId())
+				.setCp(context.getCp());
+
+		payload.addProduct(product);
+
 	}
 
 }

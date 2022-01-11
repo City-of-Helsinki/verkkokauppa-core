@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
 import fi.hel.verkkokauppa.order.api.request.rightOfPurchase.SubscriptionPriceRequest;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -43,6 +44,8 @@ public class CreateOrderFromSubscriptionCommand {
 
     @Autowired
     private OrderService orderService;
+	@Autowired
+	private SubscriptionService subscriptionService;
 
     @Autowired
     private RestServiceClient customerApiCallService;
@@ -73,7 +76,8 @@ public class CreateOrderFromSubscriptionCommand {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public String createFromSubscription(SubscriptionDto subscriptionDto) {
+    @Autowired
+	private CancelSubscriptionCommand cancelSubscriptionCommand;public String createFromSubscription(SubscriptionDto subscriptionDto) {
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
 
@@ -85,16 +89,22 @@ public class CreateOrderFromSubscriptionCommand {
             return activeOrderFromSubscription;
         }
 
-        boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+		// Returns null orderId if subscription card is expired
+		if (subscriptionService.isCardExpired(subscription)) {
+			subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
+			return null;
+		}boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
         // Returns null orderId if subscription right of purchase is false.
         if (!hasRightToPurchase) {
-            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
             return null;
         }
 
         Order order = orderService.createByParams(namespace, user);
         order.setType(OrderType.ORDER);
-        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
 
         subscription = updateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 

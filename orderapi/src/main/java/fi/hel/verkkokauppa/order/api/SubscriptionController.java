@@ -7,10 +7,7 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequest;
+import fi.hel.verkkokauppa.order.api.data.subscription.*;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
@@ -40,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -190,16 +188,27 @@ public class SubscriptionController {
 
 	@PutMapping(value = "/subscription/set-card-token", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardToken(@RequestBody UpdatePaymentCardInfoRequest dto) {
-		return subscriptionService.setSubscriptionCardTokenInternal(dto, true);
+		return subscriptionService.setSubscriptionCardInfoInternal(dto, true);
 	}
 
 
 	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+	public ResponseEntity<Boolean> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
+		boolean updated = Boolean.FALSE;
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
+		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-		// TODO
-		return null;
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+		if (subscription.getEndDate().isAfter(LocalDateTime.now())){
+			updated = Boolean.TRUE;
+			cancelSubscriptionCommand.cancel(
+					subscription.getSubscriptionId(),
+					subscription.getUser(),
+					SubscriptionCancellationCause.EXPIRED
+			);
+		}
+
+		return ResponseEntity.ok(updated);
 	}
 
 	@PostMapping(value = "/subscription/payment-paid-event", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -226,6 +235,36 @@ public class SubscriptionController {
 			throw new CommonApiException(
 					HttpStatus.INTERNAL_SERVER_ERROR,
 					new Error("failed-to-send-payment-paid-event", "failed to call payment paid webhook for order with id [" + message.getOrderId() + "]")
+			);
+		}
+	}
+
+	@PostMapping(value = "/subscription/payment-update-card", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> paymentCardUpdate(@RequestBody PaymentMessage message) {
+
+		try {
+			// This row validates that message contains authorization to order.
+			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+			// Find subscription with subscription id from order and user id from message
+			Subscription subscription = subscriptionService.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+
+			// Update given card info to subscription.
+			UpdatePaymentCardInfoRequest updateRequest = subscriptionService.getUpdatePaymentCardInfoRequest(
+					subscription.getSubscriptionId(),
+					message
+			);
+
+			return subscriptionService.setSubscriptionCardInfoInternal(
+					updateRequest,
+					false // Encrypted in message
+			);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("updating card info to orderId: {} failed " , message.getOrderId(), e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-update-payment-card-renewal-event", "failed to update subscription card info for order with id [" + message.getOrderId() + "]")
 			);
 		}
 	}
