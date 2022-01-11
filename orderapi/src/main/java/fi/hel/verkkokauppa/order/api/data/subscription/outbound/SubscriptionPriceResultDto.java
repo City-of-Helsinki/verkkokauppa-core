@@ -9,4 +9,5 @@ public class SubscriptionPriceResultDto {
     private String priceNet;
     private String priceVat;
     private String priceGross;
+    private String errorMessage;
 }

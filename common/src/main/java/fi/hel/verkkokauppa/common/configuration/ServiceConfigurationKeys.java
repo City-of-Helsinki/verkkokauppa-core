@@ -53,6 +53,7 @@ public class ServiceConfigurationKeys {
     // Order right of purchase [KYV-233]
     public static String ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE = "orderRightOfPurchaseIsActive";
     public static String ORDER_RIGHT_OF_PURCHASE_URL = "orderRightOfPurchaseUrl";
+    // Subscription price end point KYV-462
     public static String SUBSCRIPTION_PRICE_URL = "subscriptionPriceUrl";
 
 
@@ -65,7 +66,7 @@ public class ServiceConfigurationKeys {
     public static List<String> getUnrestrictedConfigurationKeys() {
         return Arrays.asList(MERCHANT_NAME, MERCHANT_STREET, MERCHANT_ZIP, MERCHANT_CITY, MERCHANT_EMAIL,
                 MERCHANT_PHONE, MERCHANT_URL, MERCHANT_TERMS_OF_SERVICE_URL,
-                MERCHANT_PAYMENT_WEBHOOK_URL, ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, ORDER_RIGHT_OF_PURCHASE_URL, MERCHANT_ORDER_WEBHOOK_URL, MERCHANT_SUBSCRIPTION_WEBHOOK_URL);
+                MERCHANT_PAYMENT_WEBHOOK_URL, ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, ORDER_RIGHT_OF_PURCHASE_URL, MERCHANT_ORDER_WEBHOOK_URL, MERCHANT_SUBSCRIPTION_WEBHOOK_URL, SUBSCRIPTION_PRICE_URL);
     }
 
     public static List<String> getRestrictedConfigurationKeys() {

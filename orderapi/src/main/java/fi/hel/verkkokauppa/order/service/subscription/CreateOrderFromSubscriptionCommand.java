@@ -1,12 +1,9 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.outbound.SubscriptionPriceResultDto;
@@ -23,7 +20,6 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +27,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -77,7 +72,9 @@ public class CreateOrderFromSubscriptionCommand {
     private ObjectMapper objectMapper;
 
     @Autowired
-	private CancelSubscriptionCommand cancelSubscriptionCommand;public String createFromSubscription(SubscriptionDto subscriptionDto) {
+	private CancelSubscriptionCommand cancelSubscriptionCommand;
+
+    public String createFromSubscription(SubscriptionDto subscriptionDto) {
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
 
@@ -106,7 +103,7 @@ public class CreateOrderFromSubscriptionCommand {
         order.setType(OrderType.ORDER);
 
 
-        subscription = updateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+        subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
         orderService.setStartDateAndCalculateNextEndDate(order, subscription, subscription.getEndDate());
         copyCustomerInfoFromSubscription(subscriptionDto, order);
@@ -124,7 +121,7 @@ public class CreateOrderFromSubscriptionCommand {
         return orderId;
     }
 
-    private Subscription updateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
+    private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
 
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
         request.setSubscriptionId(subscriptionId);
@@ -138,6 +135,15 @@ public class CreateOrderFromSubscriptionCommand {
                 throw new Exception("Price call failed request: " + request);
             }
             resultDto = objectMapper.readValue(Objects.requireNonNull(response.getBody()).toString(), SubscriptionPriceResultDto.class);
+
+            if (resultDto.getErrorMessage() != null) {
+                log.info("updateSubscriptionPricesFromMerchant subscription : {} error message : {}",
+                        subscription.getSubscriptionId(),
+                        resultDto.getErrorMessage()
+                );
+                throw new Exception("Price call failed request: " + request);
+            }
+
             if (resultDto.getSubscriptionId() != null && resultDto.getUserId() != null) {
                 // Fetch subscription.
                 subscription = getSubscriptionQuery.findByIdValidateByUser(resultDto.getSubscriptionId(), resultDto.getUserId());
