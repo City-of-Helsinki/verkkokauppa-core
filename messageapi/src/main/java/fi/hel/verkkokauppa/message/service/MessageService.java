@@ -45,7 +45,8 @@ public class MessageService {
 
     public void sendEmail(Message message) throws MailException, MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+        boolean multipart = message.getAttachments().size() > 0;
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
 
         helper.setText(message.getMessageText(),true);
         helper.setTo(message.getSendTo());
