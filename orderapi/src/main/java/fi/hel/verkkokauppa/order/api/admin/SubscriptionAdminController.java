@@ -51,6 +51,7 @@ public class SubscriptionAdminController {
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
         try {
             final SubscriptionDto subscription = getSubscriptionQuery.findById(id);
+            subscription.setRenewalDate(subscription.getEndDate().minusDays(subscriptionRenewalCheckThresholdDays));
             return ResponseEntity.ok(subscription);
         } catch (CommonApiException cae) {
             throw cae;

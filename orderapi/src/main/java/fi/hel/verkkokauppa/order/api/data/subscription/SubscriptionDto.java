@@ -23,6 +23,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private LocalDateTime startDate; // (created from orderitems.startDate)
     private LocalDateTime billingStartDate; // (created from orderitems.billingStartDate)
     private LocalDateTime endDate;
+    private LocalDateTime renewalDate;
 
     // User data
     private String user;
