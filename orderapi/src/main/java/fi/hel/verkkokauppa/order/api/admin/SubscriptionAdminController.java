@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -8,7 +9,9 @@ import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCaus
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
+import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -44,6 +44,24 @@ public class SubscriptionAdminController {
     @Autowired
     private SubscriptionRenewalService renewalService;
 
+    @Autowired
+    private GetSubscriptionQuery getSubscriptionQuery;
+
+    @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
+        try {
+            final SubscriptionDto subscription = getSubscriptionQuery.findById(id);
+            if (subscription.getEndDate() != null) {
+                subscription.setRenewalDate(subscription.getEndDate().minusDays(subscriptionRenewalCheckThresholdDays));
+            }
+            return ResponseEntity.ok(subscription);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch(EntityNotFoundException e) {
+            log.error("Exception on getting Subscription order", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
     @GetMapping(value = "/subscription-admin/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> checkRenewals() {

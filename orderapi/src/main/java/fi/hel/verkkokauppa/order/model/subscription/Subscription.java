@@ -75,6 +75,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Text)
 	private Byte paymentMethodExpirationMonth;
 
+	@Field(type = FieldType.Text)
+	private String paymentMethodCardLastFourDigits;
+
 	@Field(type = FieldType.Keyword)
 	String user;
 

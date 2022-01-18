@@ -23,7 +23,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private LocalDateTime startDate; // (created from orderitems.startDate)
     private LocalDateTime billingStartDate; // (created from orderitems.billingStartDate)
     private LocalDateTime endDate;
-
+    private LocalDateTime renewalDate;
     // User data
     private String user;
     private String namespace;
@@ -43,6 +43,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String paymentMethodToken;
     private Short paymentMethodExpirationYear;
     private Byte paymentMethodExpirationMonth;
+    private String paymentMethodCardLastFourDigits;
     // Period data (created from orderitems)
     private String periodUnit;
     private Long periodFrequency;

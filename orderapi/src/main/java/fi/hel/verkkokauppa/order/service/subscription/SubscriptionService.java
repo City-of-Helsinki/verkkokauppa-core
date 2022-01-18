@@ -111,7 +111,8 @@ public class SubscriptionService {
             PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
                     message.getEncryptedCardToken(),
                     message.getCardTokenExpYear(),
-                    message.getCardTokenExpMonth()
+                    message.getCardTokenExpMonth(),
+                    message.getCardLastFourDigits()
             );
 
             UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
@@ -161,6 +162,7 @@ public class SubscriptionService {
 
             subscriptionDto.setPaymentMethodExpirationYear(paymentCardInfoDto.getExpYear());
             subscriptionDto.setPaymentMethodExpirationMonth(paymentCardInfoDto.getExpMonth());
+            subscriptionDto.setPaymentMethodCardLastFourDigits(paymentCardInfoDto.getCardLastFourDigits());
             updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
 
             return ResponseEntity.ok().build();

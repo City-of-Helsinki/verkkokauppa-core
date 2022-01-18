@@ -50,6 +50,7 @@ public class CardTokenFetcher {
 				paymentCardInfoDto.setCardToken(response.getSource().getCardToken());
 				paymentCardInfoDto.setExpYear(response.getSource().getExpYear());
 				paymentCardInfoDto.setExpMonth(response.getSource().getExpMonth());
+				paymentCardInfoDto.setCardLastFourDigits(response.getSource().getLast4());
 
 				return paymentCardInfoDto;
 			} else {
