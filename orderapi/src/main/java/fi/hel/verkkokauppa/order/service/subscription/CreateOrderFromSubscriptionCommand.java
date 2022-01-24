@@ -39,8 +39,8 @@ public class CreateOrderFromSubscriptionCommand {
 
     @Autowired
     private OrderService orderService;
-	@Autowired
-	private SubscriptionService subscriptionService;
+    @Autowired
+    private SubscriptionService subscriptionService;
 
     @Autowired
     private RestServiceClient customerApiCallService;
@@ -72,7 +72,7 @@ public class CreateOrderFromSubscriptionCommand {
     private ObjectMapper objectMapper;
 
     @Autowired
-	private CancelSubscriptionCommand cancelSubscriptionCommand;
+    private CancelSubscriptionCommand cancelSubscriptionCommand;
 
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
         String namespace = subscriptionDto.getNamespace();
@@ -88,14 +88,16 @@ public class CreateOrderFromSubscriptionCommand {
 
         Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
 
-		// Returns null orderId if subscription card is expired
-		if (subscriptionService.isCardExpired(subscription)) {
-			subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
-			return null;
-		}boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+        // Returns null orderId if subscription card is expired
+        if (subscriptionService.isCardExpired(subscription)) {
+            subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
+            return null;
+        }
+        boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
         // Returns null orderId if subscription right of purchase is false.
         if (!hasRightToPurchase) {
-            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
+            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+            cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
             return null;
         }
 
@@ -152,7 +154,7 @@ public class CreateOrderFromSubscriptionCommand {
                         subscription.getPriceNet(),
                         subscription.getPriceVat(),
                         subscription.getPriceGross()
-                        );
+                );
                 // Set new prices to subscription from result.
                 subscription.setPriceNet(resultDto.getPriceNet());
                 subscription.setPriceVat(resultDto.getPriceVat());
