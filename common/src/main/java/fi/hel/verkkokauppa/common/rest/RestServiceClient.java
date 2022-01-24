@@ -86,11 +86,11 @@ public class RestServiceClient {
     public WebClient getAdminClient() {
         // expect a response within a few seconds
         HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-                .responseTimeout(Duration.ofMillis(3000))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30000)
+                .responseTimeout(Duration.ofMillis(30000))
                 .doOnConnected(conn ->
-                        conn.addHandlerLast(new ReadTimeoutHandler(3000, TimeUnit.MILLISECONDS))
-                                .addHandlerLast(new WriteTimeoutHandler(3000, TimeUnit.MILLISECONDS)));
+                        conn.addHandlerLast(new ReadTimeoutHandler(30000, TimeUnit.MILLISECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(30000, TimeUnit.MILLISECONDS)));
 
         String apiKey = configurationClient.getAuthKey(NamespaceType.ADMIN);
 
