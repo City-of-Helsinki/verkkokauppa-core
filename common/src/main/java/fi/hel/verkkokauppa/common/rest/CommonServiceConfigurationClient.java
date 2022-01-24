@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.rest;
 
+import lombok.Getter;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 
 @Component
+@Getter
 public class CommonServiceConfigurationClient {
     
     private Logger log = LoggerFactory.getLogger(CommonServiceConfigurationClient.class);

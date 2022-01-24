@@ -1,5 +1,9 @@
 package fi.hel.verkkokauppa.common.rest;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -10,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -28,24 +33,23 @@ public class RestServiceClient {
     @Autowired
     private CommonServiceConfigurationClient configurationClient;
 
+    @Autowired
+    private CommonServiceConfigurationClient configurations;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+
     public JSONObject makeGetCall(String url) {
         WebClient client = getClient();
         JSONObject response = queryJsonService(client, url);
-        if (response == null) {
-            return new JSONObject();
-        } else {
-            return new JSONObject(response);
-        }
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
     public JSONObject makePostCall(String url, String body) {
         WebClient client = getClient();
         JSONObject response = postQueryJsonService(client, url, body);
-        if (response == null) {
-            return new JSONObject();
-        } else {
-            return new JSONObject(response);
-        }
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
     public JSONObject makeAdminPostCall(String url, String body) {
@@ -152,5 +156,25 @@ public class RestServiceClient {
 
     }
 
+
+    public ResponseEntity<JSONObject> postCall(Object object, String configurationKey, String namespace) throws JsonProcessingException {
+
+        if (namespace == null || namespace.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String webhookUrl = configurations.getPublicServiceConfigurationValue(namespace, configurationKey);
+
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        // Removes null values.
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        //format payload, message to json string conversion
+        String body = objectMapper.writeValueAsString(object);
+        log.info("request body : {}", object);
+        JSONObject jsonResponse =  this.makePostCall(webhookUrl, body);
+        return ResponseEntity.ok().body(jsonResponse);
+    }
 }
 

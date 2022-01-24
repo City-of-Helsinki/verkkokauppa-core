@@ -3,9 +3,9 @@ package fi.hel.verkkokauppa.mockproductmanagement.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import fi.hel.verkkokauppa.mockproductmanagement.api.subscription.request.MockSubscriptionPriceRequest;
+import fi.hel.verkkokauppa.mockproductmanagement.api.subscription.response.MockSubscriptionPriceResponse;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -32,6 +32,17 @@ public class MockPriceController {
     @GetMapping("/mockprice/tilavaraus/get")
     public MockPrice getMockPriceTV(@RequestParam(value = "productId") String productId) {
         return mockPricesTV.get(productId);
+    }
+
+    @PostMapping("/mockprice/**/subscription/post")
+    public MockSubscriptionPriceResponse getMockPriceSubscription(@RequestBody MockSubscriptionPriceRequest request) {
+        MockSubscriptionPriceResponse response = new MockSubscriptionPriceResponse();
+        response.setSubscriptionId(request.getSubscriptionId());
+        response.setUserId(request.getUserId());
+        response.setPriceNet("100");
+        response.setPriceVat("0");
+        response.setPriceGross("100");
+        return response;
     }
 
 }

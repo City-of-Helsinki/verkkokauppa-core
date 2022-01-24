@@ -2,6 +2,8 @@ package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
@@ -12,6 +14,7 @@ import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
+import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -43,6 +47,9 @@ public class SubscriptionAdminController {
 
     @Autowired
     private SubscriptionRenewalService renewalService;
+
+    @Autowired
+    private SubscriptionItemMetaService subscriptionItemMetaService;
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
@@ -118,6 +125,22 @@ public class SubscriptionAdminController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<OrderItemMetaDto>> setItemMeta(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "orderItemId") String orderItemId, @RequestBody List<OrderItemMetaDto> meta) {
+        subscriptionItemMetaService.removeItemMetas(orderItemId);
+
+        List<OrderItemMetaDto> setMeta = new ArrayList<>();
+        meta.forEach(m -> {
+            m.setOrderItemId(orderItemId);
+            if (m.getOrderItemMetaId() == null) {
+                m.setOrderItemMetaId(UUIDGenerator.generateType4UUID().toString());
+            }
+            m = subscriptionItemMetaService.addItemMeta(m, subscriptionId);
+            setMeta.add(m);
+        });
+        return ResponseEntity.ok().body(setMeta);
     }
 
     public List<SubscriptionDto> getRenewableSubscriptions() {
