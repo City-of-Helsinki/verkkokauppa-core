@@ -43,5 +43,11 @@ public class CommonServiceConfigurationClient {
         return namespaceServiceConfiguration.optString("configurationValue", null);
     }
 
+    public String getAuthKey(String namespace) {
+        String serviceMappingUrl = serviceConfigurationUrl + "api-access/get?namespace=" + namespace;
+
+        return restServiceClient.queryStringService(serviceMappingUrl);
+    }
+
 }
     
