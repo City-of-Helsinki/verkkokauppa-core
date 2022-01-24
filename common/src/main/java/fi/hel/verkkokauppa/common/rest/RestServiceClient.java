@@ -1,23 +1,22 @@
 package fi.hel.verkkokauppa.common.rest;
 
+import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriUtils;
 import reactor.netty.http.client.HttpClient;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 
@@ -25,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 public class RestServiceClient {
 
     private Logger log = LoggerFactory.getLogger(RestServiceClient.class);
+
+    @Autowired
+    private CommonServiceConfigurationClient configurationClient;
 
     public JSONObject makeGetCall(String url) {
         WebClient client = getClient();
@@ -44,6 +46,18 @@ public class RestServiceClient {
         } else {
             return new JSONObject(response);
         }
+    }
+
+    public JSONObject makeAdminPostCall(String url, String body) {
+        WebClient client = getAdminClient();
+        JSONObject response = postQueryJsonService(client, url, body);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
+    }
+
+    public JSONObject makeAdminGetCall(String url) {
+        WebClient client = getAdminClient();
+        JSONObject response = queryJsonService(client, url);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
 
@@ -69,6 +83,27 @@ public class RestServiceClient {
         return client;
     }
 
+    public WebClient getAdminClient() {
+        // expect a response within a few seconds
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
+                .responseTimeout(Duration.ofMillis(3000))
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(3000, TimeUnit.MILLISECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(3000, TimeUnit.MILLISECONDS)));
+
+        String apiKey = configurationClient.getAuthKey(NamespaceType.ADMIN);
+
+        WebClient client = WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader("api-key", apiKey)
+                .defaultHeader("namespace", NamespaceType.ADMIN)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+
+        return client;
+    }
+
     public JSONObject queryJsonService(WebClient client, String url) {
         String jsonResponse = client.get()
                 .uri(url)
@@ -82,6 +117,14 @@ public class RestServiceClient {
             return new JSONObject(jsonResponse);
         }
 
+    }
+
+    public String queryStringService(String url) {
+        return getClient().get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
     }
 
     public JSONObject postQueryJsonService(WebClient client, String url, String body) {
