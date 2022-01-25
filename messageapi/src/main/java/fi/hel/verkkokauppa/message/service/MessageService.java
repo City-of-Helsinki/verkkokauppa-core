@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.util.Base64;
+import java.util.Map;
 
 @Component
 public class MessageService {
@@ -29,24 +32,31 @@ public class MessageService {
 
     public Message createSendableEmailMessage(MessageDto messageDto) {
         return new Message(
-                UUIDGenerator.generateType4UUID() + ":" +  messageDto.getOrderId(),
+                UUIDGenerator.generateType4UUID() + ":" +  messageDto.getId(),
                 messageDto.getBody(),
                 messageDto.getReceiver(),
                 env.getRequiredProperty("spring.mail.username"),
                 messageDto.getHeader(),
-                messageDto.getOrderId(),
-                MessageTypes.EMAIL
+                messageDto.getId(),
+                MessageTypes.EMAIL,
+                messageDto.getAttachments()
         );
     }
 
     public void sendEmail(Message message) throws MailException, MessagingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+        boolean multipart = message.getAttachments().size() > 0;
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
 
         helper.setText(message.getMessageText(),true);
         helper.setTo(message.getSendTo());
         helper.setSubject(message.getHeader());
         helper.setFrom(message.getFrom());
+
+        for (Map.Entry<String, String> entry : message.getAttachments().entrySet()) {
+            byte[] attachment = Base64.getDecoder().decode(entry.getValue());
+            helper.addAttachment(entry.getKey(), new ByteArrayResource(attachment));
+        }
 
         log.info(String.valueOf(mimeMessage));
         javaMailSender.send(mimeMessage);

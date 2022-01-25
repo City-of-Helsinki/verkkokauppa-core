@@ -51,6 +51,15 @@ public class GetSubscriptionQuery extends DefaultGetEntityQuery<Subscription, Su
 		}
 	}
 
+	public SubscriptionDto findById(String id) {
+		Optional<Subscription> subscription = this.getRepository().findById(id);
+		if (subscription.isEmpty()) {
+			log.warn("subscription not found, subscriptionId: " + id);
+			return null;
+		}
+		return this.mapToDto(subscription.get());
+	}
+
 	public Subscription findByIdValidateByUser(String id, String userId) {
 		if (StringUtils.isEmpty(id) || StringUtils.isEmpty(userId)) {
 			log.error("unauthorized attempt to load subscription, subscriptionId or userId missing");
