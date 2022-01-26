@@ -105,6 +105,12 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Text)
 	private String productName;
 
+	@Field(type = FieldType.Text)
+	private String productLabel;
+
+	@Field(type = FieldType.Text)
+	private String productDescription;
+
 	// Product quantity, not subscription count.
 	@Field(type = FieldType.Integer)
 	private Integer quantity;

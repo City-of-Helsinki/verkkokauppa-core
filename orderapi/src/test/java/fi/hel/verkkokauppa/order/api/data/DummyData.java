@@ -64,6 +64,8 @@ public abstract class DummyData {
                 order.getOrderId(),
                 "productId",
                 "productName",
+                "productLabel",
+                "productDescription",
                 1,
                 "unit",
                 "100",
