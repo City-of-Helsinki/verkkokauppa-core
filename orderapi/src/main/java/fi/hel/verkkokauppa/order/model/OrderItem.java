@@ -28,6 +28,10 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String productName;
     @Field(type = FieldType.Text)
+    String productLabel;
+    @Field(type = FieldType.Text)
+    String productDescription;
+    @Field(type = FieldType.Text)
     Integer quantity;
     @Field(type = FieldType.Text)
     String unit;
@@ -66,13 +70,15 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     public OrderItem() {}
 
-    public OrderItem(String orderItemId, String orderId, String productId, String productName, Integer quantity,
+    public OrderItem(String orderItemId, String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity,
                      String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
                      String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
         this.productName = productName;
+        this.productLabel = productLabel;
+        this.productDescription = productDescription;
         this.quantity = quantity;
         this.unit = unit;
         this.rowPriceNet = rowPriceNet;

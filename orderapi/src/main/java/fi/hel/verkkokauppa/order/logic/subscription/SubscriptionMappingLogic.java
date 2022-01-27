@@ -20,6 +20,8 @@ public class SubscriptionMappingLogic {
 	public void mapProductDataToEntity(SubscriptionDto dto, Subscription entity) {
 		entity.setProductId(dto.getProductId());
 		entity.setProductName(dto.getProductName());
+		entity.setProductLabel(dto.getProductLabel());
+		entity.setProductDescription(dto.getProductDescription());
 	}
 
 }

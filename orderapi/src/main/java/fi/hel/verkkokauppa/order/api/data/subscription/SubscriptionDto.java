@@ -35,6 +35,8 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String customerEmail;
     // Product data
     private String productName;
+    private String productLabel;
+    private String productDescription;
     private String productId;
     private Integer quantity;
     private String unit;
