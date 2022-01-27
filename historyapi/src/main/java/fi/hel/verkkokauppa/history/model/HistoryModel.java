@@ -1,17 +1,21 @@
-package fi.hel.verkkokauppa.common.history.model;
+package fi.hel.verkkokauppa.history.model;
 
+import fi.hel.verkkokauppa.common.contracts.history.History;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import org.joda.time.DateTime;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDateTime;
+
+@Document(indexName = "history")
 @Data
 @Builder
-public class HistoryModel {
+public class HistoryModel implements History {
     @Id
     String entityId;
 
@@ -23,7 +27,7 @@ public class HistoryModel {
     String entityType;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
-    DateTime createdAt;
+    LocalDateTime createdAt;
 
     @Field(type = FieldType.Keyword)
     String namespace;

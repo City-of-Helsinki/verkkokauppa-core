@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
-import fi.hel.verkkokauppa.common.history.service.HistoryService;
+
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -65,9 +65,6 @@ public class OrderController {
 
 	@Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
-
-	@Autowired
-    private HistoryService historyService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
