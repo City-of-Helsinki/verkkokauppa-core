@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.common.history;
+package fi.hel.verkkokauppa.common.history.dto;
 
 import fi.hel.verkkokauppa.common.contracts.history.History;
 import lombok.Builder;
@@ -9,9 +9,13 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class HistoryDto implements History {
+    String historyId;
     String entityId;
+    String user;
+
     @Builder.Default
     Boolean isVisible = false;
+
     String entityType;
     LocalDateTime createdAt;
     String namespace;

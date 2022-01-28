@@ -17,7 +17,13 @@ import java.time.LocalDateTime;
 @Builder
 public class HistoryModel implements History {
     @Id
+    String historyId;
+    // Identifier for entity example, orderId
+    @Field(type = FieldType.Text)
     String entityId;
+
+    @Field(type = FieldType.Text)
+    String user;
 
     @Field(type = FieldType.Boolean)
     @Builder.Default

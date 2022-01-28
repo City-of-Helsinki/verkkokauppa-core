@@ -9,6 +9,8 @@ public interface History {
 
     String getEntityId();
 
+    String getUser();
+
     Boolean getIsVisible();
 
     String getEntityType();
@@ -24,6 +26,8 @@ public interface History {
     String getDescription();
 
     void setEntityId(String entityId);
+
+    void setUser(String user);
 
     void setIsVisible(Boolean isVisible);
 

@@ -6,7 +6,6 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
-
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -27,11 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
@@ -352,6 +347,7 @@ public class OrderController {
                 log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
                 // TODO single order payment failed callback action
             }
+            orderService.savePaymentMessageHistory(message);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -378,6 +374,7 @@ public class OrderController {
                 log.debug("payment-paid-event callback, orderId: " + order.getOrderId());
                 // TODO single order payment paid callback action
             }
+            orderService.savePaymentMessageHistory(message);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -396,6 +393,7 @@ public class OrderController {
         try {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            orderService.savePaymentMessageHistory(message);
             return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, message.getNamespace());
 
         } catch (CommonApiException cae) {

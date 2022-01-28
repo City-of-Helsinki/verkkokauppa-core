@@ -2,7 +2,8 @@ package fi.hel.verkkokauppa.history.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.history.HistoryDto;
+import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
+import fi.hel.verkkokauppa.history.model.HistoryModel;
 import fi.hel.verkkokauppa.history.service.HistoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +21,12 @@ public class HistoryController {
     private HistoryService historyService;
 
 
-    @PostMapping(value = "/history/post", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<HistoryDto> sendOrderMessage(@RequestBody HistoryDto history) {
+    @PostMapping(value = "/history/create", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<HistoryDto> createHistory(@RequestBody HistoryDto history) {
         try {
-            historyService.saveHistory(history);
-            return ResponseEntity.status(HttpStatus.CREATED).body(history);
+            HistoryModel createdModel = historyService.saveHistory(history);
+            HistoryDto returningDto = historyService.mapToDto(createdModel);
+            return ResponseEntity.status(HttpStatus.CREATED).body(returningDto);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -33,5 +35,4 @@ public class HistoryController {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
-
 }
