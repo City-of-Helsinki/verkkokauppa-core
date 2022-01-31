@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
@@ -18,8 +19,11 @@ import fi.hel.verkkokauppa.order.api.data.subscription.UpdatePaymentCardInfoRequ
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
+import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -40,8 +45,17 @@ public class SubscriptionService {
     @Value("${payment.card_token.encryption.password}")
     private String cardTokenEncryptionPassword;
 
+    @Value("${order.experience.url}")
+    private String orderExperienceUrl;
+
     @Autowired
     private SubscriptionRepository subscriptionRepository;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private SubscriptionItemMetaRepository subscriptionItemMetaRepository;
 
     @Autowired
     private OrderService orderService;
@@ -111,7 +125,8 @@ public class SubscriptionService {
             PaymentCardInfoDto paymentCardInfoDto = new PaymentCardInfoDto(
                     message.getEncryptedCardToken(),
                     message.getCardTokenExpYear(),
-                    message.getCardTokenExpMonth()
+                    message.getCardTokenExpMonth(),
+                    message.getCardLastFourDigits()
             );
 
             UpdatePaymentCardInfoRequest request = new UpdatePaymentCardInfoRequest(subscriptionId, paymentCardInfoDto, message.getUserId());
@@ -161,6 +176,7 @@ public class SubscriptionService {
 
             subscriptionDto.setPaymentMethodExpirationYear(paymentCardInfoDto.getExpYear());
             subscriptionDto.setPaymentMethodExpirationMonth(paymentCardInfoDto.getExpMonth());
+            subscriptionDto.setPaymentMethodCardLastFourDigits(paymentCardInfoDto.getCardLastFourDigits());
             updateSubscriptionCommand.update(subscriptionId, subscriptionDto);
 
             return ResponseEntity.ok().build();
@@ -239,5 +255,13 @@ public class SubscriptionService {
             return cardExpirationDate.isBefore(today);
         }
         return false;
+    }
+
+    public List<SubscriptionItemMeta> findMetasBySubscriptionId(String subscriptionId) {
+        return subscriptionItemMetaRepository.findBySubscriptionId(subscriptionId);
+    }
+
+    public JSONObject sendSubscriptionPaymentFailedEmail(Subscription subscription) {
+        return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscription.getSubscriptionId() + "/emailSubscriptionPaymentFailed","");
     }
 }
