@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.*;
@@ -61,6 +62,9 @@ public class SubscriptionController {
 
 	@Autowired
 	private RestWebHookService restWebHookService;
+
+	@Autowired
+	private SaveHistoryService saveHistoryService;
 
 	@Autowired
 	public SubscriptionController(
@@ -207,7 +211,7 @@ public class SubscriptionController {
 					SubscriptionCancellationCause.EXPIRED
 			);
 		}
-
+		saveHistoryService.savePaymentMessageHistory(message);
 		return ResponseEntity.ok(updated);
 	}
 
@@ -218,6 +222,7 @@ public class SubscriptionController {
 		SubscriptionIdsDto dto = createSubscriptionsFromOrderId(message.getOrderId(), message.getUserId()).getBody();
 		// TODO Method invocation 'getSubscriptionIds' may produce 'NullPointerException'
 		subscriptionService.afterFirstPaymentPaidEventActions(dto.getSubscriptionIds(), message);
+		saveHistoryService.savePaymentMessageHistory(message);
 		return ResponseEntity.ok().body(dto);
 	}
 
@@ -227,6 +232,7 @@ public class SubscriptionController {
 		try {
 			// This row validates that message contains authorization to order.
 			orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+			saveHistoryService.savePaymentMessageHistory(message);
 			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, message.getNamespace());
 		} catch (CommonApiException cae) {
 			throw cae;
@@ -254,10 +260,12 @@ public class SubscriptionController {
 					message
 			);
 
-			return subscriptionService.setSubscriptionCardInfoInternal(
+			ResponseEntity<Void> response = subscriptionService.setSubscriptionCardInfoInternal(
 					updateRequest,
 					false // Encrypted in message
 			);
+			saveHistoryService.savePaymentMessageHistory(message);
+			return response;
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {
@@ -272,6 +280,7 @@ public class SubscriptionController {
 	@PostMapping(value = "/subscription/subscription-cancelled-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> subscriptionCancelledWebhook(@RequestBody SubscriptionMessage message) {
 		try {
+			saveHistoryService.saveSubscriptionMessageHistory(message);
 			return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, message.getNamespace());
 		} catch (CommonApiException cae) {
 			throw cae;

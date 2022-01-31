@@ -38,7 +38,7 @@ public class HistoryModel implements History {
     @Field(type = FieldType.Keyword)
     String namespace;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     String eventType;
 
     @Field(type = FieldType.Keyword)

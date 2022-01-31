@@ -35,4 +35,5 @@ public class HistoryController {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
+
 }

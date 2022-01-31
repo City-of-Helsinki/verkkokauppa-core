@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -29,4 +31,12 @@ public class HistoryService {
     public HistoryDto mapToDto(HistoryModel model) {
         return objectMapper.convertValue(model, HistoryDto.class);
     }
+
+    public List<HistoryModel> findHistoryModelsByNamespaceAndEntityIdOrEventTypeOrCreatedAtAfter(String namespace, String entityId){
+        return historyRepository.findHistoryModelsByNamespaceAndEntityId(
+                namespace,
+                entityId
+        );
+    }
+
 }

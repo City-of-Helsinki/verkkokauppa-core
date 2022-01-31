@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -53,6 +54,27 @@ public class HistoryFactory {
                     .user(message.getUserId())
                     .eventType(message.getEventType())
                     .description(message.getOrderType())
+                    .payload(e.getMessage())
+                    .build();
+        }
+    }
+
+
+    public HistoryDto fromSubscriptionMessage(SubscriptionMessage message){
+        try {
+            return HistoryDto.builder()
+                    .entityId(message.getSubscriptionId())
+                    .namespace(message.getNamespace())
+                    .eventType(message.getEventType())
+                    .description(message.getCancellationCause())
+                    .payload(objectMapper.writeValueAsString(message))
+                    .build();
+        } catch (JsonProcessingException e) {
+            return HistoryDto.builder()
+                    .entityId(message.getSubscriptionId())
+                    .namespace(message.getNamespace())
+                    .eventType(message.getEventType())
+                    .description(message.getCancellationCause())
                     .payload(e.getMessage())
                     .build();
         }
