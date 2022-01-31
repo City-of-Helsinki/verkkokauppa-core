@@ -248,6 +248,8 @@ public class OrderController {
                         orderId,
                         item.getProductId(),
                         item.getProductName(),
+                        item.getProductLabel(),
+                        item.getProductDescription(),
                         item.getQuantity(),
                         item.getUnit(),
                         item.getRowPriceNet(),

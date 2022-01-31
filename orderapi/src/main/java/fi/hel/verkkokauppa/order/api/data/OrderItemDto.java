@@ -17,6 +17,8 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
     private String orderId;
     private String productId;
     private String productName;
+    private String productLabel;
+    private String productDescription;
     private String unit;
     private Integer quantity;
     private String rowPriceNet;

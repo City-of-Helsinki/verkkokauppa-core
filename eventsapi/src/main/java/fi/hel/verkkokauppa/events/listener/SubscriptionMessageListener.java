@@ -34,6 +34,9 @@ public class SubscriptionMessageListener {
     @Value("${order.service.url}")
     private String orderServiceUrl;
 
+    @Value("${order.experience.url}")
+    private String orderExperienceUrl;
+
 
     @KafkaListener(
             topics = "subscriptions",
@@ -60,6 +63,8 @@ public class SubscriptionMessageListener {
     }
 
     private void subscriptionCreatedAction(SubscriptionMessage message) {
+        String url = orderExperienceUrl + "subscription/" + message.getSubscriptionId() + "/emailSubscriptionContract";
+        restServiceClient.makeAdminPostCall(url, "{}");
         // TODO action
     }
 

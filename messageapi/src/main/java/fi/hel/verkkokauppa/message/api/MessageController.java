@@ -42,8 +42,8 @@ public class MessageController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("Sending message failed, orderId: " + messageDto.getOrderId(), e);
-            Error error = new Error("failed-to-send-message", "failed to send message with id [" + messageDto.getOrderId() + "]");
+            log.error("Sending message failed, id: " + messageDto.getId(), e);
+            Error error = new Error("failed-to-send-message", "failed to send message with id [" + messageDto.getId() + "]");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }

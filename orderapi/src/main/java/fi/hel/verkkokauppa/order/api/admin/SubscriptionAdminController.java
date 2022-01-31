@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
@@ -15,6 +17,7 @@ import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
+import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

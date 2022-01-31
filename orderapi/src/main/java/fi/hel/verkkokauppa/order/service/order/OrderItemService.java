@@ -23,7 +23,7 @@ public class OrderItemService {
     @Autowired
     private OrderItemRepository orderItemRepository;
 
-    public String addItem(String orderId, String productId, String productName, Integer quantity, String unit,
+    public String addItem(String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
                           String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
                           String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
@@ -32,6 +32,8 @@ public class OrderItemService {
                 orderId,
                 productId,
                 productName,
+                productLabel,
+                productDescription,
                 quantity,
                 unit,
                 rowPriceNet,

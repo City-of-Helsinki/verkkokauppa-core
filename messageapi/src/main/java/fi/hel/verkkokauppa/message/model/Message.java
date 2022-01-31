@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import fi.hel.verkkokauppa.message.enums.MessageTypes;
 import org.springframework.data.annotation.Id;
 
+import java.util.Map;
+
 @JsonIgnoreProperties("messageText")
 public class Message {
     @Id
@@ -14,11 +16,12 @@ public class Message {
     String header;
     String identifierValue;
     MessageTypes messageType;
+    Map<String, String> attachments;
 
     public Message() {
     }
 
-    public Message(String id, String messageText, String sendTo, String from, String header, String identifierValue, MessageTypes messageType) {
+    public Message(String id, String messageText, String sendTo, String from, String header, String identifierValue, MessageTypes messageType, Map<String, String> attachments) {
         this.id = id;
         this.messageText = messageText;
         this.sendTo = sendTo;
@@ -26,6 +29,7 @@ public class Message {
         this.header = header;
         this.identifierValue = identifierValue;
         this.messageType = messageType;
+        this.attachments = attachments;
     }
 
     public String getId() {
@@ -83,4 +87,6 @@ public class Message {
     public void setMessageType(MessageTypes messageType) {
         this.messageType = messageType;
     }
+
+    public Map<String, String> getAttachments() { return attachments; }
 }
