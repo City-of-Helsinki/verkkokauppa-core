@@ -5,25 +5,32 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class HistoryDto implements History {
     String historyId;
-    @NonNull
+    @NotBlank(message = "entityId cant be blank")
     String entityId;
     String user;
 
     @Builder.Default
     Boolean isVisible = false;
-    @NonNull
+
+    @NotBlank(message = "entityType cant be blank")
     String entityType;
+
     LocalDateTime createdAt;
-    @NonNull
+
+    @NotBlank(message = "namespace cant be blank")
     String namespace;
-    @NonNull
+
+    @NotBlank(message = "eventType cant be blank")
     String eventType;
+
     String payload;
     String description;
 }

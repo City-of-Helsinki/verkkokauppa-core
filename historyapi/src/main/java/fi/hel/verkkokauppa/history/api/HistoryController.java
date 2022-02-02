@@ -15,15 +15,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 @RestController
 @Slf4j
+@Validated
 public class HistoryController {
     @Autowired
     private HistoryService historyService;
 
 
     @PostMapping(value = "/history/create", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<HistoryDto> createHistory(@Validated @RequestBody HistoryDto history) {
+    public ResponseEntity<HistoryDto> createHistory(@RequestBody @Valid HistoryDto history) {
         try {
             HistoryModel createdModel = historyService.saveHistory(history);
             HistoryDto returningDto = historyService.mapToDto(createdModel);
