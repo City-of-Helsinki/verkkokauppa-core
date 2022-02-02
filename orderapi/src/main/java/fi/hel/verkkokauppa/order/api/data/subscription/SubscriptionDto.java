@@ -1,9 +1,11 @@
 package fi.hel.verkkokauppa.order.api.data.subscription;
 
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import fi.hel.verkkokauppa.order.interfaces.Product;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
 import fi.hel.verkkokauppa.shared.model.impl.BaseIdentifiableDto;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +13,8 @@ import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -24,7 +28,6 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private LocalDateTime billingStartDate; // (created from orderitems.billingStartDate)
     private LocalDateTime endDate;
     private LocalDateTime renewalDate;
-
     // User data
     private String user;
     private String namespace;
@@ -35,6 +38,8 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String customerEmail;
     // Product data
     private String productName;
+    private String productLabel;
+    private String productDescription;
     private String productId;
     private Integer quantity;
     private String unit;
@@ -44,6 +49,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String paymentMethodToken;
     private Short paymentMethodExpirationYear;
     private Byte paymentMethodExpirationMonth;
+    private String paymentMethodCardLastFourDigits;
     // Period data (created from orderitems)
     private String periodUnit;
     private Long periodFrequency;
@@ -56,6 +62,8 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     // Relations data
     private String orderId;
 
+    // Meta data
+    private List<SubscriptionItemMeta> meta = new ArrayList<>();
 //    private LocalDateTime nextDate; // TODO needed?
 //    private Integer failureCount; // TODO needed?
 //    private Integer currentBillingCycle; // TODO needed?

@@ -394,7 +394,8 @@ public class OnlinePaymentService {
                 paymentMessageBuilder
                         .encryptedCardToken(encryptedToken)
                         .cardTokenExpYear(paymentCardInfo.getExpYear())
-                        .cardTokenExpMonth(paymentCardInfo.getExpMonth());
+                        .cardTokenExpMonth(paymentCardInfo.getExpMonth())
+                        .cardLastFourDigits(paymentCardInfo.getCardLastFourDigits());
             }
         }
 
@@ -432,6 +433,7 @@ public class OnlinePaymentService {
                 .encryptedCardToken(encryptedCardToken) // Encrypted, from dto
                 .cardTokenExpMonth(cardInfo.getExpMonth())
                 .cardTokenExpYear(cardInfo.getExpYear())
+                .cardLastFourDigits(cardInfo.getCardLastFourDigits())
                 .build();
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
         log.debug("triggered event {} for paymentId: {}", EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED, payment.getPaymentId());

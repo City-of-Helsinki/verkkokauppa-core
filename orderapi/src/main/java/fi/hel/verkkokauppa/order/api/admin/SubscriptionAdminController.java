@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
@@ -14,6 +15,8 @@ import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
+import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import org.slf4j.Logger;
@@ -56,12 +59,16 @@ public class SubscriptionAdminController {
     private GetSubscriptionQuery getSubscriptionQuery;
 
     @Autowired
+    private SubscriptionService subscriptionService;
+
+    @Autowired
     private SaveHistoryService saveHistoryService;
 
     @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
         try {
             final SubscriptionDto subscription = getSubscriptionQuery.findById(id);
+            subscription.setMeta(subscriptionService.findMetasBySubscriptionId(id));
             if (subscription.getEndDate() != null) {
                 subscription.setRenewalDate(subscription.getEndDate().minusDays(subscriptionRenewalCheckThresholdDays));
             }

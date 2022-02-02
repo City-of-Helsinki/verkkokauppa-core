@@ -88,6 +88,8 @@ public class CreateSubscriptionsFromOrderCommand {
 		// Product data
 		subscriptionDto.setProductId(orderItem.getProductId());
 		subscriptionDto.setProductName(orderItem.getProductName());
+		subscriptionDto.setProductLabel(orderItem.getProductLabel());
+		subscriptionDto.setProductDescription(orderItem.getProductDescription());
 		subscriptionDto.setQuantity(orderItem.getQuantity());
 		subscriptionDto.setUnit(orderItem.getUnit());
 		// Period data

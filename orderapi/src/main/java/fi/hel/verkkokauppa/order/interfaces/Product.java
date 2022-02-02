@@ -8,4 +8,12 @@ public interface Product {
     void setProductName(String productName);
 
     void setProductId(String productId);
+
+    String getProductLabel();
+
+    void setProductLabel(String productLabel);
+
+    String getProductDescription();
+
+    void setProductDescription(String productDescription);
 }

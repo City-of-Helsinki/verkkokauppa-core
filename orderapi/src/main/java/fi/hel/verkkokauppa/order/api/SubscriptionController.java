@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.*;
@@ -23,6 +24,7 @@ import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.service.subscription.UpdateSubscriptionCommand;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.shared.model.impl.IdWrapper;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,8 @@ public class SubscriptionController {
 
 	@Autowired
 	private SubscriptionService subscriptionService;
+	@Autowired
+	private RestServiceClient restServiceClient;
 
 	private final CreateSubscriptionCommand createSubscriptionCommand;
 	private final GetSubscriptionQuery getSubscriptionQuery;
@@ -203,6 +207,13 @@ public class SubscriptionController {
 		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
 		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+
+		try {
+			JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscription);
+		} catch (Exception e) {
+			log.error("Error sending paymentFailedEmail for subscription {}", subscription.getSubscriptionId(), e);
+		}
+
 		if (subscription.getEndDate().isAfter(LocalDateTime.now())){
 			updated = Boolean.TRUE;
 			cancelSubscriptionCommand.cancel(

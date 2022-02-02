@@ -10,5 +10,6 @@ public class PaymentCardInfoDto {
 	private String cardToken;
 	private Short expYear;
 	private Byte expMonth;
+	private String cardLastFourDigits;
 
 }

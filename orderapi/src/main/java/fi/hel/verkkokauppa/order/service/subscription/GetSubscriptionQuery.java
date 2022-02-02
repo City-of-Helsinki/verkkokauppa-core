@@ -37,7 +37,11 @@ public class GetSubscriptionQuery extends DefaultGetEntityQuery<Subscription, Su
 	public SubscriptionDto mapToDto(Subscription entity) {
 		final SubscriptionDto dto = super.mapToDto(entity);
 
-		decryptPaymentMethodToken(dto);
+		try {
+			decryptPaymentMethodToken(dto);
+		} catch (Exception e) {
+			log.error("Decrypting paymentMethodToken failed subscription {}", entity.getSubscriptionId(), e);
+		}
 
 		return dto;
 	}

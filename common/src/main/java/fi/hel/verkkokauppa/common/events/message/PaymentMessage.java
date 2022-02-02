@@ -23,6 +23,7 @@ public class PaymentMessage implements EventMessage {
     public String encryptedCardToken;
     public Short cardTokenExpYear;
     public Byte cardTokenExpMonth;
+    public String cardLastFourDigits;
 
     public PaymentMessage toCustomerWebHook(){
         return PaymentMessage.builder()

@@ -121,6 +121,8 @@ public class SubscriptionControllerTests extends DummyData {
 
         Assertions.assertEquals("productId", subscriptions.get(0).getProductId());
         Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
+        Assertions.assertEquals("productLabel", subscriptions.get(0).getProductLabel());
+        Assertions.assertEquals("productDescription", subscriptions.get(0).getProductDescription());
         Assertions.assertEquals(1, (int) subscriptions.get(0).getQuantity());
         Assertions.assertEquals("124", subscriptions.get(0).getPriceGross());
         // New orderItemId should be created from order items.
@@ -181,6 +183,8 @@ public class SubscriptionControllerTests extends DummyData {
 
         Assertions.assertEquals("productId", subscriptions.get(0).getProductId());
         Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
+        Assertions.assertEquals("productLabel", subscriptions.get(0).getProductLabel());
+        Assertions.assertEquals("productDescription", subscriptions.get(0).getProductDescription());
         Assertions.assertEquals(1, (int) subscriptions.get(0).getQuantity());
         Assertions.assertEquals("124", subscriptions.get(0).getPriceGross());
         // New orderItemId should be created from order items.
