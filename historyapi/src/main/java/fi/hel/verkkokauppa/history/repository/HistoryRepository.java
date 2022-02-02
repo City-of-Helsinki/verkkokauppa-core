@@ -10,6 +10,7 @@ import java.util.List;
 
 @Repository
 public interface HistoryRepository extends ElasticsearchRepository<HistoryModel, String> {
-   List<HistoryModel> findHistoryModelsByNamespaceAndEntityId(String namespace, String entityId);
-   List<HistoryModel> findHistoryModelsByNamespaceAndEventType(String namespace, String entityId);
+    List<HistoryModel> findHistoryModelsByNamespaceAndEntityId(String namespace, String entityId);
+    List<HistoryModel> findHistoryModelsByNamespaceAndEventType(String namespace, String eventType);
+    List<HistoryModel> findHistoryModelsByNamespaceAndEntityIdAndEventType(String namespace, String entityId, String eventType);
 }

@@ -32,8 +32,25 @@ public class HistoryService {
         return objectMapper.convertValue(model, HistoryDto.class);
     }
 
-    public List<HistoryModel> findHistoryModelsByNamespaceAndEntityIdOrEventTypeOrCreatedAtAfter(String namespace, String entityId){
-        return historyRepository.findHistoryModelsByNamespaceAndEntityId(
+    public List<HistoryModel> findHistoryModelsByNamespaceAndEntityIdAndEventType(String namespace, String entityId, String eventType) {
+        return historyRepository.findHistoryModelsByNamespaceAndEntityIdAndEventType(
+                namespace,
+                entityId,
+                eventType
+        );
+    }
+
+
+    public List<HistoryModel> findHistoryModelsByNamespaceAndEventType(String namespace, String eventType) {
+        return historyRepository.findHistoryModelsByNamespaceAndEventType(
+                namespace,
+                eventType
+        );
+    }
+
+
+    public List<HistoryModel> findHistoryModelsByNamespaceAndEntityId(String namespace, String entityId) {
+        return historyRepository.findHistoryModelsByNamespaceAndEventType(
                 namespace,
                 entityId
         );

@@ -26,18 +26,20 @@ public class AdminHistoryController {
     @Autowired
     private HistoryService historyService;
 
-    @GetMapping(value = "/admin/history/list/get", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<HistoryWrapper> listHistory(@RequestParam(value = "namespace") String namespace,
-                                                      @RequestParam(value = "entityId", required = false) String entityId
+    @GetMapping(value = "/admin/history/list/get-entity-id-event-type", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<HistoryWrapper> listHistoryWithNamespaceAndEntityIdAndEventType(
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "entityId") String entityId,
+            @RequestParam(value = "eventType") String eventType
 
     ) {
         try {
-            List<HistoryModel> models = historyService.findHistoryModelsByNamespaceAndEntityIdOrEventTypeOrCreatedAtAfter(
+            List<HistoryModel> models = historyService.findHistoryModelsByNamespaceAndEntityIdAndEventType(
                     namespace,
-                    entityId
+                    entityId,
+                    eventType
             );
             List<HistoryDto> histories = models.stream().map(model -> historyService.mapToDto(model)).collect(Collectors.toList());
-            ;
 
             return ResponseEntity.status(HttpStatus.OK).body(new HistoryWrapper(histories));
         } catch (CommonApiException cae) {
@@ -46,9 +48,58 @@ public class AdminHistoryController {
             log.error("getting histories failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-list-histories", "failed to list histories with namespace" + namespace)
+                    new Error("failed-to-list-histories-entitity-id-event-type", "failed to list histories with namespace " + namespace)
             );
         }
     }
 
+
+    @GetMapping(value = "/admin/history/list/get-event-type", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<HistoryWrapper> listHistoryWithNamespaceAndEventType(
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "eventType") String eventType
+    ) {
+        try {
+            List<HistoryModel> models = historyService.findHistoryModelsByNamespaceAndEventType(
+                    namespace,
+                    eventType
+            );
+            List<HistoryDto> histories = models.stream().map(model -> historyService.mapToDto(model)).collect(Collectors.toList());
+
+            return ResponseEntity.status(HttpStatus.OK).body(new HistoryWrapper(histories));
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting histories failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-list-histories-event-type", "failed to list histories with namespace " + namespace)
+            );
+        }
+    }
+
+
+    @GetMapping(value = "/admin/history/list/get-entity-id", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<HistoryWrapper> listHistoryWithNamespaceAndEntityId(
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "entityId") String entityId
+    ) {
+        try {
+            List<HistoryModel> models = historyService.findHistoryModelsByNamespaceAndEventType(
+                    namespace,
+                    entityId
+            );
+            List<HistoryDto> histories = models.stream().map(model -> historyService.mapToDto(model)).collect(Collectors.toList());
+
+            return ResponseEntity.status(HttpStatus.OK).body(new HistoryWrapper(histories));
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting histories failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-list-histories-entity-id", "failed to list histories with namespace " + namespace)
+            );
+        }
+    }
 }
