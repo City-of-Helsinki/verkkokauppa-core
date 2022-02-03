@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
+import fi.hel.verkkokauppa.common.history.util.EntityTypeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ public class HistoryFactory {
         try {
             return HistoryDto.builder()
                     .entityId(message.getOrderId())
+                    .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
                     .user(message.getUserId())
                     .eventType(message.getEventType())
@@ -27,6 +29,7 @@ public class HistoryFactory {
         } catch (JsonProcessingException e) {
             return HistoryDto.builder()
                     .entityId(message.getOrderId())
+                    .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
                     .user(message.getUserId())
                     .eventType(message.getEventType())
@@ -41,6 +44,7 @@ public class HistoryFactory {
         try {
             return HistoryDto.builder()
                     .entityId(message.getOrderId())
+                    .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
                     .user(message.getUserId())
                     .eventType(message.getEventType())
@@ -51,6 +55,7 @@ public class HistoryFactory {
             return HistoryDto.builder()
                     .entityId(message.getOrderId())
                     .namespace(message.getNamespace())
+                    .entityType(EntityTypeUtil.EVENT)
                     .user(message.getUserId())
                     .eventType(message.getEventType())
                     .description(message.getOrderType())
@@ -64,6 +69,7 @@ public class HistoryFactory {
         try {
             return HistoryDto.builder()
                     .entityId(message.getSubscriptionId())
+                    .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
                     .eventType(message.getEventType())
                     .description(message.getCancellationCause())
@@ -72,6 +78,7 @@ public class HistoryFactory {
         } catch (JsonProcessingException e) {
             return HistoryDto.builder()
                     .entityId(message.getSubscriptionId())
+                    .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
                     .eventType(message.getEventType())
                     .description(message.getCancellationCause())
