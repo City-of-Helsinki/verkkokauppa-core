@@ -3,6 +3,8 @@ package fi.hel.verkkokauppa.payment.api;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
@@ -35,6 +37,8 @@ public class PaymentAdminController {
 
     @Autowired
     private PaymentReturnValidator paymentReturnValidator;
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
 
     @GetMapping(value = "/payment-admin/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -113,7 +117,7 @@ public class PaymentAdminController {
                     log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());
                 }
             }
-
+            saveHistoryService.saveOrderMessageHistory(message);
             return ResponseEntity.ok().build();
 
         } catch (CommonApiException cae) {

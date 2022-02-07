@@ -170,6 +170,24 @@ services:
       - elasticsearch
       - kafka
 
+  historyapi:
+    container_name: historyapi
+    build:
+      context: .
+      args:
+        - API_DIR=/tmp/src/historyapi
+    volumes:
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/historyapi/src/main/resources/application.properties:/tmp/src/historyapi/src/main/resources/application.properties"
+    env_file:
+      - .env.docker
+    ports:
+      - '8189:8080'
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
     container_name: elasticsearch

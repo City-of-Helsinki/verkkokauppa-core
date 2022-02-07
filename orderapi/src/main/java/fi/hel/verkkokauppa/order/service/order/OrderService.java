@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -7,6 +9,9 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.history.factory.HistoryFactory;
+import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
@@ -24,6 +29,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +72,16 @@ public class OrderService {
 
     @Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
+
+    @Autowired
+    private HistoryFactory historyFactory;
+    @Autowired
+    private HistoryUtil historyUtil;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+    @Autowired
+    private ServiceUrls serviceUrl;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -321,4 +337,25 @@ public class OrderService {
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
+
+    public JSONObject saveOrderMessageHistory(OrderMessage message){
+        try {
+            String request = historyUtil.toString(historyFactory.fromOrderMessage(message));
+            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.error("saveOrderMessageHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public JSONObject savePaymentMessageHistory(PaymentMessage message){
+        try {
+            String request = historyUtil.toString(historyFactory.fromPaymentMessage(message));
+            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.info("savePaymentMessageHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
+
 }
