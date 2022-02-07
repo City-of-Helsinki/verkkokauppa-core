@@ -59,6 +59,9 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String priceNet;
     private String priceVat;
     private String priceGross;
+    private String originalPriceNet;
+    private String originalPriceVat;
+    private String originalPriceGross;
     // Relations data
     private String orderId;
 
