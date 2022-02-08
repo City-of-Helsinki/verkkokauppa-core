@@ -76,9 +76,31 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     public OrderItem() {}
 
-    public OrderItem(String orderItemId, String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity,
-                     String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                     String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
+    public OrderItem(
+            String orderItemId,
+            String orderId,
+            String productId,
+            String productName,
+            String productLabel,
+            String productDescription,
+            Integer quantity,
+            String unit,
+            String rowPriceNet,
+            String rowPriceVat,
+            String rowPriceTotal,
+            String vatPercentage,
+            String priceNet,
+            String priceVat,
+            String priceGross,
+            String originalPriceNet,
+            String originalPriceVat,
+            String originalPriceGross,
+            String periodUnit,
+            Long periodFrequency,
+            Integer periodCount,
+            LocalDateTime billingStartDate,
+            LocalDateTime startDate
+    ) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
