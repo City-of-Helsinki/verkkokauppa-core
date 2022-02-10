@@ -13,5 +13,6 @@ public interface SubscriptionItemMetaRepository extends ElasticsearchRepository<
     List<SubscriptionItemMeta> findByOrderItemId(String orderItemId);
     List<SubscriptionItemMeta> findByOrderItemIdAndKey(String orderItemId, String key);
     List<SubscriptionItemMeta> findBySubscriptionId(String subscriptionId);
+    List<SubscriptionItemMeta> findBySubscriptionIdAndOrderItemId(String subscriptionId, String orderItemId);
 
 }

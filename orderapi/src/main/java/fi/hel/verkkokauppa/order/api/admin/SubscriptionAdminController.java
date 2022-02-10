@@ -136,7 +136,7 @@ public class SubscriptionAdminController {
 
     @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemMetaDto>> setItemMeta(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "orderItemId") String orderItemId, @RequestBody List<OrderItemMetaDto> meta) {
-        subscriptionItemMetaService.removeItemMetas(orderItemId);
+        subscriptionItemMetaService.removeItemMetas(subscriptionId, orderItemId);
 
         List<OrderItemMetaDto> setMeta = new ArrayList<>();
         meta.forEach(m -> {

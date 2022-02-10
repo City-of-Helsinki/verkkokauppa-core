@@ -29,8 +29,8 @@ public class SubscriptionItemMetaService {
         return subscriptionItemMetaTransformer.transformToDto(subscriptionMeta);
     }
 
-    public List<SubscriptionItemMeta> removeItemMetas(String orderItemId) {
-        List<SubscriptionItemMeta> metas = subscriptionItemMetaRepository.findByOrderItemId(orderItemId);
+    public List<SubscriptionItemMeta> removeItemMetas(String subscriptionId, String orderItemId) {
+        List<SubscriptionItemMeta> metas = subscriptionItemMetaRepository.findBySubscriptionIdAndOrderItemId(subscriptionId, orderItemId);
         metas.forEach(meta -> {
             subscriptionItemMetaRepository.deleteById(meta.getOrderItemMetaId());
         });
