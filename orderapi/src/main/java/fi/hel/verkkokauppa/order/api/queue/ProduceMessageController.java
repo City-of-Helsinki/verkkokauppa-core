@@ -93,7 +93,7 @@ public class ProduceMessageController {
 
             jmsTemplate.convertAndSend(queue, orderMessageAsJson);
         } catch (Exception e) {
-            log.error("/queue/send/subscription-message error {}", e.getMessage());
+            log.error("/queue/send/payment-message error {}", e.getMessage());
         }
         return paymentMessage;
     }
