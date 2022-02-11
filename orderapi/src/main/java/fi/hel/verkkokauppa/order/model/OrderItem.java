@@ -52,6 +52,12 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String priceGross;
     @Field(type = FieldType.Text)
+    String originalPriceNet;
+    @Field(type = FieldType.Text)
+    String originalPriceVat;
+    @Field(type = FieldType.Text)
+    String originalPriceGross;
+    @Field(type = FieldType.Text)
     String type;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
@@ -70,9 +76,31 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     public OrderItem() {}
 
-    public OrderItem(String orderItemId, String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity,
-                     String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                     String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
+    public OrderItem(
+            String orderItemId,
+            String orderId,
+            String productId,
+            String productName,
+            String productLabel,
+            String productDescription,
+            Integer quantity,
+            String unit,
+            String rowPriceNet,
+            String rowPriceVat,
+            String rowPriceTotal,
+            String vatPercentage,
+            String priceNet,
+            String priceVat,
+            String priceGross,
+            String originalPriceNet,
+            String originalPriceVat,
+            String originalPriceGross,
+            String periodUnit,
+            Long periodFrequency,
+            Integer periodCount,
+            LocalDateTime billingStartDate,
+            LocalDateTime startDate
+    ) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
         this.productId = productId;
@@ -88,6 +116,9 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
         this.priceNet = priceNet;
         this.priceVat = priceVat;
         this.priceGross = priceGross;
+        this.originalPriceNet = originalPriceNet;
+        this.originalPriceVat = originalPriceVat;
+        this.originalPriceGross = originalPriceGross;
         // Subscription fields
         this.periodUnit = periodUnit;
         this.periodFrequency = periodFrequency;

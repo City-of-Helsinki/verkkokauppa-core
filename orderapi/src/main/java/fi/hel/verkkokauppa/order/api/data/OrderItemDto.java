@@ -28,6 +28,9 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
     private String priceNet;
     private String priceVat;
     private String priceGross;
+    private String originalPriceNet;
+    private String originalPriceVat;
+    private String originalPriceGross;
     // Subscription fields
     private Long periodFrequency;
     private String periodUnit;

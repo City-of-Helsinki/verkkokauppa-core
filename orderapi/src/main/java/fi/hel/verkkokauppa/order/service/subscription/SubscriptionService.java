@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -68,6 +69,8 @@ public class SubscriptionService {
 
     @Autowired
     private UpdateSubscriptionCommand updateSubscriptionCommand;
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
 
     public String generateSubscriptionId(String namespace, String user, String orderItemId, String timestamp) {
@@ -143,6 +146,7 @@ public class SubscriptionService {
                 .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
+        saveHistoryService.saveSubscriptionMessageHistory(subscriptionMessage);
         log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
     }
 

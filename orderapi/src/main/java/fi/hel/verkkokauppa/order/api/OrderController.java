@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
@@ -26,11 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
@@ -43,6 +40,9 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
     @Autowired
     private OrderItemService orderItemService;
@@ -259,6 +259,9 @@ public class OrderController {
                         item.getPriceNet(),
                         item.getPriceVat(),
                         item.getPriceGross(),
+                        item.getOriginalPriceNet(),
+                        item.getOriginalPriceVat(),
+                        item.getOriginalPriceGross(),
                         item.getPeriodUnit(),
                         item.getPeriodFrequency(),
                         item.getPeriodCount(),
@@ -353,6 +356,7 @@ public class OrderController {
                 log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
                 // TODO single order payment failed callback action
             }
+            saveHistoryService.savePaymentMessageHistory(message);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -379,6 +383,7 @@ public class OrderController {
                 log.debug("payment-paid-event callback, orderId: " + order.getOrderId());
                 // TODO single order payment paid callback action
             }
+            saveHistoryService.savePaymentMessageHistory(message);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -394,10 +399,10 @@ public class OrderController {
 
     @PostMapping(value = "/order/payment-paid-webhook", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> paymentPaidWebhook(@RequestBody PaymentMessage message) {
-
         try {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            saveHistoryService.savePaymentMessageHistory(message);
             return restWebHookService.postCallWebHook(message.toCustomerWebHook(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, message.getNamespace());
 
         } catch (CommonApiException cae) {
@@ -417,6 +422,7 @@ public class OrderController {
         try {
             // This row validates that message contains authorization to order.
             orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
+            saveHistoryService.saveOrderMessageHistory(message);
             return restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
         } catch (CommonApiException cae) {
             throw cae;

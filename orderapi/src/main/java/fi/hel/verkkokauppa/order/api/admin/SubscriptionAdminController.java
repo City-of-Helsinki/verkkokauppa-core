@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
@@ -59,6 +60,9 @@ public class SubscriptionAdminController {
 
     @Autowired
     private SubscriptionService subscriptionService;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
     @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
@@ -126,7 +130,7 @@ public class SubscriptionAdminController {
             renewalService.renewSubscription(subscriptionId);
             renewalService.finishRenewingSubscription(subscriptionId);
         }
-
+        saveHistoryService.saveSubscriptionMessageHistory(message);
         return ResponseEntity.ok().build();
     }
 

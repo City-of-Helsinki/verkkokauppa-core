@@ -25,7 +25,7 @@ public class OrderItemService {
 
     public String addItem(String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
                           String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                          String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
+                          String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -43,6 +43,9 @@ public class OrderItemService {
                 priceNet,
                 priceVat,
                 priceGross,
+                originalPriceNet,
+                originalPriceVat,
+                originalPriceGross,
                 periodUnit,
                 periodFrequency,
                 periodCount,
