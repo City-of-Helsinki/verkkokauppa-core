@@ -15,12 +15,12 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
         "fi.hel.verkkokauppa.common.rest",
         "fi.hel.verkkokauppa.common.configuration",
         "fi.hel.verkkokauppa.order",
-        "fi.hel.verkkokauppa.common.history"
+        "fi.hel.verkkokauppa.common.history",
+        "fi.hel.verkkokauppa.common.queue"
 })
 public class OrderapiApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(OrderapiApplication.class, args);
     }
-
 }
