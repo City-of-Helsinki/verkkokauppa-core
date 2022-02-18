@@ -1,14 +1,14 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
@@ -18,7 +18,7 @@ import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
-import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,6 +132,38 @@ public class SubscriptionAdminController {
         }
         saveHistoryService.saveSubscriptionMessageHistory(message);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/subscription-admin/renewal-validation-failed", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> subscriptionRenewalValidationFailedCallback(@RequestBody SubscriptionMessage message) {
+        log.debug("subscription-api received SUBSCRIPTION_RENEWAL_VALIDATION_FAILED event for subscriptionId: " + message.getSubscriptionId());
+        String subscriptionId = message.getSubscriptionId();
+        try {
+            JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscriptionId);
+        } catch (Exception e) {
+            log.error("Error sending paymentFailedEmail for subscription {}", subscriptionId, e);
+        }
+        saveHistoryService.saveSubscriptionMessageHistory(message);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/subscription-admin/validation-failed-email-sent-increment", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Integer> subscriptionValidationFailedEmailSentIncrement(
+            @RequestParam(value = "subscriptionId") String subscriptionId
+    ) {
+        log.debug("subscription-api /subscription-admin/validation-failed-email-sent for subscriptionId: {}", subscriptionId);
+        try {
+            Subscription subscription = subscriptionService.incrementValidationFailedEmailSentCount(subscriptionId);
+            return ResponseEntity.ok().body(subscription.getValidationFailedEmailSentCount());
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting subscription failed, subscriptionId: " + subscriptionId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-subscription", "failed to get subscription with id [" + subscriptionId + "]")
+            );
+        }
     }
 
     @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)

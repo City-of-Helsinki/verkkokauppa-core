@@ -152,7 +152,7 @@ public class SubscriptionService {
 
     public void triggerSubscriptionRenewValidationFailedEvent(Subscription subscription) {
         SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
-                .eventType(EventType.SUBSCRIPTION_RENEW_VALIDATION_FAILED)
+                .eventType(EventType.SUBSCRIPTION_RENEWAL_VALIDATION_FAILED)
                 .namespace(subscription.getNamespace())
                 .subscriptionId(subscription.getId())
                 .cancellationCause(SubscriptionCancellationCause.EXPIRED)
@@ -265,7 +265,14 @@ public class SubscriptionService {
         return subscriptionItemMetaRepository.findBySubscriptionId(subscriptionId);
     }
 
-    public JSONObject sendSubscriptionPaymentFailedEmail(Subscription subscription) {
-        return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscription.getSubscriptionId() + "/emailSubscriptionPaymentFailed","");
+    public JSONObject sendSubscriptionPaymentFailedEmail(String subscriptionId) {
+        return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscriptionId + "/emailSubscriptionPaymentFailed","");
+    }
+
+    public Subscription incrementValidationFailedEmailSentCount(String subscriptionId) {
+        Subscription subscription = subscriptionRepository.findSubscriptionBySubscriptionId(subscriptionId);
+        Integer oldSentCount = Optional.ofNullable(subscription.getValidationFailedEmailSentCount()).orElse(0);
+        subscription.setValidationFailedEmailSentCount(oldSentCount + 1);
+        return subscriptionRepository.save(subscription);
     }
 }
