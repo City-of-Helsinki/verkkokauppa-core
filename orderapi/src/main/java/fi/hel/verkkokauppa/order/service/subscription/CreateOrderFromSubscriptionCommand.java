@@ -83,6 +83,7 @@ public class CreateOrderFromSubscriptionCommand {
         String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
 
         if (activeOrderFromSubscription != null) {
+            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
             return activeOrderFromSubscription;
         }
 
@@ -90,6 +91,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         // Returns null orderId if subscription card is expired
         if (subscriptionService.isCardExpired(subscription)) {
+            log.info("Card is expired, trigger renew validations failed event for subscriptionId: {}", subscriptionDto.getSubscriptionId());
             subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
             return null;
         }
@@ -187,6 +189,7 @@ public class CreateOrderFromSubscriptionCommand {
             if (lastOrder != null) {
                 // order endDate greater than current subscription endDate
                 if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+                    log.info("End date is greater than current subscription endDate for orderId: {}", lastOrder.getOrderId());
                     return lastOrder.getOrderId();
                 }
             }

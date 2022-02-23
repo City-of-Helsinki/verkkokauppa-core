@@ -127,6 +127,7 @@ public class SubscriptionAdminController {
         String subscriptionId = message.getSubscriptionId();
 
         if (renewalService.startRenewingSubscription(subscriptionId)) {
+            log.info("Start renewing subscription with subscriptionId: {}", subscriptionId);
             renewalService.renewSubscription(subscriptionId);
             renewalService.finishRenewingSubscription(subscriptionId);
         }
