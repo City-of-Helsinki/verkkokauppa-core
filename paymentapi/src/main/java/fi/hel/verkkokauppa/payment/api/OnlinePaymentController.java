@@ -178,7 +178,8 @@ public class OnlinePaymentController {
 			boolean isValid = paymentReturnValidator.validateChecksum(authCode, returnCode, paymentId, settled, incidentId);
 			PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(isValid, returnCode, settled);
 			service.updatePaymentStatus(paymentId, paymentReturnDto);
-
+			Payment payment = service.getPayment(paymentId);
+			paymentReturnDto.setPaymentType(payment.getPaymentType());
 			return ResponseEntity.status(HttpStatus.OK).body(paymentReturnDto);
 		} catch (CommonApiException cae) {
 			throw cae;

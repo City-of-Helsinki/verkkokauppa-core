@@ -1,14 +1,17 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class PaymentReturnDto {
     private boolean isValid;        // checksum ok
     private boolean isAuthorized;   // payment only authorized.
     private boolean isPaymentPaid;  // status values confirm paid
     private boolean canRetry;       // not all failures can be retried
-    
+    private String paymentType;     // PaymentType constant.
+
     public PaymentReturnDto() {
     }
 
