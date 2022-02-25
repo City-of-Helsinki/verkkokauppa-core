@@ -209,7 +209,7 @@ public class SubscriptionController {
 		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
 
 		try {
-			JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscription);
+			JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscription.getSubscriptionId());
 		} catch (Exception e) {
 			log.error("Error sending paymentFailedEmail for subscription {}", subscription.getSubscriptionId(), e);
 		}

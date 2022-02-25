@@ -67,6 +67,9 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
 
     // Meta data
     private List<SubscriptionItemMeta> meta = new ArrayList<>();
+
+    // Error handling
+    private Integer validationFailedEmailSentCount;
 //    private LocalDateTime nextDate; // TODO needed?
 //    private Integer failureCount; // TODO needed?
 //    private Integer currentBillingCycle; // TODO needed?

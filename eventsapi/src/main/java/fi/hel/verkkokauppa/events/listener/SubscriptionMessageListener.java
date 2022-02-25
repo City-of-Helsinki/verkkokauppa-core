@@ -56,6 +56,9 @@ public class SubscriptionMessageListener {
             } else if (EventType.SUBSCRIPTION_RENEWAL_REQUESTED.equals(message.getEventType())) {
                 log.info("event type is SUBSCRIPTION_RENEWAL_REQUESTED");
                 subscriptionRenewalRequestedAction(message);
+            } else if (EventType.SUBSCRIPTION_RENEWAL_VALIDATION_FAILED.equals(message.getEventType())) {
+                log.info("event type is SUBSCRIPTION_RENEWAL_VALIDATION_FAILED");
+                subscriptionRenewalValidationFailed(message);
             }
         } catch (Exception e) {
             log.error("handling listened subscriptions event failed, jsonMessage: " + jsonMessage, e);
@@ -74,6 +77,10 @@ public class SubscriptionMessageListener {
 
     private void subscriptionRenewalRequestedAction(SubscriptionMessage message) {
         callOrderApiWithPath(message, "/subscription-admin/renewal-requested-event");
+    }
+
+    private void subscriptionRenewalValidationFailed(SubscriptionMessage message) {
+        callOrderApiWithPath(message, "/subscription-admin/renewal-validation-failed");
     }
 
     private void callOrderApiWithPath(SubscriptionMessage message, String path) {
