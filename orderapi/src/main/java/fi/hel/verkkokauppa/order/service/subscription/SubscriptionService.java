@@ -268,4 +268,8 @@ public class SubscriptionService {
     public JSONObject sendSubscriptionPaymentFailedEmail(Subscription subscription) {
         return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscription.getSubscriptionId() + "/emailSubscriptionPaymentFailed","");
     }
+
+    public List<Subscription> findAllByOrderIdAndUser(String orderId, String user){
+        return subscriptionRepository.findAllByOrderIdAndUser(orderId, user);
+    }
 }
