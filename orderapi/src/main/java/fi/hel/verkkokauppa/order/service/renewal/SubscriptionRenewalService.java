@@ -60,7 +60,10 @@ public class SubscriptionRenewalService {
         // If order ids matches prevents sending renewal order created event.
         if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
             Order order = orderService.findById(orderId);
+            log.info("Trigger order created event for subscriptionId: {}", subscriptionId);
             orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
+        } else {
+            log.info("Order ids doesn't match, can be duplicate, don't create new order for subscriptionId: {}", subscriptionId);
         }
 
         return orderId;
@@ -93,12 +96,13 @@ public class SubscriptionRenewalService {
         Optional<SubscriptionRenewalRequest> existingRequest = requestRepository.findById(subscriptionId);
         Optional<SubscriptionRenewalProcess> existingProcess = processRepository.findById(subscriptionId);
         if (existingProcess.isPresent() || existingRequest.isEmpty()) {
+            log.info("There is existing process renewing subscription with subscriptionId: {}", subscriptionId);
             // stop, this subscription is already being renewed by another instance of this service
             return false;
         } else {
-            requestRepository.deleteById(subscriptionId);
             SubscriptionRenewalProcess process = SubscriptionRenewalProcess.builder().id(subscriptionId).processingStarted(LocalDateTime.now()).build();
             processRepository.save(process);
+            requestRepository.deleteById(subscriptionId);
             return true;
         }
     }

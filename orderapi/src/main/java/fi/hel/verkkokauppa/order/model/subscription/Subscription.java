@@ -118,6 +118,10 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Integer)
 	private Integer quantity;
 
+	// Counter for sent validation emails
+	@Field(type = FieldType.Integer)
+	private Integer validationFailedEmailSentCount;
+
 	@Field(type = FieldType.Text)
 	String unit;
 
