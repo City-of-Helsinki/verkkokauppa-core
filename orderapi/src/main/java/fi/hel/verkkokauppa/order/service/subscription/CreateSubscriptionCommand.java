@@ -1,5 +1,9 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionMappingLogic;
 import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionValidationLogic;
@@ -25,6 +29,8 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 
 	@Autowired
 	private SubscriptionService subscriptionService;
+	@Autowired
+	private SendNotificationService sendNotificationService;
 
 	@Autowired
 	public CreateSubscriptionCommand(
@@ -68,5 +74,17 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 		}
 
 		// TODO: end date?
+	}
+
+	@Override
+	protected void afterSave(SubscriptionDto dto, Subscription entity) {
+		SubscriptionMessage message = SubscriptionMessage.builder()
+				.subscriptionId(entity.getSubscriptionId())
+				.orderId(entity.getOrderId())
+				.namespace(entity.getNamespace())
+				.eventType(EventType.SUBSCRIPTION_CREATED)
+				.timestamp(entity.getCreatedAt().toString())
+				.build();
+		sendNotificationService.sendSubscriptionMessageNotification(message);
 	}
 }
