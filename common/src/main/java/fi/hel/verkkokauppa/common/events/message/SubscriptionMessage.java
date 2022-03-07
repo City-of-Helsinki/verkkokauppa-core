@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.events.message;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import fi.hel.verkkokauppa.common.events.message.EventMessage;
 
 import lombok.*;
@@ -13,8 +14,9 @@ public class SubscriptionMessage implements EventMessage {
     String namespace;
 
     String subscriptionId;
+    String orderId;
     String timestamp;
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String cancellationCause;
 
     public SubscriptionMessage toCustomerWebHook(){
