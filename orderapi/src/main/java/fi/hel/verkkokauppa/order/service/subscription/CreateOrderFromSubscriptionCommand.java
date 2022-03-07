@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.outbound.SubscriptionPriceResultDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
 import fi.hel.verkkokauppa.order.api.request.subscription.SubscriptionPriceRequest;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
@@ -29,6 +32,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -56,6 +60,9 @@ public class CreateOrderFromSubscriptionCommand {
 
     @Autowired
     private OrderItemMetaTransformer orderItemMetaTransformer;
+
+    @Autowired
+    private OrderItemTransformer orderItemTransformer;
 
     @Autowired
     private OrderItemMetaRepository orderItemMetaRepository;
@@ -131,6 +138,47 @@ public class CreateOrderFromSubscriptionCommand {
         request.setSubscriptionId(subscriptionId);
         request.setNamespace(namespace);
         request.setUserId(user);
+        OrderItemDto orderItem = orderItemTransformer.transformToDto(new OrderItem(
+            subscriptionDto.getOrderItemId(),
+            subscriptionDto.getOrderId(),
+            subscriptionDto.getProductId(),
+            subscriptionDto.getProductName(),
+            subscriptionDto.getProductLabel(),
+            subscriptionDto.getProductDescription(),
+            subscriptionDto.getQuantity(),
+            subscriptionDto.getUnit(),
+            null,
+            null,
+            null,
+            subscriptionDto.getVatPercentage(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            subscriptionDto.getPeriodUnit(),
+            subscriptionDto.getPeriodFrequency(),
+            subscriptionDto.getPeriodCount(),
+            subscriptionDto.getBillingStartDate(),
+            subscriptionDto.getStartDate()
+        ));
+        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
+        List<OrderItemMetaDto> meta = new ArrayList<>();
+        for (SubscriptionItemMeta m : subscriptionMeta) {
+            meta.add(new OrderItemMetaDto(
+                null,
+                m.getOrderItemId(),
+                m.getOrderId(),
+                m.getKey(),
+                m.getValue(),
+                m.getLabel(),
+                m.getVisibleInCheckout(),
+                m.getOrdinal()
+            ));
+        }
+        orderItem.setMeta(meta);
+        request.setOrderItem(orderItem);
         ResponseEntity<JSONObject> response;
         SubscriptionPriceResultDto resultDto;
         try {
