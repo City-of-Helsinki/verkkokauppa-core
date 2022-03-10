@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,9 @@ public class PaymentMessageListener {
 
     @Value("${order.service.url}")
     private String orderServiceUrl;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     @KafkaListener(
             topics = "payments",
@@ -51,9 +55,7 @@ public class PaymentMessageListener {
 
     protected void orderPaidWebHookAction(PaymentMessage message) {
         try {
-            callOrderApi(message,
-                    "/order/payment-paid-webhook",
-                    "/subscription/payment-paid-webhook");
+            sendNotificationService.sendPaymentMessageNotification(message);
         } catch (Exception e) {
             log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
         }

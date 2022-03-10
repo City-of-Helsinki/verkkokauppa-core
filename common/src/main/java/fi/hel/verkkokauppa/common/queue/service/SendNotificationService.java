@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.common.queue.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
 import fi.hel.verkkokauppa.common.events.message.EventMessage;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -46,6 +47,21 @@ public class SendNotificationService {
             SubscriptionMessage message
     ) {
         String toQueue = queueConfigurations.getSubscriptionNotificationsQueue();
+        try {
+            ActiveMQQueue queue = new ActiveMQQueue(toQueue);
+            String messageAsJsonString = mapper.writeValueAsString(message);
+
+            jmsTemplate.convertAndSend(queue, messageAsJsonString);
+        } catch (Exception e) {
+            log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
+        }
+
+    }
+
+    public void sendPaymentMessageNotification(
+            PaymentMessage message
+    ) {
+        String toQueue = queueConfigurations.getPaymentNotificationsQueue();
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             String messageAsJsonString = mapper.writeValueAsString(message);

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.common.queue.error;
+package fi.hel.verkkokauppa.common.queue.error.exceptions;
 
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import lombok.Data;
