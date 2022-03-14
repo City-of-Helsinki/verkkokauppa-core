@@ -197,7 +197,7 @@ public class CreateOrderFromSubscriptionCommand {
             }
 
             // Fetch subscription.
-            subscription = getSubscriptionQuery.findByIdValidateByUser(resultDto.getSubscriptionId(), resultDto.getUserId());
+            subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
             log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
                     subscription.getSubscriptionId(),
                     subscription.getPriceNet(),
