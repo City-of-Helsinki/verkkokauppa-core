@@ -42,7 +42,6 @@ public class PaymentMessageListener {
             log.debug("event type is {}", message.getEventType());
             if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
                 paymentPaidAction(message);
-                orderPaidWebHookAction(message);
             } else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
                 paymentFailedAction(message);
             } else if (EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED.equals(message.getEventType())) {
@@ -50,14 +49,6 @@ public class PaymentMessageListener {
             }
         } catch (Exception e) {
             log.error("handling listened payments event failed, jsonMessage: " + jsonMessage, e);
-        }
-    }
-
-    protected void orderPaidWebHookAction(PaymentMessage message) {
-        try {
-            sendNotificationService.sendPaymentMessageNotification(message);
-        } catch (Exception e) {
-            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
         }
     }
 

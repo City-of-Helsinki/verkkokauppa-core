@@ -36,9 +36,9 @@ public class PaymentNotificationsQueueListener {
     public void consumeMessage(TextMessage textMessage) throws Exception {
         PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
-        logMessageData((ActiveMQTextMessage) textMessage, message);
+        this.logMessageData((ActiveMQTextMessage) textMessage, message);
 
-        paymentPaidAction(message);
+        this.paymentPaidAction(message);
 
         // Save history
         saveHistoryService.savePaymentMessageHistory(message);

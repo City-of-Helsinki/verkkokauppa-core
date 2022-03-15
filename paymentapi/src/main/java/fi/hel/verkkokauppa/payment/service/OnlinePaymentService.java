@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
@@ -87,6 +88,9 @@ public class OnlinePaymentService {
 
     @Value("${payment.card_token.encryption.password}")
     private String cardTokenEncryptionPassword;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -401,8 +405,18 @@ public class OnlinePaymentService {
 
         PaymentMessage paymentMessage = paymentMessageBuilder.build();
 
+        orderPaidWebHookAction(paymentMessage);
+
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
         log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+    }
+
+    protected void orderPaidWebHookAction(PaymentMessage message) {
+        try {
+            sendNotificationService.sendPaymentMessageNotification(message);
+        } catch (Exception e) {
+            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
+        }
     }
 
     public void triggerPaymentFailedEvent(Payment payment) {

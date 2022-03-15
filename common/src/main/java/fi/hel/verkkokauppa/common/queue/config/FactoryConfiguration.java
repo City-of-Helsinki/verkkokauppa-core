@@ -2,8 +2,10 @@ package fi.hel.verkkokauppa.common.queue.config;
 
 import fi.hel.verkkokauppa.common.queue.error.DefaultActiveMQErrorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.annotation.JmsListenerConfigurer;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
@@ -22,10 +24,14 @@ public class FactoryConfiguration implements JmsListenerConfigurer {
     @Autowired
     private QueueConnectionFactory queueConnectionFactory;
 
+    @Autowired
+    private Environment environment;
 
     @Override
     public void configureJmsListeners(JmsListenerEndpointRegistrar registrar) {
-        registrar.setContainerFactory(containerFactory());
+        if (environment.getProperty("spring.activemq.broker-url") != null) {
+            registrar.setContainerFactory(containerFactory());
+        }
     }
 
     @Bean
