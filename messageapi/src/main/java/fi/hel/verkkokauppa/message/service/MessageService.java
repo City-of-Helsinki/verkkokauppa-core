@@ -35,7 +35,7 @@ public class MessageService {
                 UUIDGenerator.generateType4UUID() + ":" +  messageDto.getId(),
                 messageDto.getBody(),
                 messageDto.getReceiver(),
-                env.getRequiredProperty("spring.mail.username"),
+                env.getRequiredProperty("email.bcc"),
                 messageDto.getHeader(),
                 messageDto.getId(),
                 MessageTypes.EMAIL,
@@ -50,6 +50,7 @@ public class MessageService {
 
         helper.setText(message.getMessageText(),true);
         helper.setTo(message.getSendTo());
+        helper.setBcc(env.getRequiredProperty("email.bcc"));
         helper.setSubject(message.getHeader());
         helper.setFrom(message.getFrom());
 
