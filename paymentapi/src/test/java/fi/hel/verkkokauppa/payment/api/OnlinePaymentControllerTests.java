@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -105,7 +106,11 @@ public class OnlinePaymentControllerTests {
         ConsumerRecord<?, ?> record = kafkaTestConsumer.getPayload();
         assertEquals(kafkaTestConsumer.getLatch().getCount(), 0L);
 
-        PaymentMessage fromConsumer = objectMapper.readValue(record.value().toString(), PaymentMessage.class);
+        log.info(record.value().toString());
+
+        String unescapedJson = record.value().toString().replace("\\\"", "\"");
+        String result = unescapedJson.substring(1, unescapedJson.length() - 1);
+        PaymentMessage fromConsumer = objectMapper.readValue(result, PaymentMessage.class);
 
         assertEquals(fromConsumer.getPaymentId(), payment.getPaymentId());
         assertEquals(fromConsumer.getNamespace(), payment.getNamespace());
