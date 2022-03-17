@@ -38,6 +38,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -264,11 +267,16 @@ public class OrderService {
         order.setStartDate(startDate);
 
         // Order end date = start date + subscription cycle eg month
-        order.setEndDate(nextDateCalculator.calculateNextDateTime(
+        LocalDateTime endDateAddedPeriodCycle = nextDateCalculator.calculateNextDateTime(
                 startDate,
                 subscription.getPeriodUnit(),
-                subscription.getPeriodFrequency())
+                subscription.getPeriodFrequency());
+
+        LocalDateTime newEndDate = nextDateCalculator.calculateNextEndDateTime(
+                endDateAddedPeriodCycle,
+                subscription.getPeriodUnit()
         );
+        order.setEndDate(newEndDate);
     }
 
     public void linkToSubscription(String orderId, String userId, String subscriptionId) {
