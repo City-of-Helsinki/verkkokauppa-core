@@ -14,10 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jms.core.JmsMessagingTemplate;
+import org.springframework.messaging.Message;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.jms.*;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @Slf4j
@@ -72,9 +76,10 @@ public class ProduceMessageController {
     ) {
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
-            String orderMessageAsJson = mapper.writeValueAsString(subscriptionMessage);
 
-            jmsTemplate.convertAndSend(queue, orderMessageAsJson);
+            String messageAsJson = mapper.writeValueAsString(subscriptionMessage);
+
+            jmsTemplate.convertAndSend(queue, messageAsJson);
         } catch (Exception e) {
             log.error("/queue/send/subscription-message error {}", e.getMessage());
         }

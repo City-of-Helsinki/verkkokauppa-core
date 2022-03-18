@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,9 @@ public class PaymentMessageListener {
     @Value("${order.service.url}")
     private String orderServiceUrl;
 
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
     @KafkaListener(
             topics = "payments",
             groupId = "events-api",
@@ -38,7 +42,6 @@ public class PaymentMessageListener {
             log.debug("event type is {}", message.getEventType());
             if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
                 paymentPaidAction(message);
-                orderPaidWebHookAction(message);
             } else if (EventType.PAYMENT_FAILED.equals(message.getEventType())) {
                 paymentFailedAction(message);
             } else if (EventType.SUBSCRIPTION_CARD_RENEWAL_CREATED.equals(message.getEventType())) {
@@ -46,16 +49,6 @@ public class PaymentMessageListener {
             }
         } catch (Exception e) {
             log.error("handling listened payments event failed, jsonMessage: " + jsonMessage, e);
-        }
-    }
-
-    protected void orderPaidWebHookAction(PaymentMessage message) {
-        try {
-            callOrderApi(message,
-                    "/order/payment-paid-webhook",
-                    "/subscription/payment-paid-webhook");
-        } catch (Exception e) {
-            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
         }
     }
 
