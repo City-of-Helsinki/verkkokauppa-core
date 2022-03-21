@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
@@ -278,6 +277,32 @@ public class OrderService {
         );
         order.setEndDate(newEndDate);
     }
+
+    /**
+     * Start datetime: Previous order enddate + 1 day(start of the day)
+     * End datetime: start datetime + 1 month - 1 day(end of the day)
+     */
+    public void setStartDateAndCalculateNextEndDateAfterRenewal(Order order, Subscription subscription, LocalDateTime startDate) {
+        // Previous order enddate = subscription endDate (passed to startDate)
+        startDate = startDate.plus(1, ChronoUnit.DAYS);
+        LocalDateTime startOfTheStartDate = startDate.with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
+
+        order.setStartDate(startOfTheStartDate);
+
+        // Order end date = start date + subscription cycle eg month
+        LocalDateTime endDateAddedPeriodCycle = nextDateCalculator.calculateNextDateTime(
+                startOfTheStartDate,
+                subscription.getPeriodUnit(),
+                subscription.getPeriodFrequency());
+        // End datetime: start datetime + 1 month - 1day(end of the day)
+        LocalDateTime newEndDate = nextDateCalculator.calculateNextEndDateTime(
+                endDateAddedPeriodCycle,
+                subscription.getPeriodUnit()
+        );
+
+        order.setEndDate(newEndDate);
+    }
+
 
     public void linkToSubscription(String orderId, String userId, String subscriptionId) {
         Order order = findByIdValidateByUser(orderId, userId);
