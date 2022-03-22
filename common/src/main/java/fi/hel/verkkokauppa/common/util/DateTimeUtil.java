@@ -1,10 +1,8 @@
 package fi.hel.verkkokauppa.common.util;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 public class DateTimeUtil {
 
@@ -47,7 +45,6 @@ public class DateTimeUtil {
     }
 
     public static boolean isSameDay(LocalDateTime date1, LocalDateTime date2) {
-        //SimpleDateFormat fmt = new SimpleDateFormat("yyyyMMdd");
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
         return fmt.format(date1).equals(fmt.format(date2));
     }
