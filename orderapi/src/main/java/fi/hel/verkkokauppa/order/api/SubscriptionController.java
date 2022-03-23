@@ -43,6 +43,7 @@ import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @Validated
@@ -301,6 +302,29 @@ public class SubscriptionController {
 					HttpStatus.INTERNAL_SERVER_ERROR,
 					new Error("failed-to-call-subscription-cancelled-webhook", "failed to call subscription cancelled webhook for subscription with id [" + message.getSubscriptionId() + "]")
 			);
+		}
+	}
+
+	@GetMapping(value = "/subscription-get-by-order-id", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<SubscriptionDtoListWrapper> listSubscriptions(
+			@RequestParam(value = "orderId") String orderId,
+			@RequestParam(value = "userId") String userId
+	) {
+		try {
+			List<Subscription> subscriptions = subscriptionService.findAllByOrderIdAndUser(orderId, userId);
+			List<SubscriptionDto> subscriptionDtos = subscriptions
+					.stream()
+					.map(getSubscriptionQuery::mapToDto)
+					.peek(subscriptionDto -> subscriptionDto.setMeta(
+							subscriptionService.findMetasBySubscriptionId(subscriptionDto.getSubscriptionId())
+					)).collect(Collectors.toList());
+
+			return ResponseEntity.ok(new SubscriptionDtoListWrapper(subscriptionDtos));
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch(EntityNotFoundException e) {
+			log.error("Exception on listing Subscription order", e);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
 		}
 	}
 }

@@ -196,33 +196,32 @@ public class CreateOrderFromSubscriptionCommand {
                 throw new Exception("Price call failed request: " + request);
             }
 
-            if (resultDto.getSubscriptionId() != null && resultDto.getUserId() != null) {
-                // Fetch subscription.
-                subscription = getSubscriptionQuery.findByIdValidateByUser(resultDto.getSubscriptionId(), resultDto.getUserId());
-                log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
-                        subscription.getSubscriptionId(),
-                        subscription.getPriceNet(),
-                        subscription.getPriceVat(),
-                        subscription.getPriceGross()
-                );
-                // Set new prices to subscription from result.
-                subscription.setPriceNet(resultDto.getPriceNet());
-                subscription.setPriceVat(resultDto.getPriceVat());
-                subscription.setPriceGross(resultDto.getPriceGross());
-                log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
-                        resultDto.getSubscriptionId(),
-                        resultDto.getPriceNet(),
-                        resultDto.getPriceVat(),
-                        resultDto.getPriceGross()
-                );
-                // Save given subscription values to database
-                subscription = subscriptionRepository.save(subscription);
-                // Update dto prices from updated price fields from subscription because
-                // we want new order to be made with new prices in later steps.
-                subscriptionDto.setPriceNet(subscription.getPriceNet());
-                subscriptionDto.setPriceVat(subscription.getPriceVat());
-                subscriptionDto.setPriceGross(subscription.getPriceGross());
-            }
+            // Fetch subscription.
+            subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
+            log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+                    subscription.getSubscriptionId(),
+                    subscription.getPriceNet(),
+                    subscription.getPriceVat(),
+                    subscription.getPriceGross()
+            );
+            // Set new prices to subscription from result.
+            subscription.setPriceNet(resultDto.getPriceNet());
+            subscription.setPriceVat(resultDto.getPriceVat());
+            subscription.setPriceGross(resultDto.getPriceGross());
+            log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+                    resultDto.getSubscriptionId(),
+                    resultDto.getPriceNet(),
+                    resultDto.getPriceVat(),
+                    resultDto.getPriceGross()
+            );
+            // Save given subscription values to database
+            subscription = subscriptionRepository.save(subscription);
+            // Update dto prices from updated price fields from subscription because
+            // we want new order to be made with new prices in later steps.
+            subscriptionDto.setPriceNet(subscription.getPriceNet());
+            subscriptionDto.setPriceVat(subscription.getPriceVat());
+            subscriptionDto.setPriceGross(subscription.getPriceGross());
+
         } catch (Exception e) {
             log.error("Error/new price not found when requesting new price to subscription request:{}", request, e);
         }

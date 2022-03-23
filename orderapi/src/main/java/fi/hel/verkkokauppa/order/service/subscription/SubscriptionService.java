@@ -283,4 +283,8 @@ public class SubscriptionService {
         subscription.setValidationFailedEmailSentCount(oldSentCount + 1);
         return subscriptionRepository.save(subscription);
     }
+
+    public List<Subscription> findAllByOrderIdAndUser(String orderId, String user){
+        return subscriptionRepository.findAllByOrderIdAndUser(orderId, user);
+    }
 }

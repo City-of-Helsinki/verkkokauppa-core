@@ -17,6 +17,9 @@ public class QueueConfigurations {
     @Value("${queue.subscription.notifications:subscription-notifications}")
     String subscriptionNotificationsQueue;
 
+    @Value("${queue.payment.notifications:payment-notifications}")
+    String paymentNotificationsQueue;
+
     @Value("${queue.subscription.renewals:subscription-renewals}")
     String subscriptionRenewalsQueue;
 
@@ -24,6 +27,7 @@ public class QueueConfigurations {
         ArrayList<String> allQueus = new ArrayList<>();
         allQueus.add(orderNotificationsQueue);
         allQueus.add(subscriptionNotificationsQueue);
+        allQueus.add(paymentNotificationsQueue);
         allQueus.add(subscriptionRenewalsQueue);
         return allQueus;
     }
