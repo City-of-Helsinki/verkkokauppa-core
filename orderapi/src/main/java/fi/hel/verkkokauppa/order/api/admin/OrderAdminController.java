@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 public class OrderAdminController {
 
@@ -37,6 +40,24 @@ public class OrderAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-order", "failed to get order with id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order-admin/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<OrderAggregateDto>> getOrders(@RequestParam(value = "userId") String userId) {
+        try {
+            List<OrderAggregateDto> orders = new ArrayList<>();
+            for (Order order : orderService.findByUser(userId)) {
+                orders.add(orderService.getOrderWithItems(order.getOrderId()));
+            }
+            return ResponseEntity.ok().body(orders);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-orders", "failed to get order for user id [" + userId + "]")
             );
         }
     }

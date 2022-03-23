@@ -12,5 +12,6 @@ import java.util.List;
 public interface SubscriptionRepository extends BaseRepository<Subscription, String> {
 
     List<Subscription> findByCustomerEmail(String customerEmail);
+    List<Subscription> findByUser(String user);
     Subscription findSubscriptionBySubscriptionId(String subscriptionId);
 }

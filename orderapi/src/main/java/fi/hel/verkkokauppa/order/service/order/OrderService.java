@@ -133,6 +133,10 @@ public class OrderService {
         return null;
     }
 
+    public List<Order> findByUser(String userId) {
+        return orderRepository.findByUser(userId);
+    }
+
     public Order findByNamespaceAndUser(String namespace, String user) {
         List<Order> matchingOrders = orderRepository.findByNamespaceAndUser(namespace, user);
 
