@@ -116,7 +116,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
-        orderService.setStartDateAndCalculateNextEndDate(order, subscription, subscription.getEndDate());
+        orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());
         copyCustomerInfoFromSubscription(subscriptionDto, order);
         orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());
 
