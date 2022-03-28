@@ -78,4 +78,21 @@ public class SubscriptionNotificationsQueueListener {
             }
         }
     }
+
+    /**
+     *
+     */
+    private void subscriptionCardExpiredAction(SubscriptionMessage message) throws JsonProcessingException {
+        if (EventType.SUBSCRIPTION_CARD_EXPIRED.equals(message.getEventType())) {
+            log.info("event type is {}", message.getEventType());
+            ResponseEntity<Void> response = restWebHookService.postCallWebHook(
+                    message,
+                    ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL,
+                    message.getNamespace()
+            );
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new SubscriptionMessageProcessingException("Webhook call failed", message);
+            }
+        }
+    }
 }

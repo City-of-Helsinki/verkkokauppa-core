@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -69,8 +70,12 @@ public class SubscriptionService {
 
     @Autowired
     private UpdateSubscriptionCommand updateSubscriptionCommand;
+
     @Autowired
     private SaveHistoryService saveHistoryService;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
 
     public String generateSubscriptionId(String namespace, String user, String orderItemId, String timestamp) {
@@ -160,6 +165,20 @@ public class SubscriptionService {
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
         log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
+    }
+
+
+    public void triggerSubscriptionExpiredCardEvent(Subscription subscription) {
+        SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_CARD_EXPIRED)
+                .namespace(subscription.getNamespace())
+                .subscriptionId(subscription.getId())
+                .cancellationCause(SubscriptionCancellationCause.EXPIRED)
+                .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
+                .build();
+
+        sendNotificationService.sendSubscriptionMessageNotification(subscriptionMessage);
+        log.debug("triggered event {} for subscriptionId: {}", EventType.SUBSCRIPTION_CARD_EXPIRED, subscription.getId());
     }
 
 
@@ -279,4 +298,21 @@ public class SubscriptionService {
     public List<Subscription> findAllByOrderIdAndUser(String orderId, String user){
         return subscriptionRepository.findAllByOrderIdAndUser(orderId, user);
     }
+
+    public boolean isExpiringCard(LocalDate currentDate, SubscriptionDto subscriptionDto) {
+        Short expirationYear = subscriptionDto.getPaymentMethodExpirationYear();
+        Byte expirationMonth = subscriptionDto.getPaymentMethodExpirationMonth();
+        // If values are null just return false because we can't know for sure if card is expiring.
+        if (expirationMonth == null || expirationYear == null) {
+            return false;
+        }
+        LocalDate expiringDate = LocalDate.of(
+                (int) expirationYear,
+                (int) expirationMonth,
+                1
+        );
+        LocalDate start = currentDate.withDayOfMonth(1);
+        return start.isAfter(expiringDate);
+    }
+
 }

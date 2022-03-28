@@ -12,12 +12,8 @@ import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
-import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
-import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class SubscriptionAdminController {
@@ -42,6 +39,9 @@ public class SubscriptionAdminController {
 
     @Value("${subscription.renewal.batch.sleep.millis}")
     private int subscriptionRenewalBatchSleepMillis;
+
+    @Value("${subscription.notification.expiring.card.threshold.days:#{7}}")
+    private int subscriptionNotificationExpiringCardThresholdDays;
 
     @Autowired
     private SearchSubscriptionQuery searchSubscriptionQuery;
@@ -206,5 +206,47 @@ public class SubscriptionAdminController {
             }
         }
     }
+
+    //Notifications start
+
+    @GetMapping(value = "/subscription-admin/check-expiring-card", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<SubscriptionDto>> checkExpiringCards() {
+        log.debug("Checking expiring cards...");
+
+        List<SubscriptionDto> expiredCardSubscriptions = getSubscriptionsWithExpiringCard();
+
+        // No need to further handle expired ones
+        expiredCardSubscriptions.removeIf(s -> s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
+        log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
+
+        expiredCardSubscriptions.forEach(subscriptionDto -> {
+                    subscriptionService.triggerSubscriptionExpiredCardEvent(
+                            subscriptionService.findById(subscriptionDto.getSubscriptionId())
+                    );
+                });
+
+        return ResponseEntity.ok(expiredCardSubscriptions);
+    }
+
+
+    public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
+        LocalDate currentDate = LocalDate.now();
+        LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
+        log.debug("validityCheckDate: {}", validityCheckDate);
+
+        SubscriptionCriteria criteria = new SubscriptionCriteria();
+        criteria.setStatus(SubscriptionStatus.ACTIVE);
+
+        criteria.setEndDateBefore(validityCheckDate);
+
+        List<SubscriptionDto> subscriptionDtos = searchSubscriptionQuery.searchActive(criteria);
+
+        return subscriptionDtos
+                .stream()
+                .filter(subscriptionDto -> subscriptionService.isExpiringCard(currentDate, subscriptionDto))
+                .collect(Collectors.toList());
+    }
+
+    // Notifications end
 
 }
