@@ -2,11 +2,13 @@ package fi.hel.verkkokauppa.order.listeners;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.SubscriptionMessageProcessingException;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQTextMessage;
@@ -27,6 +29,12 @@ public class SubscriptionNotificationsQueueListener {
 
     @Autowired
     private RestWebHookService restWebHookService;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ExperienceUrls experienceUrls;
 
     @Autowired
     private SaveHistoryService saveHistoryService;
@@ -85,14 +93,13 @@ public class SubscriptionNotificationsQueueListener {
     private void subscriptionCardExpiredAction(SubscriptionMessage message) throws JsonProcessingException {
         if (EventType.SUBSCRIPTION_CARD_EXPIRED.equals(message.getEventType())) {
             log.info("event type is {}", message.getEventType());
-            ResponseEntity<Void> response = restWebHookService.postCallWebHook(
-                    message,
-                    ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL,
-                    message.getNamespace()
+
+            restServiceClient.makeAdminGetCall(
+                    experienceUrls.getOrderExperienceUrl()
+                    + message.getSubscriptionId()
+                    + "/emailSubscriptionCardExpired"
             );
-            if (response.getStatusCode() != HttpStatus.OK) {
-                throw new SubscriptionMessageProcessingException("Webhook call failed", message);
-            }
+
         }
     }
 }
