@@ -13,5 +13,6 @@ public interface SubscriptionRepository extends BaseRepository<Subscription, Str
 
     List<Subscription> findByCustomerEmail(String customerEmail);
     List<Subscription> findAllByOrderIdAndUser(String orderId, String user);
+    List<Subscription> findByUser(String user);
     Subscription findSubscriptionBySubscriptionId(String subscriptionId);
 }

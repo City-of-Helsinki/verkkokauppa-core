@@ -78,6 +78,21 @@ public class SubscriptionAdminController {
         }
     }
 
+    @GetMapping(value = "/subscription-admin/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<SubscriptionDto>> getSubscriptions(@RequestParam(value = "userId") String userId) {
+        try {
+            final List<SubscriptionDto> subscriptions = subscriptionService.findByUser(userId);
+            return ResponseEntity.ok(subscriptions);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-subscriptions", "failed to get subscription with user id [" + userId + "]")
+            );
+        }
+    }
+
     @GetMapping(value = "/subscription-admin/check-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> checkRenewals() {
         log.debug("Checking renewals...");
