@@ -37,7 +37,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.*;
@@ -147,7 +149,7 @@ class OrderServiceTest extends TestUtils {
 
         LocalDateTime today = DateTimeUtil.getFormattedDateTime();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
         String todayDateAsString = today.format(formatter);
         Assertions.assertEquals(todayDateAsString, todayDateAsString);
@@ -171,19 +173,33 @@ class OrderServiceTest extends TestUtils {
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
         log.info("todayDateAsString {}", todayDateAsString);
-        String oneMonthFromToday = today.plus(1, ChronoUnit.MONTHS).format(formatter);
-        log.info("oneMonthFromToday {}", oneMonthFromToday);
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+
+
+        LocalDateTime minusOneDay = today
+                .plus(1, ChronoUnit.MONTHS)
+                .minus(1, ChronoUnit.DAYS);
+
+        LocalDateTime real = minusOneDay.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay());
+        // End datetime: start datetime + 1 month - 1day(end of the day)
+        String oneMonthFromTodayMinusOneDayEndOfThatDay = real
+                .format(formatter);
+        log.info("oneMonthFromTodayMinusOneDayEndOfThatDay {}", oneMonthFromTodayMinusOneDayEndOfThatDay);
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
         // Start date is payment paid timestamp
         Assertions.assertEquals(order1.getStartDate().format(formatter), todayDateAsString);
 
-        Assertions.assertEquals(nextDateCalculator.calculateNextDateTime(
-                        today,
-                        orderItemOrder1.getPeriodUnit(),
-                        orderItemOrder1.getPeriodFrequency()).format(formatter),
-                oneMonthFromToday);
-        // Asserts that endDate is moved + 1 month from today date.
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+        LocalDateTime periodAdded = nextDateCalculator.calculateNextDateTime(
+                today,
+                orderItemOrder1.getPeriodUnit(),
+                orderItemOrder1.getPeriodFrequency());
+        LocalDateTime calculatedNewEndDate = nextDateCalculator.calculateNextEndDateTime(
+                periodAdded,
+                Period.MONTHLY
+        );
+        Assertions.assertEquals(calculatedNewEndDate.format(formatter),
+                oneMonthFromTodayMinusOneDayEndOfThatDay);
+        // Asserts that endDate is moved + 1 month from today date - 1 day (end of day).
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
 
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
@@ -192,26 +208,32 @@ class OrderServiceTest extends TestUtils {
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
+        DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy HH");
+
         // Assert dates matches
-        Assertions.assertEquals(order1.getStartDate().format(formatter), firstSubscription.getStartDate().format(formatter));
+        Assertions.assertEquals(order1.getStartDate().format(formatter2), firstSubscription.getStartDate().format(formatter2));
         Assertions.assertEquals(order1.getEndDate().format(formatter), firstSubscription.getEndDate().format(formatter));
         log.info("order 1 startDate {}", order1.getStartDate().format(formatter));
         log.info("order 1 endDate {}", order1.getEndDate().format(formatter));
+        log.info("subscription 1 startDate {}", firstSubscription.getStartDate().format(formatter));
+        log.info("subscription 1 endDate {}", firstSubscription.getEndDate().format(formatter));
 
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
-        Assertions.assertEquals(todayDateAsString, firstSubscription.getStartDate().format(formatter));
+        Assertions.assertEquals(today.format(formatter2), firstSubscription.getStartDate().format(formatter2));
         // FIRST Payment paid, period one month paid
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
-        Assertions.assertEquals(oneMonthFromToday, firstSubscription.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, firstSubscription.getEndDate().format(formatter));
 
         // RENEWAL PROCESS START 1
         // There should be no need to renew this subscription yet
         // next renewal date should be 3 days from endDate (31.12.2021) -> threeDaysBeforeEndDate
         String threeDaysBeforeEndDate = firstSubscription.getEndDate().minus(3, ChronoUnit.DAYS).format(formatter);
         log.info("threeDaysBeforeEndDate {}", threeDaysBeforeEndDate);
-        String twentyEightDaysFromToday = today.plus(28, ChronoUnit.DAYS).format(formatter);
-        Assertions.assertEquals(twentyEightDaysFromToday, threeDaysBeforeEndDate);
+        LocalDateTime plusTwentySevenDays = today.plus(27, ChronoUnit.DAYS);
+        LocalDateTime endOfDayPlusTwentySevenDays = plusTwentySevenDays.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay());
+        String twentySevenDaysFromTodayEndOfDay = endOfDayPlusTwentySevenDays.format(formatter);
+        Assertions.assertEquals(twentySevenDaysFromTodayEndOfDay, threeDaysBeforeEndDate);
         // Renew subscription
 
         String order2FromSubscriptionId = subscriptionRenewalService.renewSubscription(firstSubscriptionId);
@@ -219,10 +241,20 @@ class OrderServiceTest extends TestUtils {
         // Fetch second subs
         Order order2 = orderService.findById(order2FromSubscriptionId);
 
-        Assertions.assertEquals(oneMonthFromToday, order2.getStartDate().format(formatter));
+        // Start datetime: Previous order enddate + 1 day(start of the day)
+        LocalDateTime renewalStartDate =  order2
+                .getEndDate()
+                .plus(1,ChronoUnit.DAYS)
+                .minus(1,ChronoUnit.MONTHS)
+                .with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
+        Assertions.assertEquals(renewalStartDate.format(formatter), order2.getStartDate().format(formatter));
 
-        String twoMonthFromToday = today.plus(2, ChronoUnit.MONTHS).format(formatter);
-        Assertions.assertEquals(twoMonthFromToday, order2.getEndDate().format(formatter));
+        String twoMonthFromTodayMinusOneDayEndOfThatDay = today
+                .plus(2, ChronoUnit.MONTHS)
+                .minus(1,ChronoUnit.DAYS)
+                .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
+                .format(formatter);
+        Assertions.assertEquals(twoMonthFromTodayMinusOneDayEndOfThatDay, order2.getEndDate().format(formatter));
         // RENEWAL PROCESS END 1
 
         // RENEWAL PROCESS START 2
@@ -380,6 +412,182 @@ class OrderServiceTest extends TestUtils {
             Assertions.assertEquals(SubscriptionStatus.CANCELLED, firstSubscription.getStatus());
         }
         // RENEWAL PROCESS END 3
+    }
+
+    //@Test
+    void createFromSubscriptionAllowCurrentDayRenewalTested() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
+        String order1Id = orderResponse.getBody().getOrder().getOrderId();
+        Order order1 = orderService.findById(order1Id);
+
+        Assertions.assertEquals(OrderType.SUBSCRIPTION, order1.getType());
+
+        // Get orderItems
+        List<OrderItem> orderItems = orderItemService.findByOrderId(order1Id);
+
+        Assertions.assertEquals(1, orderItems.size());
+        OrderItem orderItemOrder1 = orderItems.get(0);
+        // Period 1 month from now 03.12.2021 - 03.01.2022
+        Assertions.assertEquals(orderItemOrder1.getPeriodCount(), 1);
+        Assertions.assertEquals(orderItemOrder1.getPeriodFrequency(), 1);
+        Assertions.assertEquals(orderItemOrder1.getPeriodUnit(), Period.MONTHLY);
+
+        // No payments yet
+        Assertions.assertNull(order1.getEndDate());
+        Assertions.assertNull(order1.getStartDate());
+
+        // No subscriptions created yet for order
+        Assertions.assertNull(order1.getSubscriptionId());
+
+        LocalDateTime today = DateTimeUtil.getFormattedDateTime();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+
+        String todayDateAsString = today.format(formatter);
+        Assertions.assertEquals(todayDateAsString, todayDateAsString);
+
+        // FIRST payment today -> 03.12.2021
+        PaymentMessage firstPayment = PaymentMessage
+                .builder()
+                .paymentId("1")
+                .orderId(order1Id)
+                .namespace(order1.getNamespace())
+                .userId(order1.getUser())
+                .orderType(order1.getType())
+                .paymentPaidTimestamp(today.toString())
+                .build();
+
+        // Mimic first payment event
+        subscriptionController.paymentPaidEventCallback(firstPayment);
+
+        // Refetch order1 from db
+        order1 = orderService.findById(order1Id);
+        // FIRST Payment paid, period one month paid
+        Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
+        log.info("todayDateAsString {}", todayDateAsString);
+
+
+        LocalDateTime minusOneDay = today
+                .plus(1, ChronoUnit.MONTHS)
+                .minus(1, ChronoUnit.DAYS);
+
+        LocalDateTime real = minusOneDay.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay());
+        // End datetime: start datetime + 1 month - 1day(end of the day)
+        String oneMonthFromTodayMinusOneDayEndOfThatDay = real
+                .format(formatter);
+        log.info("oneMonthFromTodayMinusOneDayEndOfThatDay {}", oneMonthFromTodayMinusOneDayEndOfThatDay);
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
+        // Start date is payment paid timestamp
+        Assertions.assertEquals(order1.getStartDate().format(formatter), todayDateAsString);
+
+        LocalDateTime periodAdded = nextDateCalculator.calculateNextDateTime(
+                today,
+                orderItemOrder1.getPeriodUnit(),
+                orderItemOrder1.getPeriodFrequency());
+        LocalDateTime calculatedNewEndDate = nextDateCalculator.calculateNextEndDateTime(
+                periodAdded,
+                Period.MONTHLY
+        );
+        Assertions.assertEquals(calculatedNewEndDate.format(formatter),
+                oneMonthFromTodayMinusOneDayEndOfThatDay);
+        // Asserts that endDate is moved + 1 month from today date - 1 day (end of day).
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
+
+        // Is subscription created
+        Assertions.assertNotNull(order1.getSubscriptionId());
+
+        String firstSubscriptionId = order1.getSubscriptionId();
+        // Fetch subscription
+        Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
+
+        DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy HH");
+
+        // Assert dates matches
+        Assertions.assertEquals(order1.getStartDate().format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        Assertions.assertEquals(order1.getEndDate().format(formatter), firstSubscription.getEndDate().format(formatter));
+        log.info("order 1 startDate {}", order1.getStartDate().format(formatter));
+        log.info("order 1 endDate {}", order1.getEndDate().format(formatter));
+        log.info("subscription 1 startDate {}", firstSubscription.getStartDate().format(formatter));
+        log.info("subscription 1 endDate {}", firstSubscription.getEndDate().format(formatter));
+
+        // FIRST Payment paid, period one month paid
+        Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
+        Assertions.assertEquals(today.format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        // FIRST Payment paid, period one month paid
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, firstSubscription.getEndDate().format(formatter));
+
+        // RENEWAL PROCESS START 1
+        // There should be no need to renew this subscription yet
+        // next renewal date should be 3 days from endDate (31.12.2021) -> threeDaysBeforeEndDate
+        String threeDaysBeforeEndDate = firstSubscription.getEndDate().minus(3, ChronoUnit.DAYS).format(formatter);
+        log.info("threeDaysBeforeEndDate {}", threeDaysBeforeEndDate);
+        LocalDateTime plusTwentySevenDays = today.plus(27, ChronoUnit.DAYS);
+        LocalDateTime endOfDayPlusTwentySevenDays = plusTwentySevenDays.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay());
+        String twentySevenDaysFromTodayEndOfDay = endOfDayPlusTwentySevenDays.format(formatter);
+        Assertions.assertEquals(twentySevenDaysFromTodayEndOfDay, threeDaysBeforeEndDate);
+        // Renew subscription
+
+        String order2FromSubscriptionId = subscriptionRenewalService.renewSubscription(firstSubscriptionId);
+        subscriptionRenewalService.finishRenewingSubscription(firstSubscriptionId);
+        // Fetch second subs
+        Order order2 = orderService.findById(order2FromSubscriptionId);
+
+        // Start datetime: Previous order enddate + 1 day(start of the day)
+        LocalDateTime renewalStartDate =  order2
+                .getEndDate()
+                .plus(1,ChronoUnit.DAYS)
+                .minus(1,ChronoUnit.MONTHS)
+                .with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
+        Assertions.assertEquals(renewalStartDate.format(formatter), order2.getStartDate().format(formatter));
+
+        String twoMonthFromTodayMinusOneDayEndOfThatDay = today
+                .plus(2, ChronoUnit.MONTHS)
+                .minus(1,ChronoUnit.DAYS)
+                .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
+                .format(formatter);
+        Assertions.assertEquals(twoMonthFromTodayMinusOneDayEndOfThatDay, order2.getEndDate().format(formatter));
+        // RENEWAL PROCESS END 1
+
+        // RENEWAL PROCESS START 2
+        log.info("order2.getStartDate() {}", order2.getStartDate().format(formatter));
+        log.info("order2.getEndDate() {}", order2.getEndDate().format(formatter));
+
+        // RENEWAL PROCESS START 3 (KYV-505)
+        // Update start and endDate of order programmatically
+        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        // Set endDate at the start of the day, '00:00'.
+        firstSubscription.setEndDate(
+                today.with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay())
+        );
+        subscriptionRepository.save(firstSubscription);
+        Assertions.assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
+        subscriptionAdminController.checkRenewals();
+        Optional<Subscription> refetchFirstSubscription = subscriptionRepository.findById(firstSubscription.getSubscriptionId());
+        if (refetchFirstSubscription.isPresent()) {
+            firstSubscription = refetchFirstSubscription.get();
+            Assertions.assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
+        }
+        // RENEWAL PROCESS END 3
+
+        // RENEWAL PROCESS START 4 (Automatically cancels subscription when endDate is today -1 day)
+        // Update start and endDate of order programmatically
+        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        // Set endDate at the start of the day, '00:00'.
+        firstSubscription.setEndDate(
+                today
+                        .minus(1,ChronoUnit.DAYS)
+                        .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
+        );
+        subscriptionRepository.save(firstSubscription);
+        Assertions.assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
+        subscriptionAdminController.checkRenewals();
+        Optional<Subscription> refetchFirstSubscription2 = subscriptionRepository.findById(firstSubscription.getSubscriptionId());
+        if (refetchFirstSubscription2.isPresent()) {
+            firstSubscription = refetchFirstSubscription2.get();
+            Assertions.assertEquals(SubscriptionStatus.CANCELLED, firstSubscription.getStatus());
+        }
+        // RENEWAL PROCESS END 4
     }
 
 

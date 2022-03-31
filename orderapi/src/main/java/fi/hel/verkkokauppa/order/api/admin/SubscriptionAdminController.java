@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
@@ -12,12 +13,8 @@ import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
-import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.SearchSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.order.service.subscription.*;
 import fi.hel.verkkokauppa.shared.exception.EntityNotFoundException;
-import fi.hel.verkkokauppa.order.service.subscription.SubscriptionItemMetaService;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,10 +211,13 @@ public class SubscriptionAdminController {
         for (SubscriptionDto subscription : subscriptions) {
             LocalDateTime endDate = subscription.getEndDate();
 
-            if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
-                String subscriptionId = subscription.getSubscriptionId();
-                log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
-                cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
+            if (endDate != null) {
+                LocalDateTime now = LocalDateTime.now();
+                if (endDate.isBefore(now) && !DateTimeUtil.isSameDay(endDate, now)) {
+                    String subscriptionId = subscription.getSubscriptionId();
+                    log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
+                    cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
+                }
             }
         }
     }
