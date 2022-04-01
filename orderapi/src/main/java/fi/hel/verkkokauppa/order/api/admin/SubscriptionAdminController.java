@@ -167,6 +167,26 @@ public class SubscriptionAdminController {
         }
     }
 
+
+    @GetMapping(value = "/subscription-admin/create-card-expired-email-entity", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Integer> subscriptionCreateCardExpiredEmailEntity(
+            @RequestParam(value = "subscriptionId") String subscriptionId
+    ) {
+        log.debug("subscription-api /subscription-admin/create-card-expired-email-entity for subscriptionId: {}", subscriptionId);
+        try {
+            Subscription subscription = subscriptionService.incrementValidationFailedEmailSentCount(subscriptionId);
+            return ResponseEntity.ok().body(subscription.getValidationFailedEmailSentCount());
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting subscription failed, subscriptionId: " + subscriptionId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-subscription", "failed to get subscription with id [" + subscriptionId + "]")
+            );
+        }
+    }
+
     @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemMetaDto>> setItemMeta(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "orderItemId") String orderItemId, @RequestBody List<OrderItemMetaDto> meta) {
         subscriptionItemMetaService.removeItemMetas(subscriptionId, orderItemId);
