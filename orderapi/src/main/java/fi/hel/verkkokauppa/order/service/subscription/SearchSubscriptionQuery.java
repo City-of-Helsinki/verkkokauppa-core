@@ -16,31 +16,24 @@ import java.util.List;
 
 @Service
 public class SearchSubscriptionQuery extends
-		DefaultSearchEntitiesQuery<Subscription, SubscriptionDto, SubscriptionCriteria, String> {
+        DefaultSearchEntitiesQuery<Subscription, SubscriptionDto, SubscriptionCriteria, String, Subscription> {
 
-	private final SubscriptionMappingLogic subscriptionMappingLogic;
+    @Autowired
+    public SearchSubscriptionQuery(
+            SubscriptionRepository repository,
+            SubscriptionQueryBuilderBuilder subscriptionQueryBuilderBuilder,
+            ListMapper listMapper,
+            SubscriptionMappingLogic subscriptionMappingLogic
+    ) {
+        super(repository, subscriptionQueryBuilderBuilder, listMapper, SubscriptionDto.class, Subscription.class);
+    }
 
-	@Autowired
-	public SearchSubscriptionQuery(
-			SubscriptionRepository repository,
-			SubscriptionQueryBuilderBuilder subscriptionQueryBuilderBuilder,
-			ListMapper listMapper,
-			SubscriptionMappingLogic subscriptionMappingLogic
-	) {
-		super(repository, subscriptionQueryBuilderBuilder, listMapper, SubscriptionDto.class);
-		this.subscriptionMappingLogic = subscriptionMappingLogic;
-	}
+    public List<SubscriptionDto> searchActive(SubscriptionCriteria criteria) {
+        return super.search(criteria);
+    }
 
-	public List<SubscriptionDto> searchActive(SubscriptionCriteria criteria) {
-		return super.search(criteria);
-	}
-
-	protected void mapItemToDto(Subscription entity, SubscriptionDto dto) {
-//		subscriptionMappingLogic.mapUserDataToDto(entity, dto);
-//		subscriptionMappingLogic.mapProductDataToDto(entity, dto);
-		ModelMapper mm = new ModelMapper();
-		mm.map(entity,dto);
-		//SubscriptionMappingLogic.mapBillingAddressDataToDto(entity, dto); // TODO?
-		//SubscriptionMappingLogic.mapShippingAddressDataToDto(entity, dto); // TODO?
-	}
+    protected void mapItemToDto(Subscription entity, SubscriptionDto dto) {
+        ModelMapper mm = new ModelMapper();
+        mm.map(entity, dto);
+    }
 }

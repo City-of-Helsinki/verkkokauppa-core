@@ -9,7 +9,10 @@ import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportDataService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportService;
+import fi.hel.verkkokauppa.order.service.accounting.AccountingSearchService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingSlipService;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,9 @@ public class AccountingExportController {
     @Autowired
     private AccountingExportService accountingExportService;
 
+    @Autowired
+    private AccountingSearchService accountingSearchService;
+
     @PostMapping(value = "/accounting/export/generate", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountingExportDataDto> generateAccountingExportData(@RequestParam(value = "accountingSlipId") String accountingSlipId) {
         try {
@@ -60,7 +66,8 @@ public class AccountingExportController {
         List<AccountingExportDataDto> result = new ArrayList<>();
 
         try {
-            List<AccountingExportData> accountingExportDataList = accountingExportDataService.getNotExportedAccountingExportData();
+            // TODO Test this
+            List<AccountingExportData> accountingExportDataList = accountingSearchService.getNotExportedAccountingExportData();
 
             for (AccountingExportData accountingExportData : accountingExportDataList) {
                 AccountingExportDataDto accountingExportDataDto = new AccountingExportDataTransformer().transformToDto(accountingExportData);

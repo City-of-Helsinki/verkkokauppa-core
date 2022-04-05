@@ -14,10 +14,19 @@ import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHitSupport;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.SearchPage;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -160,15 +169,28 @@ public class AccountingExportDataService {
         );
     }
 
-    public List<AccountingExportData> getNotExportedAccountingExportData() {
-        List<AccountingExportData> exportData = IterableUtils.iterableToList(exportDataRepository.findNotExported());
-
-        if (exportData == null || exportData.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return exportData;
-    }
+//    public List<AccountingExportData> getNotExportedAccountingExportData() {
+//        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+//
+//        NativeSearchQuery query = new NativeSearchQueryBuilder()
+//                .withQuery(qb)
+//                .withPageable(PageRequest.of(0, 10000))
+//                .build();
+//
+//        SearchHits<AccountingExportData> hits = operations.search(query, AccountingExportData.class);
+//
+//        SearchPage<AccountingExportData> searchHits = SearchHitSupport.searchPageFor(hits, query.getPageable());
+//
+//        final List<AccountingExportData> exportData = searchHits.stream()
+//                .map(SearchHit::getContent)
+//                .collect(Collectors.toList());
+//
+//        if (exportData == null || exportData.isEmpty()) {
+//            return new ArrayList<>();
+//        }
+//
+//        return exportData;
+//    }
 
     public List<String> getAccountingExportDataTimestamps() {
         List<AccountingExportData> exportDatas = IterableUtils.iterableToList(exportDataRepository.findAll());
