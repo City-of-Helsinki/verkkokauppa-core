@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-@Service
 @Slf4j
+@Service
 public class HistoryService {
     @Autowired
     private ObjectMapper objectMapper;

@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 
-@RestController
 @Slf4j
 @Validated
+@RestController
 public class HistoryController {
     @Autowired
     private HistoryService historyService;
