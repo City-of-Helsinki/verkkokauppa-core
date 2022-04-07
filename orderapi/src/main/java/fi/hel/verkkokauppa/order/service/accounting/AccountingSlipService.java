@@ -73,7 +73,6 @@ public class AccountingSlipService {
     private AccountingSearchService accountingSearchService;
 
     public List<AccountingSlipDto> createAccountingData() {
-        // TODO Test this
         List<Order> ordersToAccount = accountingSearchService.findNotAccounted();
         Map<String, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
 

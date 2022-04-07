@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionMappingLogic;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionQueryBuilderBuilder;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.shared.mapper.ListMapper;
 import fi.hel.verkkokauppa.shared.service.DefaultSearchEntitiesQuery;
@@ -29,6 +30,8 @@ public class SearchSubscriptionQuery extends
     }
 
     public List<SubscriptionDto> searchActive(SubscriptionCriteria criteria) {
+        // It's possible to give other status in criteria, but we always want to search for active Subscription order.
+        criteria.setStatus(SubscriptionStatus.ACTIVE);
         return super.search(criteria);
     }
 

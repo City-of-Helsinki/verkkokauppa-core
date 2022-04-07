@@ -169,29 +169,6 @@ public class AccountingExportDataService {
         );
     }
 
-//    public List<AccountingExportData> getNotExportedAccountingExportData() {
-//        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
-//
-//        NativeSearchQuery query = new NativeSearchQueryBuilder()
-//                .withQuery(qb)
-//                .withPageable(PageRequest.of(0, 10000))
-//                .build();
-//
-//        SearchHits<AccountingExportData> hits = operations.search(query, AccountingExportData.class);
-//
-//        SearchPage<AccountingExportData> searchHits = SearchHitSupport.searchPageFor(hits, query.getPageable());
-//
-//        final List<AccountingExportData> exportData = searchHits.stream()
-//                .map(SearchHit::getContent)
-//                .collect(Collectors.toList());
-//
-//        if (exportData == null || exportData.isEmpty()) {
-//            return new ArrayList<>();
-//        }
-//
-//        return exportData;
-//    }
-
     public List<String> getAccountingExportDataTimestamps() {
         List<AccountingExportData> exportDatas = IterableUtils.iterableToList(exportDataRepository.findAll());
 

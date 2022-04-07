@@ -66,7 +66,6 @@ public class AccountingExportController {
         List<AccountingExportDataDto> result = new ArrayList<>();
 
         try {
-            // TODO Test this
             List<AccountingExportData> accountingExportDataList = accountingSearchService.getNotExportedAccountingExportData();
 
             for (AccountingExportData accountingExportData : accountingExportDataList) {

@@ -56,6 +56,7 @@ public class DefaultSearchEntitiesQuery<E extends Identifiable, D extends BaseId
 	protected Class<D> getDtoType() {
 		return dtoType;
 	}
+
 	protected Class<T> getEntityType() {
 		return entityType;
 	}
