@@ -11,5 +11,7 @@ public class SubscriptionCardExpiredDto {
 
     private String subscriptionId;
 
+    private String namespace;
+
     private LocalDateTime createdAt;
 }

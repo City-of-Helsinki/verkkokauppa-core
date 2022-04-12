@@ -7,6 +7,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Getter
 public class ExperienceUrls {
-    @Value("${order.experience.url}")
+    @Value("${order.experience.url:http://order-experience-api:8080/v1/order/}")
     private String orderExperienceUrl;
 }

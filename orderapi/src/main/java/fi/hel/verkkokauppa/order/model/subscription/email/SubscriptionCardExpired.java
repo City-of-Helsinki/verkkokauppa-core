@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -20,6 +21,9 @@ public class SubscriptionCardExpired {
     @Field(type = FieldType.Text)
     private String subscriptionId;
 
-    @CreatedDate
+    @Field(type = FieldType.Text)
+    private String namespace;
+
+    @Field(type = FieldType.Date, format = DateFormat.date_time)
     private LocalDateTime createdAt;
 }

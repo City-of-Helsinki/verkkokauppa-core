@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCardExpiredDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -64,6 +65,9 @@ public class SubscriptionAdminController {
     @Autowired
     private SaveHistoryService saveHistoryService;
 
+    @Autowired
+    private SubscriptionCardExpiredService subscriptionCardExpiredService;
+
     @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
         try {
@@ -75,7 +79,7 @@ public class SubscriptionAdminController {
             return ResponseEntity.ok(subscription);
         } catch (CommonApiException cae) {
             throw cae;
-        } catch(EntityNotFoundException e) {
+        } catch (EntityNotFoundException e) {
             log.error("Exception on getting Subscription order", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -103,7 +107,7 @@ public class SubscriptionAdminController {
 
     @GetMapping(value = "/subscription-admin/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> startProcessingRenewals() {
-        while(renewalService.renewalRequestsExist()) {
+        while (renewalService.renewalRequestsExist()) {
             try {
                 renewalService.batchProcessNextRenewalRequests();
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
@@ -169,13 +173,17 @@ public class SubscriptionAdminController {
 
 
     @GetMapping(value = "/subscription-admin/create-card-expired-email-entity", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Integer> subscriptionCreateCardExpiredEmailEntity(
-            @RequestParam(value = "subscriptionId") String subscriptionId
-    ) {
+    public ResponseEntity<SubscriptionCardExpiredDto> subscriptionCreateCardExpiredEmailEntity(
+            @RequestParam(value = "subscriptionId") String subscriptionId,
+            @RequestParam(value = "namespace") String namespace
+            ) {
         log.debug("subscription-api /subscription-admin/create-card-expired-email-entity for subscriptionId: {}", subscriptionId);
         try {
-            Subscription subscription = subscriptionService.incrementValidationFailedEmailSentCount(subscriptionId);
-            return ResponseEntity.ok().body(subscription.getValidationFailedEmailSentCount());
+            SubscriptionCardExpiredDto cardExpiredDto = subscriptionCardExpiredService.createAndTransformToDto(
+                    subscriptionId,
+                    namespace
+                    );
+            return ResponseEntity.ok().body(cardExpiredDto);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -240,10 +248,10 @@ public class SubscriptionAdminController {
         log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
 
         expiredCardSubscriptions.forEach(subscriptionDto -> {
-                    subscriptionService.triggerSubscriptionExpiredCardEvent(
-                            subscriptionService.findById(subscriptionDto.getSubscriptionId())
-                    );
-                });
+            subscriptionService.triggerSubscriptionExpiredCardEvent(
+                    subscriptionService.findById(subscriptionDto.getSubscriptionId())
+            );
+        });
 
         return ResponseEntity.ok(expiredCardSubscriptions);
     }
