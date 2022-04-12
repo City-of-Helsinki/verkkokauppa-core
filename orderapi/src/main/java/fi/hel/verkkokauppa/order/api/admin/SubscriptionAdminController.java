@@ -201,7 +201,6 @@ public class SubscriptionAdminController {
         log.debug("validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
-        criteria.setStatus(SubscriptionStatus.ACTIVE);
         criteria.setEndDateBefore(validityCheckDate);
 
         return searchSubscriptionQuery.searchActive(criteria);

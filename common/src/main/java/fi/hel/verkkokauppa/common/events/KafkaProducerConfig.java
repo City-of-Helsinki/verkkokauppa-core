@@ -47,23 +47,56 @@ public class KafkaProducerConfig {
     }
 
     @Bean
+    public Map<String, Object> producerEmptyConfigs() {
+        return new HashMap<>();
+    }
+
+    @Bean
     public ProducerFactory<String, String> producerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
+
+        DefaultKafkaProducerFactory<String, String> stringStringDefaultKafkaProducerFactory = null;
+        try {
+            stringStringDefaultKafkaProducerFactory = new DefaultKafkaProducerFactory<>(producerConfigs());
+        } catch (Exception e) {
+            stringStringDefaultKafkaProducerFactory = new DefaultKafkaProducerFactory<>(producerEmptyConfigs());
+            e.printStackTrace();
+        }
+
+        return stringStringDefaultKafkaProducerFactory;
     }
 
     @Bean
     public KafkaTemplate<String, String> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+        KafkaTemplate<String, String> stringStringKafkaTemplate = null;
+        try {
+            stringStringKafkaTemplate = new KafkaTemplate<>(producerFactory());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return stringStringKafkaTemplate;
     }
 
     @Bean
     public ProducerFactory<String, EventMessage> eventMessageProducerFactory() {
-        return new DefaultKafkaProducerFactory<>(producerConfigs());
+        DefaultKafkaProducerFactory<String, EventMessage> stringEventMessageDefaultKafkaProducerFactory = null;
+        try {
+            stringEventMessageDefaultKafkaProducerFactory = new DefaultKafkaProducerFactory<>(producerConfigs());
+        } catch (Exception e) {
+            stringEventMessageDefaultKafkaProducerFactory = new DefaultKafkaProducerFactory<>(producerEmptyConfigs());
+            e.printStackTrace();
+        }
+        return stringEventMessageDefaultKafkaProducerFactory;
     }
 
     @Bean
     public KafkaTemplate<String, EventMessage> eventMessageKafkaTemplate() {
-        return new KafkaTemplate<>(eventMessageProducerFactory());
+        KafkaTemplate<String, EventMessage> stringEventMessageKafkaTemplate = null;
+        try {
+            stringEventMessageKafkaTemplate = new KafkaTemplate<>(eventMessageProducerFactory());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return stringEventMessageKafkaTemplate;
     }
 
 }

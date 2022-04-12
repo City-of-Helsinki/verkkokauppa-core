@@ -13,13 +13,6 @@ public interface OrderRepository extends ElasticsearchRepository<Order, String> 
 
     List<Order> findByNamespaceAndUser(String namespace, String user);
     List<Order> findByUser(String user);
-
-    default Iterable<Order> findNotAccounted() {
-        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
-
-        return search(qb);
-    }
-
     List<Order> findOrdersBySubscriptionId(String subscriptionId);
 
 }

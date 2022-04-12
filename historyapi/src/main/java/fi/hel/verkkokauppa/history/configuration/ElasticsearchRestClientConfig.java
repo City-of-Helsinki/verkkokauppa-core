@@ -19,6 +19,6 @@ public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfigur
     @Override
     @Bean
     public RestHighLevelClient elasticsearchClient() {
-       return this.elasticSearchRestClientResolver.get();
+        return this.elasticSearchRestClientResolver.get();
     }
 }

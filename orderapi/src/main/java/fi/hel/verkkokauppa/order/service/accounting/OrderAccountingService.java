@@ -40,8 +40,9 @@ public class OrderAccountingService {
     public OrderAccounting getOrderAccounting(String orderId) {
         Optional<OrderAccounting> mapping = orderAccountingRepository.findById(orderId);
 
-        if (mapping.isPresent())
+        if (mapping.isPresent()) {
             return mapping.get();
+        }
 
         log.warn("order accounting not found, orderId: " + orderId);
         return null;
@@ -53,8 +54,9 @@ public class OrderAccountingService {
         for (String orderId : orderIds) {
             OrderAccounting accounting = orderAccountingRepository.findByOrderId(orderId);
 
-            if (accounting != null)
+            if (accounting != null) {
                 accountings.add(accounting);
+            }
         }
 
         log.debug("order accountings not found, orderIds: " + orderIds);
