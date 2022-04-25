@@ -249,20 +249,16 @@ public class OrderService {
         return order;
     }
 
-    /**
-     * Order start date = Subscription end date or
-     * if the Subscription end date does not exist then the time of payment
-     */
     public void setOrderStartAndEndDate(Order order, Subscription subscription, PaymentMessage message) {
+        LocalDateTime startDate = subscription.getStartDate();
+        LocalDateTime paymentAt = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
 
-        LocalDateTime startDate;
-        if (subscription.getEndDate() == null) {
-            startDate = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
+        if (startDate.isBefore(paymentAt)) {
+            setStartDateAndCalculateNextEndDate(order, subscription, paymentAt);
         } else {
-            startDate = subscription.getEndDate();
+            setStartDateAndCalculateNextEndDate(order, subscription, startDate);
         }
 
-        setStartDateAndCalculateNextEndDate(order, subscription, startDate);
         orderRepository.save(order);
     }
 
