@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
 import fi.hel.verkkokauppa.common.history.util.EntityTypeUtil;
@@ -82,6 +83,26 @@ public class HistoryFactory {
                     .namespace(message.getNamespace())
                     .eventType(message.getEventType())
                     .description(message.getCancellationCause())
+                    .payload(e.getMessage())
+                    .build();
+        }
+    }
+
+    public HistoryDto fromRefundMessage(RefundMessage message){
+        try {
+            return HistoryDto.builder()
+                    .entityId(message.getRefundId())
+                    .entityType(EntityTypeUtil.EVENT)
+                    .namespace(message.getNamespace())
+                    .eventType(message.getEventType())
+                    .payload(objectMapper.writeValueAsString(message))
+                    .build();
+        } catch (JsonProcessingException e) {
+            return HistoryDto.builder()
+                    .entityId(message.getRefundId())
+                    .entityType(EntityTypeUtil.EVENT)
+                    .namespace(message.getNamespace())
+                    .eventType(message.getEventType())
                     .payload(e.getMessage())
                     .build();
         }

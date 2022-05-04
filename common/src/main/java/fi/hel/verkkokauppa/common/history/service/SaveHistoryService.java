@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.common.history.service;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.factory.HistoryFactory;
 import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
@@ -58,5 +59,13 @@ public class SaveHistoryService {
         return null;
     }
 
-
+    public JSONObject saveRefundMessageHistory(RefundMessage message){
+        try {
+            String request = historyUtil.toString(historyFactory.fromRefundMessage(message));
+            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.info("saveRefundMessageHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
 }

@@ -11,5 +11,6 @@ public class EventType {
     public static String SUBSCRIPTION_CARD_RENEWAL_CREATED = "SUBSCRIPTION_CARD_RENEWAL_CREATED";
     public static String ORDER_CREATED = "ORDER_CREATED";
     public static String ORDER_CANCELLED = "ORDER_CANCELLED";
+    public static String REFUND_CREATED = "REFUND_CREATED";
 
 }
