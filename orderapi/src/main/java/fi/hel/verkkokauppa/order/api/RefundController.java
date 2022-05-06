@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.api.data.refund.RefundItemDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.RefundTransformer;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
+import fi.hel.verkkokauppa.order.model.refund.RefundStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundRepository;
 import org.slf4j.Logger;
@@ -24,10 +25,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class RefundController {
@@ -44,6 +47,17 @@ public class RefundController {
   @Autowired
   private SaveHistoryService saveHistoryService;
 
+  private RefundMessage createRefundMessage(String eventType, Refund refund) {
+    return RefundMessage.builder()
+            .eventType(eventType)
+            .namespace(refund.getNamespace())
+            .user(refund.getUser())
+            .refundId(refund.getRefundId())
+            .orderId(refund.getOrderId())
+            .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
+            .build();
+  }
+
   @PostMapping(value = "/refund/create", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<RefundAggregateDto> createRefund(@RequestBody RefundAggregateDto refundAggregateDto) {
     try {
@@ -57,18 +71,11 @@ public class RefundController {
         refundItems.add(refundItem);
       }
 
-      RefundMessage refundMessage = RefundMessage.builder()
-              .eventType(EventType.REFUND_CREATED)
-              .namespace(refund.getNamespace())
-              .user(refund.getUser())
-              .refundId(refund.getRefundId())
-              .orderId(refund.getOrderId())
-              .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
-              .build();
+      RefundMessage refundMessage = createRefundMessage(EventType.REFUND_CREATED, refund);
       sendEventService.sendEventMessage(TopicName.REFUNDS, refundMessage);
       saveHistoryService.saveRefundMessageHistory(refundMessage);
 
-      return ResponseEntity.ok().body(refundTransformer.transformToAggregateDto(refund, refundItems));
+      return ResponseEntity.ok().body(refundTransformer.transformToDto(refund, refundItems));
     } catch (CommonApiException cae) {
       throw cae;
     } catch (Exception e) {
@@ -78,5 +85,29 @@ public class RefundController {
               new Error("failed-to-create-refund", "failed to create refund")
       );
     }
+  }
+
+  @PostMapping(value = "/refund/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<RefundDto> confirmRefund(@RequestParam String refundId) {
+    Refund refund = refundRepository.findById(refundId).orElseThrow(() -> new CommonApiException(
+            HttpStatus.NOT_FOUND,
+            new Error("refund-not-found", "refund with id [" + refundId + "] not found")
+    ));
+
+    if (!refund.getStatus().equals(RefundStatus.DRAFT)) {
+      throw new CommonApiException(
+              HttpStatus.BAD_REQUEST,
+              new Error("refund-validation-failed", "refund [" + refundId + "] must be a draft")
+      );
+    }
+
+    refund.setStatus(RefundStatus.CONFIRMED);
+    refundRepository.save(refund);
+
+    RefundMessage refundMessage = createRefundMessage(EventType.REFUND_CONFIRMED, refund);
+    sendEventService.sendEventMessage(TopicName.REFUNDS, refundMessage);
+    saveHistoryService.saveRefundMessageHistory(refundMessage);
+
+    return ResponseEntity.ok().body(refundTransformer.transformToDto(refund));
   }
 }
