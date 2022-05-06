@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.refund.RefundDto;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 @Document(indexName = "refunds")
 @Setter
 @Getter
+@NoArgsConstructor
 public class Refund {
   @Id
   String refundId;
