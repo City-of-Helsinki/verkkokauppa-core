@@ -15,12 +15,20 @@ import java.util.stream.Collectors;
 public class RefundTransformer {
   private ModelMapper modelMapper = new ModelMapper();
 
-  public RefundAggregateDto transformToAggregateDto(Refund refund, List<RefundItem> refundItems) {
+  public RefundDto transformToDto(Refund refund) {
+    return modelMapper.map(refund, RefundDto.class);
+  }
+
+  public RefundItemDto transformToDto(RefundItem refundItem) {
+    return modelMapper.map(refundItem, RefundItemDto.class);
+  }
+
+  public RefundAggregateDto transformToDto(Refund refund, List<RefundItem> refundItems) {
     RefundAggregateDto dto = new RefundAggregateDto();
-    dto.setRefund(modelMapper.map(refund, RefundDto.class));
+    dto.setRefund(transformToDto(refund));
 
     List<RefundItemDto> refundItemDtos = refundItems.stream()
-            .map(refundItem -> modelMapper.map(refundItem, RefundItemDto.class))
+            .map(this::transformToDto)
             .collect(Collectors.toList());
 
     dto.setItems(refundItemDtos);
