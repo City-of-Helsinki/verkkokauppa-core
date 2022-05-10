@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.model.refund;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.refund.RefundItemDto;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -12,6 +13,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Document(indexName = "refunditems")
 @Getter
 @Setter
+@NoArgsConstructor
 public class RefundItem {
   @Id
   String refundItemId;
