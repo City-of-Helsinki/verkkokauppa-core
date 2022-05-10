@@ -23,10 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +82,17 @@ public class RefundController {
               new Error("failed-to-create-refund", "failed to create refund")
       );
     }
+  }
+
+  @GetMapping(value = "/refund/get-by-order-id", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<RefundAggregateDto>> getRefundsByOrderId(@RequestParam String orderId) {
+    List<Refund> refunds = refundRepository.findByOrderId(orderId);
+    List<RefundAggregateDto> dtos = new ArrayList<>();
+    for (Refund refund : refunds) {
+      List<RefundItem> refundItems = refundItemRepository.findByRefundId(refund.getRefundId());
+      dtos.add(refundTransformer.transformToDto(refund, refundItems));
+    }
+    return ResponseEntity.ok().body(dtos);
   }
 
   @PostMapping(value = "/refund/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
