@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCardExpiredDto;
@@ -82,6 +83,21 @@ public class SubscriptionAdminController {
         } catch (EntityNotFoundException e) {
             log.error("Exception on getting Subscription order", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    @GetMapping(value = "/subscription-admin/get-all", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<SubscriptionDto>> getSubscriptions(@RequestParam(value = "userId") String userId) {
+        try {
+            final List<SubscriptionDto> subscriptions = subscriptionService.findByUser(userId);
+            return ResponseEntity.ok(subscriptions);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-subscriptions", "failed to get subscription with user id [" + userId + "]")
+            );
         }
     }
 
@@ -217,7 +233,6 @@ public class SubscriptionAdminController {
         log.debug("validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
-        criteria.setStatus(SubscriptionStatus.ACTIVE);
         criteria.setEndDateBefore(validityCheckDate);
 
         return searchSubscriptionQuery.searchActive(criteria);
@@ -227,10 +242,13 @@ public class SubscriptionAdminController {
         for (SubscriptionDto subscription : subscriptions) {
             LocalDateTime endDate = subscription.getEndDate();
 
-            if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
-                String subscriptionId = subscription.getSubscriptionId();
-                log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
-                cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
+            if (endDate != null) {
+                LocalDateTime now = LocalDateTime.now();
+                if (endDate.isBefore(now) && !DateTimeUtil.isSameDay(endDate, now)) {
+                    String subscriptionId = subscription.getSubscriptionId();
+                    log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
+                    cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
+                }
             }
         }
     }

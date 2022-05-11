@@ -44,4 +44,9 @@ public class DateTimeUtil {
         return LocalDateTime.parse(localDateTime, formatter);
     }
 
+    public static boolean isSameDay(LocalDateTime date1, LocalDateTime date2) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyyMMdd");
+        return fmt.format(date1).equals(fmt.format(date2));
+    }
+
 }

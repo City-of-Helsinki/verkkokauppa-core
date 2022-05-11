@@ -69,9 +69,11 @@ public class AccountingSlipService {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private AccountingSearchService accountingSearchService;
 
     public List<AccountingSlipDto> createAccountingData() {
-        List<Order> ordersToAccount = IterableUtils.iterableToList(orderRepository.findNotAccounted());
+        List<Order> ordersToAccount = accountingSearchService.findNotAccounted();
         Map<String, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
 
         // not handling current date

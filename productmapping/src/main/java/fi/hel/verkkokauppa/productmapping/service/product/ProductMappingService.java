@@ -56,6 +56,7 @@ public class ProductMappingService {
                 createByParams("tilavaraus", "12345"),
                 createByParams("tilavaraus", "123456"),
                 createByParams("venepaikat", "1234"),
+                createByParams("venepaikat", "12345"),
                 createByParams("venepaikat", "5678")
         );
 

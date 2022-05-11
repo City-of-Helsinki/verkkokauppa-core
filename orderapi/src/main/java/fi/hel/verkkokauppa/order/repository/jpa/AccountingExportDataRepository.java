@@ -15,10 +15,4 @@ public interface AccountingExportDataRepository extends ElasticsearchRepository<
 
     int countAllByExportedStartsWith(String year);
 
-    default Iterable<AccountingExportData> findNotExported() {
-        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
-
-        return search(qb);
-    }
-
 }

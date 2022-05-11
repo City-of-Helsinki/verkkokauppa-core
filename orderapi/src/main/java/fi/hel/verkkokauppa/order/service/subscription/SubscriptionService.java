@@ -35,10 +35,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Component
 public class SubscriptionService {
@@ -237,6 +238,17 @@ public class SubscriptionService {
         }
 
         return subscription;
+    }
+
+    public List<SubscriptionDto> findByUser(String userId) {
+        List<Subscription> subscriptions = this.subscriptionRepository.findByUser(userId);
+        List<SubscriptionDto> subscriptionDtos = new ArrayList<>();
+        for (Subscription subscription : subscriptions) {
+            SubscriptionDto subscriptionDto = this.getSubscriptionQuery.mapToDto(subscription);
+            subscriptionDto.setMeta(this.findMetasBySubscriptionId(subscription.getSubscriptionId()));
+            subscriptionDtos.add(subscriptionDto);
+        }
+        return subscriptionDtos;
     }
 
     public Subscription findById(String subscriptionId) {

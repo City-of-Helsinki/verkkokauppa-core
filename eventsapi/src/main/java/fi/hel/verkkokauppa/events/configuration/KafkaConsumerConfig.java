@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.events.configuration;
 
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -118,6 +119,24 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, OrderMessage> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(ordersConsumerFactory());
+        return factory;
+    }
+
+    // RefundMessage consumer
+
+    @Bean
+    public ConsumerFactory<String, RefundMessage> refundsConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(
+                consumerConfigs(),
+                new StringDeserializer(),
+                new JsonDeserializer<>(RefundMessage.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, RefundMessage> refundsKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, RefundMessage> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(refundsConsumerFactory());
         return factory;
     }
 

@@ -128,9 +128,6 @@ public class SubscriptionController {
 			@RequestBody SubscriptionCriteria criteria
 	) {
 		try {
-			// It's possible to give other status in criteria, but we always want to search for active Subscription order.
-			criteria.setStatus(SubscriptionStatus.ACTIVE);
-
 			final List<SubscriptionDto> subscription = searchSubscriptionQuery.searchActive(criteria);
 			return ResponseEntity.ok(subscription);
 		} catch (CommonApiException cae) {

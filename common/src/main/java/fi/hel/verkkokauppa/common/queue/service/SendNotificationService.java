@@ -35,7 +35,7 @@ public class SendNotificationService {
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             String messageAsJsonString = mapper.writeValueAsString(message);
-
+            log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
             jmsTemplate.convertAndSend(queue, messageAsJsonString);
         } catch (Exception e) {
             log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
@@ -50,7 +50,7 @@ public class SendNotificationService {
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             String messageAsJsonString = mapper.writeValueAsString(message);
-
+            log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
             jmsTemplate.convertAndSend(queue, messageAsJsonString);
         } catch (Exception e) {
             log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
@@ -65,7 +65,7 @@ public class SendNotificationService {
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             String messageAsJsonString = mapper.writeValueAsString(message);
-
+            log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
             jmsTemplate.convertAndSend(queue, messageAsJsonString);
         } catch (Exception e) {
             log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());

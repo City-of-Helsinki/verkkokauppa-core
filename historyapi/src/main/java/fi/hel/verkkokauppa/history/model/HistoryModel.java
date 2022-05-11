@@ -12,9 +12,9 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 
-@Document(indexName = "history")
 @Data
 @Builder
+@Document(indexName = "history")
 public class HistoryModel implements History {
     @Id
     String historyId;
