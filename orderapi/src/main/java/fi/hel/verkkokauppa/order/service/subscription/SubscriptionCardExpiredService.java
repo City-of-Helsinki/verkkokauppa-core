@@ -21,6 +21,14 @@ public class SubscriptionCardExpiredService {
     @Autowired
     private SubscriptionCardExpiredTransformer subscriptionCardExpiredTransformer;
 
+    /**
+     * It creates a new `SubscriptionCardExpired` entity and saves it to the database, then transforms it to a
+     * `SubscriptionCardExpiredDto` and returns it
+     *
+     * @param subscriptionId The id of the subscription that has expired
+     * @param namespace The namespace of the subscription.
+     * @return A SubscriptionCardExpiredDto object
+     */
     public SubscriptionCardExpiredDto createAndTransformToDto(String subscriptionId, String namespace) {
         SubscriptionCardExpired cardExpired = SubscriptionCardExpired.builder()
                 .subscriptionCardExpiredId(

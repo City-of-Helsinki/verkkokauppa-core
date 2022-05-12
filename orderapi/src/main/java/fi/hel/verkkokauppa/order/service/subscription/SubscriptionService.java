@@ -169,6 +169,11 @@ public class SubscriptionService {
     }
 
 
+    /**
+     * When a subscription expires, send a message to the notification service to send a notification to the user.
+     *
+     * @param subscription The subscription object that is being cancelled.
+     */
     public void triggerSubscriptionExpiredCardEvent(Subscription subscription) {
         SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
                 .eventType(EventType.SUBSCRIPTION_CARD_EXPIRED)

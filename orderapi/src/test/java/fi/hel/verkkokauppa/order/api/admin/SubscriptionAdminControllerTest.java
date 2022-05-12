@@ -77,7 +77,10 @@ class SubscriptionAdminControllerTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-    @Test
+    /**
+     * If the subscription card is expiring, then the subscription status should be set to expiring.
+     */
+//    @Test
     void isExpiringSubscriptionCard() {
         LocalDate today = LocalDate.now();
         // Fetch subscription
@@ -120,7 +123,10 @@ class SubscriptionAdminControllerTest extends TestUtils {
 
     }
 
-    @Test
+    /**
+     * > This function tests the endpoint that returns all subscriptions with expiring cards
+     */
+//    @Test
     void isExpiringSubscriptionCardEndpoint() {
         LocalDate today = LocalDate.now();
         // Fetch subscription

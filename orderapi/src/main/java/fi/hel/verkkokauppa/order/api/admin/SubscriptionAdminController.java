@@ -188,6 +188,13 @@ public class SubscriptionAdminController {
     }
 
 
+    /**
+     * It creates a new `SubscriptionCardExpiredDto` object and returns it as a response
+     *
+     * @param subscriptionId the id of the subscription
+     * @param namespace the namespace of the subscription
+     * @return A subscriptionCardExpiredDto object
+     */
     @GetMapping(value = "/subscription-admin/create-card-expired-email-entity", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionCardExpiredDto> subscriptionCreateCardExpiredEmailEntity(
             @RequestParam(value = "subscriptionId") String subscriptionId,
@@ -253,8 +260,11 @@ public class SubscriptionAdminController {
         }
     }
 
-    //Notifications start
-
+    /**
+     * It checks for subscriptions with expiring cards and triggers an event for each of them
+     *
+     * @return A list of subscriptions with expiring cards.
+     */
     @GetMapping(value = "/subscription-admin/check-expiring-card", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<SubscriptionDto>> checkExpiringCards() {
         log.debug("Checking expiring cards...");
@@ -262,7 +272,7 @@ public class SubscriptionAdminController {
         List<SubscriptionDto> expiredCardSubscriptions = getSubscriptionsWithExpiringCard();
 
         // No need to further handle expired ones
-        expiredCardSubscriptions.removeIf(s -> s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
+        expiredCardSubscriptions.removeIf(s -> s.getStatus() != null && s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
         log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
 
         expiredCardSubscriptions.forEach(subscriptionDto -> {
@@ -273,8 +283,14 @@ public class SubscriptionAdminController {
 
         return ResponseEntity.ok(expiredCardSubscriptions);
     }
-
-
+    
+    /**
+     * "Get all active subscriptions that are expiring in the next X days."
+     *
+     * The function is called from a scheduled task that runs every X day
+     *
+     * @return A list of subscriptions with expiring cards.
+     */
     public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
@@ -292,7 +308,5 @@ public class SubscriptionAdminController {
                 .filter(subscriptionDto -> subscriptionService.isExpiringCard(currentDate, subscriptionDto))
                 .collect(Collectors.toList());
     }
-
-    // Notifications end
 
 }
