@@ -20,10 +20,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.web.util.NestedServletException;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -136,6 +139,74 @@ public class SubscriptionAdminControllerUnitTest {
         verify(subscriptionService, times(2)).isExpiringCard(any(), any());
 
     }
+
+    @Test
+    public void checkExpiringCardShouldPreventMultipleEmailsPerDay() throws Exception {
+        SubscriptionDto subscriptionDto = new SubscriptionDto();
+        subscriptionDto.setSubscriptionId("1");
+        ArrayList<SubscriptionDto> dtos = new ArrayList<>();
+        dtos.add(subscriptionDto);
+        // When searching active subscriptions then return mocked dto
+        when(searchSubscriptionQuery.searchActive(any(SubscriptionCriteria.class))).thenReturn(dtos);
+        // Mock that this subscription is expiring
+        when(subscriptionService.isExpiringCard(any(LocalDate.class), any(SubscriptionDto.class))).thenReturn(true);
+
+
+        SubscriptionCardExpiredDto subscriptionCardExpiredSent = new SubscriptionCardExpiredDto();
+        subscriptionCardExpiredSent.setSubscriptionId("1");
+        LocalDateTime today = LocalDateTime.now();
+        subscriptionCardExpiredSent.setCreatedAt(today);
+        ArrayList<SubscriptionCardExpiredDto> subscriptionCardExpiredDtos = new ArrayList<>();
+        subscriptionCardExpiredDtos.add(subscriptionCardExpiredSent);
+
+        when(service.findAllBySubscriptionIdOrderByCreatedAtDesc(any())).thenReturn(subscriptionCardExpiredDtos);
+
+        ResultMatcher isEmptyList = content().string(mapper.writeValueAsString(new ArrayList<>()));
+        this.mockMvc.perform(
+                        get("/subscription-admin/check-expiring-card")
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(isEmptyList);
+        //
+        verify(subscriptionService, times(0)).triggerSubscriptionExpiredCardEvent(any());
+        verify(subscriptionService, times(1)).isExpiringCard(any(), any());
+    }
+
+
+    @Test
+    public void checkExpiringCardShouldAllowEmailsWithCardExpiredEmailSentYesterday() throws Exception {
+        SubscriptionDto subscriptionDto = new SubscriptionDto();
+        subscriptionDto.setSubscriptionId("1");
+        ArrayList<SubscriptionDto> dtos = new ArrayList<>();
+        dtos.add(subscriptionDto);
+        // When searching active subscriptions then return mocked dto
+        when(searchSubscriptionQuery.searchActive(any(SubscriptionCriteria.class))).thenReturn(dtos);
+        // Mock that this subscription is expiring
+        when(subscriptionService.isExpiringCard(any(LocalDate.class), any(SubscriptionDto.class))).thenReturn(true);
+
+
+        SubscriptionCardExpiredDto subscriptionCardExpiredSent = new SubscriptionCardExpiredDto();
+        subscriptionCardExpiredSent.setSubscriptionId("1");
+        LocalDateTime yesterday = LocalDateTime.now().minus(1, ChronoUnit.DAYS);
+        subscriptionCardExpiredSent.setCreatedAt(yesterday);
+        ArrayList<SubscriptionCardExpiredDto> subscriptionCardExpiredDtos = new ArrayList<>();
+        subscriptionCardExpiredDtos.add(subscriptionCardExpiredSent);
+
+        when(service.findAllBySubscriptionIdOrderByCreatedAtDesc(any())).thenReturn(subscriptionCardExpiredDtos);
+
+
+        this.mockMvc.perform(
+                        get("/subscription-admin/check-expiring-card")
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string(mapper.writeValueAsString(dtos)));
+        //
+        verify(subscriptionService, times(1)).triggerSubscriptionExpiredCardEvent(any());
+        verify(subscriptionService, times(1)).isExpiringCard(any(), any());
+    }
+
 
     // Testing that if the service throws an exception, the controller will throw an exception.
     // Not so happy paths

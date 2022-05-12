@@ -275,15 +275,29 @@ public class SubscriptionAdminController {
         expiredCardSubscriptions.removeIf(s -> s.getStatus() != null && s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
         log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
 
+        // Removing all the expired card subscriptions that have already been sent a reminder today.
+        expiredCardSubscriptions.removeIf(dto -> {
+            List<SubscriptionCardExpiredDto> dtos = subscriptionCardExpiredService
+                    .findAllBySubscriptionIdOrderByCreatedAtDesc(dto.getSubscriptionId());
+            // If no dtos found we can send reminder
+            if (dtos.isEmpty()) {
+                return false;
+            }
+
+            SubscriptionCardExpiredDto sentCardExpiredNotification = dtos.get(0);
+            return DateTimeUtil.isSameDay(LocalDateTime.now(), sentCardExpiredNotification.getCreatedAt());
+        });
+
         expiredCardSubscriptions.forEach(subscriptionDto -> {
+            String subscriptionId = subscriptionDto.getSubscriptionId();
             subscriptionService.triggerSubscriptionExpiredCardEvent(
-                    subscriptionService.findById(subscriptionDto.getSubscriptionId())
+                    subscriptionService.findById(subscriptionId)
             );
         });
 
         return ResponseEntity.ok(expiredCardSubscriptions);
     }
-    
+
     /**
      * "Get all active subscriptions that are expiring in the next X days."
      *
