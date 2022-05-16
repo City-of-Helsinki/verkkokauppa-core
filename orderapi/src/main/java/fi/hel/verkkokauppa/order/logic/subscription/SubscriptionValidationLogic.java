@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Period;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 
@@ -33,7 +34,7 @@ public class SubscriptionValidationLogic {
 	public void validateStartDate(SubscriptionDto dto, Errors errors) {
 		final LocalDate now = LocalDate.now();
 
-		if (dto.getStartDate() != null && dto.getStartDate().isBefore(ChronoLocalDateTime.from(now))) {
+		if (dto.getStartDate() != null && dto.getStartDate().isBefore(Instant.from(ChronoLocalDateTime.from(now)))) {
 			errors.reject("error.subscription.invalid-start-date"); // TODO: ok?
 		}
 	}

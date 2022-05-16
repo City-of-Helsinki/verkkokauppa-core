@@ -30,6 +30,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -74,7 +75,7 @@ public class SubscriptionControllerTests extends DummyData {
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-    //@Test
+//    @Test
     public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
         orderRepository.delete(order);
@@ -86,7 +87,7 @@ public class SubscriptionControllerTests extends DummyData {
         orderItems.get(0).setPeriodUnit(Period.DAILY);
         orderItems.get(0).setPeriodCount(2);
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
-        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(Instant.now());
         orderItems.get(0).setPriceGross("124");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
@@ -137,7 +138,7 @@ public class SubscriptionControllerTests extends DummyData {
      }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-//    @Test
+    @Test
     public void testCreateWithItemsGet() {
         Order order = generateDummyOrder();
         order.setNamespace("venepaikat");
@@ -147,7 +148,7 @@ public class SubscriptionControllerTests extends DummyData {
         orderItems.get(0).setPeriodUnit(Period.DAILY);
         orderItems.get(0).setPeriodCount(2);
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
-        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(Instant.now());
         orderItems.get(0).setPriceGross("124");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 

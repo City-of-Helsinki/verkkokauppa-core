@@ -36,6 +36,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoField;
@@ -250,8 +251,8 @@ public class OrderService {
     }
 
     public void setOrderStartAndEndDate(Order order, Subscription subscription, PaymentMessage message) {
-        LocalDateTime startDate = subscription.getStartDate();
-        LocalDateTime paymentAt = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
+        Instant startDate = subscription.getStartDate();
+        Instant paymentAt = Instant.from(DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp()));
 
         if (startDate.isBefore(paymentAt)) {
             setStartDateAndCalculateNextEndDate(order, subscription, paymentAt);
@@ -262,12 +263,12 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    public void setStartDateAndCalculateNextEndDate(Order order, Subscription subscription, LocalDateTime startDate) {
-        order.setStartDate(startDate);
+    public void setStartDateAndCalculateNextEndDate(Order order, Subscription subscription, Instant startDate) {
+        order.setStartDate(LocalDateTime.from(startDate));
 
         // Order end date = start date + subscription cycle eg month
         LocalDateTime endDateAddedPeriodCycle = nextDateCalculator.calculateNextDateTime(
-                startDate,
+                LocalDateTime.from(startDate),
                 subscription.getPeriodUnit(),
                 subscription.getPeriodFrequency());
 

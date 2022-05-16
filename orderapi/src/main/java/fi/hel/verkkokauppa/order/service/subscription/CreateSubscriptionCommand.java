@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -70,7 +71,7 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 
 		// This value should come from orderItems!
 		if (subscription.getStartDate() == null) {
-			subscription.setStartDate(LocalDateTime.now()); // TODO: ok?
+			subscription.setStartDate(Instant.now()); // TODO: ok?
 		}
 
 		// TODO: end date?

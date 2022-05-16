@@ -12,6 +12,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
 
     private String status;
     // Date data
-    private LocalDateTime startDate; // (created from orderitems.startDate)
+    private Instant startDate; // (created from orderitems.startDate)
     private LocalDateTime billingStartDate; // (created from orderitems.billingStartDate)
     private LocalDateTime endDate;
     private LocalDateTime renewalDate;

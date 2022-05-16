@@ -82,7 +82,7 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	String user;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime startDate;
+	private Instant startDate;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
 	private LocalDateTime endDate;

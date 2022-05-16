@@ -4,10 +4,9 @@ import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.OrderController;
-import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
+import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -19,16 +18,12 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionsFromOrderCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import org.hamcrest.core.StringContains;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +31,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.Mockito.doReturn;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -211,16 +203,17 @@ class OrderServiceTest extends TestUtils {
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy HH");
 
         // Assert dates matches
-        Assertions.assertEquals(order1.getStartDate().format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        LocalDateTime startDate = LocalDateTime.from(firstSubscription.getStartDate());
+        Assertions.assertEquals(order1.getStartDate().format(formatter2), startDate.format(formatter2));
         Assertions.assertEquals(order1.getEndDate().format(formatter), firstSubscription.getEndDate().format(formatter));
         log.info("order 1 startDate {}", order1.getStartDate().format(formatter));
         log.info("order 1 endDate {}", order1.getEndDate().format(formatter));
-        log.info("subscription 1 startDate {}", firstSubscription.getStartDate().format(formatter));
+        log.info("subscription 1 startDate {}", startDate.format(formatter));
         log.info("subscription 1 endDate {}", firstSubscription.getEndDate().format(formatter));
 
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
-        Assertions.assertEquals(today.format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        Assertions.assertEquals(today.format(formatter2), startDate.format(formatter2));
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, firstSubscription.getEndDate().format(formatter));
@@ -270,7 +263,7 @@ class OrderServiceTest extends TestUtils {
 
         // RENEWAL PROCESS START 3
         // Update start and endDate of order programmatically
-        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        firstSubscription.setStartDate(Instant.from(today.minus(2, ChronoUnit.MONTHS)));
         firstSubscription.setEndDate(today.minus(1, ChronoUnit.MONTHS));
         subscriptionRepository.save(firstSubscription);
         Assertions.assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
@@ -356,14 +349,15 @@ class OrderServiceTest extends TestUtils {
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
         // Assert dates matches
-        Assertions.assertEquals(order1.getStartDate().format(formatter), firstSubscription.getStartDate().format(formatter));
+        LocalDateTime startDate = LocalDateTime.from(firstSubscription.getStartDate());
+        Assertions.assertEquals(order1.getStartDate().format(formatter), startDate.format(formatter));
         Assertions.assertEquals(order1.getEndDate().format(formatter), firstSubscription.getEndDate().format(formatter));
         log.info("order 1 startDate {}", order1.getStartDate().format(formatter));
         log.info("order 1 endDate {}", order1.getEndDate().format(formatter));
 
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
-        Assertions.assertEquals(todayDateAsString, firstSubscription.getStartDate().format(formatter));
+        Assertions.assertEquals(todayDateAsString, startDate.format(formatter));
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
         Assertions.assertEquals(oneMonthFromToday, firstSubscription.getEndDate().format(formatter));
@@ -401,7 +395,7 @@ class OrderServiceTest extends TestUtils {
 
         // RENEWAL PROCESS START 3
         // Update start and endDate of order programmatically
-        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        firstSubscription.setStartDate(Instant.from(today.minus(2, ChronoUnit.MONTHS)));
         firstSubscription.setEndDate(today.minus(1, ChronoUnit.MONTHS));
         subscriptionRepository.save(firstSubscription);
         Assertions.assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
@@ -503,16 +497,17 @@ class OrderServiceTest extends TestUtils {
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy HH");
 
         // Assert dates matches
-        Assertions.assertEquals(order1.getStartDate().format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        LocalDateTime startDate = LocalDateTime.from(firstSubscription.getStartDate());
+        Assertions.assertEquals(order1.getStartDate().format(formatter2), startDate.format(formatter2));
         Assertions.assertEquals(order1.getEndDate().format(formatter), firstSubscription.getEndDate().format(formatter));
         log.info("order 1 startDate {}", order1.getStartDate().format(formatter));
         log.info("order 1 endDate {}", order1.getEndDate().format(formatter));
-        log.info("subscription 1 startDate {}", firstSubscription.getStartDate().format(formatter));
+        log.info("subscription 1 startDate {}", startDate.format(formatter));
         log.info("subscription 1 endDate {}", firstSubscription.getEndDate().format(formatter));
 
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
-        Assertions.assertEquals(today.format(formatter2), firstSubscription.getStartDate().format(formatter2));
+        Assertions.assertEquals(today.format(formatter2), startDate.format(formatter2));
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, firstSubscription.getEndDate().format(formatter));
@@ -555,7 +550,7 @@ class OrderServiceTest extends TestUtils {
 
         // RENEWAL PROCESS START 3 (KYV-505)
         // Update start and endDate of order programmatically
-        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        firstSubscription.setStartDate(Instant.from(today.minus(2, ChronoUnit.MONTHS)));
         // Set endDate at the start of the day, '00:00'.
         firstSubscription.setEndDate(
                 today.with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay())
@@ -572,7 +567,7 @@ class OrderServiceTest extends TestUtils {
 
         // RENEWAL PROCESS START 4 (Automatically cancels subscription when endDate is today -1 day)
         // Update start and endDate of order programmatically
-        firstSubscription.setStartDate(today.minus(2, ChronoUnit.MONTHS));
+        firstSubscription.setStartDate(Instant.from(today.minus(2, ChronoUnit.MONTHS)));
         // Set endDate at the start of the day, '00:00'.
         firstSubscription.setEndDate(
                 today

@@ -80,7 +80,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
     /**
      * If the subscription card is expiring, then the subscription status should be set to expiring.
      */
-//    @Test
+    @Test
     void isExpiringSubscriptionCard() {
         LocalDate today = LocalDate.now();
         // Fetch subscription

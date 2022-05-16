@@ -11,6 +11,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Document(indexName = "orderitems")
@@ -60,10 +61,10 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String type;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime startDate; // TODO: Test for date_optional
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
+    private Instant startDate; // TODO: Test for date_optional
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second_millis)
     private LocalDateTime billingStartDate; // TODO: Test for date_optional
 
     // Subscription fields
@@ -99,7 +100,7 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
             Long periodFrequency,
             Integer periodCount,
             LocalDateTime billingStartDate,
-            LocalDateTime startDate
+            Instant startDate
     ) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;

@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -107,7 +108,7 @@ public class TestUtils extends DummyData{
         orderItems.get(0).setPeriodUnit(periodUnit);
         orderItems.get(0).setPeriodCount(periodCount);
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
-        orderItems.get(0).setStartDate(LocalDateTime.now());
+        orderItems.get(0).setStartDate(Instant.now());
         orderItems.get(0).setPriceGross("124");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 

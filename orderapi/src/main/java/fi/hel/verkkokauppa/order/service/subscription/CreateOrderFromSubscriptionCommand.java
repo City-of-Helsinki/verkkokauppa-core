@@ -31,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -291,7 +292,7 @@ public class CreateOrderFromSubscriptionCommand {
                 null,
                 null,
                 subscriptionDto.getBillingStartDate(),
-                subscriptionDto.getEndDate()
+                Instant.from(subscriptionDto.getEndDate())
         );
 
     }

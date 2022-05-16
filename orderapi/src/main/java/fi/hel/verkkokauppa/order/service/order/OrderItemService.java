@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,7 @@ import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.ConversionException;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -25,7 +27,7 @@ public class OrderItemService {
 
     public String addItem(String orderId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
                           String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                          String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
+                          String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, Instant startDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -69,7 +71,12 @@ public class OrderItemService {
     }
 
     public List<OrderItem> findByOrderId(String orderId) {
-        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        List<OrderItem> orderItems = null;
+        try {
+            orderItems = orderItemRepository.findByOrderId(orderId);
+        } catch (ConversionException e) {
+            log.error("asd",e);
+        }
 
         if (orderItems.size() > 0)
             return orderItems;
