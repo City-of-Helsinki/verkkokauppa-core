@@ -83,39 +83,4 @@ public class RefundController {
       );
     }
   }
-
-  @GetMapping(value = "/refund/get-by-order-id", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<RefundAggregateDto>> getRefundsByOrderId(@RequestParam String orderId) {
-    List<Refund> refunds = refundRepository.findByOrderId(orderId);
-    List<RefundAggregateDto> dtos = new ArrayList<>();
-    for (Refund refund : refunds) {
-      List<RefundItem> refundItems = refundItemRepository.findByRefundId(refund.getRefundId());
-      dtos.add(refundTransformer.transformToDto(refund, refundItems));
-    }
-    return ResponseEntity.ok().body(dtos);
-  }
-
-  @PostMapping(value = "/refund/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<RefundDto> confirmRefund(@RequestParam String refundId) {
-    Refund refund = refundRepository.findById(refundId).orElseThrow(() -> new CommonApiException(
-            HttpStatus.NOT_FOUND,
-            new Error("refund-not-found", "refund with id [" + refundId + "] not found")
-    ));
-
-    if (!refund.getStatus().equals(RefundStatus.DRAFT)) {
-      throw new CommonApiException(
-              HttpStatus.BAD_REQUEST,
-              new Error("refund-validation-failed", "refund [" + refundId + "] must be a draft")
-      );
-    }
-
-    refund.setStatus(RefundStatus.CONFIRMED);
-    refundRepository.save(refund);
-
-    RefundMessage refundMessage = createRefundMessage(EventType.REFUND_CONFIRMED, refund);
-    sendEventService.sendEventMessage(TopicName.REFUNDS, refundMessage);
-    saveHistoryService.saveRefundMessageHistory(refundMessage);
-
-    return ResponseEntity.ok().body(refundTransformer.transformToDto(refund));
-  }
 }
