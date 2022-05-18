@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Core start" type="CompoundRunConfigurationType">
+    <toRun name="EventsApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="MockproductmanagementApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="ProductapiApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="PriceApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="ProductmappingApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="CartApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="PaymentApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="OrderapiApplication" type="SpringBootApplicationConfigurationType" />
+    <toRun name="MessageApplication" type="SpringBootApplicationConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

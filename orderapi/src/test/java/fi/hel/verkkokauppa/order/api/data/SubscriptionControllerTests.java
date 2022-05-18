@@ -74,7 +74,7 @@ public class SubscriptionControllerTests extends DummyData {
     }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-    //@Test
+    @Test
     public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
         orderRepository.delete(order);
@@ -137,7 +137,7 @@ public class SubscriptionControllerTests extends DummyData {
      }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-//    @Test
+@Test
     public void testCreateWithItemsGet() {
         Order order = generateDummyOrder();
         order.setNamespace("venepaikat");

@@ -50,7 +50,7 @@ class SubscriptionServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-//    @Test
+@Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -65,7 +65,7 @@ class SubscriptionServiceTest extends TestUtils {
         }
     }
 
-//    @Test
+@Test
     void createFromSubscription() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
