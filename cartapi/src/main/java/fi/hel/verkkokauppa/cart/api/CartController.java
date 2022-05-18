@@ -31,7 +31,10 @@ public class CartController {
 	@GetMapping("/cart/create")
 	public ResponseEntity<Cart> createCart(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "user") String user) {
 		try {
+			//create
+
 			Cart cart = cartService.createByParams(namespace, user);
+			Cart cart2 = cartService.createByParams(namespace, user);
 			return ResponseEntity.ok().body(cart);
 		} catch (Exception e) {
 			log.error("creating cart failed", e);

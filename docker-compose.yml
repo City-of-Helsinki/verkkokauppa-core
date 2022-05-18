@@ -4,16 +4,25 @@ services:
   cartapi:
     container_name: cartapi
     build:
-      context: .
+      context: ./cartapi
+      dockerfile: Dockerfile
       args:
-        - API_DIR=/tmp/src/cartapi
+        - API_DIR=/tmp/src/messageapi
     volumes:
+      - ./:/app
       - "${HOME}/.m2:/root/.m2"
-      - "./infra/cartapi/src/main/resources/application.properties:/tmp/src/cartapi/src/main/resources/application.properties"
+      - "./infra/cartapi/src/main/resources/application.properties:/app/cartapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: sh ./cartapi/run.sh
+    ports:
+      - "8180:8080"
+      - "35729:35729"
+      - "5005:5005"
+    environment:
+      - API_DIR=cartapi
+      - spring_profiles_active=local
     env_file:
       - .env.docker
-    ports:
-      - '8180:8080'
     networks:
       - common
     depends_on:

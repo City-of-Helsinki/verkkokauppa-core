@@ -70,6 +70,7 @@ public class OrderController {
                                                          @RequestParam(value = "user") String user) {
         try {
             Order order = orderService.createByParams(namespace, user);
+            Order order2 = orderService.createByParams(namespace, user);
             String orderId = order.getOrderId();
             return orderAggregateDto(orderId);
 
