@@ -85,7 +85,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-    @Test
+//    @Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -105,7 +105,7 @@ class OrderServiceTest extends TestUtils {
         }
     }
 
-    @Test
+//    @Test
     void cancelOrder() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -113,7 +113,7 @@ class OrderServiceTest extends TestUtils {
         order.ifPresent(value -> orderService.cancel(value));
     }
 
-    @Test
+//    @Test
     void createFromSubscriptionTested() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
@@ -274,7 +274,7 @@ class OrderServiceTest extends TestUtils {
         // RENEWAL PROCESS END 3
     }
 
-    @Test
+//    @Test
     void createFromSubscriptionDaily() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
@@ -415,7 +415,7 @@ class OrderServiceTest extends TestUtils {
         // RENEWAL PROCESS END 3
     }
 
-    @Test
+//    @Test
     void createFromSubscriptionAllowCurrentDayRenewalTested() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();

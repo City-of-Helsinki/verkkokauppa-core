@@ -70,7 +70,7 @@ public class ControllerEventTests {
     }
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
-    @Test
+//    @Test
     public void testSubscriptionCancelledEvent() throws JsonProcessingException, InterruptedException {
         String namespace = UUIDGenerator.generateType4UUID().toString();
         SubscriptionMessage message = SubscriptionMessage.builder()
@@ -112,7 +112,7 @@ public class ControllerEventTests {
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     // [KYV-405]
-    @Test
+//    @Test
     public void testSendSubscriptionCancelledEvent() {
         SubscriptionMessage message = SubscriptionMessage.builder()
                 .subscriptionId("1234")
