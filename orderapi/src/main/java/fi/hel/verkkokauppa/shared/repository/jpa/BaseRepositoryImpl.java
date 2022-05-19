@@ -30,29 +30,34 @@ public class BaseRepositoryImpl<T extends Identifiable, ID> extends SimpleElasti
 		return entityType;
 	}
 
-	public Iterable<T> search(QueryBuilder query) {
-		NativeSearchQuery searchQuery = (new NativeSearchQueryBuilder()).withQuery(query).build();
-		long count = (Long)this.execute((operations) -> {
-			return operations.count(searchQuery, this.entityClass, this.getIndexCoordinates());
-		});
-
-		if (count != 0L) {
-			searchQuery.setPageable(PageRequest.of(0, (int) count));
-			SearchHits<T> searchHits = (SearchHits) this.execute((operations) -> {
-				return operations.search(searchQuery, this.entityClass, this.getIndexCoordinates());
-			});
-
-			if (searchHits != null) {
-				return searchHits.getSearchHits()
-						.stream()
-						.map(SearchHit::getContent)
-						.collect(Collectors.toList());
-			}
-		}
-		return Collections.emptyList();
-	}
+//	public Iterable<T> search(QueryBuilder query) {
+//		NativeSearchQuery searchQuery = (new NativeSearchQueryBuilder()).withQuery(query).build();
+//		long count = (Long)this.execute((operations) -> {
+//			return operations.count(searchQuery, this.entityClass, this.getIndexCoordinates());
+//		});
+//
+//		if (count != 0L) {
+//			searchQuery.setPageable(PageRequest.of(0, (int) count));
+//			SearchHits<T> searchHits = (SearchHits) this.execute((operations) -> {
+//				return operations.search(searchQuery, this.entityClass, this.getIndexCoordinates());
+//			});
+//
+//			if (searchHits != null) {
+//				return searchHits.getSearchHits()
+//						.stream()
+//						.map(SearchHit::getContent)
+//						.collect(Collectors.toList());
+//			}
+//		}
+//		return Collections.emptyList();
+//	}
 
 	private IndexCoordinates getIndexCoordinates() {
 		return this.operations.getIndexCoordinatesFor(this.entityClass);
+	}
+
+	@Override
+	public void deleteAllById(Iterable<? extends ID> ids) {
+
 	}
 }

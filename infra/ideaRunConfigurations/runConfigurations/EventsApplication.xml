@@ -1,0 +1,28 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="EventsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="events" />
+    <extension name="net.ashald.envfile">
+      <option name="IS_ENABLED" value="false" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" />
+      </ENTRIES>
+    </extension>
+    <option name="SPRING_BOOT_MAIN_CLASS" value="fi.hel.verkkokauppa.events.EventsApplication" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <option name="UPDATE_ACTION_UPDATE_POLICY" value="UpdateResources" />
+    <envs>
+      <env name="logging.level.org.springframework.data.elasticsearch.client.WIRE" value="trace" />
+      <env name="subscription.service.url" value="http://host.docker.internal:8183/subscription/create-from-payment-event" />
+      <env name="SPRING_PROFILES_ACTIVE" value="local" />
+      <env name="WEBHOOK_URL" value="https://webhook.site/ad043067-8989-4287-b9dd-59aa560a1384" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

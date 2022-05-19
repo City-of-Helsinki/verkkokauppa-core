@@ -30,6 +30,12 @@ public class OrderTransformerTests extends DummyData {
      */
     @Test
     public void should_NotHaveNullFieldsDto() throws IllegalAccessException {
+        excludedFields.add("subscriptionId");
+        excludedFields.add("priceNet");
+        excludedFields.add("priceVat");
+        excludedFields.add("priceTotal");
+        excludedFields.add("accounted");
+        excludedFields.add("customerPhone");
         final OrderDto dto = generateDummyOrderDto();
         final boolean hasNullFields = TestUtils.hasNullFields(dto, excludedFields);
 
@@ -46,6 +52,14 @@ public class OrderTransformerTests extends DummyData {
     @Test
     public void should_NotHaveNullFieldsEntity() throws IllegalAccessException{
         final Order entity = generateDummyOrder();
+        excludedFields.add("subscriptionId");
+        excludedFields.add("priceNet");
+        excludedFields.add("priceVat");
+        excludedFields.add("priceTotal");
+        excludedFields.add("accounted");
+        excludedFields.add("customerPhone");
+        excludedFields.add("startDate");
+        excludedFields.add("endDate");
         final boolean hasNullFields = TestUtils.hasNullFields(entity, excludedFields);
         assertFalse(hasNullFields);
     }
