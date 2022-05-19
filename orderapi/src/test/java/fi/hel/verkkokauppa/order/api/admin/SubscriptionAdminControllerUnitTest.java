@@ -115,7 +115,9 @@ public class SubscriptionAdminControllerUnitTest {
         SubscriptionDto subscriptionDto = new SubscriptionDto();
         subscriptionDto.setSubscriptionId("1");
         ArrayList<SubscriptionDto> dtos = new ArrayList<>();
+        ArrayList<String> dtoIds = new ArrayList<>();
         dtos.add(subscriptionDto);
+        dtoIds.add(subscriptionDto.getSubscriptionId());
         // When searching active subscriptions then return mocked dto
         when(searchSubscriptionQuery.searchActive(any(SubscriptionCriteria.class))).thenReturn(dtos);
         // Mock that this subscription is expiring
@@ -126,7 +128,7 @@ public class SubscriptionAdminControllerUnitTest {
                 )
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().string(mapper.writeValueAsString(dtos)));
+                .andExpect(content().string(mapper.writeValueAsString(dtoIds)));
 
         // Mock that this subscription is not expiring
         when(subscriptionService.isExpiringCard(any(LocalDate.class), any(SubscriptionDto.class))).thenReturn(false);

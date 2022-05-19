@@ -10,14 +10,19 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
+import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.IfProfileValue;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.Objects;
@@ -50,7 +55,7 @@ class SubscriptionServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-@Test
+//    @Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -65,7 +70,8 @@ class SubscriptionServiceTest extends TestUtils {
         }
     }
 
-@Test
+    @Test
+    @RunIfProfile(profile = "local")
     void createFromSubscription() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);

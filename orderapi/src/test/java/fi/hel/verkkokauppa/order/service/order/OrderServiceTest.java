@@ -21,6 +21,7 @@ import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptio
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
+import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -86,6 +87,7 @@ class OrderServiceTest extends TestUtils {
     }
 
     @Test
+    @RunIfProfile(profile = "local")
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -106,6 +108,7 @@ class OrderServiceTest extends TestUtils {
     }
 
     @Test
+    @RunIfProfile(profile = "local")
     void cancelOrder() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -114,6 +117,7 @@ class OrderServiceTest extends TestUtils {
     }
 
     @Test
+    @RunIfProfile(profile = "local")
     void createFromSubscriptionTested() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
@@ -275,6 +279,7 @@ class OrderServiceTest extends TestUtils {
     }
 
     @Test
+    @RunIfProfile(profile = "local")
     void createFromSubscriptionDaily() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
@@ -416,6 +421,7 @@ class OrderServiceTest extends TestUtils {
     }
 
     @Test
+    @RunIfProfile(profile = "local")
     void createFromSubscriptionAllowCurrentDayRenewalTested() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();

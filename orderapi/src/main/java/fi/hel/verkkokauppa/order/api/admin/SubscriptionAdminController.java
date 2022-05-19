@@ -266,7 +266,7 @@ public class SubscriptionAdminController {
      * @return A list of subscriptions with expiring cards.
      */
     @GetMapping(value = "/subscription-admin/check-expiring-card", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<SubscriptionDto>> checkExpiringCards() {
+    public ResponseEntity<List<String>> checkExpiringCards() {
         log.debug("Checking expiring cards...");
 
         List<SubscriptionDto> expiredCardSubscriptions = getSubscriptionsWithExpiringCard();
@@ -282,14 +282,17 @@ public class SubscriptionAdminController {
             return !dtos.isEmpty();
         });
 
+        ArrayList<String> expiredIds = new ArrayList<>();
+
         expiredCardSubscriptions.forEach(subscriptionDto -> {
             String subscriptionId = subscriptionDto.getSubscriptionId();
             subscriptionService.triggerSubscriptionExpiredCardEvent(
                     subscriptionService.findById(subscriptionId)
             );
+            expiredIds.add(subscriptionId);
         });
 
-        return ResponseEntity.ok(expiredCardSubscriptions);
+        return ResponseEntity.ok(expiredIds);
     }
 
     /**

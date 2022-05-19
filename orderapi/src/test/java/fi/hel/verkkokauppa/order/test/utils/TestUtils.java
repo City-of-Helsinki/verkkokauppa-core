@@ -171,19 +171,26 @@ public class TestUtils extends DummyData{
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
 
-        String oneMonthFromToday = today.plus(1, ChronoUnit.MONTHS).format(formatter);
+        String oneMonthFromTodayMinusOneDay = today
+                .plus(1, ChronoUnit.MONTHS)
+                .minus(1,ChronoUnit.DAYS)
+                .format(formatter);
 
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDay, order1.getEndDate().format(formatter));
         // Start date is payment paid timestamp
         Assertions.assertEquals(order1.getStartDate().format(formatter), todayDateAsString);
+
+        String oneMonthFromToday = today
+                .plus(1, ChronoUnit.MONTHS)
+                .format(formatter);
 
         Assertions.assertEquals(nextDateCalculator.calculateNextDateTime(
                         today,
                         orderItemOrder1.getPeriodUnit(),
                         orderItemOrder1.getPeriodFrequency()).format(formatter),
                 oneMonthFromToday);
-        // Asserts that endDate is moved + 1 month from today date.
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+        // Asserts that endDate is moved + 1 month and -1 day from today date.
+        Assertions.assertEquals(oneMonthFromTodayMinusOneDay, order1.getEndDate().format(formatter));
 
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());

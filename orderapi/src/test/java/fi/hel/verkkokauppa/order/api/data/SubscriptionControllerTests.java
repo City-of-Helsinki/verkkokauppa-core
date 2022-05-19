@@ -19,6 +19,7 @@ import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptio
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
+import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -75,6 +76,7 @@ public class SubscriptionControllerTests extends DummyData {
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
     @Test
+    @RunIfProfile(profile = "local")
     public void testCreateWithItems() throws JsonProcessingException {
         Order order = generateDummyOrder();
         orderRepository.delete(order);
@@ -137,7 +139,8 @@ public class SubscriptionControllerTests extends DummyData {
      }
 
     //This test is ignored because uses pure elastic search and not mocks to make testing easier.
-@Test
+    @Test
+    @RunIfProfile(profile = "local")
     public void testCreateWithItemsGet() {
         Order order = generateDummyOrder();
         order.setNamespace("venepaikat");
