@@ -10,11 +10,9 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionCardExpiredRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.*;
-import fi.hel.verkkokauppa.order.unit.utils.AutoMockBeanFactory;
-import fi.hel.verkkokauppa.order.unit.utils.UnitTest;
-import org.junit.jupiter.api.Tag;
+import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
+import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,13 +21,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.web.util.NestedServletException;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

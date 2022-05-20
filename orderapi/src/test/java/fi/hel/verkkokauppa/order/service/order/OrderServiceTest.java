@@ -21,7 +21,7 @@ import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptio
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;

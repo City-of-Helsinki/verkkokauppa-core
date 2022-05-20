@@ -1,15 +1,10 @@
-package fi.hel.verkkokauppa.order.test.utils.annotations;
+package fi.hel.verkkokauppa.order.testing.conditions;
 
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-
-import java.util.Map;
-import java.util.Objects;
+import org.junit.platform.commons.util.AnnotationUtils;
 
 import static org.junit.platform.commons.util.AnnotationUtils.findAnnotation;
 
@@ -17,7 +12,7 @@ public class RunIfProfileCondition implements ExecutionCondition {
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-        final var optional = findAnnotation(context.getElement(), RunIfProfile.class);
+        final var optional = AnnotationUtils.findAnnotation(context.getElement(), RunIfProfile.class);
         if (optional.isPresent()) {
             final RunIfProfile annotation = optional.get();
             final String profile = annotation.profile();

@@ -12,8 +12,7 @@ import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
-import fi.hel.verkkokauppa.order.test.utils.KafkaTestConsumer;
-import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assume;
@@ -81,7 +80,7 @@ public class ControllerEventTests {
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
         // Waited 1 secs
         String eventType = EventType.SUBSCRIPTION_CANCELLED;
 

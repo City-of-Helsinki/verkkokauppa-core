@@ -22,7 +22,7 @@ public class KafkaTestConsumer {
 //            groupId="payments",
 //            containerFactory="paymentsKafkaListenerContainerFactory")
 
-    @KafkaListener(topics = "${test.topic}", groupId="${test.groupId}")
+    @KafkaListener(topics = "${test.topic:test-topic}", groupId="${test.groupId:test-groupId}")
     public void receive(ConsumerRecord<?, ?> consumerRecord) {
         LOGGER.info("received payload='{}'", consumerRecord.toString());
         setPayload(consumerRecord);

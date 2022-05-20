@@ -75,7 +75,7 @@ public class OnlinePaymentController {
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {
 		try {
 			String namespace = request.getNamespace();
-			PaymentMethodDto[] methods = paymentMethodListService.getPaymentMethodList(request.getCurrency());
+			PaymentMethodDto[] methods = paymentMethodListService.getOnlinePaymentMethodList(request.getCurrency());
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
 

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.unit.utils;
+package fi.hel.verkkokauppa.order.testing.annotations;
 
 import org.junit.jupiter.api.Tag;
 

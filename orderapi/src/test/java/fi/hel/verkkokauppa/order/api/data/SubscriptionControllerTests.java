@@ -17,13 +17,9 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import fi.hel.verkkokauppa.order.test.utils.annotations.RunIfProfile;
-import org.junit.Ignore;
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +30,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
