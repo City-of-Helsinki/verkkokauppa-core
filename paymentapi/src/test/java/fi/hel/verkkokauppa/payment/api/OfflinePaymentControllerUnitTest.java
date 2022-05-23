@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.payment.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
@@ -10,11 +9,11 @@ import fi.hel.verkkokauppa.payment.service.OfflinePaymentService;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -30,8 +29,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -40,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * This class is used to test the controller layer of the application
- *
+ * <p>
  * Change OfflinePaymentController.class to controller which you want to test.
  */
 @WebMvcTest(OfflinePaymentController.class) // Change and uncomment
@@ -48,6 +46,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = AutoMockBeanFactory.class) // This automatically mocks missing beans
 @AutoConfigureMockMvc // This activates auto configuration to call mocked api endpoints.
 @Slf4j
+@EnableAutoConfiguration(exclude = {
+        ActiveMQAutoConfiguration.class,
+        KafkaAutoConfiguration.class
+})
 public class OfflinePaymentControllerUnitTest {
 
     @Autowired
@@ -62,7 +64,7 @@ public class OfflinePaymentControllerUnitTest {
     private OfflinePaymentService offlinePaymentService;
 
     @Test
-    public void exampleControllerUnitTest() throws Exception {
+    public void throwsError400IfNotFoundTest() throws Exception {
         GetPaymentMethodListRequest request = getGetPaymentMethodListRequest();
 
         OrderDto orderDto = getOrderDto();
@@ -97,37 +99,32 @@ public class OfflinePaymentControllerUnitTest {
     }
 
     @Test
-    public void whenOfflinePaymentResultIs200Test() {
+    public void whenOfflinePaymentResultIs200Test() throws Exception {
         GetPaymentMethodListRequest request = getGetPaymentMethodListRequest();
 
         OrderDto orderDto = getOrderDto();
+        request.setOrderDto(orderDto);
 
-        PaymentMethodDto expected = new PaymentMethodDto(
+        PaymentMethodDto[] mockedReturn = {
+                new PaymentMethodDto(
                 "Helsinki lasku",
                 "helsinki-invoice",
                 "helsinki-invoice",
-                "helsinki-invoice.png"
-        );
+                "helsinki-invoice.png")
+        };
 
-        request.setOrderDto(orderDto);
+        when(offlinePaymentService.getFilteredPaymentMethodList(any())).thenReturn(mockedReturn);
 
-//        when(mockMvc.perform(any())).thenReturn(null);
 
-        Exception exception = assertThrows(NestedServletException.class, () -> {
-            this.mockMvc.perform(
-                            post("/payment/offline/get-available-methods")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(mapper.writeValueAsString(request))
-                    )
-                    .andDo(print())
-                    .andExpect(status().is4xxClientError());
-        });
+        this.mockMvc.perform(
+                        post("/payment/offline/get-available-methods")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(request))
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(content().string(mapper.writeValueAsString(mockedReturn)));
 
-        CommonApiException cause = (CommonApiException) exception.getCause();
-        assertEquals(CommonApiException.class, cause.getClass());
-        assertEquals(HttpStatus.NOT_FOUND, cause.getStatus());
-        assertEquals("offline-payment-methods-not-found-from-backend", cause.getErrors().getErrors().get(0).getCode());
-        assertEquals("offline payment methods for namespace[venepaikat] not found from backend", cause.getErrors().getErrors().get(0).getMessage());
     }
 
     private GetPaymentMethodListRequest getGetPaymentMethodListRequest() {
