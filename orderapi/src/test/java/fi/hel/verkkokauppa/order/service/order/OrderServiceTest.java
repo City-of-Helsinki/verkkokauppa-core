@@ -4,10 +4,9 @@ import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.OrderController;
-import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
+import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -19,16 +18,12 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionsFromOrderCommand;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import org.hamcrest.core.StringContains;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,13 +36,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.Mockito.doReturn;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -94,7 +85,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-    //@Test
+//    @Test
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -114,7 +105,7 @@ class OrderServiceTest extends TestUtils {
         }
     }
 
-    //@Test
+//    @Test
     void cancelOrder() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
@@ -242,16 +233,16 @@ class OrderServiceTest extends TestUtils {
         Order order2 = orderService.findById(order2FromSubscriptionId);
 
         // Start datetime: Previous order enddate + 1 day(start of the day)
-        LocalDateTime renewalStartDate =  order2
+        LocalDateTime renewalStartDate = order2
                 .getEndDate()
-                .plus(1,ChronoUnit.DAYS)
-                .minus(1,ChronoUnit.MONTHS)
+                .plus(1, ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.MONTHS)
                 .with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
         Assertions.assertEquals(renewalStartDate.format(formatter), order2.getStartDate().format(formatter));
 
         String twoMonthFromTodayMinusOneDayEndOfThatDay = today
                 .plus(2, ChronoUnit.MONTHS)
-                .minus(1,ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.DAYS)
                 .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
                 .format(formatter);
         Assertions.assertEquals(twoMonthFromTodayMinusOneDayEndOfThatDay, order2.getEndDate().format(formatter));
@@ -334,19 +325,26 @@ class OrderServiceTest extends TestUtils {
         // FIRST Payment paid, period one month paid
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
         log.info("todayDateAsString {}", todayDateAsString);
-        String oneMonthFromToday = today.plus(1, ChronoUnit.MONTHS).format(formatter);
-        log.info("oneMonthFromToday {}", oneMonthFromToday);
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+        String oneMonthFromMinusOneDayToday = today
+                .plus(1, ChronoUnit.MONTHS)
+                .minus(1, ChronoUnit.DAYS)
+                .format(formatter);
+        log.info("oneMonthFromMinusOneDayToday {}", oneMonthFromMinusOneDayToday);
+        Assertions.assertEquals(oneMonthFromMinusOneDayToday, order1.getEndDate().format(formatter));
         // Start date is payment paid timestamp
         Assertions.assertEquals(order1.getStartDate().format(formatter), todayDateAsString);
+
+        String oneMonthFromToday = today
+                .plus(1, ChronoUnit.MONTHS)
+                .format(formatter);
 
         Assertions.assertEquals(nextDateCalculator.calculateNextDateTime(
                         today,
                         orderItemOrder1.getPeriodUnit(),
                         orderItemOrder1.getPeriodFrequency()).format(formatter),
                 oneMonthFromToday);
-        // Asserts that endDate is moved + 1 month from today date.
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
+        // Asserts that endDate is moved + 1 month minus one day from today date.
+        Assertions.assertEquals(oneMonthFromMinusOneDayToday, order1.getEndDate().format(formatter));
 
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
@@ -365,16 +363,16 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(todayDateAsString, order1.getStartDate().format(formatter));
         Assertions.assertEquals(todayDateAsString, firstSubscription.getStartDate().format(formatter));
         // FIRST Payment paid, period one month paid
-        Assertions.assertEquals(oneMonthFromToday, order1.getEndDate().format(formatter));
-        Assertions.assertEquals(oneMonthFromToday, firstSubscription.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromMinusOneDayToday, order1.getEndDate().format(formatter));
+        Assertions.assertEquals(oneMonthFromMinusOneDayToday, firstSubscription.getEndDate().format(formatter));
 
         // RENEWAL PROCESS START 1
         // There should be no need to renew this subscription yet
         // next renewal date should be 3 days from endDate (31.12.2021) -> threeDaysBeforeEndDate
         String threeDaysBeforeEndDate = firstSubscription.getEndDate().minus(3, ChronoUnit.DAYS).format(formatter);
         log.info("threeDaysBeforeEndDate {}", threeDaysBeforeEndDate);
-        String twentyEightDaysFromToday = today.plus(28, ChronoUnit.DAYS).format(formatter);
-        Assertions.assertEquals(twentyEightDaysFromToday, threeDaysBeforeEndDate);
+        String twentySevenDaysFromToday = today.plus(27, ChronoUnit.DAYS).format(formatter);
+        Assertions.assertEquals(twentySevenDaysFromToday, threeDaysBeforeEndDate);
         // Renew subscription
 
         String order2FromSubscriptionId = subscriptionRenewalService.renewSubscription(firstSubscriptionId);
@@ -384,8 +382,11 @@ class OrderServiceTest extends TestUtils {
 
         Assertions.assertEquals(oneMonthFromToday, order2.getStartDate().format(formatter));
 
-        String twoMonthFromToday = today.plus(2, ChronoUnit.MONTHS).format(formatter);
-        Assertions.assertEquals(twoMonthFromToday, order2.getEndDate().format(formatter));
+        String twoMonthFromTodayMinusOneDay = today
+                .plus(2, ChronoUnit.MONTHS)
+                .minus(1,ChronoUnit.DAYS)
+                .format(formatter);
+        Assertions.assertEquals(twoMonthFromTodayMinusOneDay, order2.getEndDate().format(formatter));
         // RENEWAL PROCESS END 1
 
         // RENEWAL PROCESS START 2
@@ -414,7 +415,7 @@ class OrderServiceTest extends TestUtils {
         // RENEWAL PROCESS END 3
     }
 
-    //@Test
+//    @Test
     void createFromSubscriptionAllowCurrentDayRenewalTested() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
@@ -534,16 +535,16 @@ class OrderServiceTest extends TestUtils {
         Order order2 = orderService.findById(order2FromSubscriptionId);
 
         // Start datetime: Previous order enddate + 1 day(start of the day)
-        LocalDateTime renewalStartDate =  order2
+        LocalDateTime renewalStartDate = order2
                 .getEndDate()
-                .plus(1,ChronoUnit.DAYS)
-                .minus(1,ChronoUnit.MONTHS)
+                .plus(1, ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.MONTHS)
                 .with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
         Assertions.assertEquals(renewalStartDate.format(formatter), order2.getStartDate().format(formatter));
 
         String twoMonthFromTodayMinusOneDayEndOfThatDay = today
                 .plus(2, ChronoUnit.MONTHS)
-                .minus(1,ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.DAYS)
                 .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
                 .format(formatter);
         Assertions.assertEquals(twoMonthFromTodayMinusOneDayEndOfThatDay, order2.getEndDate().format(formatter));
@@ -576,7 +577,7 @@ class OrderServiceTest extends TestUtils {
         // Set endDate at the start of the day, '00:00'.
         firstSubscription.setEndDate(
                 today
-                        .minus(1,ChronoUnit.DAYS)
+                        .minus(1, ChronoUnit.DAYS)
                         .with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
         );
         subscriptionRepository.save(firstSubscription);

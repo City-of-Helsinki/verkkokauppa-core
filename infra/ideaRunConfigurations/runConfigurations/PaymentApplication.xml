@@ -1,0 +1,35 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="PaymentApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="payment" />
+    <extension name="net.ashald.envfile">
+      <option name="IS_ENABLED" value="false" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" />
+      </ENTRIES>
+    </extension>
+    <option name="SPRING_BOOT_MAIN_CLASS" value="fi.hel.verkkokauppa.payment.PaymentApplication" />
+    <option name="ACTIVE_PROFILES" value="local" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <option name="UPDATE_ACTION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <envs>
+      <env name="server.port" value="8184" />
+      <env name="SPRING_APPLICATION_JSON" value="{&quot;elasticsearch.service.url&quot;: &quot;localhost:9200&quot;,&quot;elasticsearch.service.local.environment&quot;: &quot;true&quot;,&quot;elasticsearch.service.user&quot;: &quot;&quot;,&quot;elasticsearch.service.password&quot;: &quot;&quot;}" />
+      <env name="SERVICECONFIGURATION_URL" value="http://localhost:8187/serviceconfiguration/" />
+      <env name="PAYMENT_DEFAULT_RETURN_URL" value="http://localhost:8085/v1/payment/onlinePayment/return" />
+      <env name="PAYMENT_DEFAULT_NOTIFY_URL" value="http://localhost:3000/" />
+      <env name="SPRING_KAFKA_BOOTSTRAP-SERVERS" value="host.docker.internal:29092" />
+      <env name="PAYMENT_API_KEY" value="362334fec953738344733b796fd6f8bd3e388" />
+      <env name="PAYMENT_ENCRYPTION_KEY" value="c83944d5b1610e4904aaafe98a7aea98" />
+      <env name="PAYMENT_CARD_TOKEN_ENCRYPTION_PASSWORD" value="laIRHri2cUWE4et" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -63,7 +63,7 @@ public class OrderDtoValidationTests extends DummyData {
 
         final String message = extractMessage(constraintViolations);
         //todo: remove hardcoded messages
-        assertEquals(message, "firstname required");
+        assertEquals(message, "lastname required");
     }
 
     @Test
@@ -74,7 +74,7 @@ public class OrderDtoValidationTests extends DummyData {
 
         final String message = extractMessage(constraintViolations);
         //todo: remove hardcoded messages
-        assertEquals(message, "firstname required");
+        assertEquals(message, "lastname required");
     }
 
     @Test
