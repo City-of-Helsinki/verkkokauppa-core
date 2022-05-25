@@ -28,4 +28,7 @@ public class RefundDto {
 
     private String refundReason;
 
+    private String priceNet;
+    private String priceVat;
+    private String priceTotal;
 }
