@@ -48,6 +48,15 @@ public class Refund {
   @Field(type = FieldType.Text)
   String refundReason;
 
+  @Field(type = FieldType.Text)
+  String priceNet;
+
+  @Field(type = FieldType.Text)
+  String priceVat;
+
+  @Field(type = FieldType.Text)
+  String priceTotal;
+
   public Refund(RefundDto dto) {
     this.status = RefundStatus.DRAFT;
     this.refundId = UUIDGenerator.generateType4UUID().toString();
@@ -60,5 +69,8 @@ public class Refund {
     this.customerEmail = dto.getCustomerEmail();
     this.customerPhone = dto.getCustomerPhone();
     this.refundReason = dto.getRefundReason();
+    this.priceNet = dto.getPriceNet();
+    this.priceVat = dto.getPriceVat();
+    this.priceTotal = dto.getPriceTotal();
   }
 }
