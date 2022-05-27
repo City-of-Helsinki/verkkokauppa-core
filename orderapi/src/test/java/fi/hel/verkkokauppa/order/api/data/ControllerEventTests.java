@@ -12,7 +12,7 @@ import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
-import fi.hel.verkkokauppa.order.test.utils.KafkaTestConsumer;
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assume;
@@ -46,9 +46,6 @@ public class ControllerEventTests {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private KafkaTestConsumer kafkaTestConsumer;
-
-    @Autowired
     private SendEventService sendEventService;
 
     @Autowired
@@ -70,7 +67,8 @@ public class ControllerEventTests {
     }
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
-//    @Test
+    @Test
+    @RunIfProfile(profile = "local")
     public void testSubscriptionCancelledEvent() throws JsonProcessingException, InterruptedException {
         String namespace = UUIDGenerator.generateType4UUID().toString();
         SubscriptionMessage message = SubscriptionMessage.builder()
@@ -82,7 +80,7 @@ public class ControllerEventTests {
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
         // Waited 1 secs
         String eventType = EventType.SUBSCRIPTION_CANCELLED;
 
@@ -112,7 +110,8 @@ public class ControllerEventTests {
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     // [KYV-405]
-//    @Test
+    @Test
+    @RunIfProfile(profile = "local")
     public void testSendSubscriptionCancelledEvent() {
         SubscriptionMessage message = SubscriptionMessage.builder()
                 .subscriptionId("1234")

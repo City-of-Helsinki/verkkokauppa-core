@@ -3,21 +3,24 @@ package fi.hel.verkkokauppa.order.service.order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
+import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest
-class OrderItemServiceTest {
+@UnitTest
+@WebMvcTest(OrderItemService.class)
+@ContextConfiguration(classes = AutoMockBeanFactory.class) // This automatically mocks missing beans
+class OrderItemServiceUnitTest {
     @Mock
     private OrderItemMetaRepository orderItemMetaRepository;
 

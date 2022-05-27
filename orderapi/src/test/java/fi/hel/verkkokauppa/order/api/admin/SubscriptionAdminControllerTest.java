@@ -1,21 +1,12 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
-import fi.hel.verkkokauppa.order.api.OrderController;
-import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
-import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
-import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
-import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
-import fi.hel.verkkokauppa.order.service.order.OrderItemService;
-import fi.hel.verkkokauppa.order.service.order.OrderService;
-import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
-import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
+import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -37,40 +28,15 @@ import java.util.stream.Collectors;
 class SubscriptionAdminControllerTest extends TestUtils {
 
     private Logger log = LoggerFactory.getLogger(SubscriptionAdminControllerTest.class);
-    @Autowired
-    private OrderService orderService;
-
-    @Autowired
-    private OrderItemService orderItemService;
 
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
     @Autowired
-    private OrderRepository orderRepository;
-    @Autowired
-    private OrderController orderController;
-    @Autowired
-    private NextDateCalculator nextDateCalculator;
-
-    @Autowired
     private SubscriptionService subscriptionService;
-    @Autowired
-    private SubscriptionController subscriptionController;
 
-    @Autowired
-    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
-
-    @Autowired
-    private GetSubscriptionQuery getSubscriptionQuery;
-
-    @Autowired
-    private SubscriptionRenewalService subscriptionRenewalService;
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
-
-    private Order foundOrder;
-    private Subscription foundSubscription;
 
     @Test
     public void assertTrue() {
@@ -80,7 +46,8 @@ class SubscriptionAdminControllerTest extends TestUtils {
     /**
      * If the subscription card is expiring, then the subscription status should be set to expiring.
      */
-//    @Test
+    @Test
+    @RunIfProfile(profile = "local")
     void isExpiringSubscriptionCard() {
         LocalDate today = LocalDate.now();
         // Fetch subscription
@@ -126,7 +93,8 @@ class SubscriptionAdminControllerTest extends TestUtils {
     /**
      * > This function tests the endpoint that returns all subscriptions with expiring cards
      */
-//    @Test
+    @Test
+    @RunIfProfile(profile = "local")
     void isExpiringSubscriptionCardEndpoint() {
         LocalDate today = LocalDate.now();
         // Fetch subscription
@@ -143,6 +111,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
         LocalDate todayMinusOneMonth = today.minus(1, ChronoUnit.MONTHS);
         firstSubscription.setPaymentMethodExpirationMonth((byte) todayMinusOneMonth.getMonth().getValue());
         firstSubscription.setPaymentMethodExpirationYear((short) todayMinusOneMonth.getYear());
+        firstSubscription.setEndDate(LocalDateTime.now().minus(1, ChronoUnit.DAYS));
 
         subscriptionRepository.save(firstSubscription);
         SubscriptionDto expiredCardSubscriptionDto = subscriptionAdminController
@@ -158,7 +127,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
                                 subscriptionDto1.getSubscriptionId(),
                                 firstSubscription.getSubscriptionId()))
                 .collect(Collectors.toList()).get(0);
-
+        Assertions.assertNotNull(filteredOne);
     }
 
 

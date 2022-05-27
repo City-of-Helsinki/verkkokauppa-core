@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.logic.fetcher;
 
+import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;
 import org.helsinki.vismapay.request.paymentmethods.PaymentMethodsRequest;
@@ -20,8 +21,6 @@ public class PaymentMethodListFetcher {
 
     @Autowired
     private Environment env;
-
-	public final static String DEFAULT_CURRENCY = "EUR";
 
 	public PaymentMethod[] getList(String currency) {
 		String apiKey = env.getRequiredProperty("payment_api_key");
@@ -54,7 +53,7 @@ public class PaymentMethodListFetcher {
 	private PaymentMethodsRequest.PaymentMethodsPayload buildPayloadFor(String currency) {
 		PaymentMethodsRequest.PaymentMethodsPayload payload
 				= new PaymentMethodsRequest.PaymentMethodsPayload();
-		payload.setCurrency(currency != null ? currency : DEFAULT_CURRENCY);
+		payload.setCurrency(currency != null ? currency : CurrencyUtil.DEFAULT_CURRENCY);
 		return payload;
 	}
 }
