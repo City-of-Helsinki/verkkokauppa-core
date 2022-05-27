@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodFilter;
+import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
 import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentMethodListFetcher;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ public class PaymentMethodListService {
 	@Autowired
 	private Environment env;
 
-	public PaymentMethodDto[] getPaymentMethodList(String currency) {
+	public PaymentMethodDto[] getOnlinePaymentMethodList(String currency) {
 		try {
 			PaymentMethod[] list = paymentMethodListFetcher.getList(currency);
 
@@ -42,9 +43,34 @@ public class PaymentMethodListService {
 					paymentMethod.getImg()
 			)).toArray(PaymentMethodDto[]::new);
 		} catch (RuntimeException e) {
-			log.warn("getting payment methods failed, currency: " + currency, e);
+			log.warn("getting online payment methods failed, currency: " + currency, e);
 			return new PaymentMethodDto[0];
 		}
+	}
+
+
+	public PaymentMethodDto[] getOfflinePaymentMethodList(String currency) {
+		try {
+			if (!isDefaultCurrency(currency)) {
+				return new PaymentMethodDto[]{};
+			}
+
+			return new PaymentMethodDto[]{
+					new PaymentMethodDto(
+						"Helsinki lasku",
+						"helsinki-invoice",
+						"helsinki-invoice",
+						"helsinki-invoice.png"
+					)
+			};
+		} catch (RuntimeException e) {
+			log.warn("getting offline payment methods failed, currency: " + currency, e);
+			return new PaymentMethodDto[0];
+		}
+	}
+
+	public boolean isDefaultCurrency(String currency) {
+		return Objects.equals(currency, CurrencyUtil.DEFAULT_CURRENCY);
 	}
 
 	public PaymentMethodDto[] filterPaymentMethodList(GetPaymentMethodListRequest request, PaymentMethodDto[] methods) {

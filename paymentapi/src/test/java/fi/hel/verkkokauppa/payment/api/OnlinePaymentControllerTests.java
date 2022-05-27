@@ -16,6 +16,7 @@ import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -97,7 +98,7 @@ public class OnlinePaymentControllerTests {
 
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     @Test
-//    @Ignore
+    @RunIfProfile(profile = "local")
     public void testUpdatePaymentStatus() throws JsonProcessingException, InterruptedException {
         payment = TestPaymentCreator.getDummyPayment("5e9c9784-4856-354b-8e2a-2d89de749249", "dummy_user", "venepaikat");
         //paymentRepository.save(payment);
@@ -125,7 +126,7 @@ public class OnlinePaymentControllerTests {
 
 
     @Test
-    @Ignore
+    @RunIfProfile(profile = "local")
     public void testCreateCardRenewalPayment() throws IOException, InterruptedException, ExecutionException {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
 

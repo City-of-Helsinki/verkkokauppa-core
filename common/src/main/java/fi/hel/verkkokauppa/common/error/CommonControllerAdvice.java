@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.error;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,10 +12,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 public class CommonControllerAdvice {
 
     @ExceptionHandler(CommonApiException.class)
     public ResponseEntity<Errors> handleException(CommonApiException e) {
+        e.getErrors().getErrors().forEach(error -> log.debug("code: {} message: {}", error.getCode(), error.getMessage()));
         return ResponseEntity.status(e.getStatus()).body(e.getErrors());
     }
 
@@ -34,6 +37,7 @@ public class CommonControllerAdvice {
                 .map(err -> new ErrorModel(err.getField(), err.getRejectedValue(), err.getDefaultMessage()))
                 .distinct()
                 .collect(Collectors.toList());
+        errorMessages.forEach(errorModel -> log.debug(errorModel.getMessageError()));
         return ErrorResponse.builder().errorMessage(errorMessages).build();
     }
 

@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCardExpiredDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 public class SubscriptionAdminController {
@@ -39,6 +41,9 @@ public class SubscriptionAdminController {
 
     @Value("${subscription.renewal.batch.sleep.millis}")
     private int subscriptionRenewalBatchSleepMillis;
+
+    @Value("${subscription.notification.expiring.card.threshold.days:#{7}}")
+    private int subscriptionNotificationExpiringCardThresholdDays;
 
     @Autowired
     private SearchSubscriptionQuery searchSubscriptionQuery;
@@ -61,6 +66,9 @@ public class SubscriptionAdminController {
     @Autowired
     private SaveHistoryService saveHistoryService;
 
+    @Autowired
+    private SubscriptionCardExpiredService subscriptionCardExpiredService;
+
     @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
         try {
@@ -72,7 +80,7 @@ public class SubscriptionAdminController {
             return ResponseEntity.ok(subscription);
         } catch (CommonApiException cae) {
             throw cae;
-        } catch(EntityNotFoundException e) {
+        } catch (EntityNotFoundException e) {
             log.error("Exception on getting Subscription order", e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -115,7 +123,7 @@ public class SubscriptionAdminController {
 
     @GetMapping(value = "/subscription-admin/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> startProcessingRenewals() {
-        while(renewalService.renewalRequestsExist()) {
+        while (renewalService.renewalRequestsExist()) {
             try {
                 renewalService.batchProcessNextRenewalRequests();
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
@@ -179,6 +187,37 @@ public class SubscriptionAdminController {
         }
     }
 
+
+    /**
+     * It creates a new `SubscriptionCardExpiredDto` object and returns it as a response
+     *
+     * @param subscriptionId the id of the subscription
+     * @param namespace the namespace of the subscription
+     * @return A subscriptionCardExpiredDto object
+     */
+    @GetMapping(value = "/subscription-admin/create-card-expired-email-entity", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SubscriptionCardExpiredDto> subscriptionCreateCardExpiredEmailEntity(
+            @RequestParam(value = "subscriptionId") String subscriptionId,
+            @RequestParam(value = "namespace") String namespace
+            ) {
+        log.debug("subscription-api /subscription-admin/create-card-expired-email-entity for subscriptionId: {}", subscriptionId);
+        try {
+            SubscriptionCardExpiredDto cardExpiredDto = subscriptionCardExpiredService.createAndTransformToDto(
+                    subscriptionId,
+                    namespace
+                    );
+            return ResponseEntity.ok().body(cardExpiredDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting subscription failed, subscriptionId: " + subscriptionId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-subscription", "failed to get subscription with id [" + subscriptionId + "]")
+            );
+        }
+    }
+
     @PostMapping(value = "/subscription-admin/set-item-meta", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemMetaDto>> setItemMeta(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "orderItemId") String orderItemId, @RequestBody List<OrderItemMetaDto> meta) {
         subscriptionItemMetaService.removeItemMetas(subscriptionId, orderItemId);
@@ -219,6 +258,66 @@ public class SubscriptionAdminController {
                 }
             }
         }
+    }
+
+    /**
+     * It checks for subscriptions with expiring cards and triggers an event for each of them
+     *
+     * @return A list of subscriptions with expiring cards.
+     */
+    @GetMapping(value = "/subscription-admin/check-expiring-card", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<String>> checkExpiringCards() {
+        log.debug("Checking expiring cards...");
+
+        List<SubscriptionDto> expiredCardSubscriptions = getSubscriptionsWithExpiringCard();
+
+        // No need to further handle expired ones
+        expiredCardSubscriptions.removeIf(s -> s.getStatus() != null && s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
+        log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
+
+        // Removing all the expired card subscriptions that have already been sent a reminder
+        expiredCardSubscriptions.removeIf(dto -> {
+            List<SubscriptionCardExpiredDto> dtos = subscriptionCardExpiredService.findAllBySubscriptionIdOrderByCreatedAtDesc(dto.getSubscriptionId());
+            // If no dtos found we can send reminder
+            return !dtos.isEmpty();
+        });
+
+        ArrayList<String> expiredIds = new ArrayList<>();
+
+        expiredCardSubscriptions.forEach(subscriptionDto -> {
+            String subscriptionId = subscriptionDto.getSubscriptionId();
+            subscriptionService.triggerSubscriptionExpiredCardEvent(
+                    subscriptionService.findById(subscriptionId)
+            );
+            expiredIds.add(subscriptionId);
+        });
+
+        return ResponseEntity.ok(expiredIds);
+    }
+
+    /**
+     * "Get all active subscriptions that are expiring in the next X days."
+     *
+     * The function is called from a scheduled task that runs every X day
+     *
+     * @return A list of subscriptions with expiring cards.
+     */
+    public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
+        LocalDate currentDate = LocalDate.now();
+        LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
+        log.debug("validityCheckDate: {}", validityCheckDate);
+
+        SubscriptionCriteria criteria = new SubscriptionCriteria();
+        criteria.setStatus(SubscriptionStatus.ACTIVE);
+
+        criteria.setEndDateBefore(validityCheckDate);
+
+        List<SubscriptionDto> subscriptionDtos = searchSubscriptionQuery.searchActive(criteria);
+
+        return subscriptionDtos
+                .stream()
+                .filter(subscriptionDto -> subscriptionService.isExpiringCard(currentDate, subscriptionDto))
+                .collect(Collectors.toList());
     }
 
 }
