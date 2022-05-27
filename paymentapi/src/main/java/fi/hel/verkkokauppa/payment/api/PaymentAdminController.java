@@ -172,11 +172,11 @@ public class PaymentAdminController {
     }
 
     @PostMapping(value = "/payment-admin/online/save-payment-filter", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<PaymentFilter>> savePaymentFilter(@RequestBody @Valid List<PaymentFilterDto> paymentFilters) {
+    public ResponseEntity<List<PaymentFilterDto>> savePaymentFilter(@RequestBody @Valid List<PaymentFilterDto> paymentFilters) {
         try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    filterService.savePaymentFilters(paymentFilters)
-            );
+            List<PaymentFilter> model = filterService.savePaymentFilters(paymentFilters);
+            List<PaymentFilterDto> dto = filterService.mapToDto(model);
+            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {

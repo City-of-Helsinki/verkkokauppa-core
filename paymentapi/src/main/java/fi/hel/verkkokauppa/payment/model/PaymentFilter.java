@@ -1,9 +1,7 @@
 package fi.hel.verkkokauppa.payment.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -17,10 +15,10 @@ public class PaymentFilter {
     @Id
     String filterId;
 
-    @CreatedDate
+    @Field(type = FieldType.Date, format = DateFormat.date_time)
     LocalDateTime createdAt;
 
-    @LastModifiedDate
+    @Field(type = FieldType.Date, format = DateFormat.date_time)
     LocalDateTime updatedAt;
 
     @Field(type = FieldType.Text)
