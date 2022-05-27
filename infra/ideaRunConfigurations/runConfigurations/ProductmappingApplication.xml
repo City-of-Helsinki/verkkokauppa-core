@@ -1,0 +1,31 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ProductmappingApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="productmapping" />
+    <extension name="net.ashald.envfile">
+      <option name="IS_ENABLED" value="false" />
+      <option name="IS_SUBST" value="false" />
+      <option name="IS_PATH_MACRO_SUPPORTED" value="false" />
+      <option name="IS_IGNORE_MISSING_FILES" value="false" />
+      <option name="IS_ENABLE_EXPERIMENTAL_INTEGRATIONS" value="false" />
+      <ENTRIES>
+        <ENTRY IS_ENABLED="true" PARSER="runconfig" />
+      </ENTRIES>
+    </extension>
+    <option name="SPRING_BOOT_MAIN_CLASS" value="fi.hel.verkkokauppa.productmapping.ProductmappingApplication" />
+    <option name="ACTIVE_PROFILES" value="local" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="SHORTEN_COMMAND_LINE" value="NONE" />
+    <option name="UPDATE_ACTION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateResources" />
+    <envs>
+      <env name="logging.level.org.springframework.data.elasticsearch.client.WIRE" value="trace" />
+      <env name="server.port" value="8187" />
+      <env name="MOCKBACKEND_URL" value="http://host.docker.internal:8182" />
+      <env name="WEBHOOK_URL" value="https://webhook.site/ad043067-8989-4287-b9dd-59aa560a1384" />
+      <env name="api.access.encryption.salt" value="salt" />
+    </envs>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

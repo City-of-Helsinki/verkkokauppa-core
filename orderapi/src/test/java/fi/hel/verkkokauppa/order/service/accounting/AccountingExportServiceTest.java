@@ -23,7 +23,7 @@ public class AccountingExportServiceTest {
     private static final String PASSWORD = "password";
 
     private static final JSch JSCH = new JSch();
-    private static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 5000;
 
     @Rule
     public final FakeSftpServerRule sftpServer = new FakeSftpServerRule();

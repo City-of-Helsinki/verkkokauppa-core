@@ -2,27 +2,28 @@ package fi.hel.verkkokauppa.order.api.data;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
-import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
 import fi.hel.verkkokauppa.order.test.utils.KafkaTestConsumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.env.Environment;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -50,6 +51,12 @@ public class ControllerEventTests {
     @Autowired
     private SendEventService sendEventService;
 
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
 
     // add to your application.properties spring.kafka.bootstrap-servers=localhost:9092
     @Value("${spring.kafka.bootstrap-servers:#{null}}")
@@ -65,23 +72,24 @@ public class ControllerEventTests {
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
 //    @Test
     public void testSubscriptionCancelledEvent() throws JsonProcessingException, InterruptedException {
+        String namespace = UUIDGenerator.generateType4UUID().toString();
         SubscriptionMessage message = SubscriptionMessage.builder()
                 .subscriptionId("1234")
-                .namespace("TEST_NAMESPACE")
+                .namespace(namespace)
                 .eventType(EventType.SUBSCRIPTION_CANCELLED)
                 .cancellationCause(SubscriptionCancellationCause.CUSTOMER_CANCELLED)
                 .timestamp(DateTimeUtil.getDateTime())
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
-        Boolean bool = kafkaTestConsumer.getLatch().await(10000, TimeUnit.MILLISECONDS);
-        ConsumerRecord<?, ?> record = kafkaTestConsumer.getPayload();
-        assertEquals(kafkaTestConsumer.getLatch().getCount(), 0L);
-        String input = record.value().toString();
-        String result = trimJsonString(input);
+        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+        // Waited 1 secs
+        String eventType = EventType.SUBSCRIPTION_CANCELLED;
 
-        SubscriptionMessage fromConsumer = objectMapper.readValue(result, SubscriptionMessage.class);
-        log.info(String.valueOf(fromConsumer));
+        HistoryDto dto = getFirstHistoryDto(namespace, eventType);
+
+        SubscriptionMessage fromConsumer = objectMapper.readValue(dto.getPayload(), SubscriptionMessage.class);
+
         assertEquals(fromConsumer.getSubscriptionId(), message.getSubscriptionId());
         assertEquals(fromConsumer.getNamespace(), message.getNamespace());
         assertEquals(fromConsumer.getEventType(), EventType.SUBSCRIPTION_CANCELLED);
@@ -90,9 +98,21 @@ public class ControllerEventTests {
 
     }
 
+    private HistoryDto getFirstHistoryDto(String namespace, String eventType) throws JsonProcessingException {
+        JSONObject result2 = restServiceClient.makeGetCall(
+                serviceUrls.getHistoryServiceUrl() +
+                        "/admin/history/list/get-event-type?" +
+                        "namespace=" + namespace +
+                        "&eventType=" + eventType
+        );
+        JSONArray histories = result2.getJSONArray("histories");
+        HistoryDto dto = objectMapper.readValue(histories.getJSONObject(0).toString(), HistoryDto.class);
+        return dto;
+    }
+
     //This test is ignored because uses pure kafka and not mocks to make testing easier when developing
     // [KYV-405]
-    //@Test
+//    @Test
     public void testSendSubscriptionCancelledEvent() {
         SubscriptionMessage message = SubscriptionMessage.builder()
                 .subscriptionId("1234")
