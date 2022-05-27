@@ -46,7 +46,8 @@ class SubscriptionServiceTest extends TestUtils {
         Assertions.assertTrue(true);
     }
 
-//    @Test
+    @Test
+    @RunIfProfile(profile = "local")
     void setOrderStartAndEndDate() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);

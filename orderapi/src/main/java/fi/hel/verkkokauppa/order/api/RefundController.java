@@ -23,10 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,29 +82,5 @@ public class RefundController {
               new Error("failed-to-create-refund", "failed to create refund")
       );
     }
-  }
-
-  @PostMapping(value = "/refund/confirm", produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<RefundDto> confirmRefund(@RequestParam String refundId) {
-    Refund refund = refundRepository.findById(refundId).orElseThrow(() -> new CommonApiException(
-            HttpStatus.NOT_FOUND,
-            new Error("refund-not-found", "refund with id [" + refundId + "] not found")
-    ));
-
-    if (!refund.getStatus().equals(RefundStatus.DRAFT)) {
-      throw new CommonApiException(
-              HttpStatus.BAD_REQUEST,
-              new Error("refund-validation-failed", "refund [" + refundId + "] must be a draft")
-      );
-    }
-
-    refund.setStatus(RefundStatus.CONFIRMED);
-    refundRepository.save(refund);
-
-    RefundMessage refundMessage = createRefundMessage(EventType.REFUND_CONFIRMED, refund);
-    sendEventService.sendEventMessage(TopicName.REFUNDS, refundMessage);
-    saveHistoryService.saveRefundMessageHistory(refundMessage);
-
-    return ResponseEntity.ok().body(refundTransformer.transformToDto(refund));
   }
 }
