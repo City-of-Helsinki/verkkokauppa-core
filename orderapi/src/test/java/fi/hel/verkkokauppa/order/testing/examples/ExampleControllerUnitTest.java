@@ -1,7 +1,7 @@
-package fi.hel.verkkokauppa.order.unit;
+package fi.hel.verkkokauppa.order.testing.examples;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.order.unit.utils.AutoMockBeanFactory;
+import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

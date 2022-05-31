@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface SubscriptionCardExpiredRepository extends ElasticsearchRepository<SubscriptionCardExpired, String> {
     List<SubscriptionCardExpired> findAllBySubscriptionId(String subscriptionId);
+    List<SubscriptionCardExpired> findAllBySubscriptionIdOrderByCreatedAtDesc(String subscriptionId);
 }

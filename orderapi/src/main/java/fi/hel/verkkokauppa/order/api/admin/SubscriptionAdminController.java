@@ -266,7 +266,7 @@ public class SubscriptionAdminController {
      * @return A list of subscriptions with expiring cards.
      */
     @GetMapping(value = "/subscription-admin/check-expiring-card", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<SubscriptionDto>> checkExpiringCards() {
+    public ResponseEntity<List<String>> checkExpiringCards() {
         log.debug("Checking expiring cards...");
 
         List<SubscriptionDto> expiredCardSubscriptions = getSubscriptionsWithExpiringCard();
@@ -275,15 +275,26 @@ public class SubscriptionAdminController {
         expiredCardSubscriptions.removeIf(s -> s.getStatus() != null && s.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED));
         log.debug("Expiring card subscriptions size: {}", expiredCardSubscriptions.size());
 
-        expiredCardSubscriptions.forEach(subscriptionDto -> {
-            subscriptionService.triggerSubscriptionExpiredCardEvent(
-                    subscriptionService.findById(subscriptionDto.getSubscriptionId())
-            );
+        // Removing all the expired card subscriptions that have already been sent a reminder
+        expiredCardSubscriptions.removeIf(dto -> {
+            List<SubscriptionCardExpiredDto> dtos = subscriptionCardExpiredService.findAllBySubscriptionIdOrderByCreatedAtDesc(dto.getSubscriptionId());
+            // If no dtos found we can send reminder
+            return !dtos.isEmpty();
         });
 
-        return ResponseEntity.ok(expiredCardSubscriptions);
+        ArrayList<String> expiredIds = new ArrayList<>();
+
+        expiredCardSubscriptions.forEach(subscriptionDto -> {
+            String subscriptionId = subscriptionDto.getSubscriptionId();
+            subscriptionService.triggerSubscriptionExpiredCardEvent(
+                    subscriptionService.findById(subscriptionId)
+            );
+            expiredIds.add(subscriptionId);
+        });
+
+        return ResponseEntity.ok(expiredIds);
     }
-    
+
     /**
      * "Get all active subscriptions that are expiring in the next X days."
      *

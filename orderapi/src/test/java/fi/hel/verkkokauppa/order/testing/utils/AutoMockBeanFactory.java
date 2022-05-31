@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.unit.utils;
+package fi.hel.verkkokauppa.order.testing.utils;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
