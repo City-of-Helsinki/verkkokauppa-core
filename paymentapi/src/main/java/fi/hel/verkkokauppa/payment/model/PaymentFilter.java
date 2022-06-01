@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.payment.model;
 
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -20,6 +21,9 @@ public class PaymentFilter {
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
     LocalDateTime updatedAt;
+
+    @Field(type = FieldType.Text)
+    String namespace;
 
     @Field(type = FieldType.Text)
     String referenceId;

@@ -22,13 +22,19 @@ public class PaymentFilterService {
 
     public List<PaymentFilter> savePaymentFilters(List<PaymentFilterDto> paymentFiltersDto) {
 
-        List<PaymentFilter> paymentFilters = new ArrayList<PaymentFilter>();
+        List<PaymentFilter> paymentFilters = new ArrayList<>();
 
         for (PaymentFilterDto paymentFilterDto : paymentFiltersDto) {
+            LocalDateTime timeStamp = LocalDateTime.now();
+            List<PaymentFilter> persistedFilters = paymentFilterRepository.findAllByReferenceId(paymentFilterDto.getReferenceId());
+
             PaymentFilter paymentFilter = new PaymentFilter();
-            //paymentFilter.setFilterId(UUIDGenerator.generateType3UUIDString(paymentFilterDto.getReferenceId(), paymentFilterDto.getType()));
-            //paymentFilter.setCreatedAt(LocalDateTime.now());
-            //paymentFilter.setUpdatedAt(LocalDateTime.now());
+            paymentFilter.setFilterId(UUIDGenerator.generateType3UUIDString(paymentFilterDto.getNamespace(), paymentFilterDto.getReferenceId()));
+            if (persistedFilters.isEmpty()) {
+                paymentFilter.setCreatedAt(timeStamp);
+            } else paymentFilter.setCreatedAt(persistedFilters.get(0).getCreatedAt());
+            paymentFilter.setUpdatedAt(timeStamp);
+            paymentFilter.setNamespace(paymentFilterDto.getNamespace());
             paymentFilter.setReferenceId(paymentFilterDto.getReferenceId());
             paymentFilter.setType(paymentFilterDto.getType());
             paymentFilter.setValue(paymentFilterDto.getValue());

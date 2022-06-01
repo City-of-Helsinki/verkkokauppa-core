@@ -9,6 +9,8 @@ public class PaymentFilterDto {
     String filterId;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+    @NotBlank(message = "namespace cant be blank")
+    String namespace;
     @NotBlank(message = "referenceId cant be blank")
     String referenceId;
     @NotBlank(message = "type cant be blank")
