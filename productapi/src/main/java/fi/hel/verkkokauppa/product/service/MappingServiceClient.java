@@ -22,7 +22,8 @@ import reactor.netty.http.client.HttpClient;
 
 @Component
 public class MappingServiceClient {
-    
+
+    public static final int CONNECT_TIMEOUT = 30000;
     private Logger log = LoggerFactory.getLogger(MappingServiceClient.class);
 
     @Autowired
@@ -42,11 +43,11 @@ public class MappingServiceClient {
     public WebClient getClient() {
         // expect a response within a few seconds
         HttpClient httpClient = HttpClient.create()
-            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
-            .responseTimeout(Duration.ofMillis(3000))
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT)
+            .responseTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
             .doOnConnected(conn -> 
-                conn.addHandlerLast(new ReadTimeoutHandler(3000, TimeUnit.MILLISECONDS))
-                .addHandlerLast(new WriteTimeoutHandler(3000, TimeUnit.MILLISECONDS)));
+                conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
+                .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
 
         WebClient client = WebClient.builder()
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
