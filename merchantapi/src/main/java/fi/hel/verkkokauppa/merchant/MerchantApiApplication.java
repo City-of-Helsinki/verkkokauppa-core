@@ -21,7 +21,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 public class MerchantApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(merchantApiApplication.class, args);
+		SpringApplication.run(MerchantApiApplication.class, args);
 	}
 
 }
