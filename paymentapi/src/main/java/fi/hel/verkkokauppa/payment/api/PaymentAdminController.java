@@ -172,15 +172,21 @@ public class PaymentAdminController {
     }
 
     @PostMapping(value = "/payment-admin/online/save-payment-filter", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<PaymentFilterDto>> savePaymentFilter(@RequestBody @Valid List<PaymentFilterDto> paymentFilters) {
+    public ResponseEntity<List<PaymentFilterDto>> savePaymentFilters(@RequestBody @Valid List<PaymentFilterDto> paymentFilters) {
         try {
-            List<PaymentFilter> model = filterService.savePaymentFilters(paymentFilters);
-            List<PaymentFilterDto> dto = filterService.mapToDto(model);
-            return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+            if (paymentFilters.isEmpty()) {
+                throw new CommonApiException(
+                        HttpStatus.BAD_REQUEST,
+                        new Error("empty-payment-filter-list", "no payment filters given to save")
+                );
+            }
+            List<PaymentFilter> filtersModel = filterService.savePaymentFilters(paymentFilters);
+            List<PaymentFilterDto> filtersDto = filterService.mapPaymentFilterListToDtoList(filtersModel);
+            return ResponseEntity.status(HttpStatus.CREATED).body(filtersDto);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("saving payment return response failed", e);
+            log.error("saving payment filters failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-save-payment-filter", "failed to save payment filter(s)")

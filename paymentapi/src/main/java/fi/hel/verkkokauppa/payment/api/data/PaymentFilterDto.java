@@ -13,6 +13,8 @@ public class PaymentFilterDto {
     String namespace;
     @NotBlank(message = "referenceId cant be blank")
     String referenceId;
+    @NotBlank(message = "referenceType cant be blank")
+    String referenceType;
     @NotBlank(message = "type cant be blank")
     String type;
     String value;
