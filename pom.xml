@@ -55,6 +55,7 @@
         <module>common</module>
         <module>eventsapi</module>
         <module>historyapi</module>
+        <module>merchantapi</module>
         <module>productmapping</module>
         <module>productapi</module>
         <module>messageapi</module>
