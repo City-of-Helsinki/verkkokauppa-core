@@ -51,7 +51,7 @@ public class MerchantController {
             throw cae;
         } catch (Exception e) {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-upsert-merchant", "failed to upsert merchant")
+                    new Error("failed-to-upsert-merchant", "failed to upsert merchant, merchantId:" + merchantDto.getMerchantId())
             );
         }
     }
