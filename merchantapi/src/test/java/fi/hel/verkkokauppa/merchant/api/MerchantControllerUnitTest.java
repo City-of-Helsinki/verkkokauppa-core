@@ -110,8 +110,11 @@ public class MerchantControllerUnitTest {
                     .andExpect(status().is5xxServerError());
         });
 
-        assertEquals(CommonApiException.class, exception.getCause().getClass());
-        assertEquals("merchant-not-found", exception.getMessage());
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+
+        assertEquals("merchant-not-found", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("merchant with id [merchantId] not found", cause.getErrors().getErrors().get(0).getMessage());
     }
 
 
