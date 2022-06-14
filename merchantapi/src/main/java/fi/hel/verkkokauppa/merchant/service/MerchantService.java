@@ -76,19 +76,23 @@ public class MerchantService {
      * return the value of that configuration
      *
      * @param merchantId The merchantId of the merchant you want to get the configuration value for.
-     * @param namespace The namespace of the configuration.
-     * @param key The key of the configuration value you want to retrieve.
+     * @param namespace  The namespace of the configuration.
+     * @param key        The key of the configuration value you want to retrieve.
      * @return A String of configuration value or null
      */
     public String getConfigurationValueByMerchantIdAndNamespaceAndKey(String merchantId, String namespace, String key) {
-        MerchantModel model = merchantRepository.findByMerchantIdAndNamespace(merchantId,namespace);
+        MerchantModel model = merchantRepository.findByMerchantIdAndNamespace(merchantId, namespace);
 
-        Optional<ConfigurationModel> configuration = model.getConfigurations()
+        Optional<ConfigurationModel> configuration = getConfigurationWithKeyFromModel(key, model);
+
+        return configuration.map(ConfigurationModel::getValue).orElse(null);
+    }
+
+    public Optional<ConfigurationModel> getConfigurationWithKeyFromModel(String key, MerchantModel model) {
+        return model.getConfigurations()
                 .stream()
                 .filter(configurationModel -> Objects.equals(configurationModel.getKey(), key))
                 .findFirst();
-
-        return configuration.map(ConfigurationModel::getValue).orElse(null);
     }
 
     public List<MerchantDto> findAllByNamespace(String namespace) {
