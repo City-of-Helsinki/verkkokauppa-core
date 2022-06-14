@@ -2,13 +2,13 @@ package fi.hel.verkkokauppa.payment.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,20 +24,12 @@ public class PaymentFilterService {
         List<PaymentFilter> paymentFilters = new ArrayList<>();
 
         for (PaymentFilterDto paymentFilterDto : paymentFiltersDto) {
-            LocalDateTime timeStamp = LocalDateTime.now();
-            List<PaymentFilter> persistedFilters = paymentFilterRepository.findAllByReferenceId(paymentFilterDto.getReferenceId());
+            PaymentFilter paymentFilterToBeSaved;
+            paymentFilterToBeSaved = objectMapper.convertValue(paymentFilterDto, PaymentFilter.class);
+            paymentFilterToBeSaved.setUUID3FilterIdFromNamespaceAndValueAndReferenceIdAndReferenceType();
+            paymentFilterToBeSaved.setCreatedAt(DateTimeUtil.getFormattedDateTime());
 
-            PaymentFilter paymentFilter;
-            paymentFilter = objectMapper.convertValue(paymentFilterDto, PaymentFilter.class);
-            paymentFilter.setUUID3FilterIdFromValueAndReferenceIdAndReferenceType();
-            if (persistedFilters.isEmpty()) {
-                paymentFilter.setCreatedAt(timeStamp);
-            } else {
-                paymentFilter.setCreatedAt(persistedFilters.get(0).getCreatedAt());
-                paymentFilter.setUpdatedAt(timeStamp);
-            }
-
-            paymentFilters.add(paymentFilter);
+            paymentFilters.add(paymentFilterToBeSaved);
         }
 
         return (List<PaymentFilter>) paymentFilterRepository.saveAll(paymentFilters);

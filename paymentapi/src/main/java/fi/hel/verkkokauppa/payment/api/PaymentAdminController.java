@@ -171,7 +171,7 @@ public class PaymentAdminController {
         }
     }
 
-    @PostMapping(value = "/payment-admin/online/save-payment-filter", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/payment-admin/online/save-payment-filters", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<PaymentFilterDto>> savePaymentFilters(@RequestBody @Valid List<PaymentFilterDto> paymentFilters) {
         try {
             if (paymentFilters.isEmpty()) {

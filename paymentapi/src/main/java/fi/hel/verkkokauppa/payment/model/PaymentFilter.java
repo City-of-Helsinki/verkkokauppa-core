@@ -19,9 +19,6 @@ public class PaymentFilter {
     @Field(type = FieldType.Date, format = DateFormat.date_time)
     LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
-    LocalDateTime updatedAt;
-
     @Field(type = FieldType.Text)
     String namespace;
 
@@ -29,7 +26,7 @@ public class PaymentFilter {
     String referenceId;
 
     @Field(type = FieldType.Text)
-    ReferenceType referenceType;
+    String referenceType;
 
     @Field(type = FieldType.Text)
     String type;
@@ -37,9 +34,10 @@ public class PaymentFilter {
     @Field(type = FieldType.Text)
     String value;
 
-    public void setUUID3FilterIdFromValueAndReferenceIdAndReferenceType(){
-        String valueReferenceIdUUID3 = UUIDGenerator.generateType3UUIDString(getValue(), getReferenceId());
-        String valueReferenceIdReferenceType = UUIDGenerator.generateType3UUIDString(valueReferenceIdUUID3,referenceType.getValue());
-        this.setFilterId(valueReferenceIdReferenceType);
+    public void setUUID3FilterIdFromNamespaceAndValueAndReferenceIdAndReferenceType(){
+        String valueReferenceIdUUID3 = UUIDGenerator.generateType3UUIDString(getNamespace(), getReferenceId());
+        String valueReferenceIdValueUUID3 = UUIDGenerator.generateType3UUIDString(valueReferenceIdUUID3, getValue());
+        String valueReferenceIdValueReferenceType = UUIDGenerator.generateType3UUIDString(valueReferenceIdValueUUID3, getReferenceType());
+        this.setFilterId(valueReferenceIdValueReferenceType);
     }
 }

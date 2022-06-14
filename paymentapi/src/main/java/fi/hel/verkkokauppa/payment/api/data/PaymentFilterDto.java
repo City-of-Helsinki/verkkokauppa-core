@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public class PaymentFilterDto {
     String filterId;
     LocalDateTime createdAt;
-    LocalDateTime updatedAt;
     @NotBlank(message = "namespace cant be blank")
     String namespace;
     @NotBlank(message = "referenceId cant be blank")
