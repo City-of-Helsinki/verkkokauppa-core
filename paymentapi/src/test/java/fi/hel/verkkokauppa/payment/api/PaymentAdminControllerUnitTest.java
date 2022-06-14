@@ -80,9 +80,9 @@ public class PaymentAdminControllerUnitTest {
         when(filterService.savePaymentFilters(any())).thenReturn(responseFilters);
 
         ReflectionTestUtils.setField(filterService, "objectMapper", mapper);
-        when(filterService.mapToDto(any())).thenCallRealMethod();
+        when(filterService.mapPaymentFilterListToDtoList(any())).thenCallRealMethod();
 
-        ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilter(request);
+        ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilters(request);
 
         Assertions.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
         PaymentFilterDto expected = Objects.requireNonNull(response.getBody()).get(0);
