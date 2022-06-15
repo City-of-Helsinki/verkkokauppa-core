@@ -16,5 +16,6 @@ public class PaymentFilterDto {
     String referenceType;
     @NotBlank(message = "type cant be blank")
     String type;
+    @NotBlank(message = "value cant be blank")
     String value;
 }
