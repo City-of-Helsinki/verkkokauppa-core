@@ -68,7 +68,7 @@ public class PaymentAdminControllerUnitTest {
         List<PaymentFilterDto> request = new ArrayList<>();
         PaymentFilterDto paymentFilterDto = new PaymentFilterDto();
         paymentFilterDto.setReferenceId("setReferenceId");
-        paymentFilterDto.setType("setType");
+        paymentFilterDto.setFilterType("setFilterType");
         paymentFilterDto.setValue("setValue");
         request.add(paymentFilterDto);
 
@@ -88,7 +88,7 @@ public class PaymentAdminControllerUnitTest {
         PaymentFilterDto expected = Objects.requireNonNull(response.getBody()).get(0);
         Assertions.assertNotNull(expected.getFilterId());
         Assertions.assertEquals(expected.getReferenceId(), paymentFilterDto.getReferenceId());
-        Assertions.assertEquals(expected.getType(), paymentFilterDto.getType());
+        Assertions.assertEquals(expected.getFilterType(), paymentFilterDto.getFilterType());
         Assertions.assertEquals(expected.getValue(), paymentFilterDto.getValue());
     }
 }

@@ -7,8 +7,5 @@ import java.util.List;
 
 public interface PaymentFilterRepository extends ElasticsearchRepository<PaymentFilter, String> {
     PaymentFilter findByFilterId(String filterID);
-    List<PaymentFilter> findByNamespaceAndReferenceIdAndReferenceTypeAndValue(String namespace,
-                                                                              String referenceId,
-                                                                              String referenceType,
-                                                                              String value);
+
 }

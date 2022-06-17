@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @SpringBootTest
 @Slf4j
 public class PaymentAdminControllerTest {
-
+    List<String> idsToDelete = new ArrayList<>();
     @Autowired
     private ObjectMapper mapper;
     @Autowired
@@ -31,6 +32,18 @@ public class PaymentAdminControllerTest {
 
     @Autowired
     private PaymentFilterRepository paymentFilterRepository;
+
+    @AfterEach
+    void tearDown() {
+        try {
+            idsToDelete.forEach(s -> paymentFilterRepository.deleteById(s));
+            // Clear list because all filters deleted
+            idsToDelete = new ArrayList<>();
+        } catch (Exception e) {
+            log.info("delete error {}", e.toString());
+        }
+
+    }
 
     @Test
     @RunIfProfile(profile = "local")
@@ -40,41 +53,29 @@ public class PaymentAdminControllerTest {
         orderPaymentFilterForNordea.setReferenceId("order-1");
         orderPaymentFilterForNordea.setReferenceType("order");
         orderPaymentFilterForNordea.setNamespace("testi-namespace");
-        orderPaymentFilterForNordea.setType("banks");
+        orderPaymentFilterForNordea.setFilterType("banks");
         orderPaymentFilterForNordea.setValue("nordea");
 
         PaymentFilterDto orderPaymentFilterForOp = new PaymentFilterDto();
         orderPaymentFilterForOp.setReferenceId("order-1");
         orderPaymentFilterForOp.setReferenceType("order");
         orderPaymentFilterForOp.setNamespace("testi-namespace");
-        orderPaymentFilterForOp.setType("banks");
+        orderPaymentFilterForOp.setFilterType("banks");
         orderPaymentFilterForOp.setValue("op");
 
         PaymentFilterDto merchantPaymentFilterForNordea = new PaymentFilterDto();
         merchantPaymentFilterForNordea.setReferenceId("merchant-1");
         merchantPaymentFilterForNordea.setReferenceType("merchant");
         merchantPaymentFilterForNordea.setNamespace("testi-namespace");
-        merchantPaymentFilterForNordea.setType("banks");
+        merchantPaymentFilterForNordea.setFilterType("banks");
         merchantPaymentFilterForNordea.setValue("nordea");
 
         PaymentFilterDto merchantPaymentFilterForOp = new PaymentFilterDto();
         merchantPaymentFilterForOp.setReferenceId("merchant-1");
         merchantPaymentFilterForOp.setReferenceType("merchant");
         merchantPaymentFilterForOp.setNamespace("testi-namespace");
-        merchantPaymentFilterForOp.setType("banks");
+        merchantPaymentFilterForOp.setFilterType("banks");
         merchantPaymentFilterForOp.setValue("op");
-
-        // remove from database before querying
-        List<String> idsToDelete = new ArrayList<>();
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForNordea));
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForOp));
-        idsToDelete.add(getActualFilterId(merchantPaymentFilterForNordea));
-        idsToDelete.add(getActualFilterId(merchantPaymentFilterForOp));
-        try {
-            paymentFilterRepository.deleteAllById(idsToDelete);
-        } catch (Exception e) {
-            // do nothing if delete fails
-        }
 
         request.add(orderPaymentFilterForNordea);
         request.add(orderPaymentFilterForOp);
@@ -117,7 +118,7 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals(firstExpectedFilterDto.getFilterId(), getActualFilterId(orderPaymentFilterForNordea));
         Assertions.assertEquals(firstExpectedFilterDto.getReferenceId(), orderPaymentFilterForNordea.getReferenceId());
         Assertions.assertEquals(firstExpectedFilterDto.getReferenceType(), orderPaymentFilterForNordea.getReferenceType());
-        Assertions.assertEquals(firstExpectedFilterDto.getType(), orderPaymentFilterForNordea.getType());
+        Assertions.assertEquals(firstExpectedFilterDto.getFilterType(), orderPaymentFilterForNordea.getFilterType());
         Assertions.assertEquals(firstExpectedFilterDto.getValue(), orderPaymentFilterForNordea.getValue());
         Assertions.assertNotNull(firstExpectedFilterDto.getCreatedAt());
 
@@ -125,7 +126,7 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals(secondExpectedFilterDto.getFilterId(), getActualFilterId(orderPaymentFilterForOp));
         Assertions.assertEquals(secondExpectedFilterDto.getReferenceId(), orderPaymentFilterForOp.getReferenceId());
         Assertions.assertEquals(secondExpectedFilterDto.getReferenceType(), orderPaymentFilterForOp.getReferenceType());
-        Assertions.assertEquals(secondExpectedFilterDto.getType(), orderPaymentFilterForOp.getType());
+        Assertions.assertEquals(secondExpectedFilterDto.getFilterType(), orderPaymentFilterForOp.getFilterType());
         Assertions.assertEquals(secondExpectedFilterDto.getValue(), orderPaymentFilterForOp.getValue());
         Assertions.assertNotNull(secondExpectedFilterDto.getCreatedAt());
 
@@ -133,7 +134,7 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals(thirdExpectedFilterDto.getFilterId(), getActualFilterId(merchantPaymentFilterForNordea));
         Assertions.assertEquals(thirdExpectedFilterDto.getReferenceId(), merchantPaymentFilterForNordea.getReferenceId());
         Assertions.assertEquals(thirdExpectedFilterDto.getReferenceType(), merchantPaymentFilterForNordea.getReferenceType());
-        Assertions.assertEquals(thirdExpectedFilterDto.getType(), merchantPaymentFilterForNordea.getType());
+        Assertions.assertEquals(thirdExpectedFilterDto.getFilterType(), merchantPaymentFilterForNordea.getFilterType());
         Assertions.assertEquals(thirdExpectedFilterDto.getValue(), merchantPaymentFilterForNordea.getValue());
         Assertions.assertNotNull(thirdExpectedFilterDto.getCreatedAt());
 
@@ -141,10 +142,15 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals(fourthExpectedFilterDto.getFilterId(), getActualFilterId(merchantPaymentFilterForOp));
         Assertions.assertEquals(fourthExpectedFilterDto.getReferenceId(), merchantPaymentFilterForOp.getReferenceId());
         Assertions.assertEquals(fourthExpectedFilterDto.getReferenceType(), merchantPaymentFilterForOp.getReferenceType());
-        Assertions.assertEquals(fourthExpectedFilterDto.getType(), merchantPaymentFilterForOp.getType());
+        Assertions.assertEquals(fourthExpectedFilterDto.getFilterType(), merchantPaymentFilterForOp.getFilterType());
         Assertions.assertEquals(fourthExpectedFilterDto.getValue(), merchantPaymentFilterForOp.getValue());
         Assertions.assertNotNull(fourthExpectedFilterDto.getCreatedAt());
 
+        // remove test filters from database
+        idsToDelete.add(getActualFilterId(orderPaymentFilterForNordea));
+        idsToDelete.add(getActualFilterId(orderPaymentFilterForOp));
+        idsToDelete.add(getActualFilterId(merchantPaymentFilterForNordea));
+        idsToDelete.add(getActualFilterId(merchantPaymentFilterForOp));
     }
 
     @Test
@@ -152,28 +158,18 @@ public class PaymentAdminControllerTest {
     public void paymentFilterDuplicatePrevention() throws JsonProcessingException {
         List<PaymentFilterDto> request = new ArrayList<>();
         PaymentFilterDto orderPaymentFilterForNordea = new PaymentFilterDto();
-        orderPaymentFilterForNordea.setNamespace("testi-namespace");
-        orderPaymentFilterForNordea.setReferenceId("order-1");
+        orderPaymentFilterForNordea.setNamespace("testi2-namespace");
+        orderPaymentFilterForNordea.setReferenceId("order-2");
         orderPaymentFilterForNordea.setReferenceType("order");
-        orderPaymentFilterForNordea.setType("banks");
+        orderPaymentFilterForNordea.setFilterType("banks");
         orderPaymentFilterForNordea.setValue("nordea");
 
         PaymentFilterDto orderPaymentFilterForNordeaDuplicate = new PaymentFilterDto();
-        orderPaymentFilterForNordeaDuplicate.setNamespace("testi-namespace");
-        orderPaymentFilterForNordeaDuplicate.setReferenceId("order-1");
+        orderPaymentFilterForNordeaDuplicate.setNamespace("testi2-namespace");
+        orderPaymentFilterForNordeaDuplicate.setReferenceId("order-2");
         orderPaymentFilterForNordeaDuplicate.setReferenceType("order");
-        orderPaymentFilterForNordeaDuplicate.setType("banks");
+        orderPaymentFilterForNordeaDuplicate.setFilterType("banks");
         orderPaymentFilterForNordeaDuplicate.setValue("nordea");
-
-        // remove from database before querying
-        List<String> idsToDelete = new ArrayList<>();
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForNordea));
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForNordeaDuplicate));
-        try {
-            paymentFilterRepository.deleteAllById(idsToDelete);
-        } catch (Exception e) {
-            // do nothing if delete fails
-        }
 
         request.add(orderPaymentFilterForNordea);
         request.add(orderPaymentFilterForNordeaDuplicate);
@@ -181,12 +177,20 @@ public class PaymentAdminControllerTest {
         ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilters(request);
         log.info("response : {}",mapper.writeValueAsString(response.getBody()));
         Assertions.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
-        Assertions.assertEquals(Objects.requireNonNull(response.getBody()).size(),2);
+        Assertions.assertEquals(1,Objects.requireNonNull(response.getBody()).size());
 
-        List<PaymentFilter> foundFilters = paymentFilterRepository.findByNamespaceAndReferenceIdAndReferenceTypeAndValue(
-                "testi-namespace", "order-1", "order", "nordea"
-        );
-        Assertions.assertEquals(foundFilters.size(), 1);
+        idsToDelete.add(response.getBody().get(0).getFilterId());
+
+        List<PaymentFilter> foundFilters = (List<PaymentFilter>) paymentFilterRepository.findAllById(idsToDelete);
+        PaymentFilter paymentFilter = foundFilters.get(0);
+        Assertions.assertNotNull(paymentFilter.getFilterId());
+        Assertions.assertNotNull(paymentFilter.getCreatedAt());
+        Assertions.assertEquals(paymentFilter.getFilterId(), getActualFilterId(orderPaymentFilterForNordea));
+        Assertions.assertEquals(orderPaymentFilterForNordea.getValue(), paymentFilter.getValue());
+        Assertions.assertEquals(orderPaymentFilterForNordea.getFilterType(), paymentFilter.getFilterType());
+        Assertions.assertEquals(orderPaymentFilterForNordea.getReferenceType(), paymentFilter.getReferenceType());
+        Assertions.assertEquals(orderPaymentFilterForNordea.getReferenceId(), paymentFilter.getReferenceId());
+        Assertions.assertEquals(orderPaymentFilterForNordea.getNamespace(), paymentFilter.getNamespace());
     }
 
     public String getActualFilterId(PaymentFilterDto filterDto){
