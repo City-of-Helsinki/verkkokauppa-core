@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.NonNullApi;
 
 @Configuration
 public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfiguration {
@@ -17,6 +19,7 @@ public class ElasticsearchRestClientConfig extends AbstractElasticsearchConfigur
     }
 
     @Override
+    @NonNull
     @Bean
     public RestHighLevelClient elasticsearchClient() {
         return this.elasticSearchRestClientResolver.get();
