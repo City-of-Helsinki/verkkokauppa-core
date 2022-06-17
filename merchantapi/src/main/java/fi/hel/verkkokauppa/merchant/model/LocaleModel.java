@@ -7,7 +7,6 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Data
-@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LocaleModel {
     @Field(type = FieldType.Text)
