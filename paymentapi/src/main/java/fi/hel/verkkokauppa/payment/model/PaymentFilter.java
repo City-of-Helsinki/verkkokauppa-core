@@ -29,7 +29,7 @@ public class PaymentFilter {
     String referenceType;
 
     @Field(type = FieldType.Text)
-    String type;
+    String filterType;
 
     @Field(type = FieldType.Text)
     String value;
