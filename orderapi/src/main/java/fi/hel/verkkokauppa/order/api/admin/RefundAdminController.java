@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class RefundAdminController {
@@ -54,6 +55,16 @@ public class RefundAdminController {
                 .orderId(refund.getOrderId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
                 .build();
+    }
+
+    @GetMapping(value = "/refund-admin/get-by-refund-id", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RefundAggregateDto> getRefund(@RequestParam String refundId) {
+        Refund refund = refundRepository.findById(refundId).orElseThrow(() -> new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("refund-not-found", "refund with id [" + refundId + "] not found")
+        ));
+        List<RefundItem> refundItems = refundItemRepository.findByRefundId(refund.getRefundId());
+        return ResponseEntity.ok().body(refundTransformer.transformToDto(refund, refundItems));
     }
 
     @GetMapping(value = "/refund-admin/get-by-order-id", produces = MediaType.APPLICATION_JSON_VALUE)
