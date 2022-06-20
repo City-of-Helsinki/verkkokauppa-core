@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
-import fi.hel.verkkokauppa.payment.service.PaymentMethodListService;
+import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class OnlinePaymentController {
     private OnlinePaymentService service;
 
 	@Autowired
-	private PaymentMethodListService paymentMethodListService;
+	private PaymentMethodService paymentMethodService;
 
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
@@ -75,11 +75,11 @@ public class OnlinePaymentController {
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {
 		try {
 			String namespace = request.getNamespace();
-			PaymentMethodDto[] methods = paymentMethodListService.getOnlinePaymentMethodList(request.getCurrency());
+			PaymentMethodDto[] methods = paymentMethodService.getOnlinePaymentMethodList(request.getCurrency());
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
 
-			methods = paymentMethodListService.filterPaymentMethodList(request, methods);
+			methods = paymentMethodService.filterPaymentMethodList(request, methods);
 
 			if (methods.length == 0) {
 				log.debug("payment methods not found, namespace: " + namespace);

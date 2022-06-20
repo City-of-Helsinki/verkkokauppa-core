@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.service.OfflinePaymentService;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
@@ -110,7 +111,8 @@ public class OfflinePaymentControllerUnitTest {
                 "Helsinki lasku",
                 "helsinki-invoice",
                 "helsinki-invoice",
-                "helsinki-invoice.png")
+                "helsinki-invoice.png",
+                GatewayEnum.OFFLINE)
         };
 
         when(offlinePaymentService.getFilteredPaymentMethodList(any())).thenReturn(mockedReturn);

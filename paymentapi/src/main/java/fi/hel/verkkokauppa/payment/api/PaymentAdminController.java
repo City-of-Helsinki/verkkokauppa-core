@@ -4,15 +4,16 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
-import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
@@ -30,21 +31,30 @@ public class PaymentAdminController {
 
     private Logger log = LoggerFactory.getLogger(PaymentAdminController.class);
 
-    @Autowired
-    private OnlinePaymentService service;
-    @Autowired
-    private CancelPaymentFetcher cancelPaymentFetcher;
+    private final OnlinePaymentService onlinePaymentService;
+    private final PaymentMethodService paymentMethodService;
+    private final CancelPaymentFetcher cancelPaymentFetcher;
+    private final PaymentReturnValidator paymentReturnValidator;
+    private final SaveHistoryService saveHistoryService;
 
     @Autowired
-    private PaymentReturnValidator paymentReturnValidator;
-    @Autowired
-    private SaveHistoryService saveHistoryService;
+    public PaymentAdminController(OnlinePaymentService onlinePaymentService,
+                                  PaymentMethodService paymentMethodService,
+                                  CancelPaymentFetcher cancelPaymentFetcher,
+                                  PaymentReturnValidator paymentReturnValidator,
+                                  SaveHistoryService saveHistoryService) {
+        this.onlinePaymentService = onlinePaymentService;
+        this.paymentMethodService = paymentMethodService;
+        this.cancelPaymentFetcher = cancelPaymentFetcher;
+        this.paymentReturnValidator = paymentReturnValidator;
+        this.saveHistoryService = saveHistoryService;
+    }
 
 
     @GetMapping(value = "/payment-admin/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Payment> getPayment(@RequestParam(value = "orderId") String orderId) {
         try {
-            Payment payment = service.getPaymentForOrder(orderId);
+            Payment payment = onlinePaymentService.getPaymentForOrder(orderId);
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {
             throw cae;
@@ -65,9 +75,9 @@ public class PaymentAdminController {
         try {
             List<Payment> payments;
             if (paymentStatus != null) {
-                payments = service.getPaymentsWithNamespaceAndOrderIdAndStatus(orderId, namespace, paymentStatus);
+                payments = onlinePaymentService.getPaymentsWithNamespaceAndOrderIdAndStatus(orderId, namespace, paymentStatus);
             } else {
-                payments = service.getPaymentsForOrder(orderId, namespace);
+                payments = onlinePaymentService.getPaymentsForOrder(orderId, namespace);
             }
             return ResponseEntity.status(HttpStatus.OK).body(payments);
 
@@ -89,29 +99,29 @@ public class PaymentAdminController {
         try {
             log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
 
-            Payment existingPayment = service.getPaymentForOrder(message.getOrderId());
+            Payment existingPayment = onlinePaymentService.getPaymentForOrder(message.getOrderId());
             if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
                 log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
             } else {
                 if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.getCardToken() != null) {
-                    Payment payment = service.createSubscriptionRenewalPayment(message);
+                    Payment payment = onlinePaymentService.createSubscriptionRenewalPayment(message);
 
-                    ChargeCardTokenRequestDataDto request = service.createChargeCardTokenRequestDataDto(message, payment.getPaymentId());
+                    ChargeCardTokenRequestDataDto request = onlinePaymentService.createChargeCardTokenRequestDataDto(message, payment.getPaymentId());
 
                     try {
-                        ChargeCardTokenResponse chargeCardTokenResponse = service.chargeCardToken(request,payment);
+                        ChargeCardTokenResponse chargeCardTokenResponse = onlinePaymentService.chargeCardToken(request,payment);
 
                         PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(
                                 true,
                                 chargeCardTokenResponse.getResult().toString(),
                                 chargeCardTokenResponse.getSettled().toString()
                         );
-                        service.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
                         // TODO remove later?
                         log.debug("paymentReturnDto {}", paymentReturnDto);
                     } catch (Exception e) {
                         log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                        service.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false));
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false));
                     }
                 } else {
                     log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());
@@ -135,8 +145,8 @@ public class PaymentAdminController {
     public ResponseEntity<String> createCardRenewalPayment(@RequestBody GetPaymentRequestDataDto dto) {
         try {
 
-            Payment payment = service.getPaymentRequestDataForCardRenewal(dto);
-            String vismaPaymentUrl = service.getPaymentUrl(payment);
+            Payment payment = onlinePaymentService.getPaymentRequestDataForCardRenewal(dto);
+            String vismaPaymentUrl = onlinePaymentService.getPaymentUrl(payment);
             return ResponseEntity.status(HttpStatus.CREATED).body(vismaPaymentUrl);
         } catch (CommonApiException cae) {
             throw cae;
@@ -164,6 +174,64 @@ public class PaymentAdminController {
                     new Error("failed-to-create-payment", "failed to create payment")
             );
         }
+    }
+
+    @GetMapping(value = "/payment-admin/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PaymentMethodDto>> getPaymentMethods() {
+        List<PaymentMethodDto> paymentMethodDtos = paymentMethodService.getAllPaymentMethods();
+        return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDtos);
+    }
+
+    @GetMapping(value = "/payment-admin/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentMethodDto> getPaymentMethodByCode(@PathVariable String code) {
+        PaymentMethodDto paymentMethodDto = paymentMethodService.getPaymenMethodByCode(code)
+                .orElseThrow(() -> {
+                    log.error("getting a payment method failed");
+                    throw new CommonApiException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            new Error("failed-to-get-payment-method", "failed to get payment method")
+                    );
+                });
+        return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDto);
+    }
+
+    @PostMapping(value = "/payment-admin/create/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentMethodDto> createPaymentMethod(@RequestBody PaymentMethodDto dto) {
+        PaymentMethodDto newPaymentMethodDto = paymentMethodService.createNewPaymentMethod(dto)
+                .orElseThrow(() -> {
+                    log.error("creating a new payment method failed");
+                    throw new CommonApiException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            new Error("failed-to-create-payment-method", "failed to create a new payment method")
+                    );
+                });
+        return ResponseEntity.status(HttpStatus.CREATED).body(newPaymentMethodDto);
+    }
+
+    @PutMapping(value = "/payment-admin/update/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentMethodDto> updatePaymentMethod(@PathVariable String code, @RequestBody PaymentMethodDto dto) {
+        PaymentMethodDto updatedPaymentMethodDto = paymentMethodService.updatePaymentMethod(code, dto)
+                .orElseThrow(() -> {
+                    log.error("updating payment method failed");
+                    throw new CommonApiException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            new Error("failed-to-update-payment-method", "failed to update payment method")
+                    );
+                });;
+        return ResponseEntity.status(HttpStatus.OK).body(updatedPaymentMethodDto);
+    }
+
+    @DeleteMapping(value = "/payment-admin/delete/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> deletePaymentMethod(@PathVariable String code) {
+        boolean success = paymentMethodService.deletePaymentMethod(code);
+        if (!success) {
+            log.error("deleting a payment method by code failed");
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-delete-payment-method", "failed to delete payment method by code")
+            );
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(code);
     }
 
 }
