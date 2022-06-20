@@ -2,8 +2,10 @@ package fi.hel.verkkokauppa.common.configuration;
 
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ServiceConfigurationKeys {
@@ -58,8 +60,9 @@ public class ServiceConfigurationKeys {
 
 
     public static List<String> getAllConfigurationKeys() {
-        List<String> knownKeys = getUnrestrictedConfigurationKeys();
-        knownKeys.addAll(getRestrictedConfigurationKeys());
+        List<String> knownKeys = new ArrayList<>();
+        knownKeys.addAll(new ArrayList<>(getUnrestrictedConfigurationKeys()));
+        knownKeys.addAll(new ArrayList<>(getRestrictedConfigurationKeys()));
         return knownKeys;
     }
 

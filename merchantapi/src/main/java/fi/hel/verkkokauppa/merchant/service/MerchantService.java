@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.merchant.api.dto.MerchantDto;
 import fi.hel.verkkokauppa.merchant.mapper.MerchantMapper;
+import fi.hel.verkkokauppa.merchant.model.ConfigurationModel;
 import fi.hel.verkkokauppa.merchant.model.MerchantModel;
 import fi.hel.verkkokauppa.merchant.repository.MerchantRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -67,4 +71,35 @@ public class MerchantService {
         return mapper.toDto(merchantRepository.save(updatedEntity));
     }
 
+    /**
+     * > Find the merchant with the given merchantId and namespace, then find the configuration with the given key, and
+     * return the value of that configuration
+     *
+     * @param merchantId The merchantId of the merchant you want to get the configuration value for.
+     * @param namespace  The namespace of the configuration.
+     * @param key        The key of the configuration value you want to retrieve.
+     * @return A String of configuration value or null
+     */
+    public String getConfigurationValueByMerchantIdAndNamespaceAndKey(String merchantId, String namespace, String key) {
+        MerchantModel model = merchantRepository.findByMerchantIdAndNamespace(merchantId, namespace);
+
+        Optional<ConfigurationModel> configuration = getConfigurationWithKeyFromModel(key, model);
+
+        return configuration.map(ConfigurationModel::getValue).orElse(null);
+    }
+
+    public Optional<ConfigurationModel> getConfigurationWithKeyFromModel(String key, MerchantModel model) {
+        return model.getConfigurations()
+                .stream()
+                .filter(configurationModel -> Objects.equals(configurationModel.getKey(), key))
+                .findFirst();
+    }
+
+    public List<MerchantDto> findAllByNamespace(String namespace) {
+        return merchantRepository
+                .findAllByNamespace(namespace)
+                .stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

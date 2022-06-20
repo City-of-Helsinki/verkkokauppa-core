@@ -10,5 +10,7 @@ import java.util.List;
 
 @Repository
 public interface MerchantRepository extends ElasticsearchRepository<MerchantModel, String> {
+    MerchantModel findByMerchantIdAndNamespace(String merchantId, String namespace);
 
+    List<MerchantModel> findAllByNamespace(String namespace);
 }
