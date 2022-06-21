@@ -1,0 +1,7 @@
+{
+  "name": "Edited test payment method",
+  "code": "test-edit-payment-code",
+  "group": "test-edit-payment-group",
+  "img": "test-payment.png",
+  "gateway": "online"
+}
