@@ -184,54 +184,58 @@ public class PaymentAdminController {
 
     @GetMapping(value = "/payment-admin/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentMethodDto> getPaymentMethodByCode(@PathVariable String code) {
-        PaymentMethodDto paymentMethodDto = paymentMethodService.getPaymenMethodByCode(code)
-                .orElseThrow(() -> {
-                    log.error("getting a payment method failed");
-                    throw new CommonApiException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            new Error("failed-to-get-payment-method", "failed to get payment method")
-                    );
-                });
-        return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDto);
-    }
-
-    @PostMapping(value = "/payment-admin/create/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PaymentMethodDto> createPaymentMethod(@RequestBody PaymentMethodDto dto) {
-        PaymentMethodDto newPaymentMethodDto = paymentMethodService.createNewPaymentMethod(dto)
-                .orElseThrow(() -> {
-                    log.error("creating a new payment method failed");
-                    throw new CommonApiException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            new Error("failed-to-create-payment-method", "failed to create a new payment method")
-                    );
-                });
-        return ResponseEntity.status(HttpStatus.CREATED).body(newPaymentMethodDto);
-    }
-
-    @PutMapping(value = "/payment-admin/update/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PaymentMethodDto> updatePaymentMethod(@PathVariable String code, @RequestBody PaymentMethodDto dto) {
-        PaymentMethodDto updatedPaymentMethodDto = paymentMethodService.updatePaymentMethod(code, dto)
-                .orElseThrow(() -> {
-                    log.error("updating payment method failed");
-                    throw new CommonApiException(
-                            HttpStatus.INTERNAL_SERVER_ERROR,
-                            new Error("failed-to-update-payment-method", "failed to update payment method")
-                    );
-                });;
-        return ResponseEntity.status(HttpStatus.OK).body(updatedPaymentMethodDto);
-    }
-
-    @DeleteMapping(value = "/payment-admin/delete/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> deletePaymentMethod(@PathVariable String code) {
-        boolean success = paymentMethodService.deletePaymentMethod(code);
-        if (!success) {
-            log.error("deleting a payment method by code failed");
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-delete-payment-method", "failed to delete payment method by code")
+        try {
+            PaymentMethodDto paymentMethodDto = paymentMethodService.getPaymenMethodByCode(code);
+            return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-payment-method", "failed to get payment method")
             );
         }
-        return ResponseEntity.status(HttpStatus.OK).body(code);
+    }
+
+    @PostMapping(value = "/payment-admin/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentMethodDto> createPaymentMethod(@RequestBody PaymentMethodDto dto) {
+        try {
+            PaymentMethodDto newPaymentMethodDto = paymentMethodService.createNewPaymentMethod(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newPaymentMethodDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-create-payment-method", "failed to create a new payment method")
+            );
+        }
+    }
+
+    @PutMapping(value = "/payment-admin/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentMethodDto> updatePaymentMethod(@PathVariable String code, @RequestBody PaymentMethodDto dto) {
+        try {
+            PaymentMethodDto updatedPaymentMethodDto = paymentMethodService.updatePaymentMethod(code, dto);
+            return ResponseEntity.status(HttpStatus.OK).body(updatedPaymentMethodDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-update-payment-method", "failed to update payment method, code:" + code)
+            );
+        }
+    }
+
+    @DeleteMapping(value = "/payment-admin/payment-method/{code}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> deletePaymentMethod(@PathVariable String code) {
+        try {
+            paymentMethodService.deletePaymentMethod(code);
+            return ResponseEntity.status(HttpStatus.OK).body(code);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-delete-payment-method", "failed to delete payment method, code:" + code)
+            );
+        }
     }
 
 }

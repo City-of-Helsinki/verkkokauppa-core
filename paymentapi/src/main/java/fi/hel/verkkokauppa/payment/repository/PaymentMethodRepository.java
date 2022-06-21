@@ -10,4 +10,5 @@ public interface PaymentMethodRepository extends ElasticsearchRepository<Payment
 
     List<PaymentMethod> findByGateway(GatewayEnum gateway);
     List<PaymentMethod> findByCode(String code);
+    long deleteByCode(String code);
 }

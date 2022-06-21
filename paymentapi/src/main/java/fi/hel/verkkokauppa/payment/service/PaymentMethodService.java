@@ -170,62 +170,63 @@ public class PaymentMethodService {
 		return paymentMethodDtos;
 	}
 
-	public Optional<PaymentMethodDto> getPaymenMethodByCode(String code) {
-		Optional<fi.hel.verkkokauppa.payment.model.PaymentMethod> exsistingMethodOpt = paymentMethodRepository.findByCode(code).stream()
+	public PaymentMethodDto getPaymenMethodByCode(String code) {
+		fi.hel.verkkokauppa.payment.model.PaymentMethod exsistingMethod = paymentMethodRepository.findByCode(code).stream()
 				.filter(paymentMethod -> paymentMethod.getCode().equals(code))
-				.findFirst();
-		if (!exsistingMethodOpt.isPresent()) {
-			log.debug("payment method not found with code: " + code);
-			return Optional.empty();
-		}
-		PaymentMethodDto dto = mapper.convertValue(exsistingMethodOpt.get(), PaymentMethodDto.class);
-		return Optional.of(dto);
+				.findFirst()
+				.orElseThrow(() -> new CommonApiException(
+						HttpStatus.NOT_FOUND,
+						new Error("payment-method-not-found", "payment method with code [" + code + "] not found")
+				));
+		PaymentMethodDto dto = mapper.convertValue(exsistingMethod, PaymentMethodDto.class);
+		return dto;
 	}
 
-	public Optional<PaymentMethodDto> createNewPaymentMethod(PaymentMethodDto dto) {
-		Optional<fi.hel.verkkokauppa.payment.model.PaymentMethod> exsistingMethodOpt = paymentMethodRepository.findByCode(dto.getCode()).stream()
+	public PaymentMethodDto createNewPaymentMethod(PaymentMethodDto dto) {
+		paymentMethodRepository.findByCode(dto.getCode()).stream()
 				.filter(paymentMethod -> paymentMethod.getCode().equals(dto.getCode()))
-				.findFirst();
-		if (exsistingMethodOpt.isPresent()) {
-			log.debug("payment method already exists, not creating new with code: " + dto.getCode());
-			return Optional.empty();
-		}
+				.findFirst()
+				.ifPresent(paymentMethod -> {
+					throw new CommonApiException(
+							HttpStatus.CONFLICT,
+							new Error("payment-method-already-exists", "payment method with code [" + paymentMethod.getCode() + "] already exists")
+					);
+				});
 
 		fi.hel.verkkokauppa.payment.model.PaymentMethod paymentMethod = mapper.convertValue(dto, fi.hel.verkkokauppa.payment.model.PaymentMethod.class);
 		fi.hel.verkkokauppa.payment.model.PaymentMethod saved = paymentMethodRepository.save(paymentMethod);
 
-		return Optional.of(new PaymentMethodDto(saved.getName(), saved.getCode(), saved.getGroup(), saved.getImg(), saved.getGateway()));
+		return new PaymentMethodDto(saved.getName(), saved.getCode(), saved.getGroup(), saved.getImg(), saved.getGateway());
 	}
 
-	public Optional<PaymentMethodDto> updatePaymentMethod(String code, PaymentMethodDto dto) {
-		Optional<fi.hel.verkkokauppa.payment.model.PaymentMethod> exsistingMethodOpt = paymentMethodRepository.findByCode(code).stream()
+	public PaymentMethodDto updatePaymentMethod(String code, PaymentMethodDto dto) {
+		fi.hel.verkkokauppa.payment.model.PaymentMethod paymentMethodToUpdate  = paymentMethodRepository.findByCode(code).stream()
 				.filter(paymentMethod -> paymentMethod.getCode().equals(code))
-				.findFirst();
-		if (!exsistingMethodOpt.isPresent()) {
-			log.debug("payment method with code does not exist, not updating with code: " + dto.getCode());
-			return Optional.empty();
-		}
-
-		fi.hel.verkkokauppa.payment.model.PaymentMethod paymentMethodToUpdate = exsistingMethodOpt.get();
+				.findFirst()
+				.orElseThrow(() -> new CommonApiException(
+						HttpStatus.NOT_FOUND,
+						new Error("payment-method-not-found", "payment method with code [" + code + "] not found")
+				));
 		paymentMethodToUpdate.setName(dto.getName());
 		paymentMethodToUpdate.setCode(dto.getCode());
 		paymentMethodToUpdate.setGroup(dto.getGroup());
+		paymentMethodToUpdate.setImg(dto.getImg());
 		paymentMethodToUpdate.setGateway(dto.getGateway());
 
 		fi.hel.verkkokauppa.payment.model.PaymentMethod saved = paymentMethodRepository.save(paymentMethodToUpdate);
 
-		return Optional.of(new PaymentMethodDto(saved.getName(), saved.getCode(), saved.getGroup(), saved.getImg(), saved.getGateway()));
+		return new PaymentMethodDto(saved.getName(), saved.getCode(), saved.getGroup(), saved.getImg(), saved.getGateway());
 	}
 
 	public boolean deletePaymentMethod(String code) {
-		Optional<fi.hel.verkkokauppa.payment.model.PaymentMethod> exsistingMethodOpt = paymentMethodRepository.findByCode(code).stream()
+		fi.hel.verkkokauppa.payment.model.PaymentMethod exsistingMethod = paymentMethodRepository.findByCode(code).stream()
 				.filter(paymentMethod -> paymentMethod.getCode().equals(code))
-				.findFirst();
-		if (!exsistingMethodOpt.isPresent()) {
-			log.debug("payment method with code does not exist, not deleting payment method with code: " + code);
-			return false;
-		}
-		paymentMethodRepository.delete(exsistingMethodOpt.get());
+				.findFirst()
+				.orElseThrow(() -> new CommonApiException(
+						HttpStatus.NOT_FOUND,
+						new Error("payment-method-not-found", "payment method with code [" + code + "] not found")
+				));
+		paymentMethodRepository.delete(exsistingMethod);
 		return true;
 	}
 
