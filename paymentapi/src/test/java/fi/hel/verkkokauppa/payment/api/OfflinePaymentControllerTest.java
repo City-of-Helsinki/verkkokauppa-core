@@ -3,17 +3,15 @@ package fi.hel.verkkokauppa.payment.api;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.service.OfflinePaymentService;
+import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration;
 import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -60,7 +58,8 @@ class OfflinePaymentControllerTest {
                 "Helsinki lasku",
                 "helsinki-invoice",
                 "helsinki-invoice",
-                "helsinki-invoice.png"
+                "helsinki-invoice.png",
+                GatewayEnum.OFFLINE
         );
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getCode(), actual.getCode());

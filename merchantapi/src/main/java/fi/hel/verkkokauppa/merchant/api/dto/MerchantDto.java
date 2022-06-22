@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Data
-@ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MerchantDto {
     // If given do not create new merchant
