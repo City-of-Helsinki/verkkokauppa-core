@@ -4,15 +4,17 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
-import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
 import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
@@ -40,6 +42,8 @@ public class PaymentAdminController {
     @Autowired
     private SaveHistoryService saveHistoryService;
 
+    @Autowired
+    private PaymentFilterService filterService;
 
     @GetMapping(value = "/payment-admin/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Payment> getPayment(@RequestParam(value = "orderId") String orderId) {
@@ -162,6 +166,23 @@ public class PaymentAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-payment", "failed to create payment")
+            );
+        }
+    }
+
+    @PostMapping(value = "/payment-admin/online/save-payment-filters", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PaymentFilterDto>> savePaymentFilters(@RequestBody List<PaymentFilterDto> paymentFilters) {
+        try {
+            List<PaymentFilter> filterModelList = filterService.savePaymentFilters(paymentFilters);
+            List<PaymentFilterDto> filterDtoList = filterService.mapPaymentFilterListToDtoList(filterModelList);
+            return ResponseEntity.status(HttpStatus.CREATED).body(filterDtoList);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("saving payment filters failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-save-payment-filters", "failed to save payment filter(s)")
             );
         }
     }
