@@ -6,6 +6,6 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 import java.util.List;
 
 public interface PaymentFilterRepository extends ElasticsearchRepository<PaymentFilter, String> {
-    PaymentFilter findByFilterId(String filterID);
+    PaymentFilter findByFilterId(String filterId);
 
 }
