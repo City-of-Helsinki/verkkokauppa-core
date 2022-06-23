@@ -206,7 +206,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
-        setupInitialData();
+        createTestPaymentMethod();
         paymentMethodRepository.findAll().forEach(method -> log.info(method.getCode()));
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
 
@@ -227,7 +227,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenUpdatePaymentMethodWithValidDataThenReturnStatus200() {
-        setupInitialData();
+        createTestPaymentMethod();
 
         String code = "test-payment-code";
         PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
@@ -273,7 +273,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenDeletePaymentMethodThatExistsThenReturnStatus200() {
-        setupInitialData();
+        createTestPaymentMethod();
 
         String code = "test-payment-code";
         ResponseEntity<String> response = paymentAdminController.deletePaymentMethod(code);
@@ -304,7 +304,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnStatus200() {
-        setupInitialData();
+        createTestPaymentMethod();
 
         String code = "test-payment-code";
         ResponseEntity<PaymentMethodDto> response = paymentAdminController.getPaymentMethodByCode(code);
@@ -346,7 +346,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenGetPaymentMethodsThenReturnMoreThanZeroWithStatus200() {
-        setupInitialData();
+        createTestPaymentMethod();
 
         ResponseEntity<List<PaymentMethodDto>> response = paymentAdminController.getPaymentMethods();
 
@@ -384,7 +384,7 @@ public class PaymentAdminControllerTest {
                 gateway);
     }
 
-    private void setupInitialData() {
+    private void createTestPaymentMethod() {
         PaymentMethodModel paymentMethodModel = new PaymentMethodModel();
         paymentMethodModel.setName("Test payment method");
         paymentMethodModel.setCode("test-payment-code");

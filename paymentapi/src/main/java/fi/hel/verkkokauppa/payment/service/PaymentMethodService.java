@@ -75,13 +75,9 @@ public class PaymentMethodService {
             }
 
             List<PaymentMethodModel> paymentMethodModels = paymentMethodRepository.findByGateway(GatewayEnum.OFFLINE);
-            return paymentMethodModels.stream().map(paymentMethodModel -> new PaymentMethodDto(
-                    paymentMethodModel.getName(),
-                    paymentMethodModel.getCode(),
-                    paymentMethodModel.getGroup(),
-                    paymentMethodModel.getImg(),
-                    paymentMethodModel.getGateway()
-            )).toArray(PaymentMethodDto[]::new);
+            return paymentMethodModels.stream()
+                    .map(paymentMethodMapper::toDto)
+                    .toArray(PaymentMethodDto[]::new);
 
         } catch (RuntimeException e) {
             log.warn("getting offline payment methods failed, currency: " + currency, e);
@@ -167,10 +163,9 @@ public class PaymentMethodService {
     public List<PaymentMethodDto> getAllPaymentMethods() {
         Iterable<PaymentMethodModel> paymentMethods = paymentMethodRepository.findAll();
 
-        List<PaymentMethodDto> paymentMethodDtos = StreamSupport.stream(paymentMethods.spliterator(), false)
+        return StreamSupport.stream(paymentMethods.spliterator(), false)
                 .map(paymentMethodMapper::toDto)
                 .collect(Collectors.toList());
-        return paymentMethodDtos;
     }
 
     public PaymentMethodDto getPaymenMethodByCode(String code) {

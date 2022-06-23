@@ -5,16 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Supplier;
 
-public class AbstractModelMapper<T, D> {
+public class AbstractModelMapper<Entity, Dto> {
 
     protected final ObjectMapper mapper;
-    private final T genericModelTypeObject;
-    private final D genericDtoTypeObject;
+    private final Entity genericModelTypeObject;
+    private final Dto genericDtoTypeObject;
 
     public AbstractModelMapper(
             ObjectMapper mapper,
-            Supplier<T> modelSupplier,
-            Supplier<D> dtoSupplier
+            Supplier<Entity> modelSupplier,
+            Supplier<Dto> dtoSupplier
     ) {
         this.mapper = mapper;
         this.genericModelTypeObject = modelSupplier.get();
@@ -22,26 +22,26 @@ public class AbstractModelMapper<T, D> {
     }
 
     /**
-     * Convert the given DTO type of {@code <D>} to a Model object type of {@code <T>}.
+     * Convert the given DTO type of {@code <Dto>} to a Model object type of {@code <Entity>}.
      *
      * @param dto The DTO object to be converted to a model
-     * @return <T> A model object type
+     * @return <Entity> A model object type
      */
-    public T fromDto(D dto) {
-        return (T) mapper.convertValue(dto, genericModelTypeObject.getClass());
+    public Entity fromDto(Dto dto) {
+        return (Entity) mapper.convertValue(dto, genericModelTypeObject.getClass());
     }
 
     /**
-     * Convert the Model object type of {@code <T>} to a Dto object type of {@code <D>}.
+     * Convert the Model object type of {@code <Entity>} to a Dto object type of {@code <Dto>}.
      *
      * @param entity The entity object to be converted to Dto
      * @return A model object
      */
-    public D toDto(T entity) {
-        return (D) mapper.convertValue(entity, genericDtoTypeObject.getClass());
+    public Dto toDto(Entity entity) {
+        return (Dto) mapper.convertValue(entity, genericDtoTypeObject.getClass());
     }
 
-    public T updateFromDtoToModel(T entity, D dto) throws JsonProcessingException {
+    public Entity updateFromDtoToModel(Entity entity, Dto dto) throws JsonProcessingException {
         return mapper.readerForUpdating(entity).readValue(mapper.writeValueAsString(dto));
     }
 
