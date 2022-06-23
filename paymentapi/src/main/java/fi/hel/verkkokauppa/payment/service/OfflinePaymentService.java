@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 public class OfflinePaymentService {
 
     @Autowired
-    private PaymentMethodListService paymentMethodListService;
+    private PaymentMethodService paymentMethodService;
 
     public PaymentMethodDto[] getFilteredPaymentMethodList(GetPaymentMethodListRequest request) {
-        return paymentMethodListService.filterPaymentMethodList(
+        return paymentMethodService.filterPaymentMethodList(
                 request,
-                paymentMethodListService.getOfflinePaymentMethodList(request.getCurrency())
+                paymentMethodService.getOfflinePaymentMethodList(request.getCurrency())
         );
     }
 }

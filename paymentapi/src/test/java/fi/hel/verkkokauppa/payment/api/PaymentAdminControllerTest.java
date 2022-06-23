@@ -1,13 +1,21 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
+import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
+import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -21,14 +29,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @SpringBootTest
 @Slf4j
 public class PaymentAdminControllerTest {
-    List<String> idsToDelete = new ArrayList<>();
+
+    private ArrayList<String> paymentMethodsToBeDeleted = new ArrayList<>();
+    private List<String> paymentFiltersToBeDeleted = new ArrayList<>();
+
     @Autowired
     private ObjectMapper mapper;
+
     @Autowired
     private PaymentAdminController paymentAdminController;
+
+    @Autowired
+    private PaymentMethodRepository paymentMethodRepository;
 
     @Autowired
     private PaymentFilterRepository paymentFilterRepository;
@@ -36,13 +54,19 @@ public class PaymentAdminControllerTest {
     @AfterEach
     void tearDown() {
         try {
-            idsToDelete.forEach(s -> paymentFilterRepository.deleteById(s));
-            // Clear list because all filters deleted
-            idsToDelete = new ArrayList<>();
+            paymentMethodsToBeDeleted.forEach(s -> paymentMethodRepository.deleteByCode(s));
+            // Clear list because all merchants deleted
+            paymentMethodsToBeDeleted = new ArrayList<>();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
         }
-
+        try {
+            paymentFiltersToBeDeleted.forEach(s -> paymentFilterRepository.deleteById(s));
+            // Clear list because all filters deleted
+            paymentFiltersToBeDeleted = new ArrayList<>();
+        } catch (Exception e) {
+            log.info("delete error {}", e.toString());
+        }
     }
 
     @Test
@@ -147,14 +171,230 @@ public class PaymentAdminControllerTest {
         Assertions.assertNotNull(fourthExpectedFilterDto.getCreatedAt());
 
         // remove test filters from database
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForNordea));
-        idsToDelete.add(getActualFilterId(orderPaymentFilterForOp));
-        idsToDelete.add(getActualFilterId(merchantPaymentFilterForNordea));
-        idsToDelete.add(getActualFilterId(merchantPaymentFilterForOp));
+        paymentFiltersToBeDeleted.add(getActualFilterId(orderPaymentFilterForNordea));
+        paymentFiltersToBeDeleted.add(getActualFilterId(orderPaymentFilterForOp));
+        paymentFiltersToBeDeleted.add(getActualFilterId(merchantPaymentFilterForNordea));
+        paymentFiltersToBeDeleted.add(getActualFilterId(merchantPaymentFilterForOp));
+    }
+
+    /*
+     * It tests the create payment method endpoint.
+     */
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenCreatePaymentMethodWithValidDataThenReturnStatus201() {
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        ResponseEntity<PaymentMethodDto> response = paymentAdminController.createPaymentMethod(paymentMethodDto);
+
+        PaymentMethodDto responsePaymentMethodDto = response.getBody();
+        Assertions.assertNotNull(responsePaymentMethodDto);
+        String code = responsePaymentMethodDto.getCode();
+        paymentMethodsToBeDeleted.add(code);
+        Assertions.assertNotNull(code);
+        Assertions.assertNotNull(responsePaymentMethodDto.getName());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGroup());
+        Assertions.assertNotNull(responsePaymentMethodDto.getImg());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGateway());
+
+        Assertions.assertEquals("Test payment method", responsePaymentMethodDto.getName());
+        Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
+        Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
+        Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
+        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
     }
 
     @Test
     @RunIfProfile(profile = "local")
+    public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
+        createTestPaymentMethod();
+        paymentMethodRepository.findAll().forEach(method -> log.info(method.getCode()));
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paymentAdminController.createPaymentMethod(paymentMethodDto);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.CONFLICT, exception.getStatus());
+        assertEquals("payment-method-already-exists", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("payment method with code [test-payment-code] already exists", exception.getErrors().getErrors().get(0).getMessage());
+    }
+
+
+    /*
+     * It tests the update payment method endpoint.
+     */
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenUpdatePaymentMethodWithValidDataThenReturnStatus200() {
+        createTestPaymentMethod();
+
+        String code = "test-payment-code";
+        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
+        updatedPaymentMethodDto.setName("Edited test payment method");
+
+        ResponseEntity<PaymentMethodDto> response = paymentAdminController.updatePaymentMethod(code, updatedPaymentMethodDto);
+
+        PaymentMethodDto responsePaymentMethodDto = response.getBody();
+        Assertions.assertNotNull(responsePaymentMethodDto);
+        String resCode = responsePaymentMethodDto.getCode();
+        paymentMethodsToBeDeleted.add(resCode);
+        Assertions.assertNotNull(code);
+        Assertions.assertNotNull(responsePaymentMethodDto.getName());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGroup());
+        Assertions.assertNotNull(responsePaymentMethodDto.getImg());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGateway());
+
+        Assertions.assertEquals("Edited test payment method", responsePaymentMethodDto.getName());
+        Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
+        Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
+        Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
+        Assertions.assertEquals(GatewayEnum.OFFLINE, responsePaymentMethodDto.getGateway());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenUpdatePaymentMethodThatDoesNotExistThenReturnError404() {
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paymentAdminController.updatePaymentMethod(paymentMethodDto.getCode(), paymentMethodDto);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("payment-method-not-found", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("payment method with code [test-payment-code] not found", exception.getErrors().getErrors().get(0).getMessage());
+    }
+
+    /*
+     * It tests the delete payment method endpoint.
+     */
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenDeletePaymentMethodThatExistsThenReturnStatus200() {
+        createTestPaymentMethod();
+
+        String code = "test-payment-code";
+        ResponseEntity<String> response = paymentAdminController.deletePaymentMethod(code);
+        String responseCode = response.getBody();
+        Assertions.assertNotNull(responseCode);
+        assertEquals(code, responseCode);
+
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenDeletePaymentMethodThatDoesNotExistThenReturnError404() {
+        String code = "test-payment-code";
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paymentAdminController.deletePaymentMethod(code);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("payment-method-not-found", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("payment method with code [test-payment-code] not found", exception.getErrors().getErrors().get(0).getMessage());
+    }
+
+
+    /*
+     * It tests the get payment method by code endpoint.
+     */
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnStatus200() {
+        createTestPaymentMethod();
+
+        String code = "test-payment-code";
+        ResponseEntity<PaymentMethodDto> response = paymentAdminController.getPaymentMethodByCode(code);
+
+        PaymentMethodDto responsePaymentMethodDto = response.getBody();
+        Assertions.assertNotNull(responsePaymentMethodDto);
+        String resCode = responsePaymentMethodDto.getCode();
+        Assertions.assertNotNull(resCode);
+        paymentMethodsToBeDeleted.add(resCode);
+        Assertions.assertNotNull(responsePaymentMethodDto.getName());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGroup());
+        Assertions.assertNotNull(responsePaymentMethodDto.getImg());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGateway());
+
+        Assertions.assertEquals("Test payment method", responsePaymentMethodDto.getName());
+        Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
+        Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
+        Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
+        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnError404() {
+        String code = "test-payment-code";
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paymentAdminController.getPaymentMethodByCode(code);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("payment-method-not-found", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("payment method with code [test-payment-code] not found", exception.getErrors().getErrors().get(0).getMessage());
+    }
+
+    /*
+     * It tests the get all payment methods endpoint.
+     */
+    @Test
+    @RunIfProfile(profile = "local")
+    public void whenGetPaymentMethodsThenReturnMoreThanZeroWithStatus200() {
+        createTestPaymentMethod();
+
+        ResponseEntity<List<PaymentMethodDto>> response = paymentAdminController.getPaymentMethods();
+
+        List<PaymentMethodDto> responsePaymentMethodDtos = response.getBody();
+        Assertions.assertNotNull(responsePaymentMethodDtos);
+        Assertions.assertTrue(responsePaymentMethodDtos.size() > 0);
+
+        List<PaymentMethodDto> responseTestDataPaymentMethodDtos = responsePaymentMethodDtos.stream()
+                .filter(pm -> pm.getCode().startsWith("test-"))
+                .collect(Collectors.toList());
+        Assertions.assertEquals(responseTestDataPaymentMethodDtos.size(), 1);
+
+        PaymentMethodDto responsePaymentMethodDto = responseTestDataPaymentMethodDtos.get(0);
+        Assertions.assertNotNull(responsePaymentMethodDto);
+        String resCode = responsePaymentMethodDto.getCode();
+        Assertions.assertNotNull(resCode);
+        paymentMethodsToBeDeleted.add(resCode);
+        Assertions.assertNotNull(responsePaymentMethodDto.getName());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGroup());
+        Assertions.assertNotNull(responsePaymentMethodDto.getImg());
+        Assertions.assertNotNull(responsePaymentMethodDto.getGateway());
+
+        Assertions.assertEquals("Test payment method", responsePaymentMethodDto.getName());
+        Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
+        Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
+        Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
+        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
+    }
+
+    private PaymentMethodDto createTestPaymentMethodDto(GatewayEnum gateway) {
+        return new PaymentMethodDto("Test payment method",
+                "test-payment-code",
+                "test-payment-group",
+                "test-payment.jpg",
+                gateway);
+    }
+
+    private void createTestPaymentMethod() {
+        PaymentMethodModel paymentMethodModel = new PaymentMethodModel();
+        paymentMethodModel.setName("Test payment method");
+        paymentMethodModel.setCode("test-payment-code");
+        paymentMethodModel.setGroup("test-payment-group");
+        paymentMethodModel.setImg("test-payment.jpg");
+        paymentMethodModel.setGateway(GatewayEnum.ONLINE);
+        PaymentMethodModel saved = paymentMethodRepository.save(paymentMethodModel);
+        paymentMethodsToBeDeleted.add(saved.getCode());
+    }
+
     public void paymentFilterDuplicatePrevention() throws JsonProcessingException {
         List<PaymentFilterDto> request = new ArrayList<>();
         PaymentFilterDto orderPaymentFilterForNordea = new PaymentFilterDto();
@@ -177,11 +417,11 @@ public class PaymentAdminControllerTest {
         ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilters(request);
         log.info("response : {}",mapper.writeValueAsString(response.getBody()));
         Assertions.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
-        Assertions.assertEquals(1,Objects.requireNonNull(response.getBody()).size());
+        Assertions.assertEquals(1, Objects.requireNonNull(response.getBody()).size());
 
-        idsToDelete.add(response.getBody().get(0).getFilterId());
+        paymentFiltersToBeDeleted.add(response.getBody().get(0).getFilterId());
 
-        List<PaymentFilter> foundFilters = (List<PaymentFilter>) paymentFilterRepository.findAllById(idsToDelete);
+        List<PaymentFilter> foundFilters = (List<PaymentFilter>) paymentFilterRepository.findAllById(paymentFiltersToBeDeleted);
         PaymentFilter paymentFilter = foundFilters.get(0);
         Assertions.assertNotNull(paymentFilter.getFilterId());
         Assertions.assertNotNull(paymentFilter.getCreatedAt());
