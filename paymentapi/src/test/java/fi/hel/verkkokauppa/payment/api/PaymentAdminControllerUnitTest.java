@@ -9,8 +9,9 @@ import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.mapper.PaymentMethodMapper;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
-import fi.hel.verkkokauppa.payment.model.PaymentMethod;
+import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
@@ -19,6 +20,7 @@ import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,11 +42,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -108,12 +105,14 @@ public class PaymentAdminControllerUnitTest {
     private SaveHistoryService saveHistoryService;
     @MockBean
     private PaymentFilterService filterService;
+    @MockBean
+    private PaymentMethodMapper paymentMethodMapper;
 
 
     @BeforeEach
     public void setup() {
         ReflectionTestUtils.setField(paymentMethodService, "paymentMethodRepository", paymentMethodRepository);
-        ReflectionTestUtils.setField(paymentMethodService, "mapper", mapper);
+        ReflectionTestUtils.setField(paymentMethodService, "paymentMethodMapper", paymentMethodMapper);
     }
 
 
@@ -151,38 +150,48 @@ public class PaymentAdminControllerUnitTest {
      * It tests the create payment method endpoint.
      */
     @Test
-    public void whenCreatePaymentMethodWithValidData_thenReturnStatus201() throws Exception {
+    public void whenCreatePaymentMethodWithValidDataThenReturnStatus201() throws Exception {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
-        PaymentMethod paymentMethod = mapper.convertValue(paymentMethodDto, PaymentMethod.class);
+        PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.createNewPaymentMethod(paymentMethodDto)).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.save(paymentMethod)).thenReturn(paymentMethod);
+        Mockito.when(paymentMethodRepository.findByCode(paymentMethodDto.getCode())).thenReturn(Collections.emptyList());
+        Mockito.when(paymentMethodRepository.save(paymentMethodModel)).thenReturn(paymentMethodModel);
+        Mockito.when(paymentMethodMapper.fromDto(paymentMethodDto)).thenReturn(paymentMethodModel);
+        Mockito.when(paymentMethodMapper.toDto(paymentMethodModel)).thenReturn(paymentMethodDto);
 
         MvcResult response = this.mockMvc.perform(
                         post("/payment-admin/payment-method")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON)
-                                .content(getFileContents("data/paymentMethodCreateRequest.json"))
+                                .content(mapper.writeValueAsString(paymentMethodDto))
                 )
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(status().is(201))
                 .andReturn();
-
-        // TODO: Fix below request body verification - body is empty for even if status is 201 (?)
-        /*
-        PaymentMethodDto responseDto = objectMapper.readValue(response.getResponse().getContentAsString(), PaymentMethodDto.class);
+        PaymentMethodDto responseDto = mapper.readValue(response.getResponse().getContentAsString(), PaymentMethodDto.class);
         Assertions.assertNotNull(responseDto);
         Assertions.assertEquals(responseDto, paymentMethodDto);
-        */
     }
 
     @Test
-    public void whenCreatePaymentMethodWithInvalidGatewayData_thenReturnStatus400() throws Exception {
+    public void whenCreatePaymentMethodWithInvalidGatewayDataThenReturnStatus400() throws Exception {
+        JSONObject json = createTestPaymentMethodDtoRawJson("invalid");
         this.mockMvc.perform(
                         post("/payment-admin/payment-method")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(getFileContents("data/paymentMethodCreateInvalidRequest.json"))
+                                .content(mapper.writeValueAsString(json.toString()))
+                )
+                .andDo(print())
+                .andExpect(status().is4xxClientError())
+                .andExpect(status().is(400));
+
+        JSONObject json2 = createTestPaymentMethodDtoRawJson("OFFLINE");
+        this.mockMvc.perform(
+                        post("/payment-admin/payment-method")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(json2.toString()))
                 )
                 .andDo(print())
                 .andExpect(status().is4xxClientError())
@@ -191,12 +200,12 @@ public class PaymentAdminControllerUnitTest {
 
 
     @Test
-    public void whenCreatePaymentMethodWithSameCodeThatExists_thenReturnError409() {
+    public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
-        PaymentMethod paymentMethod = mapper.convertValue(paymentMethodDto, PaymentMethod.class);
+        PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.createNewPaymentMethod(paymentMethodDto)).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.findByCode(paymentMethodDto.getCode())).thenReturn(Arrays.asList(paymentMethod));
+        Mockito.when(paymentMethodRepository.findByCode(paymentMethodDto.getCode())).thenReturn(Arrays.asList(paymentMethodModel));
 
 
         Exception exception = assertThrows(Exception.class, () -> {
@@ -222,7 +231,7 @@ public class PaymentAdminControllerUnitTest {
      * It tests the update payment method endpoint.
      */
     @Test
-    public void whenUpdatePaymentMethodWithValidData_thenReturnStatus200() throws Exception {
+    public void whenUpdatePaymentMethodWithValidDataThenReturnStatus200() throws Exception {
         String initialCode = "test-payment-code";
         PaymentMethodDto initialPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
         PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
@@ -230,37 +239,48 @@ public class PaymentAdminControllerUnitTest {
         updatedPaymentMethodDto.setCode("test-edit-payment-code");
         updatedPaymentMethodDto.setGroup("test-edit-payment-group");
 
-        PaymentMethod initialPaymentMethod = mapper.convertValue(initialPaymentMethodDto, PaymentMethod.class);
-        PaymentMethod updatedPaymentMethod = mapper.convertValue(updatedPaymentMethodDto, PaymentMethod.class);
+        PaymentMethodModel initialPaymentMethodModel = mapper.convertValue(initialPaymentMethodDto, PaymentMethodModel.class);
+        PaymentMethodModel updatedPaymentMethodModel = mapper.convertValue(updatedPaymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.updatePaymentMethod(initialCode, updatedPaymentMethodDto)).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.findByCode(initialCode)).thenReturn(Arrays.asList(initialPaymentMethod));
-        Mockito.when(paymentMethodRepository.save(updatedPaymentMethod)).thenReturn(updatedPaymentMethod);
+        Mockito.when(paymentMethodRepository.findByCode(initialCode)).thenReturn(Arrays.asList(initialPaymentMethodModel));
+        Mockito.when(paymentMethodMapper.updateFromDtoToModel(initialPaymentMethodModel, updatedPaymentMethodDto)).thenReturn(updatedPaymentMethodModel);
+        Mockito.when(paymentMethodRepository.save(updatedPaymentMethodModel)).thenReturn(updatedPaymentMethodModel);
+        Mockito.when(paymentMethodMapper.toDto(updatedPaymentMethodModel)).thenReturn(updatedPaymentMethodDto);
 
         MvcResult response = this.mockMvc.perform(
                         put("/payment-admin/payment-method/" + initialCode)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(getFileContents("data/paymentMethodEditRequest.json"))
+                                .content(mapper.writeValueAsString(updatedPaymentMethodDto))
                 )
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(status().is(200))
                 .andReturn();
-        // TODO: Fix below request body verification - body is empty for even if status is 201 (?)
-        /*
-        PaymentMethodDto responseDto = objectMapper.readValue(response.getResponse().getContentAsString(), PaymentMethodDto.class);
+
+        PaymentMethodDto responseDto = mapper.readValue(response.getResponse().getContentAsString(), PaymentMethodDto.class);
         Assertions.assertNotNull(responseDto);
         Assertions.assertEquals(responseDto, updatedPaymentMethodDto);
-        */
     }
 
     @Test
-    public void whenUpdatePaymentMethodWithInvalidGatewayData_thenReturnStatus400() throws Exception {
+    public void whenUpdatePaymentMethodWithInvalidGatewayDataThenReturnStatus400() throws Exception {
+        JSONObject json = createTestPaymentMethodDtoRawJson("invalid");
         String code = "test-payment-code";
         this.mockMvc.perform(
                         put("/payment-admin/payment-method/" + code)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(getFileContents("data/paymentMethodCreateInvalidRequest.json"))
+                                .content(json.toString())
+                )
+                .andDo(print())
+                .andExpect(status().is4xxClientError())
+                .andExpect(status().is(400));
+
+        JSONObject json2 = createTestPaymentMethodDtoRawJson("OFFLINE");
+        this.mockMvc.perform(
+                        put("/payment-admin/payment-method/" + code)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(json2.toString()))
                 )
                 .andDo(print())
                 .andExpect(status().is4xxClientError())
@@ -269,7 +289,7 @@ public class PaymentAdminControllerUnitTest {
 
 
     @Test
-    public void whenUpdatePaymentMethodThatDoesNotExist_thenReturnError404() {
+    public void whenUpdatePaymentMethodThatDoesNotExistThenReturnError404() {
         String initialCode = "test-payment-code";
         PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
         updatedPaymentMethodDto.setName("Edited test payment method");
@@ -300,14 +320,14 @@ public class PaymentAdminControllerUnitTest {
      * It tests the delete payment method endpoint.
      */
     @Test
-    public void whenDeletePaymentMethodThatExists_thenReturnStatus200() throws Exception {
+    public void whenDeletePaymentMethodThatExistsThenReturnStatus200() throws Exception {
         String code = "test-payment-code";
 
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
-        PaymentMethod paymentMethod = mapper.convertValue(paymentMethodDto, PaymentMethod.class);
+        PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
-        Mockito.when(paymentMethodService.deletePaymentMethod(code)).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.findByCode(code)).thenReturn(Arrays.asList(paymentMethod));
+        Mockito.doCallRealMethod().when(paymentMethodService).deletePaymentMethod(code);
+        Mockito.when(paymentMethodRepository.findByCode(code)).thenReturn(Arrays.asList(paymentMethodModel));
 
         MvcResult response = this.mockMvc.perform(
                         delete("/payment-admin/payment-method/" + code)
@@ -323,10 +343,10 @@ public class PaymentAdminControllerUnitTest {
     }
 
     @Test
-    public void whenDeletePaymentMethodThatDoesNotExist_thenReturnError404() {
+    public void whenDeletePaymentMethodThatDoesNotExistThenReturnError404() {
         String code = "test-payment-code";
 
-        Mockito.when(paymentMethodService.deletePaymentMethod(code)).thenCallRealMethod();
+        Mockito.doCallRealMethod().when(paymentMethodService).deletePaymentMethod(code);
         Mockito.when(paymentMethodRepository.findByCode(code)).thenReturn(Collections.emptyList());
 
         Exception exception = assertThrows(Exception.class, () -> {
@@ -350,12 +370,13 @@ public class PaymentAdminControllerUnitTest {
      * It tests the get payment method by code endpoint.
      */
     @Test
-    public void whenGetPaymentMethodByCodeThatDoesNotExist_thenReturnStatus200() throws Exception {
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnStatus200() throws Exception {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
-        PaymentMethod paymentMethod = mapper.convertValue(paymentMethodDto, PaymentMethod.class);
+        PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.getPaymenMethodByCode(paymentMethodDto.getCode())).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.findByCode(paymentMethodDto.getCode())).thenReturn(Arrays.asList(paymentMethod));
+        Mockito.when(paymentMethodRepository.findByCode(paymentMethodDto.getCode())).thenReturn(Arrays.asList(paymentMethodModel));
+        Mockito.when(paymentMethodMapper.toDto(paymentMethodModel)).thenReturn(paymentMethodDto);
 
         MvcResult response = this.mockMvc.perform(
                         get("/payment-admin/payment-method/" + paymentMethodDto.getCode())
@@ -370,7 +391,7 @@ public class PaymentAdminControllerUnitTest {
     }
 
     @Test
-    public void whenGetPaymentMethodByCodeThatDoesNotExist_thenReturnError404() {
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnError404() {
         String code = "test-payment-code";
 
         Mockito.when(paymentMethodService.getPaymenMethodByCode(code)).thenCallRealMethod();
@@ -395,7 +416,7 @@ public class PaymentAdminControllerUnitTest {
      * It tests the get all payment methods endpoint.
      */
     @Test
-    public void whenGetPaymentMethods_thenReturnZeroWithStatus200() throws Exception {
+    public void whenGetPaymentMethodsThenReturnZeroWithStatus200() throws Exception {
         Mockito.when(paymentMethodService.getAllPaymentMethods()).thenCallRealMethod();
         Mockito.when(paymentMethodRepository.findAll()).thenReturn(Collections.emptyList());
 
@@ -411,16 +432,16 @@ public class PaymentAdminControllerUnitTest {
     }
 
     @Test
-    public void whenGetPaymentMethods_thenReturnMoreThanZeroWithStatus200() throws Exception {
+    public void whenGetPaymentMethodsThenReturnMoreThanZeroWithStatus200() throws Exception {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
         PaymentMethodDto paymentMethodDto2 = createTestPaymentMethodDto(GatewayEnum.ONLINE);
         paymentMethodDto2.setCode("second-payment-code");
 
-        PaymentMethod paymentMethod = mapper.convertValue(paymentMethodDto, PaymentMethod.class);
-        PaymentMethod paymentMethod2 = mapper.convertValue(paymentMethodDto2, PaymentMethod.class);
+        PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
+        PaymentMethodModel paymentMethodModel2 = mapper.convertValue(paymentMethodDto2, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.getAllPaymentMethods()).thenCallRealMethod();
-        Mockito.when(paymentMethodRepository.findAll()).thenReturn(Arrays.asList(paymentMethod, paymentMethod2));
+        Mockito.when(paymentMethodRepository.findAll()).thenReturn(Arrays.asList(paymentMethodModel, paymentMethodModel2));
 
         MvcResult response = this.mockMvc.perform(
                         get("/payment-admin/payment-method/")
@@ -444,11 +465,14 @@ public class PaymentAdminControllerUnitTest {
                 gateway);
     }
 
-    private static String getFileContents(String filePath) throws URISyntaxException, IOException {
-        Path path = Paths.get(ClassLoader.getSystemResource(filePath).toURI());
-        StringBuilder sb = new StringBuilder();
-        Files.lines(path).forEach(sb::append);
-        return sb.toString();
+    private JSONObject createTestPaymentMethodDtoRawJson(String gateway) {
+        JSONObject json = new JSONObject();
+        json.put("name", "Test payment method");
+        json.put("code", "test-payment-code");
+        json.put("group", "test-payment-group");
+        json.put("img", "test-payment.jpg");
+        json.put("gateway", gateway);
+        return json;
     }
 
 }

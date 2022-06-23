@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
-import fi.hel.verkkokauppa.payment.model.PaymentMethod;
+import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 
@@ -182,7 +182,7 @@ public class PaymentAdminControllerTest {
      */
     @Test
     @RunIfProfile(profile = "local")
-    public void whenCreatePaymentMethodWithValidData_thenReturnStatus201() {
+    public void whenCreatePaymentMethodWithValidDataThenReturnStatus201() {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
         ResponseEntity<PaymentMethodDto> response = paymentAdminController.createPaymentMethod(paymentMethodDto);
 
@@ -205,7 +205,7 @@ public class PaymentAdminControllerTest {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void whenCreatePaymentMethodWithSameCodeThatExists_thenReturnError409() {
+    public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
         setupInitialData();
         paymentMethodRepository.findAll().forEach(method -> log.info(method.getCode()));
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
@@ -226,7 +226,7 @@ public class PaymentAdminControllerTest {
      */
     @Test
     @RunIfProfile(profile = "local")
-    public void whenUpdatePaymentMethodWithValidData_thenReturnStatus200() {
+    public void whenUpdatePaymentMethodWithValidDataThenReturnStatus200() {
         setupInitialData();
 
         String code = "test-payment-code";
@@ -254,7 +254,7 @@ public class PaymentAdminControllerTest {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void whenUpdatePaymentMethodThatDoesNotExist_thenReturnError404() {
+    public void whenUpdatePaymentMethodThatDoesNotExistThenReturnError404() {
         PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
 
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
@@ -272,7 +272,7 @@ public class PaymentAdminControllerTest {
      */
     @Test
     @RunIfProfile(profile = "local")
-    public void whenDeletePaymentMethodThatExists_thenReturnStatus200() {
+    public void whenDeletePaymentMethodThatExistsThenReturnStatus200() {
         setupInitialData();
 
         String code = "test-payment-code";
@@ -285,7 +285,7 @@ public class PaymentAdminControllerTest {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void whenDeletePaymentMethodThatDoesNotExist_thenReturnError404() {
+    public void whenDeletePaymentMethodThatDoesNotExistThenReturnError404() {
         String code = "test-payment-code";
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
             paymentAdminController.deletePaymentMethod(code);
@@ -303,7 +303,7 @@ public class PaymentAdminControllerTest {
      */
     @Test
     @RunIfProfile(profile = "local")
-    public void whenGetPaymentMethodByCodeThatDoesNotExist_thenReturnStatus200() {
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnStatus200() {
         setupInitialData();
 
         String code = "test-payment-code";
@@ -328,7 +328,7 @@ public class PaymentAdminControllerTest {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void whenGetPaymentMethodByCodeThatDoesNotExist_thenReturnError404() {
+    public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnError404() {
         String code = "test-payment-code";
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
             paymentAdminController.getPaymentMethodByCode(code);
@@ -345,7 +345,7 @@ public class PaymentAdminControllerTest {
      */
     @Test
     @RunIfProfile(profile = "local")
-    public void whenGetPaymentMethods_thenReturnMoreThanZeroWithStatus200() {
+    public void whenGetPaymentMethodsThenReturnMoreThanZeroWithStatus200() {
         setupInitialData();
 
         ResponseEntity<List<PaymentMethodDto>> response = paymentAdminController.getPaymentMethods();
@@ -385,13 +385,13 @@ public class PaymentAdminControllerTest {
     }
 
     private void setupInitialData() {
-        PaymentMethod paymentMethod = new PaymentMethod();
-        paymentMethod.setName("Test payment method");
-        paymentMethod.setCode("test-payment-code");
-        paymentMethod.setGroup("test-payment-group");
-        paymentMethod.setImg("test-payment.jpg");
-        paymentMethod.setGateway(GatewayEnum.ONLINE);
-        PaymentMethod saved = paymentMethodRepository.save(paymentMethod);
+        PaymentMethodModel paymentMethodModel = new PaymentMethodModel();
+        paymentMethodModel.setName("Test payment method");
+        paymentMethodModel.setCode("test-payment-code");
+        paymentMethodModel.setGroup("test-payment-group");
+        paymentMethodModel.setImg("test-payment.jpg");
+        paymentMethodModel.setGateway(GatewayEnum.ONLINE);
+        PaymentMethodModel saved = paymentMethodRepository.save(paymentMethodModel);
         paymentMethodsToBeDeleted.add(saved.getCode());
     }
 

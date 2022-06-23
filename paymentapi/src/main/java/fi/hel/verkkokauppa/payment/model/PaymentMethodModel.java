@@ -9,7 +9,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Document(indexName = "payment_method")
 @Data
-public class PaymentMethod {
+public class PaymentMethodModel {
 
     @Id
     private String paymentMethodId;
