@@ -2,8 +2,6 @@ package fi.hel.verkkokauppa.payment.constant;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import java.util.Optional;
-
 public enum GatewayEnum {
     ONLINE("online"),
     OFFLINE("offline");

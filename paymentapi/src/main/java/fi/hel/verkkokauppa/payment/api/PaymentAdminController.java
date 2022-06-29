@@ -7,13 +7,16 @@ import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
+import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
 import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
@@ -50,6 +53,8 @@ public class PaymentAdminController {
         this.saveHistoryService = saveHistoryService;
     }
 
+    @Autowired
+    private PaymentFilterService filterService;
 
     @GetMapping(value = "/payment-admin/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Payment> getPayment(@RequestParam(value = "orderId") String orderId) {
@@ -176,6 +181,23 @@ public class PaymentAdminController {
         }
     }
 
+    @PostMapping(value = "/payment-admin/online/save-payment-filters", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PaymentFilterDto>> savePaymentFilters(@RequestBody List<PaymentFilterDto> paymentFilters) {
+        try {
+            List<PaymentFilter> filterModelList = filterService.savePaymentFilters(paymentFilters);
+            List<PaymentFilterDto> filterDtoList = filterService.mapPaymentFilterListToDtoList(filterModelList);
+            return ResponseEntity.status(HttpStatus.CREATED).body(filterDtoList);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("saving payment filters failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-save-payment-filters", "failed to save payment filter(s)")
+            );
+        }
+    }
+
     @GetMapping(value = "/payment-admin/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<PaymentMethodDto>> getPaymentMethods() {
         List<PaymentMethodDto> paymentMethodDtos = paymentMethodService.getAllPaymentMethods();
@@ -237,5 +259,4 @@ public class PaymentAdminController {
             );
         }
     }
-
 }

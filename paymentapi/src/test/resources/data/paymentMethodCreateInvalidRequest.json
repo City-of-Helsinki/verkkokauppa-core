@@ -1,7 +1,0 @@
-{
-  "name": "Test payment method",
-  "code": "test-payment-code",
-  "group": "test-payment-group",
-  "img": "test-payment.png",
-  "gateway": "invalid"
-}
