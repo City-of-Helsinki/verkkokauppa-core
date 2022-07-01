@@ -111,7 +111,19 @@
             <artifactId>lombok</artifactId>
 			<version>1.18.20</version>
         </dependency>
+		<!--Swagger-->
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-boot-starter</artifactId>
+			<version>3.0.0</version>
+		</dependency>
 
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+		<!--Swagger-->
 		<!-- Development -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
