@@ -49,7 +49,7 @@ public class DeadLetterQueueListener {
     @Autowired
     private QueueConfigurations queueConfigurations;
 
-    @JmsListener(destination = "${queue:DLQ}")
+    @JmsListener(destination = "${queue.dlq:DLQ}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
         try {
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
@@ -70,7 +70,7 @@ public class DeadLetterQueueListener {
      * because the default DLQ in ActiveMQ is named "ActiveMQ.DLQ" instead of "DLQ".
      */
     @Profile("local")
-    @JmsListener(destination = "${queue:ActiveMQ.DLQ}")
+    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}")
     public void consumeMessageLocal(TextMessage textMessage) throws Exception {
         try {
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
