@@ -75,6 +75,6 @@ public class PaymentNotificationsQueueListener {
      */
     private void logMessageData(ActiveMQTextMessage textMessage, PaymentMessage message) throws JsonProcessingException {
         log.info(mapper.writeValueAsString(message));
-        log.info("Message orderId: {} } redeliveryCounter: {}", message.getOrderId(),  textMessage.getRedeliveryCounter());
+        log.info("Message orderId: {} } redeliveryCounter: {}", message.getOrderId(), textMessage.getRedeliveryCounter());
     }
 }
