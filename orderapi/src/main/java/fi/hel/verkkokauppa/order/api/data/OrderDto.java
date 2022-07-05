@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
+import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import lombok.*;
 
 import javax.validation.constraints.Email;
@@ -34,5 +36,7 @@ public class OrderDto {
     private String customerEmail;
 
     private String customerPhone;
+
+    private Invoice invoice;
 
 }

@@ -26,6 +26,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.json.JSONObject;
