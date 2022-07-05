@@ -20,6 +20,9 @@ public class QueueConfigurations {
     @Value("${queue.payment.notifications:payment-notifications}")
     String paymentNotificationsQueue;
 
+    @Value("${queue.payment.failed.notifications:payment-failed-to-process}")
+    String paymentFailedToProcessQueue;
+
     @Value("${queue.subscription.renewals:subscription-renewals}")
     String subscriptionRenewalsQueue;
 
@@ -29,6 +32,7 @@ public class QueueConfigurations {
         allQueus.add(subscriptionNotificationsQueue);
         allQueus.add(paymentNotificationsQueue);
         allQueus.add(subscriptionRenewalsQueue);
+        allQueus.add(paymentFailedToProcessQueue);
         return allQueus;
     }
 }
