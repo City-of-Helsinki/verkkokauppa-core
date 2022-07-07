@@ -59,8 +59,8 @@ public class DeadLetterQueueListener {
 
             logMessageData(message);
 
-            if (message.getEventType().equals("PAYMENT_PAID")) {
-                paymentFailedAction(message);
+            if (message.getEventType() != null && message.getEventType().equals(EventType.PAYMENT_PAID)) {
+                paymentFailedToProcessAction(message);
             }
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
@@ -84,7 +84,7 @@ public class DeadLetterQueueListener {
             logMessageData(message);
 
             if (message.getEventType() != null && message.getEventType().equals(EventType.PAYMENT_PAID)) {
-                paymentFailedAction(message);
+                paymentFailedToProcessAction(message);
             }
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
@@ -92,7 +92,7 @@ public class DeadLetterQueueListener {
         }
     }
 
-    private void paymentFailedAction(PaymentMessage message) {
+    private void paymentFailedToProcessAction(PaymentMessage message) {
         sendNotificationToEmail(message);
         sendNotificationService.sendToQueue(message, queueConfigurations.getPaymentFailedToProcessQueue());
     }

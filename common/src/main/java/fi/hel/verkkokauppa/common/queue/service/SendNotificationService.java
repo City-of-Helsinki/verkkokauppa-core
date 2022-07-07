@@ -68,7 +68,7 @@ public class SendNotificationService {
             String messageAsJsonString = mapper.writeValueAsString(message);
             log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
             jmsTemplate.convertAndSend(queue, messageAsJsonString, msg -> {
-                msg.setStringProperty("MsgType", EventType.PAYMENT_PAID);
+                msg.setStringProperty("MsgType", message.getEventType());
                 return msg;
             });
         } catch (Exception e) {
