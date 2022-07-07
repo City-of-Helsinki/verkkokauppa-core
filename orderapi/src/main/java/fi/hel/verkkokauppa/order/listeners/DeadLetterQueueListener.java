@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 
 @Component
 @Slf4j
@@ -49,8 +48,12 @@ public class DeadLetterQueueListener {
     @Autowired
     private QueueConfigurations queueConfigurations;
 
-    @JmsListener(destination = "${queue.dlq:DLQ}")
-    public void consumeMessage(TextMessage textMessage) throws Exception {
+
+    /**
+     * A DLQ listener that only consumes messages with a property of MsgType = 'PAYMENT_PAID'
+     */
+    @JmsListener(destination = "${queue.dlq:DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
+    public void consumeMessage(TextMessage textMessage) {
         try {
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
@@ -59,19 +62,22 @@ public class DeadLetterQueueListener {
             if (message.getEventType().equals("PAYMENT_PAID")) {
                 paymentFailedAction(message);
             }
-        } catch(JsonProcessingException jsonProcessingException) {
+        } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
         }
     }
 
-    /*
-     * This listener is only used in local development,
-     * because the default DLQ in ActiveMQ is named "ActiveMQ.DLQ" instead of "DLQ".
+    /**
+     * A DLQ listener that only consumes messages with a property of MsgType = 'PAYMENT_PAID'
+     * <p>
+     *  NOTE: This listener is only used in local development,
+     *  because the default DLQ in ActiveMQ is named "ActiveMQ.DLQ" instead of "DLQ".
+     * </p>
      */
     @Profile("local")
-    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}")
-    public void consumeMessageLocal(TextMessage textMessage) throws Exception {
+    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
+    public void consumeMessageLocal(TextMessage textMessage) {
         try {
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
@@ -80,7 +86,7 @@ public class DeadLetterQueueListener {
             if (message.getEventType() != null && message.getEventType().equals(EventType.PAYMENT_PAID)) {
                 paymentFailedAction(message);
             }
-        } catch(JsonProcessingException jsonProcessingException) {
+        } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
         }
