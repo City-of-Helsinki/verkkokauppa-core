@@ -78,6 +78,20 @@ public class ServiceConfigurationKeys {
         );
     }
 
+    public static List<String> getNamespaceKeys() {
+        return Arrays.asList(
+                MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
+                MERCHANT_PAYMENT_WEBHOOK_URL,      // must not be overwritten by (merchant)
+                MERCHANT_ORDER_WEBHOOK_URL,        // must not be overwritten by (merchant)
+                MERCHANT_SUBSCRIPTION_WEBHOOK_URL, // must not be overwritten by (merchant)
+                NAMESPACE_API_ACCESS_TOKEN         // must not be overwritten by (merchant)
+        );
+    }
+
+
     public static boolean isRestrictedConfigurationKey(String key) {
         return getRestrictedConfigurationKeys().contains(key);
     }
