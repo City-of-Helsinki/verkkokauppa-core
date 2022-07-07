@@ -9,4 +9,7 @@ import org.springframework.stereotype.Component;
 public class ServiceUrls {
     @Value("${history.service.url:http://history-api:8080}")
     private String historyServiceUrl;
+
+    @Value("${message.service.url:http://message-api:8080}")
+    private String messageServiceUrl;
 }
