@@ -13,7 +13,7 @@
   * Create read only token! 
 * Finally, generate a Personal Access Token with Packaging read scope and paste it into the <password> tag.
   * users/username/.m2/settings.xml 
-![img.png](img.png)
+![m2tag.png](m2tag.png)
 
 ## 3. Now you can start backend docker-compose with command
 ### Run on verkkokauppa-core folder.
