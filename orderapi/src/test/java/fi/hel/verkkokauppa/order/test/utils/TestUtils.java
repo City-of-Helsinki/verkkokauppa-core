@@ -117,6 +117,22 @@ public class TestUtils extends DummyData{
         return orderController.createWithItems(orderAggregateDto);
     }
 
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount){
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("124"));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+
     public ResponseEntity<SubscriptionIdsDto> createSubscriptions(ResponseEntity<OrderAggregateDto> response){
         return subscriptionController.createSubscriptionsFromOrder(response.getBody());
     }
