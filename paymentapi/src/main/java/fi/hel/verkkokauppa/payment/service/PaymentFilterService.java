@@ -53,6 +53,10 @@ public class PaymentFilterService {
                 )));
     }
 
+    public List<PaymentFilter> findPaymentFiltersByReferenceTypeAndReferenceId(String referenceType, String referenceId) {
+        return paymentFilterRepository.findByReferenceTypeAndReferenceId(referenceType, referenceId);
+    }
+
     public List<PaymentFilterDto> mapPaymentFilterListToDtoList(List<PaymentFilter> paymentFilters) {
         return objectMapper.convertValue(paymentFilters, new TypeReference<List<PaymentFilterDto>>(){});
     }
