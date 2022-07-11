@@ -11,6 +11,7 @@ import java.util.ArrayList;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NamespaceDto {
+    String namespaceId;
     @NotBlank(message = "namespace cant be blank")
     String namespace;
     LocalDateTime createdAt;

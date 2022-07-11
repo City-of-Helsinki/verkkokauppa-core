@@ -23,7 +23,6 @@ public class NamespaceController {
     @Autowired
     private NamespaceService namespaceService;
 
-
     /**
      * > Creates namespace with configurations
      *
