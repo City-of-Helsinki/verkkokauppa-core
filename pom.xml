@@ -66,38 +66,12 @@
         <module>mockproductmanagement</module>
     </modules>
 
-<!--    <distributionManagement>-->
-<!--        <repository>-->
-<!--            <id>talpa-artifacts</id>-->
-<!--            <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1-->
-<!--            </url>-->
-<!--        </repository>-->
-<!--    </distributionManagement>-->
-
     <profiles>
         <profile>
             <id>development</id>
-            <repositories>
-                <repository>
-                    <id>talpa-artifacts-dev</id>
-                    <url>
-                        https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
-                    </url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-        </profile>
-
-        <profile>
-            <id>test-repository</id>
             <activation>
                 <property>
-                    <name>useTestRepo</name>
+                    <name>useDevRepository</name>
                     <value>true</value>
                 </property>
             </activation>
@@ -128,14 +102,47 @@
         </profile>
 
         <profile>
-            <id>prod-repository</id>
+            <id>local</id>
             <activation>
                 <property>
-                    <name>!useTestRepo</name>
+                    <name>useLocal</name>
+                    <value>true</value>
                 </property>
             </activation>
             <properties>
             </properties>
+            <distributionManagement>
+                <repository>
+                    <id>talpa-artifacts-dev</id>
+                    <url>
+                        https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
+                    </url>
+                </repository>
+            </distributionManagement>
+            <repositories>
+                <repository>
+                    <id>talpa-artifacts-dev</id>
+                    <url>
+                        https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
+                    </url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+
+        <profile>
+            <id>production</id>
+            <activation>
+                <property>
+                    <name>!useDevRepository</name>
+                </property>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <distributionManagement>
                 <repository>
                     <id>talpa-artifacts</id>
@@ -160,20 +167,6 @@
             </repositories>
         </profile>
     </profiles>
-
-<!--    <repositories>-->
-<!--        <repository>-->
-<!--            <id>talpa-artifacts</id>-->
-<!--            <url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1-->
-<!--            </url>-->
-<!--            <releases>-->
-<!--                <enabled>true</enabled>-->
-<!--            </releases>-->
-<!--            <snapshots>-->
-<!--                <enabled>true</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
-<!--    </repositories>-->
 
 </project>
 
