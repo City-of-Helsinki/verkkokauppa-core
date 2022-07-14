@@ -198,6 +198,22 @@ public class PaymentAdminController {
         }
     }
 
+    @GetMapping(value = "/payment-admin/get-payment-filters", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PaymentFilterDto>> getPaymentFilters(@RequestParam(value = "referenceType") String referenceType, @RequestParam(value = "referenceId") String referenceId) {
+        try {
+            List<PaymentFilter> paymentFilters = filterService.findPaymentFiltersByReferenceTypeAndReferenceId(referenceType, referenceId);
+            return ResponseEntity.status(HttpStatus.OK).body(filterService.mapPaymentFilterListToDtoList(paymentFilters));
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting payment filters failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-payment-filters", "failed to get payment filter(s)")
+            );
+        }
+    }
+
     @GetMapping(value = "/payment-admin/payment-method", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<PaymentMethodDto>> getPaymentMethods() {
         List<PaymentMethodDto> paymentMethodDtos = paymentMethodService.getAllPaymentMethods();
