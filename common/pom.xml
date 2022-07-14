@@ -3,6 +3,93 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<profiles>
+		<profile>
+			<id>development</id>
+			<repositories>
+				<repository>
+					<id>talpa-artifacts-dev</id>
+					<url>
+						https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
+					</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+		</profile>
+
+		<profile>
+			<id>test-repository</id>
+			<activation>
+				<property>
+					<name>useTestRepo</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<properties>
+			</properties>
+			<distributionManagement>
+				<repository>
+					<id>talpa-artifacts-dev</id>
+					<url>
+						https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
+					</url>
+				</repository>
+			</distributionManagement>
+			<repositories>
+				<repository>
+					<id>talpa-artifacts-dev</id>
+					<url>
+						https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts-dev/maven/v1
+					</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+		</profile>
+
+		<profile>
+			<id>prod-repository</id>
+			<activation>
+				<property>
+					<name>!useTestRepo</name>
+				</property>
+			</activation>
+			<properties>
+			</properties>
+			<distributionManagement>
+				<repository>
+					<id>talpa-artifacts</id>
+					<url>
+						https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1
+					</url>
+				</repository>
+			</distributionManagement>
+			<repositories>
+				<repository>
+					<id>talpa-artifacts</id>
+					<url>
+						https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/talpa-artifacts/maven/v1
+					</url>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>true</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -121,22 +208,22 @@
 		</dependency>
     </dependencies>
 
-<distributionManagement>
-		<repository>
-			<id>${server.id}</id>
-			<url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/${server.id}/maven/v1</url>
-		</repository>
-</distributionManagement>
-<repositories>
-	<repository>
-		<id>${server.id}</id>
-		<url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/${server.id}/maven/v1</url>
-		<releases>
-			<enabled>true</enabled>
-		</releases>
-		<snapshots>
-			<enabled>true</enabled>
-		</snapshots>
-	</repository>
-</repositories>
+<!--<distributionManagement>-->
+<!--		<repository>-->
+<!--			<id>${server.id}</id>-->
+<!--			<url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/${server.id}/maven/v1</url>-->
+<!--		</repository>-->
+<!--</distributionManagement>-->
+<!--<repositories>-->
+<!--	<repository>-->
+<!--		<id>${server.id}</id>-->
+<!--		<url>https://pkgs.dev.azure.com/City-of-Helsinki/talpa-verkkokauppa/_packaging/${server.id}/maven/v1</url>-->
+<!--		<releases>-->
+<!--			<enabled>true</enabled>-->
+<!--		</releases>-->
+<!--		<snapshots>-->
+<!--			<enabled>true</enabled>-->
+<!--		</snapshots>-->
+<!--	</repository>-->
+<!--</repositories>-->
 </project>
