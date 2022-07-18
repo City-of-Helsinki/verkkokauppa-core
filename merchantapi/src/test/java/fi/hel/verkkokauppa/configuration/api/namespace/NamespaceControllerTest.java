@@ -188,8 +188,4 @@ public class NamespaceControllerTest {
         return response.getBody();
     }
 
-    public void deleteNamespace(String namespace) {
-        namespaceRepository.deleteAll(namespaceRepository.findAllByNamespace(namespace));
-    }
-
 }

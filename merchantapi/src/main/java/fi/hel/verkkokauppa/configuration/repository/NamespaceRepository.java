@@ -12,5 +12,4 @@ import java.util.Optional;
 public interface NamespaceRepository extends ElasticsearchRepository<NamespaceModel, String> {
     Optional<NamespaceModel> findByNamespace(String namespace);
 
-    List<NamespaceModel> findAllByNamespace(String namespace);
 }
