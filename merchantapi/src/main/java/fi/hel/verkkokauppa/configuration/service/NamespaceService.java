@@ -43,7 +43,7 @@ public class NamespaceService {
     private void isDuplicateNamespace(NamespaceDto dto) {
         if (namespaceRepository.findByNamespace(dto.getNamespace()).isPresent()) {
             throw new CommonApiException(
-                    HttpStatus.NOT_FOUND,
+                    HttpStatus.BAD_REQUEST,
                     new Error("duplicate-namespace", "namespace with value: [" + dto.getNamespace() + "] is a duplicate one")
             );
         }
