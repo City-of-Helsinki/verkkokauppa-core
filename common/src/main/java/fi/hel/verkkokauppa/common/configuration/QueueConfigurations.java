@@ -20,7 +20,7 @@ public class QueueConfigurations {
     @Value("${queue.payment.notifications:payment-notifications}")
     String paymentNotificationsQueue;
 
-    @Value("${queue.payment.failed.notifications:payment-failed-to-process}")
+    @Value("${queue.payment.failed.to.process:payment-failed-to-process}")
     String paymentFailedToProcessQueue;
 
     @Value("${queue.subscription.renewals:subscription-renewals}")

@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
@@ -12,10 +13,13 @@ import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
+import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
+import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -32,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 public class OrderController {
@@ -40,6 +45,9 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private InvoiceService invoiceService;
 
     @Autowired
     private SaveHistoryService saveHistoryService;
@@ -208,6 +216,39 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-set-order-customer", "failed to set customer for order with id [" + orderId + "]")
+            );
+        }
+    }
+
+
+    @PostMapping(value = "/order/setInvoice", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<OrderAggregateDto> setInvoice(
+            @RequestBody InvoiceDto invoice
+    ) {
+        String orderId = null;
+        try {
+            orderId = invoice.getOrderId();
+            Order order = orderService.findByIdValidateByUser(orderId, invoice.getUserId());
+
+            if (!changesToOrderAllowed(order) || Objects.equals(order.getType(), OrderType.SUBSCRIPTION)) {
+                log.warn("setting invoice to order rejected, orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.FORBIDDEN,
+                        new Error("rejected-changes-to-order", "rejected changes to order with id [" + orderId + "], setting invoice to order rejected")
+                );
+            }
+
+            invoiceService.saveInvoiceToOrder(invoice, order);
+
+            return orderAggregateDto(orderId);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("setting order invoice failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-invoice", "failed to set invoice for order with id [" + orderId + "]")
             );
         }
     }
