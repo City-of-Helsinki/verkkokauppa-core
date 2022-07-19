@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.factory.HistoryFactory;
 import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
+import fi.hel.verkkokauppa.common.id.IncrementId;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.ListUtil;
@@ -86,6 +87,9 @@ public class OrderService {
     @Autowired
     private ServiceUrls serviceUrl;
 
+    @Autowired
+    private IncrementId incrementId;
+
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
 
@@ -119,7 +123,13 @@ public class OrderService {
     public Order createByParams(String namespace, String user) {
         String createdAt = DateTimeUtil.getDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
-        Order order = new Order(orderId, namespace, user, createdAt);
+        Long incrementId;
+        try {
+            incrementId = this.incrementId.generateOrderIncrementId();
+        } catch (Exception e) {
+            incrementId = null;
+        }
+        Order order = new Order(orderId, namespace, user, createdAt, incrementId);
 
         orderRepository.save(order);
         log.debug("created new order, orderId: " + orderId);
