@@ -123,12 +123,7 @@ public class OrderService {
     public Order createByParams(String namespace, String user) {
         String createdAt = DateTimeUtil.getDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
-        Long incrementId;
-        try {
-            incrementId = this.incrementId.generateOrderIncrementId();
-        } catch (Exception e) {
-            incrementId = null;
-        }
+        Long incrementId = this.incrementId.generateOrderIncrementId();
         Order order = new Order(orderId, namespace, user, createdAt, incrementId);
 
         orderRepository.save(order);

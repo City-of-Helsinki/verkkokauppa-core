@@ -30,10 +30,10 @@ public class IncrementIdTest {
     List<Long> ids = Collections.synchronizedList(new ArrayList<>());
     for (int i = 0; i < numOfIds; ++i) {
       executor.execute(() -> {
-        try {
-          Long id = incrementId.generateOrderIncrementId();
+        Long id = incrementId.generateOrderIncrementId();
+        if (id != null) {
           ids.add(id);
-        } catch (IOException ignored) { }
+        }
         latch.countDown();
       });
     }
