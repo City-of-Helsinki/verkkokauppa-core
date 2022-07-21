@@ -73,9 +73,12 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Auto)
     Invoice invoice;
 
+    @Field(type = FieldType.Long)
+    Long incrementId;
+
     public Order() {}
 
-    public Order(String orderId, String namespace, String user, String createdAt) {
+    public Order(String orderId, String namespace, String user, String createdAt, Long incrementId) {
         this.status = OrderStatus.DRAFT;
         this.type = OrderType.ORDER;
 
@@ -83,5 +86,6 @@ public class Order implements Customer, IdentifiableUser {
         this.namespace = namespace;
         this.user = user;
         this.createdAt = createdAt;
+        this.incrementId = incrementId;
     }
 }

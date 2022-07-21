@@ -39,4 +39,6 @@ public class OrderDto {
 
     private Invoice invoice;
 
+    private Long incrementId;
+
 }
