@@ -4,148 +4,23 @@ services:
   cartapi:
     container_name: cartapi
     build:
-      context: .
+      context: ./cartapi
       args:
         - API_DIR=/tmp/src/cartapi
     volumes:
+      - ./:/app
       - "${HOME}/.m2:/root/.m2"
-      - "./infra/cartapi/src/main/resources/application.properties:/tmp/src/cartapi/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
+      - "./infra/cartapi/src/main/resources/application.properties:/app/cartapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./cartapi/run.sh"
     ports:
-      - '8180:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  messageapi:
-    container_name: messageapi
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/messageapi
-    env_file:
-      - .env.docker
+      - "8180:8080"
+      - "35730:35729"
+      - "5000:5005"
     environment:
-      - SPRING_MAIL_HOST=mailhog
-      - SPRING_MAIL_PORT=1025
-      - SPRING_MAIL_USERNAME=""
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=false
-      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=false
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/cartapi/src/main/resources/application.properties:/tmp/src/cartapi/src/main/resources/application.properties"
-    ports:
-      - '8181:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  mockproductmanagement:
-    container_name: mockproductmanagement
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/mockproductmanagement
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/mockproductmanagement/src/main/resources/application.properties:/tmp/src/mockproductmanagement/src/main/resources/application.properties"
+      - API_DIR=cartapi
     env_file:
       - .env.docker
-    ports:
-      - '8182:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  orderapi:
-    container_name: orderapi
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/orderapi
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/orderapi/src/main/resources/application.properties:/tmp/src/orderapi/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
-    ports:
-      - '8183:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  paymentapi:
-    container_name: paymentapi
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/paymentapi
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/paymentapi/src/main/resources/application.properties:/tmp/src/paymentapi/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
-    ports:
-      - '8184:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  priceapi:
-    container_name: priceapi
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/priceapi
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/priceapi/src/main/resources/application.properties:/tmp/src/priceapi/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
-    ports:
-      - '8185:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  productapi:
-    container_name: productapi
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/productapi
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/productapi/src/main/resources/application.properties:/tmp/src/productapi/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
-    ports:
-      - '8186:8080'
-    networks:
-      - common
-    depends_on:
-      - elasticsearch
-
-  productmapping:
-    container_name: productmapping
-    build:
-      context: .
-      args:
-        - API_DIR=/tmp/src/productmapping
-    volumes:
-      - "${HOME}/.m2:/root/.m2"
-      - "./infra/productmapping/src/main/resources/application.properties:/tmp/src/productmapping/src/main/resources/application.properties"
-    env_file:
-      - .env.docker
-    ports:
-      - '8187:8080'
     networks:
       - common
     depends_on:
@@ -154,16 +29,23 @@ services:
   eventsapi:
     container_name: eventsapi
     build:
-      context: .
+      context: ./eventsapi
       args:
         - API_DIR=/tmp/src/eventsapi
     volumes:
+      - ./:/app
       - "${HOME}/.m2:/root/.m2"
-      - "./infra/eventsapi/src/main/resources/application.properties:/tmp/src/eventsapi/src/main/resources/application.properties"
+      - "./infra/eventsapi/src/main/resources/application.properties:/app/eventsapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./eventsapi/run.sh"
+    ports:
+      - "8181:8080"
+      - "35731:35729"
+      - "5001:5005"
+    environment:
+      - API_DIR=eventsapi
     env_file:
       - .env.docker
-    ports:
-      - '8188:8080'
     networks:
       - common
     depends_on:
@@ -173,16 +55,228 @@ services:
   historyapi:
     container_name: historyapi
     build:
-      context: .
+      context: ./historyapi
       args:
         - API_DIR=/tmp/src/historyapi
     volumes:
+      - ./:/app
       - "${HOME}/.m2:/root/.m2"
-      - "./infra/historyapi/src/main/resources/application.properties:/tmp/src/historyapi/src/main/resources/application.properties"
+      - "./infra/historyapi/src/main/resources/application.properties:/app/historyapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./historyapi/run.sh"
+    ports:
+      - "8182:8080"
+      - "35732:35729"
+      - "5002:5005"
+    environment:
+      - API_DIR=historyapi
     env_file:
       - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  merchantapi:
+    container_name: merchantapi
+    build:
+      context: ./merchantapi
+      args:
+        - API_DIR=/tmp/src/merchantapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/merchantapi/src/main/resources/application.properties:/app/merchantapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./merchantapi/run.sh"
     ports:
-      - '8189:8080'
+      - "8183:8080"
+      - "35733:35729"
+      - "5003:5005"
+    environment:
+      - API_DIR=merchantapi
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  messageapi:
+    container_name: messageapi
+    build:
+      context: ./messageapi
+      args:
+        - API_DIR=/tmp/src/messageapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/messageapi/src/main/resources/application.properties:/app/messageapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./messageapi/run.sh"
+    ports:
+      - "8184:8080"
+      - "35734:35729"
+      - "5004:5005"
+    env_file:
+      - .env.docker
+    environment:
+      - API_DIR=messageapi
+      - SPRING_MAIL_HOST=mailhog
+      - SPRING_MAIL_PORT=1025
+      - SPRING_MAIL_USERNAME=""
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=false
+      - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=false
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  mockproductmanagement:
+    container_name: mockproductmanagement
+    build:
+      context: ./mockproductmanagement
+      args:
+        - API_DIR=/tmp/src/mockproductmanagement
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/mockproductmanagement/src/main/resources/application.properties:/app/mockproductmanagement/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./mockproductmanagement/run.sh"
+    ports:
+      - "8185:8080"
+      - "35735:35729"
+      - "5005:5005"
+    environment:
+      - API_DIR=mockproductmanagement
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  orderapi:
+    container_name: orderapi
+    build:
+      context: ./orderapi
+      args:
+        - API_DIR=/tmp/src/orderapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/orderapi/src/main/resources/application.properties:/app/orderapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./orderapi/run.sh"
+    ports:
+      - "8186:8080"
+      - "35736:35729"
+      - "5006:5005"
+    environment:
+      - API_DIR=orderapi
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  paymentapi:
+    container_name: paymentapi
+    build:
+      context: ./paymentapi
+      args:
+        - API_DIR=/tmp/src/paymentapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/paymentapi/src/main/resources/application.properties:/app/paymentapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./paymentapi/run.sh"
+    ports:
+      - "8187:8080"
+      - "35737:35729"
+      - "5007:5005"
+    environment:
+      - API_DIR=paymentapi
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  priceapi:
+    container_name: priceapi
+    build:
+      context: ./priceapi
+      args:
+        - API_DIR=/tmp/src/priceapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/priceapi/src/main/resources/application.properties:/app/priceapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./priceapi/run.sh"
+    ports:
+      - "8188:8080"
+      - "35738:35729"
+      - "5008:5005"
+    environment:
+      - API_DIR=priceapi
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  productapi:
+    container_name: productapi
+    build:
+      context: ./productapi
+      args:
+        - API_DIR=/tmp/src/productapi
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/productapi/src/main/resources/application.properties:/app/productapi/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./productapi/run.sh"
+    ports:
+      - "8189:8080"
+      - "35739:35729"
+      - "5009:5005"
+    environment:
+      - API_DIR=productapi
+    env_file:
+      - .env.docker
+    networks:
+      - common
+    depends_on:
+      - elasticsearch
+
+  productmapping:
+    container_name: productmapping
+    build:
+      context: ./productmapping
+      args:
+        - API_DIR=/tmp/src/productmapping
+    volumes:
+      - ./:/app
+      - "${HOME}/.m2:/root/.m2"
+      - "./infra/productmapping/src/main/resources/application.properties:/app/productmapping/src/main/resources/application.properties"
+    working_dir: /app
+    command: "sh ./productmapping/run.sh"
+    ports:
+      - "8190:8080"
+      - "35740:35729"
+      - "5010:5005"
+    environment:
+      - API_DIR=productmapping
+    env_file:
+      - .env.docker
     networks:
       - common
     depends_on:
@@ -214,16 +308,6 @@ services:
     mem_reservation: 2048MB
     networks:
       - common
-
-#  kibana:
-#    image: docker.elastic.co/kibana/kibana:7.12.1
-#    container_name: kibana
-#    environment:
-#      - ELASTICSEARCH_URL=elasticsearch:9200
-#    ports:
-#      - "5601:5601"
-#    networks:
-#      - common
 
   zookeeper:
     container_name: zookeeper
