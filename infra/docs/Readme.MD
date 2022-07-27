@@ -35,8 +35,11 @@ GET http://localhost:8187/productmapping/initializetestdata
 ###
 GET http://localhost:8187/servicemapping/initializetestdata
 
-### When these are done, you can test backend functionality with Kassa-ui
+### Then you can create first order using order-experience-api
+[Run shell script](../create_test_order.sh)
 
+### When these are done, you can test backend functionality with Kassa-ui
+[Create test product with kassa-ui](http://localhost:3000/purchase/306ab20a-6b30-3ce3-95e8-fef818e6c30e?language=fi&quantity=1&namespace=venepaikat)
 * Get product id from products indices
 * Change this PRODUCTID id on url to product id from indices.   
 * http://localhost:3000/purchase/PRODUCTID?language=fi&quantity=1&namespace=venepaikat
