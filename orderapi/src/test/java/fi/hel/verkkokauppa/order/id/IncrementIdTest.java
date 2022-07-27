@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
@@ -17,6 +18,17 @@ import java.util.concurrent.Executors;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@ComponentScan({
+        "fi.hel.verkkokauppa.common.elastic",
+        "fi.hel.verkkokauppa.common.error",
+        "fi.hel.verkkokauppa.common.events",
+        "fi.hel.verkkokauppa.common.rest",
+        "fi.hel.verkkokauppa.common.configuration",
+        "fi.hel.verkkokauppa.order",
+        "fi.hel.verkkokauppa.common.history",
+        "fi.hel.verkkokauppa.common.queue",
+        "fi.hel.verkkokauppa.common.id"
+})
 public class IncrementIdTest {
   @Autowired
   IncrementId incrementId;

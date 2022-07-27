@@ -36,6 +36,7 @@ services:
       - ./:/app
       - "${HOME}/.m2:/root/.m2"
       - "./infra/eventsapi/src/main/resources/application.properties:/app/eventsapi/src/main/resources/application.properties"
+      - "./infra/eventsapi/src/main/resources/application-local.properties:/app/eventsapi/src/main/resources/application-local.properties"
     working_dir: /app
     command: "sh ./eventsapi/run.sh"
     ports:
@@ -50,6 +51,7 @@ services:
       - common
     depends_on:
       - elasticsearch
+      - activemq
       - kafka
 
   historyapi:
@@ -167,6 +169,7 @@ services:
       - ./:/app
       - "${HOME}/.m2:/root/.m2"
       - "./infra/orderapi/src/main/resources/application.properties:/app/orderapi/src/main/resources/application.properties"
+      - "./infra/orderapi/src/main/resources/application-local.properties:/app/orderapi/src/main/resources/application-local.properties"
     working_dir: /app
     command: "sh ./orderapi/run.sh"
     ports:
@@ -181,6 +184,8 @@ services:
       - common
     depends_on:
       - elasticsearch
+      - activemq
+      - kafka
 
   paymentapi:
     container_name: paymentapi
@@ -192,6 +197,7 @@ services:
       - ./:/app
       - "${HOME}/.m2:/root/.m2"
       - "./infra/paymentapi/src/main/resources/application.properties:/app/paymentapi/src/main/resources/application.properties"
+      - "./infra/paymentapi/src/main/resources/application-local.properties:/app/paymentapi/src/main/resources/application-local.properties"
     working_dir: /app
     command: "sh ./paymentapi/run.sh"
     ports:
@@ -206,6 +212,8 @@ services:
       - common
     depends_on:
       - elasticsearch
+      - activemq
+      - kafka
 
   priceapi:
     container_name: priceapi
@@ -217,6 +225,7 @@ services:
       - ./:/app
       - "${HOME}/.m2:/root/.m2"
       - "./infra/priceapi/src/main/resources/application.properties:/app/priceapi/src/main/resources/application.properties"
+      - "./infra/priceapi/src/main/resources/application-local.properties:/app/priceapi/src/main/resources/application-local.properties"
     working_dir: /app
     command: "sh ./priceapi/run.sh"
     ports:
