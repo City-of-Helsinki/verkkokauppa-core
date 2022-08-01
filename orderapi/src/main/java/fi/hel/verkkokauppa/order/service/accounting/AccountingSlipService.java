@@ -155,7 +155,7 @@ public class AccountingSlipService {
         for (OrderAccounting orderAccounting : orderAccountings) {
             LocalDateTime createdAt = orderAccounting.getCreatedAt();
 
-            if (createdAt.toLocalDate().isBefore(LocalDate.now()) || createdAt.toLocalDate().isEqual(LocalDate.now())) {
+            if (createdAt.toLocalDate().isBefore(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
