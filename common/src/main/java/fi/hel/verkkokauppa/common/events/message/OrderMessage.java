@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -15,7 +17,7 @@ public class OrderMessage implements EventMessage {
 
     public String orderId;
     public String orderItemId;
-    public String timestamp;
+    public LocalDateTime timestamp;
 
     public String orderType;
 

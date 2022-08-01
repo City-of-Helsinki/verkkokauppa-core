@@ -27,7 +27,6 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
-import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.json.JSONObject;
@@ -114,14 +113,14 @@ public class OrderService {
         return orderAggregateDto;
     }
 
-    public String generateOrderId(String namespace, String user, String timestamp) {
+    public String generateOrderId(String namespace, String user, LocalDateTime timestamp) {
         String whoseOrder = UUIDGenerator.generateType3UUIDString(namespace, user);
-        String orderId = UUIDGenerator.generateType3UUIDString(whoseOrder, timestamp);
+        String orderId = UUIDGenerator.generateType3UUIDString(whoseOrder, timestamp.toString());
         return orderId;
     }
 
     public Order createByParams(String namespace, String user) {
-        String createdAt = DateTimeUtil.getDateTime();
+        LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
         Long incrementId = this.incrementId.generateOrderIncrementId();
         Order order = new Order(orderId, namespace, user, createdAt, incrementId);
@@ -224,7 +223,7 @@ public class OrderService {
                 .namespace(order.getNamespace())
                 .orderId(order.getOrderId())
                 .userId(order.getUser())
-                .timestamp(DateTimeUtil.getDateTime())
+                .timestamp(DateTimeUtil.getFormattedDateTime())
                 .build();
 
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
@@ -257,7 +256,7 @@ public class OrderService {
 
     public void setOrderStartAndEndDate(Order order, Subscription subscription, PaymentMessage message) {
         LocalDateTime startDate = subscription.getStartDate();
-        LocalDateTime paymentAt = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
+        LocalDateTime paymentAt = DateTimeUtil.fromFormattedDateTimeString(message.getPaymentPaidTimestamp());
 
         if (startDate.isBefore(paymentAt)) {
             setStartDateAndCalculateNextEndDate(order, subscription, paymentAt);

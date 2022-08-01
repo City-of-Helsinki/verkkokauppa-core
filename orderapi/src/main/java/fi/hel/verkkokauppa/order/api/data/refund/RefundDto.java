@@ -5,8 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -18,7 +17,7 @@ public class RefundDto {
     private String orderId;
     private String namespace;
     private String user;
-    private String createdAt;
+    private LocalDateTime createdAt;
     private String status;
 
     private String customerFirstName;

@@ -1,11 +1,13 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +15,7 @@ public abstract class DummyData {
     public Order generateDummyOrder() {
         Order order = new Order();
         order.setOrderId("1");
-        order.setCreatedAt("today");
+        order.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         order.setUser("dummy_user");
         order.setNamespace("dummy_namespace");
         order.setStatus("dummy_status");
@@ -28,7 +30,7 @@ public abstract class DummyData {
     public OrderDto generateDummyOrderDto() {
         OrderDto dto = OrderDto.builder()
                 .orderId("1")
-                .createdAt("today")
+                .createdAt(DateTimeUtil.getFormattedDateTime())
                 .customerEmail("dummy_email@example.com")
                 .customerFirstName("dummy_firstname")
                 .customerLastName("dummy_lastname")
@@ -124,13 +126,13 @@ public abstract class DummyData {
     public List<OrderAccounting> generateDummyOrderAccountingList() {
         OrderAccounting orderAccounting1 = new OrderAccounting();
         orderAccounting1.setOrderId("1");
-        orderAccounting1.setCreatedAt("2021-09-01");
+        orderAccounting1.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
         OrderAccounting orderAccounting2 = new OrderAccounting();
         orderAccounting2.setOrderId("2");
-        orderAccounting2.setCreatedAt("2021-09-01");
+        orderAccounting2.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
         OrderAccounting orderAccounting3 = new OrderAccounting();
         orderAccounting3.setOrderId("3");
-        orderAccounting3.setCreatedAt("2021-09-02");
+        orderAccounting3.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-02"));
 
         List<OrderAccounting> orderAccountings = new ArrayList<>();
         orderAccountings.add(orderAccounting1);

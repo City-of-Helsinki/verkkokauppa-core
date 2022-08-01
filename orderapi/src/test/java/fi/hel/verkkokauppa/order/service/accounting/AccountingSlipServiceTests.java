@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemAccountingTransformer;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,21 +45,21 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderAccounting> orderAccountings = generateDummyOrderAccountingList();
 
         when(mockOrderAccountingService.getOrderAccountings(orderIds)).thenReturn(orderAccountings);
-        Map<String, List<String>> result = accountingSlipService.groupAccountingsByDate(orders);
+        Map<LocalDateTime, List<String>> result = accountingSlipService.groupAccountingsByDate(orders);
 
         assertFalse(result.isEmpty());
 
-        Map<String, List<String>> expectedResult = new HashMap<>();
-        expectedResult.put("2021-09-01", List.of("1", "2"));
-        expectedResult.put("2021-09-02", Collections.singletonList("3"));
+        Map<LocalDateTime, List<String>> expectedResult = new HashMap<>();
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-01"), List.of("1", "2"));
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-02"), Collections.singletonList("3"));
         assertEquals(expectedResult, result);
     }
 
     @Test
     public void testAccountingsAreSummedPerPostingForEachCompanyCode() {
-        Map<String, List<String>> accountingsForDate = new HashMap<>();
-        accountingsForDate.put("2021-09-01", List.of("1", "2"));
-        Set<Map.Entry<String, List<String>>> entries = accountingsForDate.entrySet();
+        Map<LocalDateTime, List<String>> accountingsForDate = new HashMap<>();
+        accountingsForDate.put(DateTimeUtil.fromFormattedDateString("2021-09-01"), List.of("1", "2"));
+        Set<Map.Entry<LocalDateTime, List<String>>> entries = accountingsForDate.entrySet();
 
         String companyCode1 = "1234";
         OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting("1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
@@ -83,7 +85,7 @@ public class AccountingSlipServiceTests extends DummyData {
         when(mockOrderItemAccountingService.getOrderItemAccountings("2")).thenReturn(list);
 
         Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountingsForDate = null;
-        for (Map.Entry<String, List<String>> entry : entries) {
+        for (Map.Entry<LocalDateTime, List<String>> entry : entries) {
             summedOrderItemAccountingsForDate = accountingSlipService.getSummedOrderItemAccountingsForDate(entry);
         }
 

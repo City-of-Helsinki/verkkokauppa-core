@@ -3,39 +3,21 @@ package fi.hel.verkkokauppa.order.service.accounting;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.jcraft.jsch.*;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.IterableUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.*;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
-import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
-import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHitSupport;
-import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.SearchPage;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.DecimalFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -73,12 +55,11 @@ public class AccountingExportDataService {
 
         log.debug("generated accounting export data xml successfully");
 
-        String postingDate = accountingSlip.getPostingDate();
-        LocalDate postingDateFormatted = LocalDate.parse(postingDate, DateTimeFormatter.BASIC_ISO_DATE);
+        LocalDateTime postingDate = accountingSlip.getPostingDate();
 
         AccountingExportDataDto exportDataDto = new AccountingExportDataDto(
                 accountingSlip.getAccountingSlipId(),
-                postingDateFormatted.toString(),
+                postingDate,
                 xml
         );
 
@@ -169,7 +150,7 @@ public class AccountingExportDataService {
         );
     }
 
-    public List<String> getAccountingExportDataTimestamps() {
+    public List<LocalDateTime> getAccountingExportDataTimestamps() {
         List<AccountingExportData> exportDatas = IterableUtils.iterableToList(exportDataRepository.findAll());
 
         if (exportDatas == null || exportDatas.isEmpty()) {

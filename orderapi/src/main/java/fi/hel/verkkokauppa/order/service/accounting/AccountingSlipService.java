@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,7 +75,7 @@ public class AccountingSlipService {
 
     public List<AccountingSlipDto> createAccountingData() {
         List<Order> ordersToAccount = accountingSearchService.findNotAccounted();
-        Map<String, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
+        Map<LocalDateTime, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
 
         // not handling current date
         if (accountingIdsByDate == null || accountingIdsByDate.isEmpty()) {
@@ -132,18 +133,18 @@ public class AccountingSlipService {
         return accountingSlipDto;
     }
 
-    public List<AccountingSlipDto> createAccountingSlips(Map<String, List<String>> accountingIdsByDate) {
+    public List<AccountingSlipDto> createAccountingSlips(Map<LocalDateTime, List<String>> accountingIdsByDate) {
         List<AccountingSlipDto> accountingSlips = new ArrayList<>();
 
-        for (Map.Entry<String, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
+        for (Map.Entry<LocalDateTime, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
             List<AccountingSlipDto> accountingSlipDtos = createAccountingSlipForDate(accountingsForDate);
             accountingSlips.addAll(accountingSlipDtos);
         }
         return accountingSlips;
     }
 
-    public Map<String, List<String>> groupAccountingsByDate(List<Order> ordersToAccount) {
-        Map<String, List<String>> map = new HashMap<>();
+    public Map<LocalDateTime, List<String>> groupAccountingsByDate(List<Order> ordersToAccount) {
+        Map<LocalDateTime, List<String>> map = new HashMap<>();
 
         List<String> orderIds = ordersToAccount.stream()
                 .map(Order::getOrderId)
@@ -152,9 +153,9 @@ public class AccountingSlipService {
         List<OrderAccounting> orderAccountings = orderAccountingService.getOrderAccountings(orderIds);
 
         for (OrderAccounting orderAccounting : orderAccountings) {
-            String createdAt = orderAccounting.getCreatedAt();
+            LocalDateTime createdAt = orderAccounting.getCreatedAt();
 
-            if (LocalDate.parse(createdAt).isBefore(LocalDate.now())) {
+            if (createdAt.toLocalDate().isBefore(LocalDate.now()) || createdAt.toLocalDate().isEqual(LocalDate.now())) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -170,11 +171,10 @@ public class AccountingSlipService {
         return map;
     }
 
-    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<String, List<String>> accountingsForDate) {
+    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<LocalDateTime, List<String>> accountingsForDate) {
         List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
-        String postingDateString = accountingsForDate.getKey();
-        LocalDate postingDate = LocalDate.parse(postingDateString);
+        LocalDateTime postingDate = accountingsForDate.getKey();
         int referenceNumber = postingDate.getDayOfYear();
 
         Map<String, List<OrderItemAccountingDto>> summedItemAccountings = getSummedOrderItemAccountingsForDate(accountingsForDate);
@@ -183,18 +183,12 @@ public class AccountingSlipService {
             List<OrderItemAccountingDto> summedItemAccountingsForCompanyCode = accountingListForCompanyCode.getValue();
 
             String companyCode = accountingListForCompanyCode.getKey();
-            String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDateString, companyCode);
+            String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDate.toString(), companyCode);
 
             String headerTextDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(postingDate);
             String headertext = "Verkkokauppa " + headerTextDate;
 
             List<AccountingSlipRowDto> rows = createAccountingSlipRowDtos(summedItemAccountingsForCompanyCode, accountingSlipId, headertext);
-
-            DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
-
-            String documentDate = DateTimeUtil.getDate();
-            String documentDateFormatted = DateTimeUtil.getFormattedDate(documentDate, formatter);
-            String postingDateFormatted = DateTimeUtil.getFormattedDate(postingDateString, formatter);
 
             String referenceYear = DateTimeFormatter.ofPattern("yy").format(postingDate);
             String referenceNumberFormatted = String.format("%1$" + REFERENCE_NUMBER_LENGTH + "s", referenceNumber).replace(' ', '0');
@@ -204,8 +198,8 @@ public class AccountingSlipService {
                     accountingSlipId,
                     companyCode,
                     "3N",
-                    documentDateFormatted,
-                    postingDateFormatted,
+                    DateTimeUtil.getFormattedDateTime(),
+                    postingDate,
                     reference,
                     headertext,
                     "EUR",
@@ -224,7 +218,7 @@ public class AccountingSlipService {
         return accountingSlipDtos;
     }
 
-    public Map<String, List<OrderItemAccountingDto>> getSummedOrderItemAccountingsForDate(Map.Entry<String, List<String>> accountingsForDate) {
+    public Map<String, List<OrderItemAccountingDto>> getSummedOrderItemAccountingsForDate(Map.Entry<LocalDateTime, List<String>> accountingsForDate) {
         List<OrderItemAccountingDto> accountingItemsForDate = new ArrayList<>();
 
         for (String id : accountingsForDate.getValue()) {
