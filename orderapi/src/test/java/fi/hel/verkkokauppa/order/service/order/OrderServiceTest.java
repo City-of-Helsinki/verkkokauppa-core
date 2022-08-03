@@ -101,9 +101,9 @@ class OrderServiceTest extends TestUtils {
             foundSubscription = subscription.get();
             orderService.setOrderStartAndEndDate(foundOrder, foundSubscription, message);
 
-            Assertions.assertEquals(foundOrder.getStartDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp));
+            Assertions.assertEquals(foundOrder.getStartDate(), DateTimeUtil.fromFormattedDateTimeString(paymentPaidTimestamp));
             // End date = startDate plus periodFrequency and period eq. daily/monthly/yearly.
-            Assertions.assertEquals(foundOrder.getEndDate(), DateTimeUtil.fromFormattedString(paymentPaidTimestamp).plus(1, ChronoUnit.DAYS));
+            Assertions.assertEquals(foundOrder.getEndDate(), DateTimeUtil.fromFormattedDateTimeString(paymentPaidTimestamp).plus(1, ChronoUnit.DAYS));
         }
     }
 

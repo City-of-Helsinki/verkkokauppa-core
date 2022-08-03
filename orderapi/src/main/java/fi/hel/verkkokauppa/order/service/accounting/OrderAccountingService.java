@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +31,7 @@ public class OrderAccountingService {
     }
 
     public OrderAccountingDto createOrderAccounting(String orderId, List<OrderItemAccountingDto> orderItemAccountings) {
-        String createdAt = DateTimeUtil.getDate();
+        LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
         OrderAccountingDto orderAccountingDto = new OrderAccountingDto(orderId, createdAt, orderItemAccountings);
         createOrderAccounting(orderAccountingDto);
 

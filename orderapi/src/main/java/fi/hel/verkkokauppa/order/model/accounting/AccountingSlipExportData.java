@@ -8,6 +8,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDateTime;
+
 @Document(indexName = "accountingexportdatas")
 @Data
 @AllArgsConstructor
@@ -15,7 +17,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 public class AccountingSlipExportData {
 
     @Id
-    private String timestamp;
+    private LocalDateTime timestamp;
 
     @Field(type = FieldType.Keyword)
     private String accountingSlipId;
