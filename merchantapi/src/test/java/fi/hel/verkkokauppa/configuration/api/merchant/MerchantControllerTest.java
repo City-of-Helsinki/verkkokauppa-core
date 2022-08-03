@@ -276,6 +276,7 @@ public class MerchantControllerTest {
             add("merchantOrderWebhookUrl");
             add("merchantSubscriptionWebhookUrl");
             add("subscriptionPriceUrl");
+            add("merchantRefundWebhookUrl");
             add("payment_api_version");
             add("payment_api_key");
             add("payment_currency");
