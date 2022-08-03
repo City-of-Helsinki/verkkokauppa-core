@@ -17,7 +17,7 @@ public class OrderMessage implements EventMessage {
 
     public String orderId;
     public String orderItemId;
-    public LocalDateTime timestamp;
+    public String timestamp;
 
     public String orderType;
 

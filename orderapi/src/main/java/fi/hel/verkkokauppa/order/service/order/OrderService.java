@@ -223,7 +223,7 @@ public class OrderService {
                 .namespace(order.getNamespace())
                 .orderId(order.getOrderId())
                 .userId(order.getUser())
-                .timestamp(DateTimeUtil.getFormattedDateTime())
+                .timestamp(DateTimeUtil.getDateTime())
                 .build();
 
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
@@ -320,7 +320,7 @@ public class OrderService {
                 .eventType(eventType)
                 .namespace(order.getNamespace())
                 .orderId(order.getOrderId())
-                .timestamp(order.getCreatedAt())
+                .timestamp(DateTimeUtil.getFormattedDateTime(order.getCreatedAt()))
                 .orderType(order.getType())
                 .priceTotal(order.getPriceTotal())
                 .priceNet(order.getPriceNet())
