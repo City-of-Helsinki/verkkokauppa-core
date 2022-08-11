@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -13,7 +14,7 @@ public abstract class DummyData {
     public Order generateDummyOrder() {
         Order order = new Order();
         order.setOrderId("1");
-        order.setCreatedAt("today");
+        order.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         order.setUser("dummy_user");
         order.setNamespace("dummy_namespace");
         order.setStatus("dummy_status");
@@ -28,7 +29,7 @@ public abstract class DummyData {
     public OrderDto generateDummyOrderDto() {
         OrderDto dto = OrderDto.builder()
                 .orderId("1")
-                .createdAt("today")
+                .createdAt(DateTimeUtil.getFormattedDateTime())
                 .customerEmail("dummy_email@example.com")
                 .customerFirstName("dummy_firstname")
                 .customerLastName("dummy_lastname")

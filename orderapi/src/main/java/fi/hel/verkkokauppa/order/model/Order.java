@@ -12,6 +12,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -31,8 +32,8 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Keyword)
     String user;
 
-    @Field(type = FieldType.Text)
-    String createdAt;
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    LocalDateTime createdAt;
 
     @Field(type = FieldType.Text)
     String status;
@@ -61,8 +62,8 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Text)
     String priceTotal;
 
-    @Field(type = FieldType.Date, format = DateFormat.date)
-    String accounted;
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    LocalDate accounted;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime startDate;
@@ -78,7 +79,7 @@ public class Order implements Customer, IdentifiableUser {
 
     public Order() {}
 
-    public Order(String orderId, String namespace, String user, String createdAt, Long incrementId) {
+    public Order(String orderId, String namespace, String user, LocalDateTime createdAt, Long incrementId) {
         this.status = OrderStatus.DRAFT;
         this.type = OrderType.ORDER;
 

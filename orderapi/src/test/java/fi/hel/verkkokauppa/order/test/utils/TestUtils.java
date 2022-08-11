@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -76,8 +77,9 @@ public class TestUtils extends DummyData{
     public static boolean hasNullFields(Object entity, List<String> exclusions) throws IllegalAccessException, IllegalArgumentException {
         for (Field f : entity.getClass().getDeclaredFields()) {
             f.setAccessible(true);
-            final String value = (String) f.get(entity);
+            final Object value = f.get(entity);
             final String name = f.getName();
+
             boolean excludeNext = false;
 
             for (String exclusion : exclusions) {
@@ -93,6 +95,7 @@ public class TestUtils extends DummyData{
                     return true;
                 }
             }
+
         }
         return false;
     }
