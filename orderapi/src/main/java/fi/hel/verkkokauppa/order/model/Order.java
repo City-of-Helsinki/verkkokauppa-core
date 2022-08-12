@@ -62,7 +62,7 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Text)
     String priceTotal;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(type = FieldType.Date, format = DateFormat.date)
     LocalDate accounted;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
