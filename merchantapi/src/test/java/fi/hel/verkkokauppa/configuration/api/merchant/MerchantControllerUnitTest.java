@@ -114,8 +114,8 @@ public class MerchantControllerUnitTest {
         CommonApiException cause = (CommonApiException) exception.getCause();
         assertEquals(CommonApiException.class, cause.getClass());
 
-        assertEquals("merchant-not-found", cause.getErrors().getErrors().get(0).getCode());
-        assertEquals("merchant with id [merchantId] not found", cause.getErrors().getErrors().get(0).getMessage());
+        assertEquals("failed-to-upsert-merchant", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("failed to upsert merchant, merchantId:merchantId", cause.getErrors().getErrors().get(0).getMessage());
     }
 
 
