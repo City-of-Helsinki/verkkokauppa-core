@@ -6,10 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static fi.hel.verkkokauppa.common.configuration.MerchantConfigurationKeys.*;
-
 @Component
-public class ServiceConfigurationKeys extends NamespaceConfigurationKeys {
+public class ServiceConfigurationKeys {
 
     //
     // Payment related configuration keys, based on KYV-60 Jira task
