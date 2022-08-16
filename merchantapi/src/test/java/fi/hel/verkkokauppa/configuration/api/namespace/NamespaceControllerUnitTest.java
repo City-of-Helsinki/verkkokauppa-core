@@ -86,15 +86,18 @@ public class NamespaceControllerUnitTest {
     public void namespaceGetKeys() throws Exception {
 
         List<String> allKeys = new ArrayList<>(new ArrayList<>() {{
+            add("merchantOrderWebhookUrl");
+            add("merchantPaymentWebhookUrl");
+            add("merchantRefundWebhookUrl");
+            add("merchantSubscriptionWebhookUrl");
             add("merchantTermsOfServiceUrl");
+            add("orderCancelRedirectUrl");
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
+            add("orderSuccessRedirectUrl");
             add("subscriptionPriceUrl");
-            add("merchantPaymentWebhookUrl");
-            add("merchantOrderWebhookUrl");
-            add("merchantSubscriptionWebhookUrl");
-            add("namespaceApiAccessToken");
         }});
+
 
         MvcResult response = this.mockMvc.perform(
                         get("/namespace/keys")

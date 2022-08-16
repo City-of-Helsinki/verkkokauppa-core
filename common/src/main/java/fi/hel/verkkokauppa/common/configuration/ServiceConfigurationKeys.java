@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class ServiceConfigurationKeys {
@@ -101,7 +103,7 @@ public class ServiceConfigurationKeys {
     }
 
     public static List<String> getNamespaceKeys() {
-        return Arrays.asList(
+        return Stream.of(
                 SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
@@ -112,7 +114,7 @@ public class ServiceConfigurationKeys {
                 MERCHANT_REFUND_WEBHOOK_URL,       // must not be overwritten by (merchant)
                 ORDER_CANCEL_REDIRECT_URL,         // must not be overwritten by (merchant)
                 ORDER_SUCCESS_REDIRECT_URL         // must not be overwritten by (merchant)
-        );
+        ).sorted().collect(Collectors.toList());
     }
 
     public static boolean isRestrictedConfigurationKey(String key) {
