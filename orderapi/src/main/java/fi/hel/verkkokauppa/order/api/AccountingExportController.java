@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,9 +88,9 @@ public class AccountingExportController {
     }
 
     @GetMapping(value = "/accounting/export/list", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<String>> listAccountingExportDataIds() {
+    public ResponseEntity<List<LocalDate>> listAccountingExportDataIds() {
         try {
-            List<String> accountingExportDataIds = accountingExportDataService.getAccountingExportDataTimestamps();
+            List<LocalDate> accountingExportDataIds = accountingExportDataService.getAccountingExportDataTimestamps();
 
             return ResponseEntity.ok().body(accountingExportDataIds);
         } catch (Exception e) {

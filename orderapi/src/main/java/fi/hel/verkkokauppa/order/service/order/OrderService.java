@@ -257,7 +257,7 @@ public class OrderService {
 
     public void setOrderStartAndEndDate(Order order, Subscription subscription, PaymentMessage message) {
         LocalDateTime startDate = subscription.getStartDate();
-        LocalDateTime paymentAt = DateTimeUtil.fromFormattedString(message.getPaymentPaidTimestamp());
+        LocalDateTime paymentAt = DateTimeUtil.fromFormattedDateTimeString(message.getPaymentPaidTimestamp());
 
         if (startDate.isBefore(paymentAt)) {
             setStartDateAndCalculateNextEndDate(order, subscription, paymentAt);

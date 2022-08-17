@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -28,10 +29,10 @@ public class AccountingSlipDto {
     private String documentType;
 
     @JacksonXmlProperty(localName = "DocumentDate")
-    private String documentDate;
+    private LocalDate documentDate;
 
     @JacksonXmlProperty(localName = "PostingDate")
-    private String postingDate;
+    private LocalDate postingDate;
 
     @JacksonXmlProperty(localName = "Reference")
     private String reference;
@@ -46,8 +47,8 @@ public class AccountingSlipDto {
     @JacksonXmlProperty(localName = "LineItem")
     private List<AccountingSlipRowDto> rows;
 
-    public AccountingSlipDto(String accountingSlipId, String companyCode, String documentType, String documentDate,
-                             String postingDate, String reference, String headerText, String currencyCode,
+    public AccountingSlipDto(String accountingSlipId, String companyCode, String documentType, LocalDate documentDate,
+                             LocalDate postingDate, String reference, String headerText, String currencyCode,
                              List<AccountingSlipRowDto> rows) {
         this.accountingSlipId = accountingSlipId;
         this.companyCode = companyCode;

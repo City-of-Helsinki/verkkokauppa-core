@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class AccountingExportService {
@@ -54,7 +55,7 @@ public class AccountingExportService {
         AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
 
         String senderId = accountingSlipDto.getSenderId();
-        String timestamp = exportData.getTimestamp();
+        LocalDate timestamp = exportData.getTimestamp();
         String filename = constructAccountingExportFileName(senderId, timestamp);
 
         export(exportData.getXml(), filename);
@@ -62,9 +63,8 @@ public class AccountingExportService {
         markAsExported(exportData);
     }
 
-    public String constructAccountingExportFileName(String senderId, String ExportDataTimestamp) {
-        LocalDate localDate = LocalDate.parse(ExportDataTimestamp);
-        int year = localDate.getYear();
+    public String constructAccountingExportFileName(String senderId, LocalDate exportDataTimestamp) {
+        int year = exportDataTimestamp.getYear();
         int count = exportDataRepository.countAllByExportedStartsWith(Integer.toString(year));
 
         int runningNumber = count + 1;
@@ -131,7 +131,7 @@ public class AccountingExportService {
     }
 
     private void markAsExported(AccountingExportDataDto exportData) {
-        exportData.setExported(DateTimeUtil.getDate());
+        exportData.setExported(DateTimeUtil.getFormattedDateTime().toLocalDate());
 
         exportDataRepository.save(new AccountingExportDataTransformer().transformToEntity(exportData));
         log.debug("marked accounting exported, accounting slip id: " + exportData.getAccountingSlipId());
