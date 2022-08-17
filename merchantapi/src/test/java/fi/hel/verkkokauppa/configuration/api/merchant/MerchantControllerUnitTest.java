@@ -302,31 +302,17 @@ public class MerchantControllerUnitTest {
     public void merchantGetKeys() throws Exception {
 
         List<String> allKeys = new ArrayList<>(new ArrayList<>() {{
-            add("merchantName");
-            add("merchantStreet");
-            add("merchantZip");
             add("merchantCity");
             add("merchantEmail");
+            add("merchantName");
             add("merchantPhone");
-            add("merchantUrl");
+            add("merchantStreet");
             add("merchantTermsOfServiceUrl");
-            add("merchantPaymentWebhookUrl");
+            add("merchantUrl");
+            add("merchantZip");
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
-            add("merchantOrderWebhookUrl");
-            add("merchantSubscriptionWebhookUrl");
             add("subscriptionPriceUrl");
-            add("merchantRefundWebhookUrl");
-            add("payment_api_version");
-            add("payment_api_key");
-            add("payment_currency");
-            add("payment_type");
-            add("payment_register_card_token");
-            add("payment_return_url");
-            add("payment_notification_url");
-            add("payment_language");
-            add("payment_submerchant_id");
-            add("payment_cp");
         }});
 
         MvcResult response = this.mockMvc.perform(
