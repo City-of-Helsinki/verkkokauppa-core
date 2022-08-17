@@ -58,7 +58,7 @@ public class MerchantController {
 
     @GetMapping("/merchant/keys")
     public ResponseEntity<List<String>> getKeys() {
-        return ResponseEntity.ok(ServiceConfigurationKeys.getAllConfigurationKeys());
+        return ResponseEntity.ok(ServiceConfigurationKeys.getMerchantKeys());
     }
 
     @GetMapping("/merchant/getValue")

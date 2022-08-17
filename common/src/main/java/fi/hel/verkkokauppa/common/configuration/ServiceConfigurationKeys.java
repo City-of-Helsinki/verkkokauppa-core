@@ -117,6 +117,31 @@ public class ServiceConfigurationKeys {
         ).sorted().collect(Collectors.toList());
     }
 
+    public static List<String> getOverridableMerchantKeys() {
+        return Stream.of(
+                MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL            // can be overwritten by (merchant)
+        ).sorted().collect(Collectors.toList());
+    }
+
+    public static List<String> getMerchantKeys() {
+        return Stream.of(
+                MERCHANT_NAME,
+                MERCHANT_STREET,
+                MERCHANT_ZIP,
+                MERCHANT_CITY,
+                MERCHANT_EMAIL,
+                MERCHANT_PHONE,
+                MERCHANT_URL,
+                MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
+                ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL             // can be overwritten by (merchant)
+        ).sorted().collect(Collectors.toList());
+    }
+
     public static boolean isRestrictedConfigurationKey(String key) {
         return getRestrictedConfigurationKeys().contains(key);
     }
