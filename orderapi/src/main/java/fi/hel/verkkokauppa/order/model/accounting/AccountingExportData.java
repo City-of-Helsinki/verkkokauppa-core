@@ -26,7 +26,7 @@ public class AccountingExportData {
     @Field(type = FieldType.Text)
     private String xml;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
+    @Field(type = FieldType.Date, format = DateFormat.date)
     private LocalDate exported;
 
 }
