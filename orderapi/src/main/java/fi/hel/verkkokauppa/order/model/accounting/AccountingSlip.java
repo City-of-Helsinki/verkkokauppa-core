@@ -9,6 +9,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
+
 @Document(indexName = "accountingslips")
 @Data
 @AllArgsConstructor
@@ -24,11 +26,11 @@ public class AccountingSlip {
     @Field(type = FieldType.Text)
     private String documentType;
 
-    @Field(type = FieldType.Text)
-    private String documentDate;
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    private LocalDate documentDate;
 
-    @Field(type = FieldType.Text)
-    private String postingDate;
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    private LocalDate postingDate;
 
     @Field(type = FieldType.Text)
     private String reference;
