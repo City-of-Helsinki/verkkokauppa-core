@@ -1,11 +1,12 @@
 package fi.hel.verkkokauppa.order.api.data;
 
-import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import lombok.*;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -17,13 +18,13 @@ public class OrderDto {
     private String subscriptionId;
     private String namespace;
     private String user;
-    private String createdAt;
+    private LocalDateTime createdAt;
     private String status;
     private String type;
     private String priceNet;
     private String priceVat;
     private String priceTotal;
-    private String accounted;
+    private LocalDate accounted;
 
     @NotBlank(message = "firstname required")
     private String customerFirstName;

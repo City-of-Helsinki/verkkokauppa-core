@@ -7,7 +7,6 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +14,7 @@ public abstract class DummyData {
     public Order generateDummyOrder() {
         Order order = new Order();
         order.setOrderId("1");
-        order.setCreatedAt(DateTimeUtil.getDateTime());
+        order.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         order.setUser("dummy_user");
         order.setNamespace("dummy_namespace");
         order.setStatus("dummy_status");
@@ -30,7 +29,7 @@ public abstract class DummyData {
     public OrderDto generateDummyOrderDto() {
         OrderDto dto = OrderDto.builder()
                 .orderId("1")
-                .createdAt(DateTimeUtil.getDateTime())
+                .createdAt(DateTimeUtil.getFormattedDateTime())
                 .customerEmail("dummy_email@example.com")
                 .customerFirstName("dummy_firstname")
                 .customerLastName("dummy_lastname")
