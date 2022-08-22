@@ -56,11 +56,9 @@ public class AccountingExportDataService {
 
         log.debug("generated accounting export data xml successfully");
 
-        LocalDate postingDate = accountingSlip.getPostingDate();
-
         AccountingExportDataDto exportDataDto = new AccountingExportDataDto(
                 accountingSlip.getAccountingSlipId(),
-                postingDate,
+                accountingSlip.getPostingDate(),
                 xml
         );
 
