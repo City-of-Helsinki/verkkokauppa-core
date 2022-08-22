@@ -17,7 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @TestPropertySource(properties = "spring.activemq.broker-url=failover:(tcp://localhost:61616)?startupMaxReconnectAttempts=1")
-@Profile("local")
+@RunIfProfile(profile = "local")
 class InvoiceServiceTest extends TestUtils {
 
     @Autowired
