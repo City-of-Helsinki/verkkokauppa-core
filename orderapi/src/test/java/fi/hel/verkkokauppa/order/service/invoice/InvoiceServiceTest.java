@@ -24,6 +24,12 @@ class InvoiceServiceTest extends TestUtils {
     @Autowired
     InvoiceMapper invoiceMapper;
 
+
+    @Test
+    public void assertTrue(){
+        Assertions.assertTrue(true);
+    }
+
     @Test
     @RunIfProfile(profile = "local")
     void saveInvoiceToOrder() {
