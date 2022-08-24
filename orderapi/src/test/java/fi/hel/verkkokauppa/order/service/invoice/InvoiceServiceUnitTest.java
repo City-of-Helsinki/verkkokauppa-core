@@ -21,6 +21,8 @@ import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -40,33 +42,26 @@ import static org.mockito.ArgumentMatchers.any;
 @UnitTest
 @WebMvcTest(InvoiceService.class)
 @ContextConfiguration(classes = AutoMockBeanFactory.class) // This automatically mocks missing beans
-@AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {
-        ActiveMQAutoConfiguration.class,
-        KafkaAutoConfiguration.class
-})
 class InvoiceServiceUnitTest extends DummyData {
 
     @Autowired
     ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     OrderRepository orderRepository;
-    @MockBean
+
+    @InjectMocks
     InvoiceService invoiceService;
 
-    @MockBean
+    @Mock
     InvoiceMapper invoiceMapper;
 
-    @MockBean
+    @Mock
     OrderTransformerUtils orderTransformerUtils;
 
     @Test
     void saveInvoiceToOrder() throws NoSuchMethodException {
         Order order = generateDummyOrder();
-
-        // Mocking the method `saveInvoiceToOrder` to call the real method.
-        Mockito.when(invoiceService.saveInvoiceToOrder(any(), any())).thenCallRealMethod();
 
         ReflectionTestUtils.setField(invoiceMapper, "mapper", new ObjectMapper());
 
