@@ -43,6 +43,7 @@ import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@RunIfProfile(profile = "local")
 class OrderServiceTest extends TestUtils {
 
     private Logger log = LoggerFactory.getLogger(OrderServiceTest.class);

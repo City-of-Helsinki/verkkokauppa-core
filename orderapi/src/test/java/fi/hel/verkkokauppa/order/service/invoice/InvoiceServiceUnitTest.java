@@ -21,14 +21,11 @@ import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -42,26 +39,32 @@ import static org.mockito.ArgumentMatchers.any;
 @UnitTest
 @WebMvcTest(InvoiceService.class)
 @ContextConfiguration(classes = AutoMockBeanFactory.class) // This automatically mocks missing beans
+@EnableAutoConfiguration(exclude = {
+        ActiveMQAutoConfiguration.class,
+        KafkaAutoConfiguration.class
+})
 class InvoiceServiceUnitTest extends DummyData {
 
     @Autowired
     ObjectMapper objectMapper;
 
-    @Mock
+    @MockBean
     OrderRepository orderRepository;
-
-    @InjectMocks
+    @MockBean
     InvoiceService invoiceService;
 
-    @Mock
+    @MockBean
     InvoiceMapper invoiceMapper;
 
-    @Mock
+    @MockBean
     OrderTransformerUtils orderTransformerUtils;
 
     @Test
     void saveInvoiceToOrder() throws NoSuchMethodException {
         Order order = generateDummyOrder();
+
+        // Mocking the method `saveInvoiceToOrder` to call the real method.
+        Mockito.when(invoiceService.saveInvoiceToOrder(any(), any())).thenCallRealMethod();
 
         ReflectionTestUtils.setField(invoiceMapper, "mapper", new ObjectMapper());
 
