@@ -14,6 +14,9 @@ import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
 import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -41,6 +44,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = AutoMockBeanFactory.class)
 @AutoConfigureMockMvc
 @Import(SubscriptionAdminController.class)
+@EnableAutoConfiguration(exclude = {
+        ActiveMQAutoConfiguration.class,
+        KafkaAutoConfiguration.class
+})
 public class SubscriptionAdminControllerUnitTest {
 
     @Autowired

@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
         "fi.hel.verkkokauppa.common.queue",
         "fi.hel.verkkokauppa.common.id"
 })
+@RunIfProfile(profile = "local")
 public class IncrementIdTest {
   @Autowired
   IncrementId incrementId;
