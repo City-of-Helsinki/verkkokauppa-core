@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.accounting;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
@@ -28,10 +29,18 @@ public class AccountingSlipDto {
     @JacksonXmlProperty(localName = "DocumentType")
     private String documentType;
 
+    /**
+     * yyyyMMdd -format is required for SAP system
+     */
     @JacksonXmlProperty(localName = "DocumentDate")
+    @JsonFormat(pattern = "yyyyMMdd")
     private LocalDate documentDate;
 
+    /**
+     * yyyyMMdd -format is required for SAP system
+     */
     @JacksonXmlProperty(localName = "PostingDate")
+    @JsonFormat(pattern = "yyyyMMdd")
     private LocalDate postingDate;
 
     @JacksonXmlProperty(localName = "Reference")
