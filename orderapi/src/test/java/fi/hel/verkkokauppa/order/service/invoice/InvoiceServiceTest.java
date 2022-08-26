@@ -4,7 +4,6 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.mapper.InvoiceMapper;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -45,6 +44,8 @@ class InvoiceServiceTest extends TestUtils {
         Order createdOrderWithInvoice = invoiceService.saveInvoiceToOrder(invoiceDto, order);
 
         InvoiceDto fromCreatedInvoiceModel = invoiceMapper.toDto(createdOrderWithInvoice.getInvoice());
+        Assertions.assertEquals(10, fromCreatedInvoiceModel.getInvoiceId().length());
+        Assertions.assertEquals('2', fromCreatedInvoiceModel.getInvoiceId().charAt(0));
         Assertions.assertEquals(invoiceDto.getBusinessId(), fromCreatedInvoiceModel.getBusinessId());
         Assertions.assertEquals(invoiceDto.getName(), fromCreatedInvoiceModel.getName());
         Assertions.assertEquals(invoiceDto.getAddress(), fromCreatedInvoiceModel.getAddress());
