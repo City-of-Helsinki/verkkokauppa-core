@@ -5,10 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
 
 @Data
 @Builder
@@ -19,6 +15,7 @@ public class InvoiceDto {
     String orderId;
     String userId;
     // Model data
+    String invoiceId;
     String businessId;
     String name;
     String address;

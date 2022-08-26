@@ -34,4 +34,13 @@ public class IncrementId {
       return null;
     }
   }
+
+  public Long generateInvoiceIncrementId() {
+    try {
+      return this.generateIncrementId("invoice");
+    } catch (Exception e) {
+      log.error("failed to generate invoice increment id", e);
+      return null;
+    }
+  }
 }
