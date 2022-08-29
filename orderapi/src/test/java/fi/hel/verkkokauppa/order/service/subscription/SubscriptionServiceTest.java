@@ -22,6 +22,7 @@ import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@RunIfProfile(profile = "local")
 class SubscriptionServiceTest extends TestUtils {
     @Autowired
     private SubscriptionService subscriptionService;

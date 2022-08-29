@@ -34,6 +34,7 @@ import java.util.UUID;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@RunIfProfile(profile = "local")
 public class SubscriptionControllerTests extends DummyData {
 
     @Autowired

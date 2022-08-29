@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.accounting;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.IterableUtils;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -108,6 +108,7 @@ public class AccountingExportDataService {
         mapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
         mapper.addMixIn(AccountingSlipDto.class, AccountingSlipMixInDto.class);
         mapper.addMixIn(AccountingSlipRowDto.class, AccountingSlipRowMixInDto.class);
+        mapper.registerModule(new JavaTimeModule());
 
         AccountingSlipWrapperDto wrapper = new AccountingSlipWrapperDto(accountingSlip);
 

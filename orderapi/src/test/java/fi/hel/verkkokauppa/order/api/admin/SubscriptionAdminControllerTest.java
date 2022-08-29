@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@RunIfProfile(profile = "local")
 class SubscriptionAdminControllerTest extends TestUtils {
 
     private Logger log = LoggerFactory.getLogger(SubscriptionAdminControllerTest.class);

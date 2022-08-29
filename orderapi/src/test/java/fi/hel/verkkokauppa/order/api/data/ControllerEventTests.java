@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         "test.groupId=subscriptions",
         "kafka.client.authentication.enabled=false"
 })
+@RunIfProfile(profile = "local")
 public class ControllerEventTests {
     private Logger log = LoggerFactory.getLogger(ControllerEventTests.class);
 

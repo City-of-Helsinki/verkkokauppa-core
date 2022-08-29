@@ -4,7 +4,6 @@ import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.mapper.InvoiceMapper;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -12,8 +11,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
+@TestPropertySource(properties = "spring.activemq.broker-url=failover:(tcp://localhost:61616)?startupMaxReconnectAttempts=1")
+@RunIfProfile(profile = "local")
 class InvoiceServiceTest extends TestUtils {
 
     @Autowired
@@ -23,6 +25,12 @@ class InvoiceServiceTest extends TestUtils {
 
     @Autowired
     InvoiceMapper invoiceMapper;
+
+
+    @Test
+    public void assertTrue(){
+        Assertions.assertTrue(true);
+    }
 
     @Test
     @RunIfProfile(profile = "local")
