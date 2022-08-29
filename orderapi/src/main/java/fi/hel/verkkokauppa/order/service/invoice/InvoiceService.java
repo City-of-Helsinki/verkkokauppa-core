@@ -18,27 +18,29 @@ public class InvoiceService {
 
     final InvoiceMapper invoiceMapper;
 
-    final IncrementId incrementId;
+    final IncrementId incrementIdGenerator;
 
     @Autowired
     public InvoiceService(OrderRepository orderRepository, InvoiceMapper invoiceMapper, IncrementId incrementId) {
         this.orderRepository = orderRepository;
         this.invoiceMapper = invoiceMapper;
-        this.incrementId = incrementId;
+        this.incrementIdGenerator = incrementId;
     }
 
     public Order saveInvoiceToOrder(InvoiceDto invoiceDto, Order order) {
         Invoice invoice = invoiceMapper.fromDto(invoiceDto);
-        invoice.setInvoiceId(order.getInvoice() == null || order.getInvoice().getInvoiceId().isEmpty()
-                ? generateInvoiceId()
-                : order.getInvoice().getInvoiceId()
-        );
+        invoice.setInvoiceId(generateOrReapplyInvoiceId(order));
         order.setInvoice(invoice);
         return orderRepository.save(order);
     }
 
-    protected String generateInvoiceId(){
-        Long invoiceIncrement = incrementId.generateInvoiceIncrementId();
-        return TypePrefix.INVOICE.number + String.format("%09d", invoiceIncrement);
+    protected String generateOrReapplyInvoiceId(Order order) {
+        if (order.getInvoice() == null || order.getInvoice().getInvoiceId().isEmpty()) {
+            Long invoiceIncrement = incrementIdGenerator.generateInvoiceIncrementId();
+            return TypePrefix.INVOICE.number + String.format("%09d", invoiceIncrement);
+        } else {
+            return order.getInvoice().getInvoiceId();
+        }
     }
+
 }
