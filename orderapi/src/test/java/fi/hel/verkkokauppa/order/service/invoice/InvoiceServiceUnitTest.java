@@ -45,7 +45,7 @@ class InvoiceServiceUnitTest extends DummyData {
     OrderTransformerUtils orderTransformerUtils;
 
     @MockBean
-    IncrementId incrementId;
+    IncrementId incrementIdGenerator;
 
     @Test
     void saveInvoiceToOrder() throws NoSuchMethodException {
@@ -60,7 +60,7 @@ class InvoiceServiceUnitTest extends DummyData {
 
         ReflectionTestUtils.setField(invoiceService, "orderRepository", orderRepository);
 
-        ReflectionTestUtils.setField(invoiceService, "incrementId", incrementId);
+        ReflectionTestUtils.setField(invoiceService, "incrementIdGenerator", incrementIdGenerator);
 
         ReflectionTestUtils.setField(invoiceMapper, "genericModelTypeObject", new Invoice());
 
@@ -69,9 +69,9 @@ class InvoiceServiceUnitTest extends DummyData {
 
         Mockito.when(orderTransformerUtils.transformToOrderAggregateDto(any(), any(), any())).thenCallRealMethod();
 
-        Mockito.when(invoiceService.generateInvoiceId()).thenCallRealMethod();
+        Mockito.when(invoiceService.generateOrReapplyInvoiceId(order)).thenCallRealMethod();
 
-        Mockito.when(incrementId.generateInvoiceIncrementId()).thenReturn(1L);
+        Mockito.when(incrementIdGenerator.generateInvoiceIncrementId()).thenReturn(1L);
 
         InvoiceDto invoiceDto = InvoiceDto.builder()
                 .orderId(order.getOrderId())
@@ -88,7 +88,7 @@ class InvoiceServiceUnitTest extends DummyData {
         // + with added generated invoiceId
         Mockito.when(orderRepository.save(any(Order.class))).thenAnswer(i -> {
             Order argument = (Order) i.getArguments()[0];
-            invoiceDto.setInvoiceId(invoiceService.generateInvoiceId());
+            invoiceDto.setInvoiceId(invoiceService.generateOrReapplyInvoiceId(argument));
             argument.setInvoice(invoiceMapper.fromDto(invoiceDto));
             return argument;
         });
