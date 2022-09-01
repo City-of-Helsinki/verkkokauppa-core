@@ -53,6 +53,8 @@ class InvoiceServiceTest extends TestUtils {
         Order createdOrderWithInvoice = invoiceService.saveInvoiceToOrder(invoiceDto, order);
 
         InvoiceDto fromCreatedInvoiceModel = invoiceMapper.toDto(createdOrderWithInvoice.getInvoice());
+        Assertions.assertEquals(10, fromCreatedInvoiceModel.getInvoiceId().length());
+        Assertions.assertEquals('2', fromCreatedInvoiceModel.getInvoiceId().charAt(0));
         Assertions.assertEquals(invoiceDto.getBusinessId(), fromCreatedInvoiceModel.getBusinessId());
         Assertions.assertEquals(invoiceDto.getName(), fromCreatedInvoiceModel.getName());
         Assertions.assertEquals(invoiceDto.getAddress(), fromCreatedInvoiceModel.getAddress());
