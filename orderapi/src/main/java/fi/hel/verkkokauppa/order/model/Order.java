@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +14,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 
 @Document(indexName = "orders")
@@ -24,7 +25,11 @@ public class Order implements Customer, IdentifiableUser {
     String orderId;
 
     @Field(type = FieldType.Text)
-    String subscriptionId;
+    ArrayList<String> subscriptionId;
+
+    // Key is orderItemId, value is created subscription.
+    @Field(type = FieldType.Auto)
+    ArrayList<String> subscriptionIds;
 
     @Field(type = FieldType.Keyword)
     String namespace;

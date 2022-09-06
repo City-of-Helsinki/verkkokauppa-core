@@ -6,6 +6,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -14,5 +16,6 @@ public interface OrderRepository extends ElasticsearchRepository<Order, String> 
     List<Order> findByNamespaceAndUser(String namespace, String user);
     List<Order> findByUser(String user);
     List<Order> findOrdersBySubscriptionId(String subscriptionId);
+    List<Order> findAllBySubscriptionIdsIn(Collection<ArrayList<String>> subscriptionIds);
 
 }

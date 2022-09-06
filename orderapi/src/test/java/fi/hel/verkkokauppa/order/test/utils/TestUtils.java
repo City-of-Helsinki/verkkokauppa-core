@@ -214,7 +214,7 @@ public class TestUtils extends DummyData{
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
 
-        String firstSubscriptionId = order1.getSubscriptionId();
+        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
         // Fetch subscription and return
         return subscriptionService.findById(firstSubscriptionId);
 

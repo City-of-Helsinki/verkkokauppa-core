@@ -42,15 +42,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 @Component
 public class OrderService {
-        
+
     private Logger log = LoggerFactory.getLogger(OrderService.class);
 
     @Autowired
@@ -133,7 +131,7 @@ public class OrderService {
 
     public Order findById(String orderId) {
         Optional<Order> mapping = orderRepository.findById(orderId);
-        
+
         if (mapping.isPresent())
             return mapping.get();
 
@@ -179,7 +177,7 @@ public class OrderService {
     public void setTotals(String orderId, String priceNet, String priceVat, String priceTotal) {
         Order order = findById(orderId);
         if (order != null)
-            setTotals(order, priceNet, priceVat, priceTotal);        
+            setTotals(order, priceNet, priceVat, priceTotal);
     }
 
     public void setTotals(Order order, String priceNet, String priceVat, String priceTotal) {
@@ -200,25 +198,25 @@ public class OrderService {
 
     public void setType(Order order, String type) {
         order.setType(type);
-        
+
         orderRepository.save(order);
         log.debug("set order type, orderId: " + order.getOrderId() + " type: " + order.getType());
     }
 
-    public void confirm(Order order ) {
+    public void confirm(Order order) {
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
         log.debug("confirmed order, orderId: " + order.getOrderId());
     }
 
-    public void cancel(Order order ) {
+    public void cancel(Order order) {
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
         triggerOrderCancelledEvent(order);
         log.debug("canceled order, orderId: " + order.getOrderId());
     }
 
-    public void triggerOrderCancelledEvent(Order order){
+    public void triggerOrderCancelledEvent(Order order) {
         OrderMessage orderMessage = OrderMessage.builder()
                 .eventType(EventType.ORDER_CANCELLED)
                 .namespace(order.getNamespace())
@@ -234,7 +232,7 @@ public class OrderService {
     public Order findByIdValidateByUser(String orderId, String userId) {
         if (StringUtils.isEmpty(orderId) || StringUtils.isEmpty(userId)) {
             log.error("unauthorized attempt to load order, orderId or userId missing");
-            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            Error error = new Error("order-not-found-from-backend", "order with id [" + orderId + "] and user id [" + userId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
@@ -248,7 +246,7 @@ public class OrderService {
         String orderUserId = order.getUser();
         if (orderUserId == null || userId == null || !orderUserId.equals(userId)) {
             log.error("unauthorized attempt to load order, userId does not match");
-            Error error = new Error("order-not-found-from-backend", "order with order id [" + orderId + "] and user id ["+ userId +"] not found from backend");
+            Error error = new Error("order-not-found-from-backend", "order with order id [" + orderId + "] and user id [" + userId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
@@ -312,7 +310,9 @@ public class OrderService {
 
     public void linkToSubscription(String orderId, String userId, String subscriptionId) {
         Order order = findByIdValidateByUser(orderId, userId);
-        order.setSubscriptionId(subscriptionId);
+        order.setSubscriptionId(new ArrayList<>() {{
+            add(subscriptionId);
+        }});
         orderRepository.save(order);
     }
 
@@ -327,8 +327,8 @@ public class OrderService {
                 .priceNet(order.getPriceNet())
                 .priceVat(order.getPriceVat());
 
-        if (StringUtils.isNotEmpty(order.getSubscriptionId())) {
-            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId());
+        if (!order.getSubscriptionIds().isEmpty()) {
+            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId().stream().findFirst().orElse(""));
             String paymentMethodToken = subscription.getPaymentMethodToken();
 
             List<OrderItem> orderitems = orderItemService.findByOrderId(order.getOrderId());
@@ -341,7 +341,7 @@ public class OrderService {
                     .productName(orderItem.getProductName())
                     .productQuantity(orderItem.getQuantity().toString())
                     .isSubscriptionRenewalOrder(true)
-                    .subscriptionId(order.getSubscriptionId())
+                    .subscriptionId(order.getSubscriptionId().stream().findFirst().orElse(""))
                     .userId(order.getUser());
         }
 
@@ -362,6 +362,22 @@ public class OrderService {
         return subscriptionOrders;
     }
 
+    public List<OrderAggregateDto> findBySubscriptions(String subscriptionId) {
+        List<Order> orderIds = orderRepository.findAllBySubscriptionIdsIn(Collections.singleton(new ArrayList<>() {{
+            add(subscriptionId);
+        }}));
+
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(order -> getOrderWithItems(order.getOrderId()))
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
+    }
+
+
     public boolean validateRightOfPurchase(String orderId, String user, String namespace) {
         Order order = findByIdValidateByUser(orderId, user);
         orderRightOfPurchaseService.setNamespace(namespace);
@@ -377,20 +393,20 @@ public class OrderService {
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
 
-    public JSONObject saveOrderMessageHistory(OrderMessage message){
+    public JSONObject saveOrderMessageHistory(OrderMessage message) {
         try {
             String request = historyUtil.toString(historyFactory.fromOrderMessage(message));
-            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
+            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create", request);
         } catch (Exception e) {
             log.error("saveOrderMessageHistory processing error: " + e.getMessage());
         }
         return null;
     }
 
-    public JSONObject savePaymentMessageHistory(PaymentMessage message){
+    public JSONObject savePaymentMessageHistory(PaymentMessage message) {
         try {
             String request = historyUtil.toString(historyFactory.fromPaymentMessage(message));
-            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
+            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create", request);
         } catch (Exception e) {
             log.info("savePaymentMessageHistory processing error: " + e.getMessage());
         }

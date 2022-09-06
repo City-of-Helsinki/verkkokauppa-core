@@ -390,8 +390,8 @@ public class OrderController {
             Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
             // a single order which has subscription id means subscription renewal
-            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
-                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId());
+            if (order != null && !order.getSubscriptionId().isEmpty()) {
+                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId().stream().findFirst().orElse(""));
                 // TODO subscription renewal order payment failed callback action
             } else {
                 log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
@@ -418,7 +418,7 @@ public class OrderController {
             Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
             // a single order which has subscription id means subscription renewal
-            if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
+            if (order != null && !order.getSubscriptionId().isEmpty()) {
                 subscriptionService.afterRenewalPaymentPaidEventActions(message, order);
             } else {
                 log.debug("payment-paid-event callback, orderId: " + order.getOrderId());

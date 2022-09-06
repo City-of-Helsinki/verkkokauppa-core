@@ -199,7 +199,7 @@ class OrderServiceTest extends TestUtils {
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
 
-        String firstSubscriptionId = order1.getSubscriptionId();
+        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
@@ -354,7 +354,7 @@ class OrderServiceTest extends TestUtils {
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
 
-        String firstSubscriptionId = order1.getSubscriptionId();
+        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
@@ -503,7 +503,7 @@ class OrderServiceTest extends TestUtils {
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
 
-        String firstSubscriptionId = order1.getSubscriptionId();
+        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 

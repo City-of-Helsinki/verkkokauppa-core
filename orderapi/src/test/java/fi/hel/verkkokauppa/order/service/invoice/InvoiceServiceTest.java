@@ -10,10 +10,16 @@ import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@TestPropertySource(properties = "spring.activemq.broker-url=failover:(tcp://localhost:61616)?startupMaxReconnectAttempts=1")
+@RunIfProfile(profile = "local")
 class InvoiceServiceTest extends TestUtils {
 
     @Autowired
@@ -23,6 +29,11 @@ class InvoiceServiceTest extends TestUtils {
 
     @Autowired
     InvoiceMapper invoiceMapper;
+
+    @Test
+    public void assertTrue() {
+        Assertions.assertTrue(true);
+    }
 
     @Test
     @RunIfProfile(profile = "local")

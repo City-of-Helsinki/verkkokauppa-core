@@ -204,7 +204,7 @@ public class SubscriptionController {
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
 
 		try {
 			JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscription.getSubscriptionId());
@@ -261,7 +261,7 @@ public class SubscriptionController {
 			// This row validates that message contains authorization to order.
 			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 			// Find subscription with subscription id from order and user id from message
-			Subscription subscription = subscriptionService.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+			Subscription subscription = subscriptionService.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
 
 			// Update given card info to subscription.
 			UpdatePaymentCardInfoRequest updateRequest = subscriptionService.getUpdatePaymentCardInfoRequest(

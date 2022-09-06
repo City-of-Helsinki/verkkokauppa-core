@@ -119,7 +119,7 @@ public class SubscriptionService {
     }
 
     public void afterRenewalPaymentPaidEventActions(PaymentMessage message, Order order) {
-        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId(), message.getUserId());
+        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
 
         if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
             setSubscriptionEndDateFromOrder(order, subscription);

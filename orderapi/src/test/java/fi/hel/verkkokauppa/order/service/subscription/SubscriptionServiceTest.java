@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import org.junit.jupiter.api.Assertions;
@@ -17,6 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -25,6 +28,9 @@ import java.util.Optional;
 class SubscriptionServiceTest extends TestUtils {
     @Autowired
     private SubscriptionService subscriptionService;
+
+    @Autowired
+    private OrderService orderService;
 
     @Autowired
     private SubscriptionRepository subscriptionRepository;
@@ -65,7 +71,7 @@ class SubscriptionServiceTest extends TestUtils {
     @Test
     @RunIfProfile(profile = "local")
     void createFromSubscription() {
-        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(2, 1L, Period.DAILY, 2);
         ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
         Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
         Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
@@ -73,6 +79,16 @@ class SubscriptionServiceTest extends TestUtils {
         if (order.isPresent() && subscription.isPresent()) {
             foundOrder = order.get();
             foundSubscription = subscription.get();
+
+            foundOrder.setSubscriptionIds(new ArrayList<>() {{
+                add(foundSubscription.getSubscriptionId());
+                add("random");
+                add("Key2");
+            }});
+            orderRepository.save(foundOrder);
+            Assertions.assertEquals(1,orderService.findBySubscriptions(foundSubscription.getSubscriptionId()).size());
+            Assertions.assertEquals(1,orderService.findBySubscriptions("random").size());
+
             subscriptionService.setSubscriptionEndDateFromOrder(foundOrder, foundSubscription);
             Assertions.assertEquals(foundSubscription.getEndDate(), foundOrder.getEndDate());
         }
