@@ -8,7 +8,6 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
-import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
@@ -17,7 +16,6 @@ import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
@@ -390,8 +388,8 @@ public class OrderController {
             Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
             // a single order which has subscription id means subscription renewal
-            if (order != null && !order.getSubscriptionId().isEmpty()) {
-                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId().stream().findFirst().orElse(""));
+            if (order != null && !order.getSubscriptionIds().isEmpty()) {
+                log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionIds: " + order.getSubscriptionIds());
                 // TODO subscription renewal order payment failed callback action
             } else {
                 log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
@@ -418,7 +416,7 @@ public class OrderController {
             Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
             // a single order which has subscription id means subscription renewal
-            if (order != null && !order.getSubscriptionId().isEmpty()) {
+            if (order != null && !order.getSubscriptionIds().isEmpty()) {
                 subscriptionService.afterRenewalPaymentPaidEventActions(message, order);
             } else {
                 log.debug("payment-paid-event callback, orderId: " + order.getOrderId());

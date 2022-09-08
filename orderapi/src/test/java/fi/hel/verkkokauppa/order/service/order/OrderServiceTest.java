@@ -140,7 +140,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertNull(order1.getStartDate());
 
         // No subscriptions created yet for order
-        Assertions.assertNull(order1.getSubscriptionId());
+        Assertions.assertNull(order1.getSubscriptionIds());
 
         LocalDateTime today = DateTimeUtil.getFormattedDateTime();
 
@@ -197,9 +197,9 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
 
         // Is subscription created
-        Assertions.assertNotNull(order1.getSubscriptionId());
+        Assertions.assertNotNull(order1.getSubscriptionIds());
 
-        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
+        String firstSubscriptionId = order1.getFirstSubscriptionId();
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
@@ -302,7 +302,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertNull(order1.getStartDate());
 
         // No subscriptions created yet for order
-        Assertions.assertNull(order1.getSubscriptionId());
+        Assertions.assertNull(order1.getSubscriptionIds());
 
         LocalDateTime today = DateTimeUtil.getFormattedDateTime();
 
@@ -352,9 +352,9 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(oneMonthFromMinusOneDayToday, order1.getEndDate().format(formatter));
 
         // Is subscription created
-        Assertions.assertNotNull(order1.getSubscriptionId());
+        Assertions.assertNotNull(order1.getSubscriptionIds());
 
-        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
+        String firstSubscriptionId = order1.getFirstSubscriptionId();
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 
@@ -444,7 +444,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertNull(order1.getStartDate());
 
         // No subscriptions created yet for order
-        Assertions.assertNull(order1.getSubscriptionId());
+        Assertions.assertNull(order1.getSubscriptionIds());
 
         LocalDateTime today = DateTimeUtil.getFormattedDateTime();
 
@@ -501,9 +501,9 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(oneMonthFromTodayMinusOneDayEndOfThatDay, order1.getEndDate().format(formatter));
 
         // Is subscription created
-        Assertions.assertNotNull(order1.getSubscriptionId());
+        Assertions.assertNotNull(order1.getSubscriptionIds());
 
-        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
+        String firstSubscriptionId = order1.getFirstSubscriptionId();
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
 

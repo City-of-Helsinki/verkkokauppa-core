@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
 import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -15,19 +16,18 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 
 @Document(indexName = "orders")
 @Setter
 @Getter
+@Slf4j
 public class Order implements Customer, IdentifiableUser {
     @Id
     String orderId;
 
-    @Field(type = FieldType.Text)
-    ArrayList<String> subscriptionId;
-
-    // Key is orderItemId, value is created subscription.
     @Field(type = FieldType.Auto)
     ArrayList<String> subscriptionIds;
 
@@ -81,6 +81,18 @@ public class Order implements Customer, IdentifiableUser {
 
     @Field(type = FieldType.Long)
     Long incrementId;
+
+    public String getFirstSubscriptionId() {
+        Optional<String> first = Optional.empty();
+        try {
+            first = getSubscriptionIds().stream().findFirst();
+        } catch (NoSuchElementException exception) {
+            log.error("Cant get first subscription id from order subscriptionIds");
+        }
+
+        return first.orElseThrow();
+    }
+
 
     public Order() {}
 

@@ -26,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -162,7 +161,7 @@ public class TestUtils extends DummyData{
         Assertions.assertNull(order1.getStartDate());
 
         // No subscriptions created yet for order
-        Assertions.assertNull(order1.getSubscriptionId());
+        Assertions.assertNull(order1.getSubscriptionIds());
 
         LocalDateTime today = DateTimeUtil.getFormattedDateTime();
 
@@ -212,9 +211,9 @@ public class TestUtils extends DummyData{
         Assertions.assertEquals(oneMonthFromTodayMinusOneDay, order1.getEndDate().format(formatter));
 
         // Is subscription created
-        Assertions.assertNotNull(order1.getSubscriptionId());
+        Assertions.assertNotNull(order1.getSubscriptionIds());
 
-        String firstSubscriptionId = order1.getSubscriptionId().stream().findFirst().orElse("");
+        String firstSubscriptionId = order1.getFirstSubscriptionId();
         // Fetch subscription and return
         return subscriptionService.findById(firstSubscriptionId);
 

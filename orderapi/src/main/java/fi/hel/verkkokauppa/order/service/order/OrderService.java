@@ -310,7 +310,7 @@ public class OrderService {
 
     public void linkToSubscription(String orderId, String userId, String subscriptionId) {
         Order order = findByIdValidateByUser(orderId, userId);
-        order.setSubscriptionId(new ArrayList<>() {{
+        order.setSubscriptionIds(new ArrayList<>() {{
             add(subscriptionId);
         }});
         orderRepository.save(order);
@@ -328,7 +328,7 @@ public class OrderService {
                 .priceVat(order.getPriceVat());
 
         if (!order.getSubscriptionIds().isEmpty()) {
-            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getSubscriptionId().stream().findFirst().orElse(""));
+            SubscriptionDto subscription = getSubscriptionQuery.getOne(order.getFirstSubscriptionId());
             String paymentMethodToken = subscription.getPaymentMethodToken();
 
             List<OrderItem> orderitems = orderItemService.findByOrderId(order.getOrderId());
@@ -341,7 +341,7 @@ public class OrderService {
                     .productName(orderItem.getProductName())
                     .productQuantity(orderItem.getQuantity().toString())
                     .isSubscriptionRenewalOrder(true)
-                    .subscriptionId(order.getSubscriptionId().stream().findFirst().orElse(""))
+                    .subscriptionId(order.getFirstSubscriptionId())
                     .userId(order.getUser());
         }
 

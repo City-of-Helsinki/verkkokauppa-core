@@ -35,10 +35,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.ChronoField;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Component
@@ -119,7 +115,7 @@ public class SubscriptionService {
     }
 
     public void afterRenewalPaymentPaidEventActions(PaymentMessage message, Order order) {
-        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
+        Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getFirstSubscriptionId(), message.getUserId());
 
         if (EventType.PAYMENT_PAID.equals(message.getEventType())) {
             setSubscriptionEndDateFromOrder(order, subscription);

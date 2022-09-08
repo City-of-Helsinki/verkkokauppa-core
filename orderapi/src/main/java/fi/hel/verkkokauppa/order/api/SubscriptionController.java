@@ -13,7 +13,6 @@ import fi.hel.verkkokauppa.order.api.data.subscription.*;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
-import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.CancelSubscriptionCommand;
 import fi.hel.verkkokauppa.order.service.subscription.CreateSubscriptionCommand;
@@ -204,7 +203,7 @@ public class SubscriptionController {
 		log.debug("subscription-api received PAYMENT_FAILED event for paymentId: " + message.getPaymentId());
 		Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 
-		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
+		Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(order.getFirstSubscriptionId(), message.getUserId());
 
 		try {
 			JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(subscription.getSubscriptionId());
@@ -261,7 +260,7 @@ public class SubscriptionController {
 			// This row validates that message contains authorization to order.
 			Order order = orderService.findByIdValidateByUser(message.getOrderId(), message.getUserId());
 			// Find subscription with subscription id from order and user id from message
-			Subscription subscription = subscriptionService.findByIdValidateByUser(order.getSubscriptionId().stream().findFirst().orElse(""), message.getUserId());
+			Subscription subscription = subscriptionService.findByIdValidateByUser(order.getFirstSubscriptionId(), message.getUserId());
 
 			// Update given card info to subscription.
 			UpdatePaymentCardInfoRequest updateRequest = subscriptionService.getUpdatePaymentCardInfoRequest(
