@@ -22,6 +22,8 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     String orderItemId;
     @Field(type = FieldType.Keyword)
     String orderId;
+    @Field(type = FieldType.Keyword)
+    String merchantId;
 
     @Field(type = FieldType.Keyword)
     String productId;
@@ -79,6 +81,7 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     public OrderItem(
             String orderItemId,
             String orderId,
+            String merchantId,
             String productId,
             String productName,
             String productLabel,
@@ -103,6 +106,7 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     ) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
+        this.merchantId = merchantId;
         this.productId = productId;
         this.productName = productName;
         this.productLabel = productLabel;

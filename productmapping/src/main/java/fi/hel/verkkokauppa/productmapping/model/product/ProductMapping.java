@@ -13,14 +13,17 @@ public class ProductMapping {
     String namespace;
     @Field(type = FieldType.Text)
     String namespaceEntityId;
+    @Field(type = FieldType.Text)
+    String merchantId;
 
     public ProductMapping() {
     }
     
-    public ProductMapping(String productId, String namespace, String namespaceEntityId) {
+    public ProductMapping(String productId, String namespace, String namespaceEntityId, String merchantId) {
         this.productId = productId;
         this.namespace = namespace;
         this.namespaceEntityId = namespaceEntityId;
+        this.merchantId = merchantId;
     }
     
     public String getProductId() {
@@ -46,4 +49,11 @@ public class ProductMapping {
         this.namespaceEntityId = namespaceEntityId;
     }
 
+    public String getMerchantId() {
+        return merchantId;
+    }
+
+    public void setMerchantId(String merchantId) {
+        this.merchantId = merchantId;
+    }
 }

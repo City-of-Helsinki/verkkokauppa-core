@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfigura
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
+
 @SpringBootTest
 @EnableAutoConfiguration(exclude = {
 		ActiveMQAutoConfiguration.class,

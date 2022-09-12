@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.mapper.AbstractModelMapper;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import org.springframework.beans.factory.annotation.Autowired;

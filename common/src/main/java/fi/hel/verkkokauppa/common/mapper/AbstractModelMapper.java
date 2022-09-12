@@ -1,11 +1,11 @@
-package fi.hel.verkkokauppa.payment.mapper;
+package fi.hel.verkkokauppa.common.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Supplier;
 
-public class AbstractModelMapper<Entity, Dto> {
+public abstract class AbstractModelMapper<Entity, Dto> {
 
     protected final ObjectMapper mapper;
     private final Entity genericModelTypeObject;
@@ -46,3 +46,4 @@ public class AbstractModelMapper<Entity, Dto> {
     }
 
 }
+

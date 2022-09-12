@@ -63,6 +63,7 @@ public abstract class DummyData {
         return new OrderItem(
                 orderItemId,
                 order.getOrderId(),
+                "merchantId",
                 "productId",
                 "productName",
                 "productLabel",

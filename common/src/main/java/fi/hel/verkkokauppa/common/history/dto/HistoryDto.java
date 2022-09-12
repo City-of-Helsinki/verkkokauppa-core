@@ -3,10 +3,8 @@ package fi.hel.verkkokauppa.common.history.dto;
 import fi.hel.verkkokauppa.common.contracts.history.History;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Data

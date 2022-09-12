@@ -1,8 +1,14 @@
 package fi.hel.verkkokauppa.order.service.subscription;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
+import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
@@ -81,6 +87,12 @@ public class CreateOrderFromSubscriptionCommand {
     @Autowired
     private CancelSubscriptionCommand cancelSubscriptionCommand;
 
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
@@ -113,7 +125,6 @@ public class CreateOrderFromSubscriptionCommand {
         Order order = orderService.createByParams(namespace, user);
         order.setType(OrderType.ORDER);
 
-
         subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
         orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());
@@ -134,6 +145,17 @@ public class CreateOrderFromSubscriptionCommand {
 
     private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
 
+        String merchantId;
+        try {
+            log.info("Fetching product-mapping for subscriptionId:" + subscriptionId + " and productId: " + subscriptionDto.getProductId());
+            JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + subscriptionDto.getProductId());
+            ProductMappingDto dto = objectMapper.readValue(response.toString(), ProductMappingDto.class);
+            merchantId = dto.getMerchantId();
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize productmapping", e);
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-prices", "failed to update subscription prices from merchant"));
+        }
+
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
         request.setSubscriptionId(subscriptionId);
         request.setNamespace(namespace);
@@ -141,6 +163,7 @@ public class CreateOrderFromSubscriptionCommand {
         OrderItemDto orderItem = orderItemTransformer.transformToDto(new OrderItem(
             subscriptionDto.getOrderItemId(),
             subscriptionDto.getOrderId(),
+            merchantId,
             subscriptionDto.getProductId(),
             subscriptionDto.getProductName(),
             subscriptionDto.getProductLabel(),
@@ -271,6 +294,7 @@ public class CreateOrderFromSubscriptionCommand {
     private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) {
         return orderItemService.addItem(
                 orderId,
+                null,
                 subscriptionDto.getProductId(),
                 subscriptionDto.getProductName(),
                 subscriptionDto.getProductLabel(),
