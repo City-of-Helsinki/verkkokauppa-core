@@ -38,7 +38,7 @@ public class ProductMappingService {
     }
 
     public ProductMapping createByParams(String namespace, String namespaceEntityId, String merchantId) {
-        String productId = UUIDGenerator.generateType3UUIDString(namespace, namespaceEntityId);
+        String productId = generateProductIdFromMerchantId(namespace, namespaceEntityId, merchantId);
         ProductMapping productMapping = new ProductMapping(productId, namespace, namespaceEntityId, merchantId);
         productMappingRepository.save(productMapping);
         log.debug("created product mapping for namespace: " + namespace + " and merchant: " + merchantId + " with productId: " + productId);
@@ -46,17 +46,24 @@ public class ProductMappingService {
         return productMapping;
     }
 
+    public String generateProductIdFromMerchantId(String namespace, String namespaceEntityId, String merchantId) {
+        String productId = UUIDGenerator.generateType3UUIDString(namespace, namespaceEntityId);
+        productId = UUIDGenerator.generateType3UUIDString(productId , merchantId);
+        return productId;
+    }
+
+
     // generate some mock data
     public List<ProductMapping> initializeTestData() {
         List<ProductMapping> entities = Arrays.asList(
                 createByParams("asukaspysakointi", "1234", "9876"),
-                createByParams("asukaspysakointi", "12345", "98765"),
-                createByParams("asukaspysakointi", "123456","987654"),
-                createByParams("tilavaraus", "1234", "9876"),
+                createByParams("asukaspysakointi", "12345", "9876"),
+                createByParams("asukaspysakointi", "123456","9876"),
+                createByParams("tilavaraus", "1234", "98765"),
                 createByParams("tilavaraus", "12345", "98765"),
-                createByParams("tilavaraus", "123456", "987654"),
-                createByParams("venepaikat", "1234", "9876"),
-                createByParams("venepaikat", "12345", "98765"),
+                createByParams("tilavaraus", "123456", "98765"),
+                createByParams("venepaikat", "1234", "987654"),
+                createByParams("venepaikat", "12345", "987654"),
                 createByParams("venepaikat", "5678", "987654")
         );
 
