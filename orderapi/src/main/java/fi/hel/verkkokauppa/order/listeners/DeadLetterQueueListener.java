@@ -55,13 +55,12 @@ public class DeadLetterQueueListener {
     @JmsListener(destination = "${queue.dlq:DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
     public void consumeMessage(TextMessage textMessage) {
         try {
+            log.info("Consuming PaymentMessage from DLQ: {}", textMessage.getText());
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
             logMessageData(message);
 
-            if (message.getEventType() != null && message.getEventType().equals(EventType.PAYMENT_PAID)) {
-                paymentFailedToProcessAction(message);
-            }
+            paymentFailedToProcessAction(message);
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
@@ -79,13 +78,12 @@ public class DeadLetterQueueListener {
     @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
     public void consumeMessageLocal(TextMessage textMessage) {
         try {
+            log.info("Consuming PaymentMessage from local DLQ: {}", textMessage.getText());
             PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
             logMessageData(message);
 
-            if (message.getEventType() != null && message.getEventType().equals(EventType.PAYMENT_PAID)) {
-                paymentFailedToProcessAction(message);
-            }
+            paymentFailedToProcessAction(message);
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
@@ -93,8 +91,10 @@ public class DeadLetterQueueListener {
     }
 
     private void paymentFailedToProcessAction(PaymentMessage message) {
+        log.info("Starting payment-failed-to-process action for payment: {}", message.toString());
         sendNotificationToEmail(message);
         sendNotificationService.sendToQueue(message, queueConfigurations.getPaymentFailedToProcessQueue());
+        log.info("Ending payment-failed-to-process action for payment: {}", message.toString());
     }
 
     private void sendNotificationToEmail(PaymentMessage paymentMessage) {
@@ -102,6 +102,7 @@ public class DeadLetterQueueListener {
         msgJson.put("id", paymentMessage.getPaymentId());
         msgJson.put("receiver", paymentFailedNotificationEmail);
         msgJson.put("header", "DLQ queue alert - " + EventType.PAYMENT_PAID);
+        log.info("Initial mail message without body: {}", msgJson.toString());
         try {
             String html = Files.readString(Paths.get(ClassLoader.getSystemResource(EMAIL_TEMPLATE_PATH).toURI()));
             html = html.replace("#EVENT_TYPE#", paymentMessage.getEventType());
@@ -111,7 +112,7 @@ public class DeadLetterQueueListener {
 
             msgJson.put("body", html);
         } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
+            log.info("Failed to serialize email template: {}", e.toString());
         }
 
         log.info("Payment with id {} failed. Sending email notification to {}", paymentMessage.getPaymentId(), paymentFailedNotificationEmail);

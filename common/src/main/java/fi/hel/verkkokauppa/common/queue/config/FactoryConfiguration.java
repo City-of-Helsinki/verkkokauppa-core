@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.queue.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.queue.error.DefaultActiveMQErrorHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,9 @@ public class FactoryConfiguration implements JmsListenerConfigurer {
     @Autowired
     private Environment environment;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Override
     public void configureJmsListeners(JmsListenerEndpointRegistrar registrar) {
         if (environment.getProperty("spring.activemq.broker-url") != null) {
@@ -39,7 +43,7 @@ public class FactoryConfiguration implements JmsListenerConfigurer {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setSessionTransacted(true);
-        factory.setErrorHandler(new DefaultActiveMQErrorHandler());
+        factory.setErrorHandler(new DefaultActiveMQErrorHandler(objectMapper));
         return factory;
     }
 }
