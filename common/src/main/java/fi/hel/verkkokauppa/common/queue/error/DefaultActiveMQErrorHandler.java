@@ -32,7 +32,7 @@ public class DefaultActiveMQErrorHandler implements ErrorHandler {
     @Override
     public void handleError(Throwable t) {
         try {
-            log.error(mapper.writeValueAsString(t));
+            log.error("DefaultActiveMqError: "+ mapper.writeValueAsString(t));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize error for logging.");
             log.error("Error cause: {}", t.getCause());
