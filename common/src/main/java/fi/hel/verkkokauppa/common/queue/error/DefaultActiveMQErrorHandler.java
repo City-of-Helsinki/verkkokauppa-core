@@ -2,10 +2,13 @@ package fi.hel.verkkokauppa.common.queue.error;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.queue.error.exceptions.DLQPaymentMessageProcessingException;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.PaymentMessageProcessingException;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.SubscriptionMessageProcessingException;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ErrorHandler;
 
@@ -13,9 +16,17 @@ import org.springframework.util.ErrorHandler;
 public class DefaultActiveMQErrorHandler implements ErrorHandler {
 
     private ObjectMapper mapper;
+    private SendNotificationService sendNotificationService;
+    private QueueConfigurations queueConfigurations;
 
-    public DefaultActiveMQErrorHandler(ObjectMapper mapper) {
+    public DefaultActiveMQErrorHandler(
+            ObjectMapper mapper,
+            SendNotificationService sendNotificationService,
+            QueueConfigurations queueConfigurations
+    ) {
         this.mapper = mapper;
+        this.sendNotificationService = sendNotificationService;
+        this.queueConfigurations = queueConfigurations;
     }
 
     @Override
@@ -35,6 +46,12 @@ public class DefaultActiveMQErrorHandler implements ErrorHandler {
         if (t.getCause() instanceof PaymentMessageProcessingException) {
             PaymentMessage paymentMessage = ((PaymentMessageProcessingException) t.getCause()).getPaymentMessage();
             log.error(t.getCause().getMessage() + " {}", paymentMessage);
+        }
+
+        if (t.getCause() instanceof DLQPaymentMessageProcessingException) {
+            PaymentMessage paymentMessage = ((DLQPaymentMessageProcessingException) t.getCause()).getPaymentMessage();
+            log.error(t.getCause().getMessage() + " {}", paymentMessage);
+            sendNotificationService.sendToQueue(paymentMessage, queueConfigurations.getPaymentFailedToProcessQueue());
         }
 
     }
