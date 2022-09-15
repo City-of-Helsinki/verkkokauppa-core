@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.DLQPaymentMessageProcessingException;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.PaymentMessageProcessingException;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
@@ -47,6 +48,9 @@ public class DeadLetterQueueListener {
     private SendNotificationService sendNotificationService;
 
     @Autowired
+    private SaveHistoryService saveHistoryService;
+
+    @Autowired
     private RestServiceClient restServiceClient;
 
     @Autowired
@@ -75,6 +79,7 @@ public class DeadLetterQueueListener {
                             .cause(jsonProcessingException.toString())
                             .build();
             sendNotificationService.sendToQueue(errorMsg, queueConfigurations.getPaymentFailedToProcessQueue());
+            saveHistoryService.saveErrorMessageHistory(errorMsg);
         }
     }
 
@@ -105,6 +110,7 @@ public class DeadLetterQueueListener {
                     .cause(jsonProcessingException.toString())
                     .build();
             sendNotificationService.sendToQueue(errorMsg, queueConfigurations.getPaymentFailedToProcessQueue());
+            saveHistoryService.saveErrorMessageHistory(errorMsg);
         }
     }
 

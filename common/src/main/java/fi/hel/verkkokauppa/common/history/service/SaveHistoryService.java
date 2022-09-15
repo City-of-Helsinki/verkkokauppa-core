@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.common.history.service;
 
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
+import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.RefundMessage;
@@ -62,6 +63,16 @@ public class SaveHistoryService {
     public JSONObject saveRefundMessageHistory(RefundMessage message){
         try {
             String request = historyUtil.toString(historyFactory.fromRefundMessage(message));
+            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.info("saveRefundMessageHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public JSONObject saveErrorMessageHistory(ErrorMessage message){
+        try {
+            String request = historyUtil.toString(historyFactory.fromErrorMessage(message));
             return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
         } catch (Exception e) {
             log.info("saveRefundMessageHistory processing error: " + e.getMessage());
