@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.common.history.factory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.RefundMessage;
@@ -102,6 +103,26 @@ public class HistoryFactory {
                     .entityId(message.getRefundId())
                     .entityType(EntityTypeUtil.EVENT)
                     .namespace(message.getNamespace())
+                    .eventType(message.getEventType())
+                    .payload(e.getMessage())
+                    .build();
+        }
+    }
+
+    public HistoryDto fromErrorMessage(ErrorMessage message){
+        try {
+            return HistoryDto.builder()
+                    .entityId("-")
+                    .namespace("-")
+                    .entityType(EntityTypeUtil.ERROR_EVENT)
+                    .eventType(message.getEventType())
+                    .payload(objectMapper.writeValueAsString(message))
+                    .build();
+        } catch (JsonProcessingException e) {
+            return HistoryDto.builder()
+                    .entityId("-")
+                    .namespace("-")
+                    .entityType(EntityTypeUtil.ERROR_EVENT)
                     .eventType(message.getEventType())
                     .payload(e.getMessage())
                     .build();
