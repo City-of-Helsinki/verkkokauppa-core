@@ -57,9 +57,11 @@ public class ProductMappingController {
      * @return ProductMapping with common productId as a UUID string and original backend identifiers
      */
     @GetMapping("/productmapping/create")
-	public ResponseEntity<ProductMapping> createProductMapping(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "namespaceEntityId") String namespaceEntityId) {
+	public ResponseEntity<ProductMapping> createProductMapping(@RequestParam(value = "namespace") String namespace,
+															   @RequestParam(value = "namespaceEntityId") String namespaceEntityId,
+															   @RequestParam(value = "merchantId") String merchantId) {
 		try {
-			return ResponseEntity.ok().body(service.createByParams(namespace, namespaceEntityId));
+			return ResponseEntity.ok().body(service.createByParams(namespace, namespaceEntityId, merchantId));
 		} catch (Exception e) {
 			log.error("creating product mapping failed", e);
 			Error error = new Error("failed-to-create-product-mapping", "failed to create product mapping");

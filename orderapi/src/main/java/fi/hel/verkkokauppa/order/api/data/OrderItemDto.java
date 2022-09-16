@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderItemDto implements OrderItemSubscriptionFields {
 
+    private String merchantId;
     private String orderItemId;
     private String orderId;
     private String productId;

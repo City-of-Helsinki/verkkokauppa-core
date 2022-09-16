@@ -212,7 +212,7 @@ public class SubscriptionController {
 			log.error("Error sending paymentFailedEmail for subscription {}", subscription.getSubscriptionId(), e);
 		}
 
-		if (subscription.getEndDate().isAfter(LocalDateTime.now())){
+		if (subscription.getEndDate().isAfter(LocalDateTime.now())) {
 			updated = Boolean.TRUE;
 			cancelSubscriptionCommand.cancel(
 					subscription.getSubscriptionId(),

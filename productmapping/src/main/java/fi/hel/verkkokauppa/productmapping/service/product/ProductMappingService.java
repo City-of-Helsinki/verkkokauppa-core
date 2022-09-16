@@ -37,27 +37,34 @@ public class ProductMappingService {
         return null;
     }
 
-    public ProductMapping createByParams(String namespace, String namespaceEntityId) {
-        String productId = UUIDGenerator.generateType3UUIDString(namespace, namespaceEntityId);
-        ProductMapping productMapping = new ProductMapping(productId, namespace, namespaceEntityId);
+    public ProductMapping createByParams(String namespace, String namespaceEntityId, String merchantId) {
+        String productId = generateProductIdFromMerchantId(namespace, namespaceEntityId, merchantId);
+        ProductMapping productMapping = new ProductMapping(productId, namespace, namespaceEntityId, merchantId);
         productMappingRepository.save(productMapping);
-        log.debug("created product mapping for namespace: " + namespace + " with productId: " + productId);
+        log.debug("created product mapping for namespace: " + namespace + " and merchant: " + merchantId + " with productId: " + productId);
 
         return productMapping;
     }
 
+    public String generateProductIdFromMerchantId(String namespace, String namespaceEntityId, String merchantId) {
+        String productId = UUIDGenerator.generateType3UUIDString(namespace, namespaceEntityId);
+        productId = UUIDGenerator.generateType3UUIDString(productId , merchantId);
+        return productId;
+    }
+
+
     // generate some mock data
     public List<ProductMapping> initializeTestData() {
         List<ProductMapping> entities = Arrays.asList(
-                createByParams("asukaspysakointi", "1234"),
-                createByParams("asukaspysakointi", "12345"),
-                createByParams("asukaspysakointi", "123456"),
-                createByParams("tilavaraus", "1234"),
-                createByParams("tilavaraus", "12345"),
-                createByParams("tilavaraus", "123456"),
-                createByParams("venepaikat", "1234"),
-                createByParams("venepaikat", "12345"),
-                createByParams("venepaikat", "5678")
+                createByParams("asukaspysakointi", "1234", "9876"),
+                createByParams("asukaspysakointi", "12345", "9876"),
+                createByParams("asukaspysakointi", "123456","9876"),
+                createByParams("tilavaraus", "1234", "98765"),
+                createByParams("tilavaraus", "12345", "98765"),
+                createByParams("tilavaraus", "123456", "98765"),
+                createByParams("venepaikat", "1234", "987654"),
+                createByParams("venepaikat", "12345", "987654"),
+                createByParams("venepaikat", "5678", "987654")
         );
 
         productMappingRepository.saveAll(entities);

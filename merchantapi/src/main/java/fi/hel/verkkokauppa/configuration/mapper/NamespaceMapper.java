@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.configuration.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.mapper.AbstractModelMapper;
 import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceDto;
 import fi.hel.verkkokauppa.configuration.model.namespace.NamespaceModel;
 import org.springframework.beans.factory.annotation.Autowired;

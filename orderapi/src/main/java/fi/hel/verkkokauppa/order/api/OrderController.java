@@ -287,6 +287,7 @@ public class OrderController {
             dto.getItems().stream().forEach(item -> {
                 String orderItemId = orderItemService.addItem(
                         orderId,
+                        item.getMerchantId(),
                         item.getProductId(),
                         item.getProductName(),
                         item.getProductLabel(),

@@ -39,6 +39,7 @@ class OrderItemServiceUnitTest {
         doReturn("Success", "Success").when(orderItemRepository).save(new OrderItem());
         String orderItem1 = orderItemService.addItem(
                 orderId,
+                "merchantId",
                 "productId",
                 "productName",
                 "productLabel",
@@ -63,6 +64,7 @@ class OrderItemServiceUnitTest {
         );
         String orderItem2 = orderItemService.addItem(
                 orderId,
+                "merchantId",
                 "productId",
                 "productName",
                 "productLabel",
