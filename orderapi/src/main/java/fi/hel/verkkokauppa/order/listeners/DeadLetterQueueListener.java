@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,7 @@ import javax.jms.JMSException;
 import javax.jms.TextMessage;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -137,7 +139,8 @@ public class DeadLetterQueueListener {
         msgJson.put("header", "DLQ queue alert - " + EventType.PAYMENT_PAID);
         log.info("Initial mail message without body: {}", msgJson.toString());
         try {
-            String html = Files.readString(Paths.get(ClassLoader.getSystemResource(EMAIL_TEMPLATE_PATH).toURI()));
+            ClassPathResource emailTemplateResource = new ClassPathResource(EMAIL_TEMPLATE_PATH);
+            String html = Files.readString(Paths.get(emailTemplateResource.getURL().toURI()));
             html = html.replace("#EVENT_TYPE#", EventType.PAYMENT_PAID);
             html = html.replace("#GENERAL_INFORMATION#", "<p>" + paymentMessage.getPaymentId() + "</p>" );
             html = html.replace("#NAMESPACE#", paymentMessage.getNamespace());
