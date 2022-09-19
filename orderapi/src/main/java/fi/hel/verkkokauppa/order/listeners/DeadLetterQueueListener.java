@@ -13,6 +13,7 @@ import fi.hel.verkkokauppa.common.queue.error.exceptions.PaymentMessageProcessin
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import org.json.JSONObject;
@@ -63,12 +64,16 @@ public class DeadLetterQueueListener {
     @JmsListener(destination = "${queue.dlq:DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
     public void consumeMessage(TextMessage textMessage) {
         try {
-            log.info("Consuming PaymentMessage from DLQ: {}", textMessage.getText());
-            PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
+            if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
+                log.info("Consuming PaymentMessage from DLQ: {}", textMessage.getText());
+                PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
-            logMessageData(message);
+                logMessageData(message);
 
-            paymentFailedToProcessAction(message);
+                paymentFailedToProcessAction(message);
+            } else {
+                log.info("TextMessage.getText() is NULL");
+            }
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
@@ -94,12 +99,16 @@ public class DeadLetterQueueListener {
     @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
     public void consumeMessageLocal(TextMessage textMessage) {
         try {
-            log.info("Consuming PaymentMessage from local DLQ: {}", textMessage.getText());
-            PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
+            if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
+                log.info("Consuming PaymentMessage from local DLQ: {}", textMessage.getText());
+                PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
-            logMessageData(message);
+                logMessageData(message);
 
-            paymentFailedToProcessAction(message);
+                paymentFailedToProcessAction(message);
+            } else {
+                log.info("TextMessage.getText() is NULL");
+            }
         } catch(JsonProcessingException | JMSException jsonProcessingException) {
             log.debug(jsonProcessingException.getMessage());
             log.info("Failed to convert queue message to PaymentMessage type.");
@@ -129,7 +138,7 @@ public class DeadLetterQueueListener {
         log.info("Initial mail message without body: {}", msgJson.toString());
         try {
             String html = Files.readString(Paths.get(ClassLoader.getSystemResource(EMAIL_TEMPLATE_PATH).toURI()));
-            html = html.replace("#EVENT_TYPE#", paymentMessage.getEventType());
+            html = html.replace("#EVENT_TYPE#", EventType.PAYMENT_PAID);
             html = html.replace("#GENERAL_INFORMATION#", "<p>" + paymentMessage.getPaymentId() + "</p>" );
             html = html.replace("#NAMESPACE#", paymentMessage.getNamespace());
             html = html.replace("#EVENT_PAYLOAD#", mapper.writeValueAsString(paymentMessage));
