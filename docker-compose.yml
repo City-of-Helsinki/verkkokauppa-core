@@ -170,6 +170,7 @@ services:
       - "${HOME}/.m2:/root/.m2"
       - "./infra/orderapi/src/main/resources/application.properties:/app/orderapi/src/main/resources/application.properties"
       - "./infra/orderapi/src/main/resources/application-local.properties:/app/orderapi/src/main/resources/application-local.properties"
+      - "./infra/orderapi/src/main/resources/email/template_email_dlq_alert.html:/app/orderapi/src/main/resources/email/template_email_dlq_alert.html"
     working_dir: /app
     command: "sh ./orderapi/run.sh"
     ports:
