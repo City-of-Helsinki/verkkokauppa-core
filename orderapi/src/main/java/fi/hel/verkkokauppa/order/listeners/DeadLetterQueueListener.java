@@ -9,7 +9,6 @@ import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.error.exceptions.DLQPaymentMessageProcessingException;
-import fi.hel.verkkokauppa.common.queue.error.exceptions.PaymentMessageProcessingException;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -25,10 +24,13 @@ import org.springframework.stereotype.Component;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @Slf4j
@@ -137,14 +139,14 @@ public class DeadLetterQueueListener {
         msgJson.put("header", "DLQ queue alert - " + EventType.PAYMENT_PAID);
         log.info("Initial mail message without body: {}", msgJson.toString());
         try {
-            String html = Files.readString(Paths.get(ClassLoader.getSystemResource(EMAIL_TEMPLATE_PATH).toURI()));
+            String html = readFileAsString(EMAIL_TEMPLATE_PATH);
             html = html.replace("#EVENT_TYPE#", EventType.PAYMENT_PAID);
             html = html.replace("#GENERAL_INFORMATION#", "<p>" + paymentMessage.getPaymentId() + "</p>" );
             html = html.replace("#NAMESPACE#", paymentMessage.getNamespace());
             html = html.replace("#EVENT_PAYLOAD#", mapper.writeValueAsString(paymentMessage));
 
             msgJson.put("body", html);
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             log.info("Failed to serialize email template: {}", mapper.writeValueAsString(e));
             throw new DLQPaymentMessageProcessingException("Failed to serialize email template - not sending email", paymentMessage);
         }
@@ -164,6 +166,21 @@ public class DeadLetterQueueListener {
      */
     private void logMessageData(PaymentMessage message) throws JsonProcessingException {
         log.info("DLQ-Message: " + mapper.writeValueAsString(message));
+    }
+
+    private String readFileAsString(String filePath) throws IOException {
+        ClassLoader classLoader = getClass().getClassLoader();
+        InputStream inputStream = classLoader.getResourceAsStream(filePath);
+
+        StringBuilder sb = new StringBuilder();
+        try (Reader reader = new BufferedReader(new InputStreamReader
+                (inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
+            int c = 0;
+            while ((c = reader.read()) != -1) {
+                sb.append((char) c);
+            }
+        }
+        return sb.toString();
     }
 
 }
