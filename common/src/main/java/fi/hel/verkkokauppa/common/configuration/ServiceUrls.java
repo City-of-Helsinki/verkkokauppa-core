@@ -13,6 +13,9 @@ public class ServiceUrls {
     @Value("${message.service.url:http://message-api:8080}")
     private String messageServiceUrl;
 
+    @Value("${merchant.service.url:http://merchant-api:8080}")
+    private String merchantServiceUrl;
+
     @Value("${productmapping.service.url:http://product-mapping-api:8080/productmapping/}")
     private String productMappingServiceUrl;
 }
