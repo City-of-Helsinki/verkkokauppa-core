@@ -4,3 +4,4 @@
 .DS_Store
 infra/settings.xml
 infra/kafka/clusters.json
+mockedSap/*

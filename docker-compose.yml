@@ -394,6 +394,15 @@ services:
       ACTIVEMQ_MIN_MEMORY: 512
       ACTIVEMQ_MAX_MEMORY: 2048
 
+  sftp:
+    image: atmoz/sftp
+    volumes:
+      - "./mockedSap/upload:/home/username/upload"
+    ports:
+      - "2222:22"
+    networks: [common]
+    command: username:password:1000
+
 volumes:
   esdata1:
     driver: local

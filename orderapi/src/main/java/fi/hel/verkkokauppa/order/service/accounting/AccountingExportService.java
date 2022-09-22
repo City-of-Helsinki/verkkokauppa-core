@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,9 @@ public class AccountingExportService {
     public static final int RUNNING_NUMBER_LENGTH = 4;
 
     private Logger log = LoggerFactory.getLogger(AccountingExportService.class);
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
 
     @Value("${sap.sftp.server.url}")
     private String sftpServerUrl;
@@ -123,6 +127,12 @@ public class AccountingExportService {
         jschSession.setPassword(sftpServerPassword);
 
         jsch.setKnownHosts(sshKnownHostsPath);
+
+        if (activeProfile != null && activeProfile.equals("local")) {
+            java.util.Properties config = new java.util.Properties();
+            config.put("StrictHostKeyChecking", "no");
+            jschSession.setConfig(config);
+        }
 
         jschSession.connect();
         log.info("Connected to the server succesfully");
