@@ -59,8 +59,7 @@ public class AccountingExportService {
         AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
 
         String senderId = accountingSlipDto.getSenderId();
-        LocalDate timestamp = exportData.getTimestamp();
-        String filename = constructAccountingExportFileName(senderId, timestamp);
+        String filename = constructAccountingExportFileName(senderId, exportData.getTimestamp());
 
         export(exportData.getXml(), filename);
 
@@ -68,8 +67,9 @@ public class AccountingExportService {
     }
 
     public String constructAccountingExportFileName(String senderId, LocalDate exportDataTimestamp) {
-        int year = exportDataTimestamp.getYear();
-        int count = exportDataRepository.countAllByExportedStartsWith(Integer.toString(year));
+        LocalDate start = LocalDate.of(exportDataTimestamp.getYear(), 1, 1);
+        LocalDate end = LocalDate.of(exportDataTimestamp.getYear(), 12, 31);
+        int count = exportDataRepository.countAllByExportedGreaterThanEqualAndExportedLessThanEqual(start, end);
 
         int runningNumber = count + 1;
         String runningNumberFormatted = String.format("%1$" + RUNNING_NUMBER_LENGTH + "s", runningNumber).replace(' ', '0');
@@ -97,6 +97,7 @@ public class AccountingExportService {
 
             log.info("Exported file [" + filename + "] succesfully");
         } catch (SftpException | IOException e) {
+            log.debug(e.getLocalizedMessage());
             log.debug("Failed to export accounting data");
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
