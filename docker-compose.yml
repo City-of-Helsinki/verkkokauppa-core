@@ -397,11 +397,12 @@ services:
   sftp:
     image: atmoz/sftp
     volumes:
-      - "./mockedSap/upload:/home/username/upload"
+      - "./mockedSap/share:/home/sftp/share"
+      - "./infra/mockedSap/init.sh:/etc/sftp.d/init.sh:ro"
     ports:
       - "2222:22"
     networks: [common]
-    command: username:password:1000
+    command: sftp:password:::share
 
 volumes:
   esdata1:

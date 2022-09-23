@@ -88,6 +88,10 @@ public class AccountingExportService {
         byte[] strToBytes = fileContent.getBytes();
 
         try (InputStream stream = new ByteArrayInputStream(strToBytes)) {
+            if (isLocal()) {
+                // Local development moves files under share folder, normally it moves to home dir.
+                filename = "share/" + filename;
+            }
             channelSftp.put(stream, filename);
             channelSftp.disconnect();
 
@@ -128,16 +132,21 @@ public class AccountingExportService {
 
         jsch.setKnownHosts(sshKnownHostsPath);
 
-        if (activeProfile != null && activeProfile.equals("local")) {
+        if (isLocal()) {
             java.util.Properties config = new java.util.Properties();
             config.put("StrictHostKeyChecking", "no");
             jschSession.setConfig(config);
+            jschSession.setPort(2222);
         }
 
         jschSession.connect();
         log.info("Connected to the server succesfully");
 
         return (ChannelSftp) jschSession.openChannel("sftp");
+    }
+
+    public boolean isLocal() {
+        return activeProfile != null && activeProfile.equals("local");
     }
 
     private void markAsExported(AccountingExportDataDto exportData) {

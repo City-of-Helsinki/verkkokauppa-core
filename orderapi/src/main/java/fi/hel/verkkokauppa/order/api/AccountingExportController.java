@@ -63,7 +63,7 @@ public class AccountingExportController {
     @GetMapping(value = "/accounting/export", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountingExportDataDto>> ExportAccountingData() {
         List<AccountingExportDataDto> result = new ArrayList<>();
-
+        accountingExportService.export("test","share/testi.txt");
         try {
             List<AccountingExportData> accountingExportDataList = accountingSearchService.getNotExportedAccountingExportData();
 
