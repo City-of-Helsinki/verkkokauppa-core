@@ -67,9 +67,9 @@ public class AccountingExportService {
     }
 
     public String constructAccountingExportFileName(String senderId, LocalDate exportDataTimestamp) {
-        LocalDate start = LocalDate.of(exportDataTimestamp.getYear(), 1, 1);
-        LocalDate end = LocalDate.of(exportDataTimestamp.getYear(), 12, 31);
-        int count = exportDataRepository.countAllByExportedGreaterThanEqualAndExportedLessThanEqual(start, end);
+        LocalDate startOfYear = LocalDate.of(exportDataTimestamp.getYear(), 1, 1);
+        LocalDate endOfYear = LocalDate.of(exportDataTimestamp.getYear(), 12, 31);
+        int count = exportDataRepository.countAllByExportedGreaterThanEqualAndExportedLessThanEqual(startOfYear, endOfYear);
 
         int runningNumber = count + 1;
         String runningNumberFormatted = String.format("%1$" + RUNNING_NUMBER_LENGTH + "s", runningNumber).replace(' ', '0');
