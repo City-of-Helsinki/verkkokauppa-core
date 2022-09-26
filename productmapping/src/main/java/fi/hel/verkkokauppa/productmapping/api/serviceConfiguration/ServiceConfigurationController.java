@@ -1,8 +1,6 @@
 package fi.hel.verkkokauppa.productmapping.api.serviceConfiguration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +11,9 @@ import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfigurationBatchDto;
-import fi.hel.verkkokauppa.productmapping.response.merchant.dto.NamespaceConfigurationDto;
+import fi.hel.verkkokauppa.productmapping.response.namespace.ConfigurationModel;
+import fi.hel.verkkokauppa.productmapping.response.namespace.dto.NamespaceConfigurationDto;
+import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +27,7 @@ import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConf
 import fi.hel.verkkokauppa.productmapping.service.serviceConfiguration.ServiceConfigurationService;
 
 @RestController
+@Slf4j
 public class ServiceConfigurationController {
 
     @Autowired
@@ -84,25 +85,53 @@ public class ServiceConfigurationController {
     public List<ServiceConfiguration> getPublicServiceConfigurationAll(@RequestParam(value = "namespace") String namespace) {
         List<ServiceConfiguration> serviceConfigurations = service.findBy(namespace);
         JSONObject namespaceModelJson = commonServiceConfigurationClient.getNamespaceModel(namespace);
-        ArrayList<NamespaceConfigurationDto> configurationDtos;
-        ArrayList<ServiceConfiguration> configurationsFromNamespaceDto = null;
-        try {
-            configurationDtos = new ArrayList<>(
-                    objectMapper.readValue(namespaceModelJson.getJSONArray("configurations").toString(),
-                            new TypeReference<ArrayList<NamespaceConfigurationDto>>() {
-                            }));
-            // TODO create override!
-            serviceConfigurations.forEach(namespaceConfigurationDto -> {
 
-            });
-        } catch (JsonProcessingException e) {
-            //throw new RuntimeException(e);
-        }
+        overrideConfigurationsFromNamespaceModelConfigurations(namespace, serviceConfigurations, namespaceModelJson);
 
-
-
+        // contains values from service configurations and namespace, values on namespace model configuration overrides values in service configurations
         return serviceConfigurations;
     }
+
+    private void overrideConfigurationsFromNamespaceModelConfigurations(String namespace, List<ServiceConfiguration> serviceConfigurations, JSONObject namespaceModelJson) {
+        if (namespaceModelJson.getJSONArray("configurations") != null) {
+            namespaceModelJson.getJSONArray("configurations").forEach(namespaceConfiguration -> {
+                try {
+                    ConfigurationModel namespaceConfiguration2 = objectMapper.readValue(namespaceConfiguration.toString(), ConfigurationModel.class);
+                    // Find first serviceconfiguration using namespace configuration key
+                    Optional<ServiceConfiguration> first = serviceConfigurations.stream().filter(
+                                    serviceConfiguration -> Objects.equals(
+                                            serviceConfiguration.getConfigurationKey(),
+                                            namespaceConfiguration2.getKey()
+                                    ))
+                            .findFirst();
+
+                    // If found, update value from namespace model configuration value
+                    first.ifPresent(serviceConfiguration -> serviceConfiguration.setConfigurationValue(namespaceConfiguration2.getValue()));
+
+                    // If not found from service configurations create new entry using namespaceConfiguration key and value
+                    if (!first.isPresent()) {
+                        serviceConfigurations.add(
+                                createFromNamespaceConfiguration(namespace, namespaceConfiguration2)
+                        );
+                    }
+                } catch (JsonProcessingException e) {
+                    log.info("Namespace model configuration cant be serialized. Error : {}", e.toString());
+                }
+            });
+        }
+    }
+
+    private ServiceConfiguration createFromNamespaceConfiguration(String namespace, ConfigurationModel namespaceConfiguration) {
+        ServiceConfiguration e = new ServiceConfiguration();
+        String key = namespaceConfiguration.getKey();
+        e.setConfigurationId(UUIDGenerator.generateType3UUIDString(namespace, key));
+        e.setConfigurationKey(key);
+        e.setConfigurationValue(namespaceConfiguration.getValue());
+        e.setRestricted(false);
+        e.setNamespace(namespace);
+        return e;
+    }
+
 
     /**
      * If key is namespace key, then first find value from merchant-api/namespace/getValue (index namespace)
@@ -125,7 +154,12 @@ public class ServiceConfigurationController {
      */
     @GetMapping("/serviceconfiguration/restricted/getAll")
     public List<ServiceConfiguration> getRestrictedServiceConfigurationAll(@RequestParam(value = "namespace") String namespace) {
-        return service.findRestricted(namespace);
+        List<ServiceConfiguration> serviceRestricted = service.findRestricted(namespace);
+        JSONObject namespaceModelJson = commonServiceConfigurationClient.getNamespaceModel(namespace);
+        overrideConfigurationsFromNamespaceModelConfigurations(namespace, serviceRestricted, namespaceModelJson);
+
+        // contains values from service configurations and namespace, values on namespace model configuration overrides values in service configurations
+        return serviceRestricted;
     }
 
     /**

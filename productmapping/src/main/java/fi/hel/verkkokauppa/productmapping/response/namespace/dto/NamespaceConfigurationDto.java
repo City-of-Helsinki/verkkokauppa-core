@@ -1,8 +1,8 @@
-package fi.hel.verkkokauppa.productmapping.response.merchant.dto;
+package fi.hel.verkkokauppa.productmapping.response.namespace.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-import fi.hel.verkkokauppa.productmapping.response.merchant.ConfigurationModel;
+import fi.hel.verkkokauppa.productmapping.response.namespace.ConfigurationModel;
 import lombok.Data;
 
 @Data

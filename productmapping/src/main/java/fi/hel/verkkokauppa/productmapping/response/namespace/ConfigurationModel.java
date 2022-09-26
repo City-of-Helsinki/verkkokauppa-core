@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.productmapping.response.merchant;
+package fi.hel.verkkokauppa.productmapping.response.namespace;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

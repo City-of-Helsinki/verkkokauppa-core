@@ -40,6 +40,10 @@ public class CommonServiceConfigurationClient {
     }
 
     public String getPublicServiceConfigurationValue(String namespace, String key) {
+        String namespaceConfigurationValue = getNamespaceConfigurationValue(namespace, key);
+        if (namespaceConfigurationValue != null) {
+            return namespaceConfigurationValue;
+        }
         String serviceMappingUrl = serviceConfigurationUrl + "public/get?namespace=" + namespace + "&key=" + key;
         JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), serviceMappingUrl);
         log.debug("namespaceServiceConfiguration: " + namespaceServiceConfiguration);
