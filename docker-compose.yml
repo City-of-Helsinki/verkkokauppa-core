@@ -394,6 +394,16 @@ services:
       ACTIVEMQ_MIN_MEMORY: 512
       ACTIVEMQ_MAX_MEMORY: 2048
 
+  sftp:
+    image: atmoz/sftp
+    volumes:
+      - "./mockedSap/share:/home/sftp/share"
+      - "./infra/mockedSap/init.sh:/etc/sftp.d/init.sh:ro"
+    ports:
+      - "2222:22"
+    networks: [common]
+    command: sftp:password:::share
+
 volumes:
   esdata1:
     driver: local

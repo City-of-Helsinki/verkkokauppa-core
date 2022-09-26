@@ -136,7 +136,7 @@ public class AccountingExportDataService {
         );
     }
 
-    public List<AccountingExportData> getAccountingExportDataByTimestamp(String timestamp) {
+    public List<AccountingExportData> getAccountingExportDataByTimestamp(LocalDate timestamp) {
         List<AccountingExportData> exportData = exportDataRepository.findAllByTimestamp(timestamp);
 
         if (exportData != null && !exportData.isEmpty()) {
@@ -146,7 +146,7 @@ public class AccountingExportDataService {
         throw new CommonApiException(
                 HttpStatus.NOT_FOUND,
                 new Error("accounting-export-data-not-found-from-backend",
-                        "accounting export data with timestamp [" + timestamp + "]  not found from backend")
+                        "accounting export data with timestamp [" + timestamp.toString() + "]  not found from backend")
         );
     }
 

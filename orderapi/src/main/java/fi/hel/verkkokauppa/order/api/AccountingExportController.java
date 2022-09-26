@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.service.accounting.AccountingSlipService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,6 @@ public class AccountingExportController {
     @GetMapping(value = "/accounting/export", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountingExportDataDto>> ExportAccountingData() {
         List<AccountingExportDataDto> result = new ArrayList<>();
-
         try {
             List<AccountingExportData> accountingExportDataList = accountingSearchService.getNotExportedAccountingExportData();
 
@@ -100,7 +100,8 @@ public class AccountingExportController {
     }
 
     @GetMapping(value = "/accounting/export/getByTimestamp", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountingExportDataDto>> getAccountExportDataWithTimestamp(@RequestParam(value = "timestamp") String timestamp) {
+    public ResponseEntity<List<AccountingExportDataDto>> getAccountExportDataWithTimestamp(@RequestParam(value = "timestamp")
+                                                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate timestamp) {
         try {
             List<AccountingExportData> exportDatas = accountingExportDataService.getAccountingExportDataByTimestamp(timestamp);
             List<AccountingExportDataDto> result = new ArrayList<>();
