@@ -305,6 +305,7 @@ public class MerchantControllerUnitTest {
             add("merchantEmail");
             add("merchantName");
             add("merchantPhone");
+            add("merchantShopId");
             add("merchantStreet");
             add("merchantTermsOfServiceUrl");
             add("merchantUrl");
