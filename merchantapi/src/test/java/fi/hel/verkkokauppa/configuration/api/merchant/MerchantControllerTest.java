@@ -79,7 +79,7 @@ public class MerchantControllerTest {
         assertEquals(CommonApiException.class, exception.getClass());
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         assertEquals("merchant-not-found", exception.getErrors().getErrors().get(0).getCode());
-        assertEquals("merchant with id [merchantId] not found", exception.getErrors().getErrors().get(0).getMessage());
+        assertEquals("merchant with value: [merchantId] not found", exception.getErrors().getErrors().get(0).getMessage());
     }
 
 

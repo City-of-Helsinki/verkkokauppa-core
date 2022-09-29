@@ -39,6 +39,7 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_EMAIL = "merchantEmail";
     public static String MERCHANT_PHONE = "merchantPhone";
     public static String MERCHANT_URL = "merchantUrl";
+    public static String MERCHANT_SHOP_ID = "merchantShopId";
 
 
     // NamespaceModel keys START [KYV-605]
@@ -135,6 +136,7 @@ public class ServiceConfigurationKeys {
                 MERCHANT_EMAIL,
                 MERCHANT_PHONE,
                 MERCHANT_URL,
+                MERCHANT_SHOP_ID,
                 MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
