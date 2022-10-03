@@ -103,6 +103,21 @@ public class ServiceConfigurationKeys {
         );
     }
 
+    public static List<String> getPlatformKeys() {
+        return Stream.of(
+                PAYMENT_API_VERSION,
+                PAYMENT_API_KEY,
+                PAYMENT_ENCRYPTION_KEY,
+                PAYMENT_CURRENCY,
+                PAYMENT_TYPE,
+                PAYMENT_REGISTER_CARD_TOKEN,
+                PAYMENT_RETURN_URL,
+                PAYMENT_NOTIFICATION_URL,
+                NAMESPACE_API_ACCESS_TOKEN,
+                PAYMENT_SUBMERCHANT_ID
+        ).sorted().collect(Collectors.toList());
+    }
+
     public static List<String> getNamespaceKeys() {
         return Stream.of(
                 SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
