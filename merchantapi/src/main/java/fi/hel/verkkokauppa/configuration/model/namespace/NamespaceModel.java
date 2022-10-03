@@ -17,6 +17,7 @@ import java.util.ArrayList;
 @Document(indexName = "namespace")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NamespaceModel {
+
     @Id
     String namespaceId;
 

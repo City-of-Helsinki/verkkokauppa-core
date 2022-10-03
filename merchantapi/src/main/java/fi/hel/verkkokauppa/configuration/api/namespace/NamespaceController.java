@@ -3,9 +3,12 @@ package fi.hel.verkkokauppa.configuration.api.namespace;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
+import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceAndMerchantWrapperDto;
 import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceDto;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
+import fi.hel.verkkokauppa.configuration.service.MerchantService;
 import fi.hel.verkkokauppa.configuration.service.NamespaceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Validated
@@ -24,6 +28,9 @@ import java.util.List;
 public class NamespaceController {
     @Autowired
     private NamespaceService namespaceService;
+
+    @Autowired
+    private MerchantService merchantService;
 
     /**
      * > Creates namespace with configurations
@@ -89,6 +96,26 @@ public class NamespaceController {
         return ResponseEntity.ok(
                 dto
         );
+    }
+
+    /**
+     * Only used for local dev environment to populate the database with
+     * namespace and merchant configurations.
+     */
+    @GetMapping("/namespace/init/merchant/initialize-test-data")
+    public ResponseEntity<List<NamespaceAndMerchantWrapperDto>> initializeTestData() {
+        List<NamespaceDto> namespaceDtos = namespaceService.initializeTestData();
+        List<MerchantDto> merchantDtos = merchantService.initializeTestData();
+
+        // Construct wrapper DTO that maps merchants to corresponding namespace
+        List<NamespaceAndMerchantWrapperDto> wrapperDto = namespaceDtos.stream()
+                .map(namespace -> NamespaceAndMerchantWrapperDto.builder()
+                        .namespace(namespace)
+                        .merchants(merchantDtos.stream()
+                                .filter(merchant -> merchant.getNamespace().equals(namespace.getNamespace()))
+                                .collect(Collectors.toList())
+                        ).build()).collect(Collectors.toList());
+        return ResponseEntity.ok(wrapperDto);
     }
 
 }
