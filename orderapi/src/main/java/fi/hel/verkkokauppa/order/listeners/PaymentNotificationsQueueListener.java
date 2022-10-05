@@ -34,6 +34,7 @@ public class PaymentNotificationsQueueListener {
 
     @JmsListener(destination = "${queue.payment.notifications:payment-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
+        log.info("Consuming payment-notifications message");
         PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
         logMessageData((ActiveMQTextMessage) textMessage, message);
@@ -74,7 +75,8 @@ public class PaymentNotificationsQueueListener {
      * Logs redelivery count and orderId from PaymentMessage
      */
     private void logMessageData(ActiveMQTextMessage textMessage, PaymentMessage message) throws JsonProcessingException {
-        log.info(mapper.writeValueAsString(message));
+        log.info("ActiveMQ text message: {}",mapper.writeValueAsString(textMessage));
+        log.info("Payment message: {}", mapper.writeValueAsString(message));
         log.info("Message orderId: {} } redeliveryCounter: {}", message.getOrderId(), textMessage.getRedeliveryCounter());
     }
 }

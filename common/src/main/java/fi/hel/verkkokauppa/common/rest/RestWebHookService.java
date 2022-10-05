@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -13,8 +14,10 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 @NoArgsConstructor
+@Slf4j
 @Component
 public class RestWebHookService {
+
     @Autowired
     private RestServiceClient restServiceClient;
 
@@ -41,7 +44,7 @@ public class RestWebHookService {
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         //format payload, message to json string conversion
         String body = objectMapper.writeValueAsString(object);
-
+        log.info("Webhook request body : {} request url :{} ", body, webhookUrl);
         restServiceClient.makeVoidPostCall(webhookUrl, body);
         return ResponseEntity.ok().build();
     }
