@@ -148,13 +148,13 @@ public class RestServiceClient {
     }
 
     public void postVoidQueryJsonService(WebClient client, String url, String body) {
-        client.post()
+        String response = client.post()
                 .uri(url)
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
-
+        log.info("Response from postVoidQueryJsonService: {}", response);
     }
 
 
