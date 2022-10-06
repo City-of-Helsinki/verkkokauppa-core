@@ -12,6 +12,7 @@ import fi.hel.verkkokauppa.configuration.model.LocaleModel;
 import fi.hel.verkkokauppa.configuration.model.merchant.MerchantModel;
 import fi.hel.verkkokauppa.configuration.repository.MerchantRepository;
 import fi.hel.verkkokauppa.configuration.repository.NamespaceRepository;
+import fi.hel.verkkokauppa.configuration.service.MerchantService;
 import fi.hel.verkkokauppa.configuration.service.NamespaceService;
 import fi.hel.verkkokauppa.configuration.testing.utils.AutoMockBeanFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,9 @@ public class NamespaceControllerUnitTest {
     // as new field with @MockBean to controller test.
     @MockBean
     private NamespaceService namespaceService;
+
+    @MockBean
+    private MerchantService merchantService;
 
     @MockBean
     private NamespaceRepository namespaceRepository;

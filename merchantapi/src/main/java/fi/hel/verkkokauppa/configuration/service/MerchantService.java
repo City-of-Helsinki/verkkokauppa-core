@@ -1,27 +1,30 @@
 package fi.hel.verkkokauppa.configuration.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
-import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceDto;
 import fi.hel.verkkokauppa.configuration.mapper.MerchantMapper;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
+import fi.hel.verkkokauppa.configuration.model.LocaleModel;
 import fi.hel.verkkokauppa.configuration.model.merchant.MerchantModel;
-import fi.hel.verkkokauppa.configuration.model.namespace.NamespaceModel;
 import fi.hel.verkkokauppa.configuration.repository.MerchantRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
@@ -30,6 +33,9 @@ public class MerchantService {
     private MerchantMapper mapper;
     @Autowired
     private MerchantRepository merchantRepository;
+
+    @Autowired
+    private Environment env;
 
     /**
      * Save the merchant and return the saved merchant as a DTO.
@@ -163,5 +169,66 @@ public class MerchantService {
                 .stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    public List<MerchantDto> initializeTestData() {
+        String mockbackendurl = env.getProperty("mockbackend.url");
+
+        MerchantModel asukaspysakointiMerchant = new MerchantModel();
+        asukaspysakointiMerchant.setNamespace("asukaspysakointi");
+        asukaspysakointiMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        asukaspysakointiMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
+        MerchantModel venepaikatMerchant = new MerchantModel();
+        venepaikatMerchant.setNamespace("venepaikat");
+        venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
+        // Add configurations
+        List<ConfigurationModel> asukaspysakointiConfig = Arrays.asList(
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "asukaspysäköinti", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_STREET, "Katu 1", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ZIP, "000000", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_EMAIL, "asukas@pysäköinti.fi", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/url", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "987-654", false)
+        );
+
+        List<ConfigurationModel> venepaikatConfig = Arrays.asList(
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "venepaikat", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_STREET, "Ranta 1", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ZIP, "000000", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_EMAIL, "vene@paikat.fi", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/url", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "987-654", false)
+        );
+
+        asukaspysakointiMerchant.setConfigurations(new ArrayList(asukaspysakointiConfig));
+        venepaikatMerchant.setConfigurations(new ArrayList(venepaikatConfig));
+
+        List<MerchantModel> MerchantEntities = Arrays.asList(asukaspysakointiMerchant, venepaikatMerchant);
+
+        Iterable<MerchantModel> savedMerchantsIter = merchantRepository.saveAll(MerchantEntities);
+        List<MerchantDto> savedMerchantDtos = StreamSupport.stream(savedMerchantsIter.spliterator(), false)
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+
+        log.debug("initialized namespace configurations mock data");
+        return savedMerchantDtos;
+    }
+
+    public ConfigurationModel constructConfigByParams(String namespace, String configurationKey, String configurationValue, boolean isRestricted) {
+        LocaleModel locale = new LocaleModel();
+        locale.setFi("locale_fi");
+        locale.setEn("locale_en");
+        locale.setSv("locale_sv");
+        ConfigurationModel config = new ConfigurationModel(configurationKey, configurationValue, isRestricted, locale);
+        log.debug("created configuration for merchant namespace: " + namespace + " with configuration: " + config.toString());
+
+        return config;
     }
 }

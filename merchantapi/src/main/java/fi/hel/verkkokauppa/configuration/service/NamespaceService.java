@@ -1,30 +1,47 @@
 package fi.hel.verkkokauppa.configuration.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.configuration.api.namespace.dto.NamespaceDto;
 import fi.hel.verkkokauppa.configuration.mapper.NamespaceMapper;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
+import fi.hel.verkkokauppa.configuration.model.LocaleModel;
 import fi.hel.verkkokauppa.configuration.model.namespace.NamespaceModel;
 import fi.hel.verkkokauppa.configuration.repository.NamespaceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
 public class NamespaceService {
+
     @Autowired
     private NamespaceMapper namespaceMapper;
+
     @Autowired
     private NamespaceRepository namespaceRepository;
+
+    @Autowired
+    private Environment env;
+
+    // https://webhook.site/ To create custom unique webhook test url, makes webhook testing easier
+    @Value("${webhook.url:#{null}}")
+    private String webHookUrl;
 
     /**
      * Save the namespace and return the saved namespace as a DTO.
@@ -163,5 +180,77 @@ public class NamespaceService {
 
     public NamespaceDto findByNamespace(String namespace) {
         return namespaceMapper.toDto(getNamespaceModelByNamespace(namespace));
+    }
+
+    public List<NamespaceDto> initializeTestData() {
+        String mockbackendurl = env.getProperty("mockbackend.url");
+
+        NamespaceModel asukaspysakointiNamespace = new NamespaceModel();
+        asukaspysakointiNamespace.setNamespace("asukaspysakointi");
+        asukaspysakointiNamespace.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        asukaspysakointiNamespace.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
+        NamespaceModel venepaikatNamespace = new NamespaceModel();
+        venepaikatNamespace.setNamespace("venepaikat");
+        venepaikatNamespace.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        venepaikatNamespace.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
+        // Add configurations
+        List<ConfigurationModel> asukaspysakointiConfig = Arrays.asList(
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_API_KEY, "asukaspysakointi_mock_api_key", true),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "asukaspysakointi_mock_encryption_key", true),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/return_url", true),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/notification_url", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/price", false),
+            // Webhooks
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_subscription_webhook", false)
+        );
+
+        List<ConfigurationModel> venepaikatConfig = Arrays.asList(
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_API_KEY, "venepaikat_mock_api_key", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "venepaikat_mock_encryption_key", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/return_url", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/notification_url", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
+            // Webhooks
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_subscription_webhook", false)
+        );
+
+        asukaspysakointiNamespace.setConfigurations(new ArrayList(asukaspysakointiConfig));
+        venepaikatNamespace.setConfigurations(new ArrayList(venepaikatConfig));
+
+        List<NamespaceModel> namespaceEntities = Arrays.asList(asukaspysakointiNamespace, venepaikatNamespace);
+
+        Iterable<NamespaceModel> savedNamespacesIter = namespaceRepository.saveAll(namespaceEntities);
+        List<NamespaceDto> savedNamespaceDtos = StreamSupport.stream(savedNamespacesIter.spliterator(), false)
+                        .map(namespaceMapper::toDto)
+                        .collect(Collectors.toList());
+
+        log.debug("initialized namespace configurations mock data");
+        return savedNamespaceDtos;
+    }
+
+    public ConfigurationModel constructConfigByParams(String namespace, String configurationKey, String configurationValue, boolean isRestricted) {
+        LocaleModel locale = new LocaleModel();
+        locale.setFi("locale_fi");
+        locale.setEn("locale_en");
+        locale.setSv("locale_sv");
+        ConfigurationModel config = new ConfigurationModel(configurationKey, configurationValue, isRestricted, locale);
+        log.debug("created configuration for namespace: " + namespace + " with configuration: " + config.toString());
+
+        return config;
     }
 }
