@@ -1,12 +1,17 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -22,6 +27,7 @@ import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
+import org.json.JSONArray;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -30,8 +36,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +51,9 @@ import java.util.Optional;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@TestPropertySource(properties = {
+        "merchant.service.url=http://localhost:8188"
+})
 @RunIfProfile(profile = "local")
 class OrderServiceTest extends TestUtils {
 
@@ -78,6 +89,15 @@ class OrderServiceTest extends TestUtils {
     private SubscriptionRenewalService subscriptionRenewalService;
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Order foundOrder;
     private Subscription foundSubscription;
@@ -200,9 +220,13 @@ class OrderServiceTest extends TestUtils {
         // Is subscription created
         Assertions.assertNotNull(order1.getSubscriptionId());
 
+
         String firstSubscriptionId = order1.getSubscriptionId();
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
+
+        // Checks merchant Id is added to subscription
+        Assertions.assertNotNull(firstSubscription.getMerchantId());
 
         DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("dd.MM.yyyy HH");
 
@@ -598,5 +622,39 @@ class OrderServiceTest extends TestUtils {
         // RENEWAL PROCESS END 4
     }
 
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String namespace = "venepaikat";
+        String jsonResponse = restServiceClient.getClient().get()
+                .uri(serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info(jsonResponse);
+        JSONArray result = new JSONArray(jsonResponse);
+        log.info(result.toString());
+        String firstMerchantIdFromNamespace = result.getJSONObject(0).getString("merchantId");
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "http://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+
+        order.setCustomerEmail("severi.kupari@ambientia.fi");
+        orderRepository.save(order);
+    }
 
 }

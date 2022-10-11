@@ -112,6 +112,7 @@ public class TestUtils extends DummyData{
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
         orderItems.get(0).setStartDate(LocalDateTime.now());
         orderItems.get(0).setPriceGross("124");
+        orderItems.get(0).setMerchantId("merchantId");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
@@ -127,6 +128,28 @@ public class TestUtils extends DummyData{
         order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("124"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId("124"));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId){
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
