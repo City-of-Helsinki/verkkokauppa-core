@@ -626,16 +626,7 @@ class OrderServiceTest extends TestUtils {
     @RunIfProfile(profile = "local")
     void createOrderWithMerchantId() throws JsonProcessingException {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
-        String namespace = "venepaikat";
-        String jsonResponse = restServiceClient.getClient().get()
-                .uri(serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-        log.info(jsonResponse);
-        JSONArray result = new JSONArray(jsonResponse);
-        log.info(result.toString());
-        String firstMerchantIdFromNamespace = result.getJSONObject(0).getString("merchantId");
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
         OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
@@ -648,12 +639,9 @@ class OrderServiceTest extends TestUtils {
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
         log.info("Kassa URL: {}", "http://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
         order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
-
         order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
-
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
-
-        order.setCustomerEmail("severi.kupari@ambientia.fi");
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
         orderRepository.save(order);
     }
 
