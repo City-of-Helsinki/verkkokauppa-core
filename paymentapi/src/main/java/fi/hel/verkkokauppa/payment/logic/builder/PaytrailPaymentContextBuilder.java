@@ -43,7 +43,7 @@ public class PaytrailPaymentContextBuilder {
         defaultContext.setAggregateMerchantId(env.getRequiredProperty("payment_default_paytrail_aggregate_merchant_id"));
         defaultContext.setCp(env.getRequiredProperty("payment_default_paytrail_cp"));
 
-        // fetch namespace specific service configuration from mapping api
+        // fetch namespace and merchant specific service configuration from mapping api
         PaytrailPaymentContext enrichedContext = null;
         try {
             enrichedContext = enrichWithNamespaceConfiguration(defaultContext);
@@ -71,20 +71,6 @@ public class PaytrailPaymentContextBuilder {
         return namespaceServiceConfiguration;
     }
 
-    private MerchantDto getMerchantConfiguration(String namespace, String merchantId) {
-        MerchantDto merchantConfiguration;
-        try {
-            merchantConfiguration = commonServiceConfigurationClient.getMerchantModel(merchantId, namespace);
-        } catch (JsonProcessingException e) {
-            LOG.error("failed to fetch merchant configuration for merchant: " + merchantId, e);
-            return null;
-        }
-
-        // TODO caching
-
-        return merchantConfiguration;
-    }
-
     private PaytrailPaymentContext enrichWithNamespaceConfiguration(PaytrailPaymentContext context) {
         JSONObject namespaceServiceConfiguration = getNamespaceConfiguration(context.getNamespace());
 
@@ -104,7 +90,7 @@ public class PaytrailPaymentContextBuilder {
     }
 
     private PaytrailPaymentContext enrichWithMerchantConfiguration(PaytrailPaymentContext context, String merchantId) {
-        MerchantDto merchantConfiguration = getMerchantConfiguration(context.getNamespace(), merchantId);
+        MerchantDto merchantConfiguration = commonServiceConfigurationClient.getMerchantModel(merchantId, context.getNamespace());
 
         if (merchantConfiguration != null) {
             ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfiguration.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID)

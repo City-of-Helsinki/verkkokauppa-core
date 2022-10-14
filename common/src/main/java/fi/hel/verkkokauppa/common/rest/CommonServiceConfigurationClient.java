@@ -86,7 +86,7 @@ public class CommonServiceConfigurationClient {
         }
     }
 
-    public MerchantDto getMerchantModel(String merchantId, String namespace) throws JsonProcessingException {
+    public MerchantDto getMerchantModel(String merchantId, String namespace) {
         String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/get?merchantId=" + merchantId + "&namespace=" + namespace;
         try {
             JSONObject merchantModel = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
