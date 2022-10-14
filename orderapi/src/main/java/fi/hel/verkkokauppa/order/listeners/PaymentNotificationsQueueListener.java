@@ -75,7 +75,7 @@ public class PaymentNotificationsQueueListener {
      * Logs redelivery count and orderId from PaymentMessage
      */
     private void logMessageData(ActiveMQTextMessage textMessage, PaymentMessage message) throws JsonProcessingException {
-        log.info("ActiveMQ text message: {}",mapper.writeValueAsString(textMessage));
+        log.info("ActiveMQ text message: {}", textMessage != null ? textMessage.toString() : null);
         log.info("Payment message: {}", mapper.writeValueAsString(message));
         log.info("Message orderId: {} } redeliveryCounter: {}", message.getOrderId(), textMessage.getRedeliveryCounter());
     }
