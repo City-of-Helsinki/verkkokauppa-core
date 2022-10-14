@@ -36,6 +36,8 @@ public class OrderTransformerTests extends DummyData {
         excludedFields.add("priceTotal");
         excludedFields.add("accounted");
         excludedFields.add("customerPhone");
+        excludedFields.add("invoice");
+        excludedFields.add("incrementId");
         final OrderDto dto = generateDummyOrderDto();
         final boolean hasNullFields = TestUtils.hasNullFields(dto, excludedFields);
 
@@ -60,6 +62,8 @@ public class OrderTransformerTests extends DummyData {
         excludedFields.add("customerPhone");
         excludedFields.add("startDate");
         excludedFields.add("endDate");
+        excludedFields.add("invoice");
+        excludedFields.add("incrementId");
         final boolean hasNullFields = TestUtils.hasNullFields(entity, excludedFields);
         assertFalse(hasNullFields);
     }
