@@ -104,6 +104,8 @@ public class CreateSubscriptionsFromOrderCommand {
 		// Date data
 		subscriptionDto.setStartDate(orderItem.getStartDate());
 		subscriptionDto.setBillingStartDate(orderItem.getBillingStartDate());
+		// Relation data
+		subscriptionDto.setMerchantId(orderItem.getMerchantId());
 	}
 
 	private void copyOrderItemMetaFieldsToSubscription(OrderItemDto orderItem, String subscriptionId) {

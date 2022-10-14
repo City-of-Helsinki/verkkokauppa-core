@@ -1,7 +1,13 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
@@ -20,6 +26,8 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +42,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-public class TestUtils extends DummyData{
+@Slf4j
+public class TestUtils extends DummyData {
 
     @Autowired
     private OrderTransformerUtils orderTransformerUtils;
@@ -63,11 +72,18 @@ public class TestUtils extends DummyData{
     @Autowired
     private SubscriptionService subscriptionService;
 
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
 
     /**
      * Exclude field names by providing the field name as a string.
      * For example, if data object has a member variable "firstName" and you want to exclude it -
      * pass it inside a list as a string: Arrays.asList("firstName")
+     *
      * @param entity
      * @param exclusions
      * @return
@@ -100,7 +116,7 @@ public class TestUtils extends DummyData{
         return false;
     }
 
-    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount){
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
@@ -112,6 +128,7 @@ public class TestUtils extends DummyData{
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
         orderItems.get(0).setStartDate(LocalDateTime.now());
         orderItems.get(0).setPriceGross("124");
+        orderItems.get(0).setMerchantId("merchantId");
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
@@ -120,13 +137,35 @@ public class TestUtils extends DummyData{
         return orderController.createWithItems(orderAggregateDto);
     }
 
-    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount){
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount) {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
         order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("124"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId("124"));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId) {
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
@@ -136,11 +175,11 @@ public class TestUtils extends DummyData{
     }
 
 
-    public ResponseEntity<SubscriptionIdsDto> createSubscriptions(ResponseEntity<OrderAggregateDto> response){
+    public ResponseEntity<SubscriptionIdsDto> createSubscriptions(ResponseEntity<OrderAggregateDto> response) {
         return subscriptionController.createSubscriptionsFromOrder(response.getBody());
     }
 
-    public Subscription createAndGetMonthlySubscription(){
+    public Subscription createAndGetMonthlySubscription() {
         ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.MONTHLY, 1);
         String order1Id = orderResponse.getBody().getOrder().getOrderId();
         Order order1 = orderService.findById(order1Id);
@@ -192,7 +231,7 @@ public class TestUtils extends DummyData{
 
         String oneMonthFromTodayMinusOneDay = today
                 .plus(1, ChronoUnit.MONTHS)
-                .minus(1,ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.DAYS)
                 .format(formatter);
 
         Assertions.assertEquals(oneMonthFromTodayMinusOneDay, order1.getEndDate().format(formatter));
@@ -218,5 +257,18 @@ public class TestUtils extends DummyData{
         // Fetch subscription and return
         return subscriptionService.findById(firstSubscriptionId);
 
+    }
+
+    public String getFirstMerchantIdFromNamespace(String namespace) {
+
+        String jsonResponse = restServiceClient.getClient().get()
+                .uri(serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info(jsonResponse);
+        JSONArray result = new JSONArray(jsonResponse);
+        log.info(result.toString());
+        return result.getJSONObject(0).getString("merchantId");
     }
 }

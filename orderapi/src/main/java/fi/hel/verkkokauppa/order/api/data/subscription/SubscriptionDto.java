@@ -64,6 +64,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String originalPriceGross;
     // Relations data
     private String orderId;
+    private String merchantId;
 
     // Meta data
     private List<SubscriptionItemMeta> meta = new ArrayList<>();

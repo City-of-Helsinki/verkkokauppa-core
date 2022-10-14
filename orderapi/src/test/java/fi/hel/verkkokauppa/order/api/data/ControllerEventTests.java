@@ -81,7 +81,7 @@ public class ControllerEventTests {
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
-        Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+        Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         // Waited 1 secs
         String eventType = EventType.SUBSCRIPTION_CANCELLED;
 

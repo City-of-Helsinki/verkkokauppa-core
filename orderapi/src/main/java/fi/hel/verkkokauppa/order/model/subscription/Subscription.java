@@ -30,6 +30,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Text)
 	private String orderId;
 
+	@Field(type = FieldType.Text)
+	private String merchantId;
+
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	private LocalDateTime createdAt;
 

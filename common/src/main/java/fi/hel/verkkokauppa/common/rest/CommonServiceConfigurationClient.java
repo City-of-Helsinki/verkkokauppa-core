@@ -40,9 +40,13 @@ public class CommonServiceConfigurationClient {
     }
 
     public String getPublicServiceConfigurationValue(String namespace, String key) {
-        String namespaceConfigurationValue = getNamespaceConfigurationValue(namespace, key);
-        if (namespaceConfigurationValue != null) {
-            return namespaceConfigurationValue;
+        try {
+            String namespaceConfigurationValue = getNamespaceConfigurationValue(namespace, key);
+            if (namespaceConfigurationValue != null) {
+                return namespaceConfigurationValue;
+            }
+        } catch (Exception ignored) {
+            log.info("No value found from namespace: {} configuration for key: {}", namespace, key);
         }
         String serviceMappingUrl = serviceConfigurationUrl + "public/get?namespace=" + namespace + "&key=" + key;
         JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), serviceMappingUrl);
@@ -53,18 +57,28 @@ public class CommonServiceConfigurationClient {
 
     public String getNamespaceConfigurationValue(String namespace, String key) {
         String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/namespace/getValue?namespace=" + namespace + "&key=" + key;
-        JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
-        log.debug("namespaceConfigurationValue: " + namespaceServiceConfiguration);
-
-        return namespaceServiceConfiguration.optString("value", null);
+        try {
+            JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
+            log.debug("namespaceConfigurationValue: " + namespaceServiceConfiguration);
+            return namespaceServiceConfiguration.optString("value", null);
+        } catch (Exception exception) {
+            log.info(exception.toString());
+            log.info("No value found from namespace: {} configuration for key: {}", namespace, key);
+            return null;
+        }
     }
 
     public JSONObject getNamespaceModel(String namespace) {
         String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/namespace/get?namespace=" + namespace;
-        JSONObject namespaceModel = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
-        log.debug("namespaceConfigurationValue: " + namespaceModel);
-
-        return namespaceModel;
+        try {
+            JSONObject namespaceModel = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
+            log.debug("namespaceConfigurationValue: " + namespaceModel);
+            return namespaceModel;
+        } catch (Exception e) {
+            log.info(e.toString());
+            log.info("Cant find namespace model with given namespace: {}", namespace);
+            return null;
+        }
     }
 
     public String getAuthKey(String namespace) {

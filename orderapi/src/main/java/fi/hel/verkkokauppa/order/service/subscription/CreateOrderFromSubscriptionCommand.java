@@ -294,7 +294,7 @@ public class CreateOrderFromSubscriptionCommand {
     private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) {
         return orderItemService.addItem(
                 orderId,
-                null,
+                subscriptionDto.getMerchantId(),
                 subscriptionDto.getProductId(),
                 subscriptionDto.getProductName(),
                 subscriptionDto.getProductLabel(),
