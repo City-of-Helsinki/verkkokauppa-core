@@ -56,7 +56,7 @@ public class PaymentContextBuilder {
     private JSONObject getNamespaceConfiguration(String namespace) {
         WebClient client = serviceConfigurationClient.getClient();
         JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
-        
+
         // TODO caching
 
         return namespaceServiceConfiguration;

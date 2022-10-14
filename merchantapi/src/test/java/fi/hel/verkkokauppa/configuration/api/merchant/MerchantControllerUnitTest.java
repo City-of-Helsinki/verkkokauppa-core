@@ -4,8 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 
-import fi.hel.verkkokauppa.configuration.api.merchant.MerchantController;
+import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
+import fi.hel.verkkokauppa.configuration.mapper.ConfigurationMapper;
 import fi.hel.verkkokauppa.configuration.mapper.MerchantMapper;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
 import fi.hel.verkkokauppa.configuration.model.LocaleModel;
@@ -17,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -63,6 +66,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ActiveMQAutoConfiguration.class,
         KafkaAutoConfiguration.class
 })
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MerchantControllerUnitTest {
 
     @Autowired
@@ -81,6 +85,13 @@ public class MerchantControllerUnitTest {
 
     @MockBean
     private MerchantMapper merchantMapper;
+
+    private ConfigurationMapper mockConfigurationMapper;
+
+    @BeforeAll
+    public void initMocks() {
+        mockConfigurationMapper = new ConfigurationMapper(objectMapper);
+    }
 
     /**
      * It tests the upsert merchant endpoint.
@@ -150,7 +161,8 @@ public class MerchantControllerUnitTest {
         merchantDto.setNamespace("test-namespace");
 
         ReflectionTestUtils.setField(merchantMapper, "objectMapper", objectMapper);
-        ReflectionTestUtils.setField(merchantService, "mapper", merchantMapper);
+        ReflectionTestUtils.setField(merchantService, "merchantMapper", merchantMapper);
+        ReflectionTestUtils.setField(merchantService, "configurationMapper", mockConfigurationMapper);
         ReflectionTestUtils.setField(merchantService, "merchantRepository", merchantRepository);
         Mockito.when(merchantMapper.fromDto(merchantDto)).thenCallRealMethod();
         Mockito.when(merchantService.save(merchantDto)).thenCallRealMethod();
@@ -208,7 +220,7 @@ public class MerchantControllerUnitTest {
         merchantDto.setNamespace(namespace);
 
         ReflectionTestUtils.setField(merchantMapper, "objectMapper", objectMapper);
-        ReflectionTestUtils.setField(merchantService, "mapper", merchantMapper);
+        ReflectionTestUtils.setField(merchantService, "merchantMapper", merchantMapper);
         ReflectionTestUtils.setField(merchantService, "merchantRepository", merchantRepository);
 
         String testValue = "test-value";
@@ -239,6 +251,52 @@ public class MerchantControllerUnitTest {
 
         String contentAsString = response.getResponse().getContentAsString();
         Assertions.assertEquals(testValue, contentAsString);
+    }
+
+    @Test
+    public void getValueDtoReturnsCorrectValueAndStatus200() throws Exception {
+        MerchantDto merchantDto = new MerchantDto();
+        String merchantId = "test-merchantId";
+        merchantDto.setMerchantId(merchantId);
+        String namespace = "test-namespace";
+        merchantDto.setNamespace(namespace);
+
+        String testValue = "test-value";
+        String testKey = "test-key";
+        ConfigurationModel configurationModel = new ConfigurationModel();
+        configurationModel.setKey(testKey);
+        configurationModel.setValue("test-value");
+
+        ReflectionTestUtils.setField(merchantMapper, "objectMapper", objectMapper);
+        ReflectionTestUtils.setField(merchantService, "merchantMapper", merchantMapper);
+        ReflectionTestUtils.setField(merchantService, "configurationMapper", mockConfigurationMapper);
+        ReflectionTestUtils.setField(merchantService, "merchantRepository", merchantRepository);
+        Mockito.when(merchantMapper.fromDto(merchantDto)).thenCallRealMethod();
+        Mockito.when(merchantService.save(merchantDto)).thenCallRealMethod();
+
+        Mockito.when(merchantService.getConfigurationByMerchantIdAndNamespaceAndKey(
+                merchantId,
+                namespace,
+                testKey
+        )).thenCallRealMethod();
+
+        Mockito.when(merchantService.getConfigurationWithKeyFromModel(any(), any())).thenReturn(Optional.of(configurationModel));
+
+        Mockito.when(merchantRepository.findByMerchantIdAndNamespace(any(), any())).thenReturn(objectMapper.convertValue(merchantDto, MerchantModel.class));
+
+        MvcResult response = this.mockMvc.perform(
+                        get("/merchant/getValueDto")
+                                .param("merchantId", merchantId)
+                                .param("namespace", namespace)
+                                .param("key", testKey)
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+
+        String contentAsString = response.getResponse().getContentAsString();
+        ConfigurationDto responseConfigurationDto = objectMapper.readValue(contentAsString, ConfigurationDto.class);
+        Assertions.assertEquals(testValue, responseConfigurationDto.getValue());
     }
 
     @Test
