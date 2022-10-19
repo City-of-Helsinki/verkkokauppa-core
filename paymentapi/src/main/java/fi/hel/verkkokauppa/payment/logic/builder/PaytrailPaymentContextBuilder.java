@@ -75,12 +75,14 @@ public class PaytrailPaymentContextBuilder {
         JSONObject namespaceServiceConfiguration = getNamespaceConfiguration(context.getNamespace());
 
         String returnUrl = (String) namespaceServiceConfiguration.get("payment_return_url");
-        if (returnUrl != null)
+        if (returnUrl != null) {
             context.setReturnUrl(returnUrl);
+        }
 
         String notifyUrl = (String) namespaceServiceConfiguration.get("payment_notification_url");
-        if (notifyUrl != null)
+        if (notifyUrl != null) {
             context.setNotifyUrl(notifyUrl);
+        }
 
         String cp = (String) namespaceServiceConfiguration.get("payment_cp");
         if (cp != null)
