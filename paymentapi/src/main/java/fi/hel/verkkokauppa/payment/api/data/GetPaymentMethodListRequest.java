@@ -12,5 +12,6 @@ public class GetPaymentMethodListRequest {
 	private String namespace;
 
 	private OrderDto orderDto;
+	private String merchantId;
 
 }

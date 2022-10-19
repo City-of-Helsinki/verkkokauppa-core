@@ -2,11 +2,13 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class OnlinePaymentController {
 
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
+
+	@Autowired
+	private PaymentPaytrailService paymentPaytrailService;
 
 
 	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -75,19 +80,24 @@ public class OnlinePaymentController {
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {
 		try {
 			String namespace = request.getNamespace();
-			PaymentMethodDto[] methods = paymentMethodService.getOnlinePaymentMethodList(request.getCurrency());
+
+			PaymentMethodDto[] vismaMethods = paymentMethodService.getOnlinePaymentMethodList(request.getCurrency());
+			PaymentMethodDto[] paytrailMethods = paymentPaytrailService.getOnlinePaymentMethodList(request.getMerchantId(),
+					request.getNamespace(), request.getCurrency());
+			PaymentMethodDto[] allMethods = ListUtil.mergeArrays(PaymentMethodDto.class, vismaMethods, paytrailMethods);
+
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
 
-			methods = paymentMethodService.filterPaymentMethodList(request, methods);
+			allMethods = paymentMethodService.filterPaymentMethodList(request, allMethods);
 
-			if (methods.length == 0) {
+			if (allMethods.length == 0) {
 				log.debug("payment methods not found, namespace: " + namespace);
 				Error error = new Error("payment-methods-not-found-from-backend", "payment methods for namespace[" + namespace + "] not found from backend");
 				throw new CommonApiException(HttpStatus.NOT_FOUND, error);
 			}
 
-			return ResponseEntity.status(HttpStatus.OK).body(methods);
+			return ResponseEntity.status(HttpStatus.OK).body(allMethods);
 		} catch (CommonApiException cae) {
 			throw cae;
 		} catch (Exception e) {

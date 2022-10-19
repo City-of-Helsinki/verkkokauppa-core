@@ -87,7 +87,7 @@ public class NamespaceController {
             @RequestParam(value = "namespace") String namespace,
             @RequestParam(value = "key") String key
     ) {
-        String value = namespaceService.getConfigurationValueByMerchantIdAndNamespaceAndKey(namespace, key);
+        String value = namespaceService.getConfigurationValueByNamespaceAndKey(namespace, key);
         NamespaceConfigurationDto dto = new NamespaceConfigurationDto();
         ConfigurationModel configuration = new ConfigurationModel();
         configuration.setKey(key);

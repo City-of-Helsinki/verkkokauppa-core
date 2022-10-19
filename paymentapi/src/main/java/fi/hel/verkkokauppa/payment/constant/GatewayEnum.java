@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum GatewayEnum {
     ONLINE("online"),
+    ONLINE_PAYTRAIL("online-paytrail"),
     OFFLINE("offline");
 
     @JsonValue
