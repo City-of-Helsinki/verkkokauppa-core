@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +17,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/payment/online")
 public class OnlinePaymentController {
 
 	private Logger log = LoggerFactory.getLogger(OnlinePaymentController.class);
@@ -33,8 +36,11 @@ public class OnlinePaymentController {
 	@Autowired
 	private PaymentReturnValidator paymentReturnValidator;
 
+	@Autowired
+	private PaymentPaytrailService paymentPaytrailService;
 
-	@PostMapping(value = "/payment/online/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
+
+	@PostMapping(value = "/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
 		try {
 			Payment payment = service.getPaymentRequestData(dto);
@@ -50,7 +56,23 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping(value = "/payment/online/visma/get", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/paytrail/createFromOrder", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Payment> createPaytrailPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
+		try {
+			Payment payment = service.getPaymentRequestData(dto);
+			return ResponseEntity.status(HttpStatus.CREATED).body(payment);
+		} catch (CommonApiException cae) {
+			throw cae;
+		} catch (Exception e) {
+			log.error("creating payment or chargerequest failed", e);
+			throw new CommonApiException(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					new Error("failed-to-create-payment", "failed to create payment")
+			);
+		}
+	}
+
+	@GetMapping(value = "/visma/get", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> getVismaPaymentRequest(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 														  @RequestParam(value = "userId") String userId) {
 		try {
@@ -71,7 +93,7 @@ public class OnlinePaymentController {
 
 
 
-	@PostMapping(value = "/payment/online/get-available-methods", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(value = "/get-available-methods", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PaymentMethodDto[]> getAvailableMethods(@RequestBody GetPaymentMethodListRequest request) {
 		try {
 			String namespace = request.getNamespace();
@@ -99,7 +121,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping(value = "/payment/online/get", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/get", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Payment> getPayment(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 														  @RequestParam(value = "userId") String userId) {
 		try {
@@ -116,7 +138,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping("/payment/online/url")
+	@GetMapping("/url")
 	public ResponseEntity<String> getPaymentUrl(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 												@RequestParam(value = "userId") String userId) {
 		try {
@@ -134,7 +156,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping("/payment/online/status")
+	@GetMapping("/status")
 	public ResponseEntity<String> getPaymentStatus(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 												   @RequestParam(value = "userId") String userId) {
 		try {
@@ -151,7 +173,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping(value = "/payment/online/cardInfo", produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = "/cardInfo", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<PaymentCardInfoDto> getPaymentCardInfo(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "orderId") String orderId,
 																 @RequestParam(value = "userId") String userId) {
 		try {
@@ -171,7 +193,7 @@ public class OnlinePaymentController {
 		}
 	}
 
-	@GetMapping("/payment/online/check-return-url")
+	@GetMapping("/check-return-url")
 	public ResponseEntity<PaymentReturnDto> checkReturnUrl(@RequestParam(value = "AUTHCODE") String authCode, @RequestParam(value = "RETURN_CODE") String returnCode,
 		@RequestParam(value = "ORDER_NUMBER") String paymentId, @RequestParam(value = "SETTLED", required = false) String settled, @RequestParam(value = "INCIDENT_ID", required = false) String incidentId) {
 		try {

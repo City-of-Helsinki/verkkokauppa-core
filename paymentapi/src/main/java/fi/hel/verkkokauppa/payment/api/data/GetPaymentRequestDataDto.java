@@ -6,6 +6,7 @@ public class GetPaymentRequestDataDto {
 	private String paymentMethod;
 	private String paymentMethodLabel;
 	private String language;
+	private String merchantId;
 
 	public OrderWrapper getOrder() {
 		return order;
@@ -37,5 +38,13 @@ public class GetPaymentRequestDataDto {
 
 	public void setLanguage(String language) {
 		this.language = language;
+	}
+
+	public String getMerchantId() {
+		return merchantId;
+	}
+
+	public void setMerchantId(String merchantId) {
+		this.merchantId = merchantId;
 	}
 }
