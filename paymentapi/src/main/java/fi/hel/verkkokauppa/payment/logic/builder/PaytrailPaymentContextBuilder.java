@@ -1,14 +1,12 @@
 package fi.hel.verkkokauppa.payment.logic.builder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
@@ -17,9 +15,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import fi.hel.verkkokauppa.payment.service.ServiceConfigurationClient;
 
 @Component
+@Slf4j
 public class PaytrailPaymentContextBuilder {
-
-    private static final Logger LOG = LoggerFactory.getLogger(PaytrailPaymentContextBuilder.class);
 
     @Autowired
     private Environment env;
@@ -49,15 +46,15 @@ public class PaytrailPaymentContextBuilder {
             enrichedContext = enrichWithNamespaceConfiguration(defaultContext);
             enrichedContext = enrichWithMerchantConfiguration(enrichedContext, merchantId);
         } catch (Exception e) {
-            LOG.error("failed to fetch service configuration for namespace {} and merchant {}: " + namespace, merchantId, e);
+            log.error("failed to fetch service configuration for namespace {} and merchant {}: " + namespace, merchantId, e);
             // TODO by default allowing payments with defaults
         }
 
         if (enrichedContext != null) {
-            LOG.debug("using merchant specific service configuration");
+            log.debug("using merchant specific service configuration");
             return enrichedContext;
         } else {
-            LOG.debug("using default service configuration");
+            log.debug("using default service configuration");
             return defaultContext;
         }
     }
@@ -85,9 +82,9 @@ public class PaytrailPaymentContextBuilder {
         }
 
         String cp = (String) namespaceServiceConfiguration.get("payment_cp");
-        if (cp != null)
+        if (cp != null) {
             context.setCp(cp);
-
+        }
         return context;
     }
 
@@ -98,7 +95,7 @@ public class PaytrailPaymentContextBuilder {
             ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfiguration.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID)
                     .ifPresent(config -> context.setShopId(config.getValue()));
         } else {
-            LOG.debug("No merchant configurations found for merchant {} in namespace {}", merchantId, context.getNamespace());
+            log.debug("No merchant configurations found for merchant {} in namespace {}", merchantId, context.getNamespace());
         }
 
         return context;

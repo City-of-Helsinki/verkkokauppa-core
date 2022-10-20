@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.payment.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
@@ -37,9 +38,9 @@ public class PaymentPaytrailService {
     }
 
     public PaymentMethodDto[] getOnlinePaymentMethodList(String merchantId, String namespace, String currency) {
-        if (merchantId != null && !merchantId.isEmpty()) {
+        if (StringUtils.isNotEmpty(merchantId)) {
             String shopId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID);
-            if (shopId != null && !shopId.isEmpty()) {
+            if (StringUtils.isNotEmpty(shopId)) {
                 PaytrailClient paytrailClient = paytrailClientFactory.getClient(shopId);
                 try {
                     PaytrailPaymentMethodsRequest.PaymentMethodsPayload payload = new PaytrailPaymentMethodsRequest.PaymentMethodsPayload();
