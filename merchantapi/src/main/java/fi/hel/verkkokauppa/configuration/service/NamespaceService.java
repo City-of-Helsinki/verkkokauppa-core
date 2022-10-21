@@ -163,7 +163,7 @@ public class NamespaceService {
      * @param key       The key of the configuration value you want to retrieve.
      * @return A String of configuration value or null
      */
-    public String getConfigurationValueByMerchantIdAndNamespaceAndKey(String namespace, String key) {
+    public String getConfigurationValueByNamespaceAndKey(String namespace, String key) {
         NamespaceModel model = getNamespaceModelByNamespace(namespace);
 
         Optional<ConfigurationModel> configuration = getConfigurationWithKeyFromModel(key, model);

@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.visma.VismaAuth;
 import fi.hel.verkkokauppa.payment.logic.fetcher.GetPaymentRequestFetcher;
@@ -16,15 +17,13 @@ import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.helsinki.vismapay.request.payment.CapturePaymentRequest;
-import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.PaymentDetailsResponse;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -41,12 +40,12 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -62,6 +61,9 @@ public class OnlinePaymentControllerTests {
     private PaymentAdminController paymentAdminController;
     @Autowired
     private OnlinePaymentService onlinePaymentService;
+
+    @Autowired
+    private PaymentPaytrailService paymentPaytrailService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -175,5 +177,15 @@ public class OnlinePaymentControllerTests {
         // Cancel payment
         //VismaPayResponse responseCF2 = cancelPaymentFetcher.cancelPayment(paymentId);
         //assertEquals(responseCF2.getResult(),0, "Cancel to payment is not working.");
+    }
+
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testGetOnlinePaytrailPaymentMethods() {
+        PaymentMethodDto[] onlinePaymentMethodList = paymentPaytrailService.getOnlinePaymentMethodList("01fde0e9-82b2-4846-acc0-94291625192b", "venepaikat", "EUR");
+
+        assertTrue(onlinePaymentMethodList.length > 0);
+        assertEquals(onlinePaymentMethodList.length, 17);
     }
 }
