@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
@@ -32,6 +33,7 @@ import org.springframework.boot.autoconfigure.validation.ValidationAutoConfigura
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -163,20 +165,109 @@ public class PaytrailPaymentControllerUnitTests {
 
         Exception exception = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
+                post("/payment/paytrail/createFromOrder")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(paymentRequestDataDto))
+            )
+            .andDo(print())
+            .andExpect(status().is5xxServerError())
+            .andExpect(status().is(500));
+        });
+
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, cause.getStatus());
+        assertEquals("failed-to-create-paytrail-payment", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("Failed to create paytrail payment", cause.getErrors().getErrors().get(0).getMessage());
+    }
+
+    @Test
+    public void whenCreateFromOrderWithoutUserStatusThenReturnStatus403() throws Exception {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setLanguage("FI");
+        paymentRequestDataDto.setPaymentMethod("nordea");
+        paymentRequestDataDto.setPaymentMethodLabel("Nordea");
+
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        orderWrapper.getOrder().setUser("");
+        paymentRequestDataDto.setOrder(orderWrapper);
+
+        String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                post("/payment/paytrail/createFromOrder")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(paymentRequestDataDto))
+            )
+            .andDo(print());
+        });
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, cause.getStatus());
+        assertEquals("rejected-creating-payment-for-order-without-user", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating payment for order without user, order id [" + orderWrapper.getOrder().getOrderId() + "]", cause.getErrors().getErrors().get(0).getMessage());
+
+    }
+
+    @Test
+    public void whenCreateFromOrderWithInvalidOrderStatusThenReturnStatus403() throws Exception {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setLanguage("FI");
+        paymentRequestDataDto.setPaymentMethod("nordea");
+        paymentRequestDataDto.setPaymentMethodLabel("Nordea");
+
+        /* Test with OrderStatus.DRAFT */
+        OrderWrapper orderWrapper1 = createDummyOrderWrapper();
+        orderWrapper1.getOrder().setStatus("draft");
+        paymentRequestDataDto.setOrder(orderWrapper1);
+
+        String mockPaymentId1 = PaymentUtil.generatePaymentOrderNumber(orderWrapper1.getOrder().getOrderId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId1);
+
+        Exception exception1 = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                post("/payment/paytrail/createFromOrder")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .content(mapper.writeValueAsString(paymentRequestDataDto))
+            )
+            .andDo(print());
+        });
+        CommonApiException cause1 = (CommonApiException) exception1.getCause();
+        assertEquals(CommonApiException.class, cause1.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, cause1.getStatus());
+        assertEquals("rejected-creating-payment-for-unconfirmed-order", cause1.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper1.getOrder().getOrderId() + "]", cause1.getErrors().getErrors().get(0).getMessage());
+
+        /* Test with OrderStatus.CANCELLED */
+        OrderWrapper orderWrapper2 = createDummyOrderWrapper();
+        orderWrapper2.getOrder().setStatus("cancelled");
+        paymentRequestDataDto.setOrder(orderWrapper2);
+
+        String mockPaymentId2 = PaymentUtil.generatePaymentOrderNumber(orderWrapper2.getOrder().getOrderId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId2);
+
+        Exception exception2 = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
                             post("/payment/paytrail/createFromOrder")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .accept(MediaType.APPLICATION_JSON)
                                     .content(mapper.writeValueAsString(paymentRequestDataDto))
                     )
-                    .andDo(print())
-                    .andExpect(status().is5xxServerError())
-                    .andExpect(status().is(500));
+                    .andDo(print());
         });
+        CommonApiException cause2 = (CommonApiException) exception2.getCause();
+        assertEquals(CommonApiException.class, cause2.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, cause2.getStatus());
+        assertEquals("rejected-creating-payment-for-unconfirmed-order", cause2.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper2.getOrder().getOrderId() + "]", cause2.getErrors().getErrors().get(0).getMessage());
 
-        CommonApiException cause = (CommonApiException) exception.getCause();
-        assertEquals(CommonApiException.class, cause.getClass());
-        assertEquals("failed-to-create-paytrail-payment", cause.getErrors().getErrors().get(0).getCode());
-        assertEquals("Failed to create paytrail payment", cause.getErrors().getErrors().get(0).getMessage());
     }
 
     private Payment mockCreateValidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, String mockPaymentId) {
