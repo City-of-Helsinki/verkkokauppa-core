@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.configuration.api.merchant;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
 import fi.hel.verkkokauppa.configuration.service.MerchantService;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +73,16 @@ public class MerchantController {
         );
     }
 
+    @GetMapping("/merchant/getValueDto")
+    public ResponseEntity<ConfigurationDto> getValueDto(
+            @RequestParam(value = "merchantId") String merchantId,
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "key") String key
+    ) {
+        return ResponseEntity.ok(
+                merchantService.getConfigurationByMerchantIdAndNamespaceAndKey(merchantId, namespace, key));
+    }
+
     @GetMapping("/merchant/list-by-namespace")
     public ResponseEntity<List<MerchantDto>> getMerchantsByNamespace(@RequestParam(value = "namespace") String namespace) {
         List<MerchantDto> merchantDtos = merchantService.findAllByNamespace(namespace);
@@ -79,5 +90,12 @@ public class MerchantController {
         return ResponseEntity.ok(
                 merchantDtos
         );
+    }
+
+    @GetMapping("/merchant/get")
+    public ResponseEntity<MerchantDto> getMerchantByMerchantId(@RequestParam(value = "merchantId") String merchantId,
+                                                               @RequestParam(value="namespace") String namespace) {
+        MerchantDto merchantDto = merchantService.findByMerchantIdAndNamespace(merchantId, namespace);
+        return ResponseEntity.ok(merchantDto);
     }
 }

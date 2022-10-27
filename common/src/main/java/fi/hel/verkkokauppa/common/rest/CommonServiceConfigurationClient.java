@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import lombok.Getter;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 
 @Component
@@ -34,6 +40,21 @@ public class CommonServiceConfigurationClient {
         this.restServiceClient = restServiceClient;
         this.serviceUrls = serviceUrls;
         this.mapper = mapper;
+    }
+
+    public List<ServiceConfigurationDto> getRestrictedServiceConfigurations(String namespace) {
+        String serviceMappingUrl = serviceConfigurationUrl + "restricted/getAll?namespace="+namespace;
+        JSONArray namespaceServiceConfigurations = restServiceClient.queryJsonArrayService(restServiceClient.getClient(), serviceMappingUrl);
+        log.debug("namespaceServiceConfiguration: " + namespaceServiceConfigurations);
+
+        try {
+            List<ServiceConfigurationDto> serviceConfigurationDtos = Arrays.asList(mapper.readValue(namespaceServiceConfigurations.toString(), ServiceConfigurationDto[].class));
+            return serviceConfigurationDtos;
+        } catch (JsonProcessingException e) {
+            log.debug(e.toString());
+            log.debug("Could not serialize service configurations for namespace: {}", namespace);
+            return Collections.emptyList();
+        }
     }
 
     public String getRestrictedServiceConfigurationValue(String namespace, String key) {
@@ -96,8 +117,8 @@ public class CommonServiceConfigurationClient {
 
             return merchantDto;
         } catch (Exception e) {
-            log.info(e.toString());
-            log.info("Cant find merchant model with given namespace {} and merchantId {}", namespace, merchantId);
+            log.debug(e.toString());
+            log.debug("Cant find merchant model with given namespace {} and merchantId {}", namespace, merchantId);
             return null;
         }
     }
@@ -110,8 +131,8 @@ public class CommonServiceConfigurationClient {
 
             return merchantServiceConfiguration.optString("value", null);
         } catch (Exception e) {
-            log.info(e.toString());
-            log.info("Cant find merchant configuration value with given namespace {}, merchantId {} and configuration key {}", namespace, merchantId, key);
+            log.debug(e.toString());
+            log.debug("Cant find merchant configuration value with given namespace {}, merchantId {} and configuration key {}", namespace, merchantId, key);
             return null;
         }
     }

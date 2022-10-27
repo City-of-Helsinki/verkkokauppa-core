@@ -56,6 +56,9 @@ public class Payment {
 	@Field(type = FieldType.Text)
 	String paymentMethodLabel;
 
+	@Field(type = FieldType.Text)
+	String paytrailTransactionId;
+
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
 	}
@@ -178,5 +181,13 @@ public class Payment {
 
 	public void setUserId(String userId) {
 		this.userId = userId;
+	}
+
+	public String getPaytrailTransactionId() {
+		return paytrailTransactionId;
+	}
+
+	public void setPaytrailTransactionId(String paytrailTransactionId) {
+		this.paytrailTransactionId = paytrailTransactionId;
 	}
 }

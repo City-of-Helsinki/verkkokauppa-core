@@ -56,7 +56,7 @@ public class PaymentContextBuilder {
     private JSONObject getNamespaceConfiguration(String namespace) {
         WebClient client = serviceConfigurationClient.getClient();
         JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
-        
+
         // TODO caching
 
         return namespaceServiceConfiguration;
@@ -67,7 +67,7 @@ public class PaymentContextBuilder {
         JSONObject namespaceServiceConfiguration = getNamespaceConfiguration(context.getNamespace());
 
         String returnUrl = (String) namespaceServiceConfiguration.get("payment_return_url");
-        if (returnUrl != null) 
+        if (returnUrl != null)
             context.setReturnUrl(returnUrl);
 
         String notifyUrl = (String) namespaceServiceConfiguration.get("payment_notification_url");
@@ -79,7 +79,7 @@ public class PaymentContextBuilder {
             context.setMerchantId(Long.valueOf(merchantId));
 
         String cp = (String) namespaceServiceConfiguration.get("payment_cp");
-        if (cp != null)    
+        if (cp != null)
             context.setCp(cp);
 
         return context;
