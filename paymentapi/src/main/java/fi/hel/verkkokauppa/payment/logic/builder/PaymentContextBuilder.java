@@ -1,15 +1,15 @@
 package fi.hel.verkkokauppa.payment.logic.builder;
 
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import fi.hel.verkkokauppa.payment.logic.context.PaymentContext;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import fi.hel.verkkokauppa.payment.service.ServiceConfigurationClient;
+import java.util.List;
 
 @Component
 public class PaymentContextBuilder {
@@ -20,7 +20,7 @@ public class PaymentContextBuilder {
     private Environment env;
 
     @Autowired
-    private ServiceConfigurationClient serviceConfigurationClient;
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
 
     public PaymentContext buildFor(String namespace) {
@@ -53,34 +53,30 @@ public class PaymentContextBuilder {
         }
     }
 
-    private JSONObject getNamespaceConfiguration(String namespace) {
-        WebClient client = serviceConfigurationClient.getClient();
-        JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
-
-        // TODO caching
-
-        return namespaceServiceConfiguration;
-    }
-
     private PaymentContext enrichWithNamespaceConfiguration(PaymentContext context) {
         // refer to ServiceConfigurationKeys at mapping api
-        JSONObject namespaceServiceConfiguration = getNamespaceConfiguration(context.getNamespace());
+        List<ServiceConfigurationDto> namespaceServiceConfiguration = commonServiceConfigurationClient.getRestrictedServiceConfigurations(context.getNamespace());
 
-        String returnUrl = (String) namespaceServiceConfiguration.get("payment_return_url");
-        if (returnUrl != null)
-            context.setReturnUrl(returnUrl);
+        for (ServiceConfigurationDto configDto : namespaceServiceConfiguration) {
+            String key = configDto.getConfigurationKey();
+            String value = configDto.getConfigurationValue();
+            if (key.equals("payment_return_url") && value != null) {
+                context.setReturnUrl(value);
+            }
 
-        String notifyUrl = (String) namespaceServiceConfiguration.get("payment_notification_url");
-        if (notifyUrl != null)
-            context.setNotifyUrl(notifyUrl);
+            if (key.equals("payment_notification_url") && value != null) {
+                context.setNotifyUrl(value);
+            }
 
-        String merchantId = (String) namespaceServiceConfiguration.get("payment_submerchant_id");
-        if (merchantId != null)
-            context.setMerchantId(Long.valueOf(merchantId));
+            if (key.equals("payment_submerchant_id") && value != null) {
+                context.setMerchantId(Long.valueOf(value));
+            }
 
-        String cp = (String) namespaceServiceConfiguration.get("payment_cp");
-        if (cp != null)
-            context.setCp(cp);
+            if (key.equals("payment_cp") && value != null) {
+                context.setCp(value);
+            }
+
+        }
 
         return context;
     }

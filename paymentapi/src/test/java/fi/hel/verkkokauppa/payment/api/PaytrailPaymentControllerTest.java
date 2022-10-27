@@ -147,7 +147,7 @@ public class PaytrailPaymentControllerTest {
 
         /* Test with OrderStatus.CANCELLED */
         OrderWrapper orderWrapper2 = createDummyOrderWrapper();
-        orderWrapper2.getOrder().setStatus("draft");
+        orderWrapper2.getOrder().setStatus("cancelled");
         paymentRequestDataDto.setOrder(orderWrapper2);
 
         CommonApiException exception2 = assertThrows(CommonApiException.class, () -> {
