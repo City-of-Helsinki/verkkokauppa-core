@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -12,13 +13,19 @@ import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -99,6 +106,57 @@ public class PaytrailPaymentControllerTest {
 
             toBeDeletedPaymentId.add(paymentId);
         }
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testCreatePaymentFromOrderWithoutUser() {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        orderWrapper.getOrder().setUser("");
+        paymentRequestDataDto.setOrder(orderWrapper);
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paytrailPaymentController.createPaymentFromOrder(paymentRequestDataDto);
+        });
+        Assertions.assertEquals(CommonApiException.class, exception.getClass());
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+        Assertions.assertEquals("rejected-creating-payment-for-order-without-user", exception.getErrors().getErrors().get(0).getCode());
+        Assertions.assertEquals("rejected creating payment for order without user, order id [" + orderWrapper.getOrder().getOrderId() + "]", exception.getErrors().getErrors().get(0).getMessage());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testCreatePaymentFromOrderWithInvalidStatus() {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+
+        /* Test with OrderStatus.DRAFT */
+        OrderWrapper orderWrapper1 = createDummyOrderWrapper();
+        orderWrapper1.getOrder().setStatus("draft");
+        paymentRequestDataDto.setOrder(orderWrapper1);
+
+        CommonApiException exception1 = assertThrows(CommonApiException.class, () -> {
+            paytrailPaymentController.createPaymentFromOrder(paymentRequestDataDto);
+        });
+        Assertions.assertEquals(CommonApiException.class, exception1.getClass());
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, exception1.getStatus());
+        Assertions.assertEquals("rejected-creating-payment-for-unconfirmed-order", exception1.getErrors().getErrors().get(0).getCode());
+        Assertions.assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper1.getOrder().getOrderId() + "]", exception1.getErrors().getErrors().get(0).getMessage());
+
+        /* Test with OrderStatus.CANCELLED */
+        OrderWrapper orderWrapper2 = createDummyOrderWrapper();
+        orderWrapper2.getOrder().setStatus("draft");
+        paymentRequestDataDto.setOrder(orderWrapper2);
+
+        CommonApiException exception2 = assertThrows(CommonApiException.class, () -> {
+            paytrailPaymentController.createPaymentFromOrder(paymentRequestDataDto);
+        });
+        Assertions.assertEquals(CommonApiException.class, exception2.getClass());
+        Assertions.assertEquals(HttpStatus.FORBIDDEN, exception2.getStatus());
+        Assertions.assertEquals("rejected-creating-payment-for-unconfirmed-order", exception2.getErrors().getErrors().get(0).getCode());
+        Assertions.assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper2.getOrder().getOrderId() + "]", exception2.getErrors().getErrors().get(0).getMessage());
     }
 
     private OrderWrapper createDummyOrderWrapper() {
