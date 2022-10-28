@@ -31,7 +31,7 @@ public class PaytrailPaymentController {
             log.error("creating payment or paytrail payment request failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-create-payment", "failed to create payment")
+                    new Error("failed-to-create-paytrail-payment", "failed to create payment")
             );
         }
     }

@@ -5,7 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
-import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailRequestConverter;
+import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
@@ -15,6 +15,7 @@ import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.request.paymentmethods.PaytrailPaymentMethodsRequest;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest;
+import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.helsinki.paytrail.response.paymentmethods.PaytrailPaymentMethodsResponse;
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,18 +34,18 @@ public class PaytrailPaymentClient {
     private final PaytrailAuthClientFactory paytrailAuthClientFactory;
     private final PaytrailPaymentMethodsResponseMapper paymentMethodsResponseMapper;
     private final PaytrailPaymentCreateResponseMapper paymentCreateResponseMapper;
-    private final IPaytrailRequestConverter<PaytrailPaymentCreateRequest, OrderWrapper> createPaymentRequestConverter;
+    private final IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> createPaymentPayloadConverter;
 
     @Autowired
     public PaytrailPaymentClient(
             PaytrailAuthClientFactory paytrailAuthClientFactory,
             ObjectMapper mapper,
-            IPaytrailRequestConverter<PaytrailPaymentCreateRequest, OrderWrapper> createPaymentRequestConverter
+            IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> createPaymentPayloadConverter
     ) {
         this.paytrailAuthClientFactory = paytrailAuthClientFactory;
         this.paymentMethodsResponseMapper = new PaytrailPaymentMethodsResponseMapper(mapper);
         this.paymentCreateResponseMapper = new PaytrailPaymentCreateResponseMapper(mapper);
-        this.createPaymentRequestConverter = createPaymentRequestConverter;
+        this.createPaymentPayloadConverter = createPaymentPayloadConverter;
     }
 
     public List<PaytrailPaymentMethod> getPaymentMethods() {
@@ -63,10 +64,12 @@ public class PaytrailPaymentClient {
         }
     }
 
-    public PaytrailPaymentResponse createPayment(PaytrailPaymentContext context, OrderWrapper orderWrapperDto) {
+    public PaytrailPaymentResponse createPayment(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto) {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.getClient(context.getShopId());
 
-        PaytrailPaymentCreateRequest request = createPaymentRequestConverter.convertToRequest(context, orderWrapperDto);
+        CreatePaymentPayload payload = createPaymentPayloadConverter.convertToPayload(context, orderWrapperDto);
+        payload.setStamp(paymentId);
+        PaytrailPaymentCreateRequest request = new PaytrailPaymentCreateRequest(payload);
         CompletableFuture<PaytrailPaymentCreateResponse> response = paytrailClient.sendRequest(request);
 
         try {

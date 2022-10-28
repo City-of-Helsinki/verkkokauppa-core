@@ -4,12 +4,12 @@ import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
-import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailRequestConverter;
+import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.paytrail.model.payments.PaymentCallbackUrls;
 import org.helsinki.paytrail.model.payments.PaymentCustomer;
 import org.helsinki.paytrail.model.payments.PaymentItem;
-import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest;
+import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -17,16 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class PaytrailCreatePaymentRequestConverter implements IPaytrailRequestConverter<PaytrailPaymentCreateRequest, OrderWrapper> {
+public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> {
 
 
     @Override
-    public PaytrailPaymentCreateRequest convertToRequest(PaytrailPaymentContext context, OrderWrapper orderWrapper) {
+    public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper) {
         OrderDto orderDto = orderWrapper.getOrder();
-        String paymentId = PaymentUtil.generatePaymentOrderNumber(orderDto.getOrderId());
 
-        PaytrailPaymentCreateRequest.CreatePaymentPayload payload = new PaytrailPaymentCreateRequest.CreatePaymentPayload();
-        payload.setStamp(paymentId);
+        CreatePaymentPayload payload = new CreatePaymentPayload();
         payload.setReference(orderDto.getOrderId());
         payload.setAmount(PaymentUtil.convertToCents(new BigDecimal(orderDto.getPriceTotal())).intValue());
         payload.setCurrency(context.getDefaultCurrency());
@@ -55,7 +53,7 @@ public class PaytrailCreatePaymentRequestConverter implements IPaytrailRequestCo
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);
 
-        return new PaytrailPaymentCreateRequest(payload);
+        return payload;
     }
 
     private ArrayList<PaymentItem> createPaytrailPaymentItemsFromOrderItems(PaytrailPaymentContext context, List<OrderItemDto> orderItemDtos) {
