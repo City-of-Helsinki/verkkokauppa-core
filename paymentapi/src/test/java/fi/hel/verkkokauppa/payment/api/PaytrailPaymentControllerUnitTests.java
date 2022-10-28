@@ -37,6 +37,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -63,7 +64,11 @@ import java.util.UUID;
         PaytrailCreatePaymentRequestConverter.class
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
-@ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "paytrail.aggregate.merchant.id=695861",
+        "paytrail.test.shop.id=695874",
+        "paytrail.merchant.secret=MONISAIPPUAKAUPPIAS"
+})
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
 

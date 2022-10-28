@@ -28,7 +28,7 @@ public class PaytrailPaymentController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("creating payment or chargerequest failed", e);
+            log.error("creating payment or paytrail payment request failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-payment", "failed to create payment")
