@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
@@ -9,7 +8,7 @@ import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.logic.builder.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
-import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentRequestConverter;
+import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentPayloadConverter;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -35,8 +34,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -60,10 +59,14 @@ import java.util.UUID;
         PaytrailPaymentController.class,
         PaytrailPaymentClient.class,
         PaytrailAuthClientFactory.class,
-        PaytrailCreatePaymentRequestConverter.class
+        PaytrailCreatePaymentPayloadConverter.class
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
-@ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "paytrail.aggregate.merchant.id=695861",
+        "paytrail.test.shop.id=695874",
+        "paytrail.merchant.secret=MONISAIPPUAKAUPPIAS"
+})
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
 
@@ -209,8 +212,8 @@ public class PaytrailPaymentControllerUnitTests {
         CommonApiException cause = (CommonApiException) exception.getCause();
         assertEquals(CommonApiException.class, cause.getClass());
         assertEquals(HttpStatus.FORBIDDEN, cause.getStatus());
-        assertEquals("rejected-creating-payment-for-order-without-user", cause.getErrors().getErrors().get(0).getCode());
-        assertEquals("rejected creating payment for order without user, order id [" + orderWrapper.getOrder().getOrderId() + "]", cause.getErrors().getErrors().get(0).getMessage());
+        assertEquals("rejected-creating-paytrail-payment-for-order-without-user", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating paytrail payment for order without user, order id [" + orderWrapper.getOrder().getOrderId() + "]", cause.getErrors().getErrors().get(0).getMessage());
 
     }
 
@@ -242,8 +245,8 @@ public class PaytrailPaymentControllerUnitTests {
         CommonApiException cause1 = (CommonApiException) exception1.getCause();
         assertEquals(CommonApiException.class, cause1.getClass());
         assertEquals(HttpStatus.FORBIDDEN, cause1.getStatus());
-        assertEquals("rejected-creating-payment-for-unconfirmed-order", cause1.getErrors().getErrors().get(0).getCode());
-        assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper1.getOrder().getOrderId() + "]", cause1.getErrors().getErrors().get(0).getMessage());
+        assertEquals("rejected-creating-paytrail-payment-for-unconfirmed-order", cause1.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating paytrail payment for unconfirmed order, order id [" + orderWrapper1.getOrder().getOrderId() + "]", cause1.getErrors().getErrors().get(0).getMessage());
 
         /* Test with OrderStatus.CANCELLED */
         OrderWrapper orderWrapper2 = createDummyOrderWrapper();
@@ -265,8 +268,8 @@ public class PaytrailPaymentControllerUnitTests {
         CommonApiException cause2 = (CommonApiException) exception2.getCause();
         assertEquals(CommonApiException.class, cause2.getClass());
         assertEquals(HttpStatus.FORBIDDEN, cause2.getStatus());
-        assertEquals("rejected-creating-payment-for-unconfirmed-order", cause2.getErrors().getErrors().get(0).getCode());
-        assertEquals("rejected creating payment for unconfirmed order, order id [" + orderWrapper2.getOrder().getOrderId() + "]", cause2.getErrors().getErrors().get(0).getMessage());
+        assertEquals("rejected-creating-paytrail-payment-for-unconfirmed-order", cause2.getErrors().getErrors().get(0).getCode());
+        assertEquals("rejected creating paytrail payment for unconfirmed order, order id [" + orderWrapper2.getOrder().getOrderId() + "]", cause2.getErrors().getErrors().get(0).getMessage());
 
     }
 

@@ -1,5 +1,10 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class GetPaymentRequestDataDto {
 
 	private OrderWrapper order;
@@ -7,44 +12,4 @@ public class GetPaymentRequestDataDto {
 	private String paymentMethodLabel;
 	private String language;
 	private String merchantId;
-
-	public OrderWrapper getOrder() {
-		return order;
-	}
-
-	public void setOrder(OrderWrapper order) {
-		this.order = order;
-	}
-
-	public String getPaymentMethod() {
-		return paymentMethod;
-	}
-
-	public void setPaymentMethod(String paymentMethod) {
-		this.paymentMethod = paymentMethod;
-	}
-
-	public String getPaymentMethodLabel() {
-		return paymentMethodLabel;
-	}
-
-	public void setPaymentMethodLabel(String paymentMethodLabel) {
-		this.paymentMethodLabel = paymentMethodLabel;
-	}
-
-	public String getLanguage() {
-		return language;
-	}
-
-	public void setLanguage(String language) {
-		this.language = language;
-	}
-
-	public String getMerchantId() {
-		return merchantId;
-	}
-
-	public void setMerchantId(String merchantId) {
-		this.merchantId = merchantId;
-	}
 }

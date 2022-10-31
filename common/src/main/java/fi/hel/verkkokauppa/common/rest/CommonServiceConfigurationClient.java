@@ -30,9 +30,6 @@ public class CommonServiceConfigurationClient {
     private final ServiceUrls serviceUrls;
     private final ObjectMapper mapper;
 
-    @Value("${serviceconfiguration.url:#{null}}")
-    private String serviceConfigurationUrl;
-
 
     @Lazy
     @Autowired
@@ -43,7 +40,7 @@ public class CommonServiceConfigurationClient {
     }
 
     public List<ServiceConfigurationDto> getRestrictedServiceConfigurations(String namespace) {
-        String serviceMappingUrl = serviceConfigurationUrl + "restricted/getAll?namespace="+namespace;
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "restricted/getAll?namespace="+namespace;
         JSONArray namespaceServiceConfigurations = restServiceClient.queryJsonArrayService(restServiceClient.getClient(), serviceMappingUrl);
         log.debug("namespaceServiceConfiguration: " + namespaceServiceConfigurations);
 
@@ -58,7 +55,7 @@ public class CommonServiceConfigurationClient {
     }
 
     public String getRestrictedServiceConfigurationValue(String namespace, String key) {
-        String serviceMappingUrl = serviceConfigurationUrl + "restricted/get?namespace=" + namespace + "&key=" + key;
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "restricted/get?namespace=" + namespace + "&key=" + key;
         JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), serviceMappingUrl);
         log.debug("namespaceServiceConfiguration: " + namespaceServiceConfiguration);
 
@@ -74,7 +71,7 @@ public class CommonServiceConfigurationClient {
         } catch (Exception ignored) {
             log.info("No value found from namespace: {} configuration for key: {}", namespace, key);
         }
-        String serviceMappingUrl = serviceConfigurationUrl + "public/get?namespace=" + namespace + "&key=" + key;
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "public/get?namespace=" + namespace + "&key=" + key;
         JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), serviceMappingUrl);
         log.debug("namespaceServiceConfiguration: " + namespaceServiceConfiguration);
 
@@ -137,8 +134,23 @@ public class CommonServiceConfigurationClient {
         }
     }
 
+    public List<MerchantDto> getMerchantsForNamespace(String namespace) {
+        String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace;
+        JSONArray merchantsResponse = restServiceClient.queryJsonArrayService(restServiceClient.getClient(), merchantApiUrl);
+        log.info("Merchants: " + merchantsResponse.toString());
+
+        try {
+            List<MerchantDto> merchantDtos = Arrays.asList(mapper.readValue(merchantsResponse.toString(), MerchantDto[].class));
+            return merchantDtos;
+        } catch (Exception e) {
+            log.debug(e.toString());
+            log.debug("Cant find merchants with given namespace {}", namespace);
+            return Collections.emptyList();
+        }
+    }
+
     public String getAuthKey(String namespace) {
-        String serviceMappingUrl = serviceConfigurationUrl + "api-access/get?namespace=" + namespace;
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "api-access/get?namespace=" + namespace;
 
         return restServiceClient.queryStringService(serviceMappingUrl);
     }

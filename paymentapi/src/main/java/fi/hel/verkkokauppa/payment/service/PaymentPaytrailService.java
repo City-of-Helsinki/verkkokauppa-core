@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.payment.logic.builder.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
@@ -100,13 +101,13 @@ public class PaymentPaytrailService {
         boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
         String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
 
-        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId);
-        PaytrailPaymentResponse createResponse = paytrailPaymentClient.createPayment(context, dto.getOrder());
-
         String paymentId = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId);
+        PaytrailPaymentResponse createResponse = paytrailPaymentClient.createPayment(context, paymentId, dto.getOrder());
+
         Payment payment = createPayment(dto, paymentType, paymentId, createResponse.getTransactionId());
         if (payment.getPaymentId() == null) {
-            throw new RuntimeException("Didn't manage to create payment.");
+            throw new RuntimeException("Didn't manage to create paytrail payment.");
         }
 
         return payment;
@@ -114,10 +115,10 @@ public class PaymentPaytrailService {
 
     private void isValidUserToCreatePayment(String orderId, String userId) {
         if (userId == null || userId.isEmpty()) {
-            log.warn("creating payment without user rejected, orderId: " + orderId);
+            log.warn("creating paytrail payment without user rejected, orderId: " + orderId);
             throw new CommonApiException(
                     HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-order-without-user", "rejected creating payment for order without user, order id [" + orderId + "]")
+                    new Error("rejected-creating-paytrail-payment-for-order-without-user", "rejected creating paytrail payment for order without user, order id [" + orderId + "]")
             );
         }
     }
@@ -125,10 +126,10 @@ public class PaymentPaytrailService {
     private void isValidOrderStatusToCreatePayment(String orderId, String orderStatus) {
         // check order status, can only create payment for confirmed orders
         if (!"confirmed".equals(orderStatus)) {
-            log.warn("creating payment for unconfirmed order rejected, orderId: " + orderId);
+            log.warn("creating paytrail payment for unconfirmed order rejected, orderId: " + orderId);
             throw new CommonApiException(
                     HttpStatus.FORBIDDEN,
-                    new Error("rejected-creating-payment-for-unconfirmed-order", "rejected creating payment for unconfirmed order, order id [" + orderId + "]")
+                    new Error("rejected-creating-paytrail-payment-for-unconfirmed-order", "rejected creating paytrail payment for unconfirmed order, order id [" + orderId + "]")
             );
         }
     }
@@ -175,7 +176,7 @@ public class PaymentPaytrailService {
     }
 
     private void createPaymentItem(OrderItemDto itemDto, String paymentId, String orderId) {
-        fi.hel.verkkokauppa.payment.model.PaymentItem item = new fi.hel.verkkokauppa.payment.model.PaymentItem();
+        PaymentItem item = new PaymentItem();
         item.setPaymentId(paymentId);
         item.setOrderId(orderId);
         item.setProductId(itemDto.getProductId());

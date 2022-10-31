@@ -18,4 +18,7 @@ public class ServiceUrls {
 
     @Value("${productmapping.service.url:http://product-mapping-api:8080/productmapping/}")
     private String productMappingServiceUrl;
+
+    @Value("${serviceconfiguration.url:http://product-mapping-api:8080/productmapping/}")
+    private String serviceconfigurationServiceUrl;
 }
