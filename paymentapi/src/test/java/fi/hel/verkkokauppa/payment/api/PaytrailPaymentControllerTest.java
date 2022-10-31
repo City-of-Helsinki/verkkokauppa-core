@@ -1,8 +1,6 @@
 package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
-import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -13,6 +11,7 @@ import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
+import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -22,22 +21,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
 @Slf4j
-public class PaytrailPaymentControllerTest {
+public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
     @Autowired
     private PaytrailPaymentController paytrailPaymentController;
@@ -50,9 +44,6 @@ public class PaytrailPaymentControllerTest {
 
     @Autowired
     private PaymentItemRepository paymentItemRepository;
-
-    @Autowired
-    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     private ArrayList<String> toBeDeletedPaymentId = new ArrayList<>();
 
@@ -206,13 +197,5 @@ public class PaytrailPaymentControllerTest {
 
         order.setItems(items);
         return order;
-    }
-
-    public String getFirstMerchantIdFromNamespace(String namespace) {
-        List<MerchantDto> merchants = commonServiceConfigurationClient.getMerchantsForNamespace(namespace);
-        if (merchants.size() > 0) {
-            return merchants.get(0).getMerchantId();
-        }
-        return null;
     }
 }
