@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,6 +123,20 @@ public class RestServiceClient {
             return new JSONObject(jsonResponse);
         }
 
+    }
+
+    public JSONArray queryJsonArrayService(WebClient client, String url) {
+        String jsonResponse = client.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONArray();
+        } else {
+            return new JSONArray(jsonResponse);
+        }
     }
 
     public String queryStringService(String url) {

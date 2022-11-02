@@ -1,9 +1,5 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -34,7 +30,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;

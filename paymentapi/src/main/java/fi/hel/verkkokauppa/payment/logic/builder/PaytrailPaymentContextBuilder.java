@@ -3,16 +3,16 @@ package fi.hel.verkkokauppa.payment.logic.builder;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
 import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
+
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import fi.hel.verkkokauppa.payment.service.ServiceConfigurationClient;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -20,9 +20,6 @@ public class PaytrailPaymentContextBuilder {
 
     @Autowired
     private Environment env;
-
-    @Autowired
-    private ServiceConfigurationClient serviceConfigurationClient;
 
     @Autowired
     private CommonServiceConfigurationClient commonServiceConfigurationClient;
@@ -47,7 +44,6 @@ public class PaytrailPaymentContextBuilder {
             enrichedContext = enrichWithMerchantConfiguration(enrichedContext, merchantId);
         } catch (Exception e) {
             log.error("failed to fetch service configuration for namespace {} and merchant {}: " + namespace, merchantId, e);
-            // TODO by default allowing payments with defaults
         }
 
         if (enrichedContext != null) {
@@ -59,31 +55,23 @@ public class PaytrailPaymentContextBuilder {
         }
     }
 
-    private JSONObject getNamespaceConfiguration(String namespace) {
-        WebClient client = serviceConfigurationClient.getClient();
-        JSONObject namespaceServiceConfiguration = serviceConfigurationClient.getAllServiceConfiguration(client, namespace);
-
-        // TODO caching
-
-        return namespaceServiceConfiguration;
-    }
-
     private PaytrailPaymentContext enrichWithNamespaceConfiguration(PaytrailPaymentContext context) {
-        JSONObject namespaceServiceConfiguration = getNamespaceConfiguration(context.getNamespace());
+        List<ServiceConfigurationDto> namespaceServiceConfiguration = commonServiceConfigurationClient.getRestrictedServiceConfigurations(context.getNamespace());
 
-        String returnUrl = (String) namespaceServiceConfiguration.get("payment_return_url");
-        if (returnUrl != null) {
-            context.setReturnUrl(returnUrl);
-        }
+        for (ServiceConfigurationDto configDto : namespaceServiceConfiguration) {
+            String key = configDto.getConfigurationKey();
+            String value = configDto.getConfigurationValue();
+            if (key.equals("payment_return_url") && value != null) {
+                context.setReturnUrl(value);
+            }
 
-        String notifyUrl = (String) namespaceServiceConfiguration.get("payment_notification_url");
-        if (notifyUrl != null) {
-            context.setNotifyUrl(notifyUrl);
-        }
+            if (key.equals("payment_notification_url") && value != null) {
+                context.setNotifyUrl(value);
+            }
 
-        String cp = (String) namespaceServiceConfiguration.get("payment_cp");
-        if (cp != null) {
-            context.setCp(cp);
+            if (key.equals("payment_cp") && value != null) {
+                context.setCp(value);
+            }
         }
         return context;
     }
