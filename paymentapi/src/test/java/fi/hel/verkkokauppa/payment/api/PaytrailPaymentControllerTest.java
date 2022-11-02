@@ -159,43 +159,4 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         Assertions.assertEquals("rejected-creating-paytrail-payment-for-unconfirmed-order", exception2.getErrors().getErrors().get(0).getCode());
         Assertions.assertEquals("rejected creating paytrail payment for unconfirmed order, order id [" + orderWrapper2.getOrder().getOrderId() + "]", exception2.getErrors().getErrors().get(0).getMessage());
     }
-
-    private OrderWrapper createDummyOrderWrapper() {
-        OrderDto orderDto = new OrderDto();
-        String orderId = UUID.randomUUID().toString();
-        orderDto.setOrderId(orderId);
-        orderDto.setNamespace("venepaikat");
-        orderDto.setUser("dummy_user");
-        orderDto.setCreatedAt("");
-        orderDto.setStatus("confirmed");
-        orderDto.setType("order");
-        orderDto.setCustomerFirstName("Martin");
-        orderDto.setCustomerLastName("Leh");
-        orderDto.setCustomerEmail("testi@ambientia.fi");
-        orderDto.setPriceNet("1234");
-        orderDto.setPriceVat("0");
-        // Sets total price to be 1 eur
-        orderDto.setPriceTotal("1234");
-
-        OrderWrapper order = new OrderWrapper();
-        order.setOrder(orderDto);
-
-        List<OrderItemDto> items = new ArrayList<>();
-
-        OrderItemDto orderItem = new OrderItemDto();
-
-        String orderItemId = UUID.randomUUID().toString();
-        orderItem.setOrderItemId(orderItemId);
-        orderItem.setPriceGross(BigDecimal.valueOf(1234));
-        orderItem.setQuantity(1);
-        orderItem.setVatPercentage("24");
-        orderItem.setProductId("test-product-id");
-        orderItem.setProductName("productName");
-        orderItem.setOrderId(orderId);
-
-        items.add(orderItem);
-
-        order.setItems(items);
-        return order;
-    }
 }
