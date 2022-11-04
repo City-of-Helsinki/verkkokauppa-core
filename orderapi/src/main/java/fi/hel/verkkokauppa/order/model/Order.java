@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
-import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import lombok.Getter;
 import lombok.Setter;
@@ -77,6 +77,9 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Long)
     Long incrementId;
 
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    private LocalDateTime lastValidPurchaseDateTime;
+
     public Order() {}
 
     public Order(String orderId, String namespace, String user, LocalDateTime createdAt, Long incrementId) {
@@ -88,5 +91,17 @@ public class Order implements Customer, IdentifiableUser {
         this.user = user;
         this.createdAt = createdAt;
         this.incrementId = incrementId;
+    }
+
+    public Order(String orderId, String namespace, String user, LocalDateTime createdAt, Long incrementId, LocalDateTime lastValidPurchaseDateTime) {
+        this.status = OrderStatus.DRAFT;
+        this.type = OrderType.ORDER;
+
+        this.orderId = orderId;
+        this.namespace = namespace;
+        this.user = user;
+        this.createdAt = createdAt;
+        this.incrementId = incrementId;
+        this.lastValidPurchaseDateTime = lastValidPurchaseDateTime;
     }
 }

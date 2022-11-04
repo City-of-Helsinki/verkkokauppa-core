@@ -131,6 +131,17 @@ public class OrderService {
         return order;
     }
 
+    public Order createByParams(String namespace, String user, LocalDateTime lastValidPurchaseDateTime) {
+        LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
+        String orderId = generateOrderId(namespace, user, createdAt);
+        Long incrementId = this.incrementId.generateOrderIncrementId();
+        Order order = new Order(orderId, namespace, user, createdAt, incrementId, lastValidPurchaseDateTime);
+
+        orderRepository.save(order);
+        log.debug("created new order, orderId: " + orderId);
+        return order;
+    }
+
     public Order findById(String orderId) {
         Optional<Order> mapping = orderRepository.findById(orderId);
         
