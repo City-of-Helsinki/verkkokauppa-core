@@ -4,7 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.logic.validation.PaytrailPaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;

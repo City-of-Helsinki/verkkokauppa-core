@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.logic.context;
+package fi.hel.verkkokauppa.payment.paytrail.context;
 
 import lombok.Data;
 

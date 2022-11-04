@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
-import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
 import lombok.extern.slf4j.Slf4j;

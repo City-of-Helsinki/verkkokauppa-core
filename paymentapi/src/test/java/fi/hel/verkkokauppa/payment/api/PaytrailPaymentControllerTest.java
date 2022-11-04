@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
@@ -31,7 +30,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -39,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.UUID;
 
 @Slf4j
 public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
@@ -350,45 +347,6 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
             e.printStackTrace();
         }
         toBeDeletedPaymentId.add(payment.getPaymentId());
-    }
-
-    private OrderWrapper createDummyOrderWrapper() {
-        OrderDto orderDto = new OrderDto();
-        String orderId = UUID.randomUUID().toString();
-        orderDto.setOrderId(orderId);
-        orderDto.setNamespace("venepaikat");
-        orderDto.setUser("dummy_user");
-        orderDto.setCreatedAt("");
-        orderDto.setStatus("confirmed");
-        orderDto.setType("order");
-        orderDto.setCustomerFirstName("Martin");
-        orderDto.setCustomerLastName("Leh");
-        orderDto.setCustomerEmail("testi@ambientia.fi");
-        orderDto.setPriceNet("1234");
-        orderDto.setPriceVat("0");
-        // Sets total price to be 1 eur
-        orderDto.setPriceTotal("1234");
-
-        OrderWrapper order = new OrderWrapper();
-        order.setOrder(orderDto);
-
-        List<OrderItemDto> items = new ArrayList<>();
-
-        OrderItemDto orderItem = new OrderItemDto();
-
-        String orderItemId = UUID.randomUUID().toString();
-        orderItem.setOrderItemId(orderItemId);
-        orderItem.setPriceGross(BigDecimal.valueOf(1234));
-        orderItem.setQuantity(1);
-        orderItem.setVatPercentage("24");
-        orderItem.setProductId("test-product-id");
-        orderItem.setProductName("productName");
-        orderItem.setOrderId(orderId);
-
-        items.add(orderItem);
-
-        order.setItems(items);
-        return order;
     }
 
     private Map<String, String> createMockCallbackParams(String paymentId, String transactionId, String status) {

@@ -7,14 +7,13 @@ import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.logic.builder.PaytrailPaymentContextBuilder;
-import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
-import fi.hel.verkkokauppa.payment.logic.validation.PaytrailPaymentReturnValidator;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentPayloadConverter;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
-import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
@@ -24,6 +23,7 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
+import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,8 +56,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -496,9 +494,9 @@ public class PaytrailPaymentControllerUnitTests {
     private Payment mockCreateValidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, String mockPaymentId) {
         OrderWrapper orderWrapper = paymentRequestDataDto.getOrder();
         PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace());
-        Payment mockPayment = createMockPayment(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
-        PaymentItem mockPaymentItem = createMockPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
-        Payer mockPayer = createMockPayer(mockPaymentId, orderWrapper.getOrder());
+        Payment mockPayment = TestPaymentCreator.createDummyPaymentFromGetPaymentRequest(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
+        PaymentItem mockPaymentItem = TestPaymentCreator.createDummyPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
+        Payer mockPayer = TestPaymentCreator.createDummyPayer(mockPaymentId, orderWrapper.getOrder());
 
         mockCreatePaymentFlow(mockPaymentContext, mockPayment, mockPaymentItem, mockPayer);
 
@@ -510,9 +508,9 @@ public class PaytrailPaymentControllerUnitTests {
         PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace());
         mockPaymentContext.setAggregateMerchantId("invalid-123");
         mockPaymentContext.setShopId("invalid-456");
-        Payment mockPayment = createMockPayment(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
-        PaymentItem mockPaymentItem = createMockPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
-        Payer mockPayer = createMockPayer(mockPaymentId, orderWrapper.getOrder());
+        Payment mockPayment = TestPaymentCreator.createDummyPaymentFromGetPaymentRequest(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
+        PaymentItem mockPaymentItem = TestPaymentCreator.createDummyPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
+        Payer mockPayer = TestPaymentCreator.createDummyPayer(mockPaymentId, orderWrapper.getOrder());
 
         mockCreatePaymentFlow(mockPaymentContext, mockPayment, mockPaymentItem, mockPayer);
 
@@ -618,56 +616,7 @@ public class PaytrailPaymentControllerUnitTests {
         return mockPaymentContext;
     }
 
-    private Payment createMockPayment(GetPaymentRequestDataDto dto, String type, String paymentId) {
-        OrderDto order = dto.getOrder().getOrder();
 
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-
-        Payment payment = new Payment();
-        payment.setPaymentId(paymentId);
-        payment.setNamespace(order.getNamespace());
-        payment.setOrderId(order.getOrderId());
-        payment.setUserId(order.getUser());
-        payment.setPaymentMethod(dto.getPaymentMethod());
-        payment.setPaymentMethodLabel(dto.getPaymentMethodLabel());
-        payment.setTimestamp(sdf.format(timestamp));
-        payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
-        payment.setPaymentType(type);
-        payment.setStatus(PaymentStatus.CREATED);
-        payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
-        payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
-        payment.setTotal(new BigDecimal(order.getPriceTotal()));
-        payment.setPaytrailTransactionId("2e60d1e0-0f5a-4f1b-ad95-d9b0fc00202a");
-
-        return payment;
-    }
-
-    private PaymentItem createMockPaymentItem(String paymentId, OrderItemDto itemDto) {
-        PaymentItem item = new PaymentItem();
-        item.setPaymentId(paymentId);
-        item.setOrderId(itemDto.getOrderId());
-        item.setProductId(itemDto.getProductId());
-        item.setProductName(itemDto.getProductName());
-        item.setQuantity(item.getQuantity());
-        item.setRowPriceNet(itemDto.getRowPriceNet());
-        item.setRowPriceVat(itemDto.getRowPriceVat());
-        item.setRowPriceTotal(itemDto.getRowPriceTotal());
-        item.setTaxPercent(itemDto.getVatPercentage());
-        item.setPriceNet(itemDto.getPriceNet());
-        item.setTaxAmount(itemDto.getPriceVat());
-        item.setPriceGross(itemDto.getPriceGross());
-        return item;
-    }
-
-    private Payer createMockPayer(String paymentId, OrderDto orderDto) {
-        Payer payer = new Payer();
-        payer.setPaymentId(paymentId);
-        payer.setFirstName(orderDto.getCustomerFirstName());
-        payer.setLastName(orderDto.getCustomerLastName());
-        payer.setEmail(orderDto.getCustomerEmail());
-        return payer;
-    }
 
     private Map<String, String> createMockCallbackParams(String paymentId, String transactionId, String status) {
         Map<String, String> mockCallbackCheckoutParams = new HashMap<>();

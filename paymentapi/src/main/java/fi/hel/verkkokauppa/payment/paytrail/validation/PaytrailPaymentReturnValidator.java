@@ -1,12 +1,10 @@
-package fi.hel.verkkokauppa.payment.logic.validation;
+package fi.hel.verkkokauppa.payment.paytrail.validation;
 
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.constants.PaymentStatus;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
