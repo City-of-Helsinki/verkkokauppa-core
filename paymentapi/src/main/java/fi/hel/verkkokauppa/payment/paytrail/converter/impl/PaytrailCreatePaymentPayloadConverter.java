@@ -3,7 +3,7 @@ package fi.hel.verkkokauppa.payment.paytrail.converter.impl;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
-import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.paytrail.model.payments.PaymentCallbackUrls;

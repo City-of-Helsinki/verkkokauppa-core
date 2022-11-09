@@ -1,11 +1,10 @@
-package fi.hel.verkkokauppa.payment.logic.builder;
+package fi.hel.verkkokauppa.payment.paytrail.context;
 
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
-import fi.hel.verkkokauppa.payment.logic.context.PaytrailPaymentContext;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
