@@ -38,7 +38,9 @@ public class PaytrailPaymentReturnValidator {
         if (isSuccesfull(status) && StringUtils.isNotEmpty(settlementReference)) {
             isPaymentPaid = true;
         } else if (isSuccesfull(status) && StringUtils.isEmpty(settlementReference)){
-            isAuthorized = true;
+            // This is temporarily set to FALSE until subscription flow is fully implemented.
+            // When subscriptions are supported, change this to TRUE
+            isAuthorized = false;
         } else {
             if (!PaymentStatus.PENDING.getStatus().equals(status)) {
                 canRetry = true;
@@ -60,7 +62,8 @@ public class PaytrailPaymentReturnValidator {
             log.debug("calculatedSignature: " + calculatedSignature);
             return calculatedSignature;
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            e.printStackTrace();
+            log.debug("Failed to create signature from return data", e);
+            log.debug(e.getMessage());
             return null;
         }
     }
