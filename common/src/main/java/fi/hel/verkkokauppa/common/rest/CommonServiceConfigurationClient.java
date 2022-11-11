@@ -136,36 +136,6 @@ public class CommonServiceConfigurationClient {
         }
     }
 
-    public MerchantDto updateMerchantConfigurationValueByKey(String merchantId, String namespace, String key, String value) {
-        String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/get?merchantId=" + merchantId + "&namespace=" + namespace;
-        try {
-            JSONObject merchantModel = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
-            log.debug("merchantConfigurationValue: " + merchantModel);
-
-            MerchantDto merchantDto = mapper.readValue(merchantModel.toString(), MerchantDto.class);
-
-            if (!ServiceConfigurationKeys.getMerchantKeys().contains(key)) {
-                log.debug("Cant update merchant model - invalid merchant key provided: {}", key);
-                return null;
-            }
-
-            /* Modify config value by provided key */
-            MerchantDto modifiedMerchantDto = ConfigurationParseUtil.modifyMerchantConfigurationValueByKey(merchantDto, key, value);
-            String body = mapper.writeValueAsString(modifiedMerchantDto);
-
-            /* Update the modified merchant */
-            merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/upsert";
-            JSONObject updatedMerchantModel = restServiceClient.makePostCall(merchantApiUrl, body);
-            MerchantDto updatedMerchantDto = mapper.readValue(updatedMerchantModel.toString(), MerchantDto.class);
-
-            return updatedMerchantDto;
-        } catch (Exception e) {
-            log.debug(e.toString());
-            log.debug("Failed to update merchant model with given namespace {}, merchantId {} and key {}", namespace, merchantId, key);
-            return null;
-        }
-    }
-
     public List<MerchantDto> getMerchantsForNamespace(String namespace) {
         String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace;
         JSONArray merchantsResponse = restServiceClient.queryJsonArrayService(restServiceClient.getClient(), merchantApiUrl);

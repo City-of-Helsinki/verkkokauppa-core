@@ -1,7 +1,10 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ConfigurationDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
@@ -26,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -60,6 +64,15 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
     @Autowired
     private PaymentItemRepository paymentItemRepository;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Value("${paytrail.aggregate.merchant.id}")
     private String aggregateMerchantId;
@@ -194,7 +207,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         paymentRequestDataDto.setMerchantId(merchantId);
 
         /* Temporarily invalidate merchant specifid paytrail merchant shop ID */
-        MerchantDto merchantConfigWithInvalidShopId = commonServiceConfigurationClient.updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID, "");
+        MerchantDto merchantConfigWithInvalidShopId = updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID, "");
         ConfigurationDto shopIdConfig = ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfigWithInvalidShopId.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID).get();
         assertEquals("", shopIdConfig.getValue());
 
@@ -209,7 +222,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         assertEquals("Failed to validate paytrail payment context, merchant shop id not found for merchant [" + merchantId + "]", exception.getErrors().getErrors().get(0).getMessage());
 
         /* Set back Paytrail test shop ID */
-        MerchantDto merchantConfigWithValidShopId = commonServiceConfigurationClient.updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID, TEST_PAYTRAIL_SHOP_IN_SHOP_ID);
+        MerchantDto merchantConfigWithValidShopId = updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID, TEST_PAYTRAIL_SHOP_IN_SHOP_ID);
         ConfigurationDto validShopIdConfig = ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfigWithValidShopId.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID).get();
         assertEquals(TEST_PAYTRAIL_SHOP_IN_SHOP_ID, validShopIdConfig.getValue());
     }
@@ -226,7 +239,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         paymentRequestDataDto.setMerchantId(merchantId);
 
         /* Temporarily invalidate merchant specifid paytrail normal merchant ID */
-        MerchantDto merchantConfigWithInvalidPaytrailMerchantId = commonServiceConfigurationClient.updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "");
+        MerchantDto merchantConfigWithInvalidPaytrailMerchantId = updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "");
         ConfigurationDto paytrailMerchantIdConfig = ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfigWithInvalidPaytrailMerchantId.getConfigurations(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID).get();
         assertEquals("", paytrailMerchantIdConfig.getValue());
 
@@ -239,7 +252,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         assertEquals("Failed to validate paytrail payment context, merchant credentials (merchant ID or secret key) are missing for merchant [" + merchantId + "]", exception.getErrors().getErrors().get(0).getMessage());
 
         /* Set back Paytrail test shop ID */
-        MerchantDto merchantConfigWithValidPaytrailMerchantId = commonServiceConfigurationClient.updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, TEST_PAYTRAIL_MERCHANT_ID);
+        MerchantDto merchantConfigWithValidPaytrailMerchantId = updateMerchantConfigurationValueByKey(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, TEST_PAYTRAIL_MERCHANT_ID);
         ConfigurationDto validPaytrailMerchantIdConfig = ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfigWithValidPaytrailMerchantId.getConfigurations(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID).get();
         assertEquals(TEST_PAYTRAIL_MERCHANT_ID, validPaytrailMerchantIdConfig.getValue());
     }
@@ -269,7 +282,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, aggregateSecretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             ResponseEntity<PaymentReturnDto> response = paytrailPaymentController.checkReturnUrl(merchantId, mockSignature, mockStatus, payment.getPaymentId(), mockSettlementReference, mockCallbackCheckoutParams);
@@ -355,7 +368,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, aggregateSecretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             ResponseEntity<PaymentReturnDto> response = paytrailPaymentController.checkReturnUrl(merchantId, mockSignature, mockStatus, payment.getPaymentId(), null, mockCallbackCheckoutParams);
@@ -398,7 +411,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, aggregateSecretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             ResponseEntity<PaymentReturnDto> response = paytrailPaymentController.checkReturnUrl(merchantId, mockSignature, mockStatus, payment.getPaymentId(), null, mockCallbackCheckoutParams);
@@ -422,7 +435,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
     private Map<String, String> createMockCallbackParams(String paymentId, String transactionId, String status) {
         Map<String, String> mockCallbackCheckoutParams = new HashMap<>();
-        mockCallbackCheckoutParams.put("checkout-account", aggregateMerchantId);
+        mockCallbackCheckoutParams.put("checkout-account", TEST_PAYTRAIL_MERCHANT_ID);
         mockCallbackCheckoutParams.put("checkout-algorithm", "sha256");
         mockCallbackCheckoutParams.put("checkout-amount", "2964");
         mockCallbackCheckoutParams.put("checkout-stamp", paymentId);
@@ -432,5 +445,35 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         mockCallbackCheckoutParams.put("checkout-provider", "nordea");
 
         return mockCallbackCheckoutParams;
+    }
+
+    private MerchantDto updateMerchantConfigurationValueByKey(String merchantId, String namespace, String key, String value) {
+        String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/get?merchantId=" + merchantId + "&namespace=" + namespace;
+        try {
+            JSONObject merchantModel = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
+            log.debug("merchantConfigurationValue: " + merchantModel);
+
+            MerchantDto merchantDto = mapper.readValue(merchantModel.toString(), MerchantDto.class);
+
+            if (!ServiceConfigurationKeys.getMerchantKeys().contains(key)) {
+                log.debug("Cant update merchant model - invalid merchant key provided: {}", key);
+                return null;
+            }
+
+            /* Modify config value by provided key */
+            MerchantDto modifiedMerchantDto = ConfigurationParseUtil.modifyMerchantConfigurationValueByKey(merchantDto, key, value);
+            String body = mapper.writeValueAsString(modifiedMerchantDto);
+
+            /* Update the modified merchant */
+            merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/upsert";
+            JSONObject updatedMerchantModel = restServiceClient.makePostCall(merchantApiUrl, body);
+            MerchantDto updatedMerchantDto = mapper.readValue(updatedMerchantModel.toString(), MerchantDto.class);
+
+            return updatedMerchantDto;
+        } catch (Exception e) {
+            log.debug(e.toString());
+            log.debug("Failed to update merchant model with given namespace {}, merchantId {} and key {}", namespace, merchantId, key);
+            return null;
+        }
     }
 }
