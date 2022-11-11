@@ -33,7 +33,7 @@ public class TestPaymentCreator {
         return payment;
     }
 
-    public static Payment createDummyPaymentFromGetPaymentRequest(GetPaymentRequestDataDto dto, String type, String paymentId) {
+    public static Payment createDummyPaymentFromGetPaymentRequest(GetPaymentRequestDataDto dto, String type, String paymentId, boolean isShopInShopPayment) {
         OrderDto order = dto.getOrder().getOrder();
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
@@ -54,6 +54,7 @@ public class TestPaymentCreator {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setPaytrailTransactionId("2e60d1e0-0f5a-4f1b-ad95-d9b0fc00202a");
+        payment.setShopInShopPayment(isShopInShopPayment);
 
         return payment;
     }

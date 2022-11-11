@@ -40,6 +40,7 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_PHONE = "merchantPhone";
     public static String MERCHANT_URL = "merchantUrl";
     public static String MERCHANT_SHOP_ID = "merchantShopId";
+    public static String MERCHANT_PAYTRAIL_MERCHANT_ID = "merchantPaytrailMerchantId";
 
 
     // NamespaceModel keys START [KYV-605] (values can be fetched from serviceconfiguration,namespace model)
@@ -133,7 +134,8 @@ public class ServiceConfigurationKeys {
                 MERCHANT_EMAIL,
                 MERCHANT_PHONE,
                 MERCHANT_URL,
-                MERCHANT_SHOP_ID
+                MERCHANT_SHOP_ID,
+                MERCHANT_PAYTRAIL_MERCHANT_ID
         ).sorted().collect(Collectors.toList());
 
         merchantKeys.addAll(overridableMerchantKeys);

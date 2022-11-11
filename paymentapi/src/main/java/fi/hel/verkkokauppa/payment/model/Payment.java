@@ -63,6 +63,9 @@ public class Payment {
 	@Field(type = FieldType.Text)
 	String paytrailTransactionId;
 
+	@Field(type = FieldType.Boolean)
+	boolean shopInShopPayment;
+
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
 	}

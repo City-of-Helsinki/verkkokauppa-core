@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.payment.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -60,6 +61,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -73,22 +75,13 @@ import java.util.stream.Collectors;
         PaytrailCreatePaymentPayloadConverter.class
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
-@TestPropertySource(properties = {
-        "paytrail.aggregate.merchant.id=695861",
-        "paytrail.test.shop.id=695874",
-        "paytrail.merchant.secret=MONISAIPPUAKAUPPIAS"
-})
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
-
-    @Value("${paytrail.aggregate.merchant.id}")
-    private String aggregateMerchantId;
-
-    @Value("${paytrail.test.shop.id}")
-    private String shopInShopMerchantId;
-
-    @Value("${paytrail.merchant.secret}")
-    private String secretKey;
+    
+    private static final String TEST_MERCHANT_ID = "01fde0e9-82b2-4846-acc0-94291625192b";
+    private static final String PAYTRAIL_MERCHANT_ID = "375917";
+    private static final String PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
+    private static final String PAYTRAIL_AGGREGATE_SECRET_KEY = "MONISAIPPUAKAUPPIAS";
 
     @Autowired
     private MockMvc mockMvc;
@@ -107,6 +100,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     @MockBean
     private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
+
+    @MockBean
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @MockBean
     private PaytrailPaymentContextBuilder paymentContextBuilder;
@@ -128,13 +124,15 @@ public class PaytrailPaymentControllerUnitTests {
         ReflectionTestUtils.setField(paymentPaytrailService, "paymentRepository", paymentRepository);
         ReflectionTestUtils.setField(paymentPaytrailService, "paymentItemRepository", paymentItemRepository);
         ReflectionTestUtils.setField(paymentPaytrailService, "payerRepository", payerRepository);
-        ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "secretKey", secretKey);
+        ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "aggregateSecretKey", PAYTRAIL_AGGREGATE_SECRET_KEY);
+        ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "commonServiceConfigurationClient", commonServiceConfigurationClient);
+        ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "paymentRepository", paymentRepository);
     }
 
     @Test
     public void whenCreateFromOrderWithValidDataThenReturnStatus201() throws Exception {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
-        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
         paymentRequestDataDto.setPaymentMethod("nordea");
         paymentRequestDataDto.setPaymentMethodLabel("Nordea");
@@ -143,7 +141,8 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper);
 
         String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
-        Payment mockPayment = mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId);
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        Payment mockPayment = mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
 
         MvcResult response = this.mockMvc.perform(
                         post("/payment/paytrail/createFromOrder")
@@ -176,7 +175,7 @@ public class PaytrailPaymentControllerUnitTests {
     @Test
     public void whenCreateFromOrderWithInvalidPaymentContextThenReturnStatus500() {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
-        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
         paymentRequestDataDto.setPaymentMethod("nordea");
         paymentRequestDataDto.setPaymentMethodLabel("Nordea");
@@ -185,7 +184,9 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper);
 
         String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
-        mockCreateInvalidPaymentFromOrder(paymentRequestDataDto, mockPaymentId);
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockPaymentContext.setPaytrailMerchantId("invalid-123");
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
 
         Exception exception = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
@@ -209,7 +210,7 @@ public class PaytrailPaymentControllerUnitTests {
     @Test
     public void whenCreateFromOrderWithoutUserStatusThenReturnStatus403() throws Exception {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
-        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
         paymentRequestDataDto.setPaymentMethod("nordea");
         paymentRequestDataDto.setPaymentMethodLabel("Nordea");
@@ -219,7 +220,8 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper);
 
         String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
-        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId);
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
 
         Exception exception = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
@@ -241,7 +243,7 @@ public class PaytrailPaymentControllerUnitTests {
     @Test
     public void whenCreateFromOrderWithInvalidOrderStatusThenReturnStatus403() throws Exception {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
-        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
         paymentRequestDataDto.setPaymentMethod("nordea");
         paymentRequestDataDto.setPaymentMethodLabel("Nordea");
@@ -252,7 +254,8 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper1);
 
         String mockPaymentId1 = PaymentUtil.generatePaymentOrderNumber(orderWrapper1.getOrder().getOrderId());
-        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId1);
+        PaytrailPaymentContext mockPaymentContext1 = createMockPaytrailPaymentContext(orderWrapper1.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext1, mockPaymentId1);
 
         Exception exception1 = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
@@ -275,7 +278,8 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper2);
 
         String mockPaymentId2 = PaymentUtil.generatePaymentOrderNumber(orderWrapper2.getOrder().getOrderId());
-        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId2);
+        PaytrailPaymentContext mockPaymentContext2 = createMockPaytrailPaymentContext(orderWrapper2.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext2, mockPaymentId2);
 
         Exception exception2 = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
@@ -294,6 +298,75 @@ public class PaytrailPaymentControllerUnitTests {
     }
 
     @Test
+    public void whenCreateFromOrderWithInvalidShopInShopPaymentContextThenReturnStatus403() throws Exception {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
+        paymentRequestDataDto.setLanguage("FI");
+        paymentRequestDataDto.setPaymentMethod("nordea");
+        paymentRequestDataDto.setPaymentMethodLabel("Nordea");
+
+        /* Test with missing shopId context */
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        paymentRequestDataDto.setOrder(orderWrapper);
+
+        String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockPaymentContext.setUseShopInShop(true);
+        mockPaymentContext.setShopId(null);
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                            post("/payment/paytrail/createFromOrder")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .accept(MediaType.APPLICATION_JSON)
+                                    .content(mapper.writeValueAsString(paymentRequestDataDto))
+                    )
+                    .andDo(print());
+        });
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, cause.getStatus());
+        assertEquals("validation-failed-for-paytrail-payment-context-without-merchant-shop-id", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("Failed to validate paytrail payment context, merchant shop id not found for merchant [" + paymentRequestDataDto.getMerchantId() + "]", cause.getErrors().getErrors().get(0).getMessage());
+    }
+
+    @Test
+    public void whenCreateFromOrderWithInvalidNormalPaymentContextThenReturnStatus403() throws Exception {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
+        paymentRequestDataDto.setLanguage("FI");
+        paymentRequestDataDto.setPaymentMethod("nordea");
+        paymentRequestDataDto.setPaymentMethodLabel("Nordea");
+
+        /* Test with missing shopId context */
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        paymentRequestDataDto.setOrder(orderWrapper);
+
+        String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockPaymentContext.setUseShopInShop(false);
+        mockPaymentContext.setPaytrailMerchantId(null);
+        mockPaymentContext.setPaytrailSecretKey(null);
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                            post("/payment/paytrail/createFromOrder")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .accept(MediaType.APPLICATION_JSON)
+                                    .content(mapper.writeValueAsString(paymentRequestDataDto))
+                    )
+                    .andDo(print());
+        });
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, cause.getStatus());
+        assertEquals("validation-failed-for-paytrail-payment-context-without-paytrail-merchant-credentials", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("Failed to validate paytrail payment context, merchant credentials (merchant ID or secret key) are missing for merchant [" + paymentRequestDataDto.getMerchantId() + "]", cause.getErrors().getErrors().get(0).getMessage());
+    }
+
+    @Test
     public void whenCheckReturnUrlWithSuccessfulPaymentThenReturnStatus200() throws Exception {
         /* First create mock payment from mock order to make the whole return url check process possible */
         Payment mockPaymentDto = mockCheckReturnUrlProcess();
@@ -307,14 +380,14 @@ public class PaytrailPaymentControllerUnitTests {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, secretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             /* Convert mock callback checkout params to actual query params */
             String queryParams = mockCallbackCheckoutParams.keySet().stream()
                     .map(key -> key + "=" + mockCallbackCheckoutParams.get(key))
                     .collect(Collectors.joining("&"));
-
+            queryParams += "&" + "merchantId=" + TEST_MERCHANT_ID;
             MvcResult checkReturnUrlResponse = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams)
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -354,6 +427,7 @@ public class PaytrailPaymentControllerUnitTests {
         String queryParams1 = mockCallbackCheckoutParams1.keySet().stream()
                 .map(key -> key + "=" + mockCallbackCheckoutParams1.get(key))
                 .collect(Collectors.joining("&"));
+        queryParams1 += "&" + "merchantId=" + TEST_MERCHANT_ID;
 
         MvcResult checkReturnUrlResponse1 = this.mockMvc.perform(
                         get("/payment/paytrail/check-return-url?" + queryParams1)
@@ -379,7 +453,7 @@ public class PaytrailPaymentControllerUnitTests {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams2);
         try {
-            String mockSignature2 = PaytrailSignatureService.calculateSignature(filteredParams, null, secretKey);
+            String mockSignature2 = PaytrailSignatureService.calculateSignature(filteredParams, null, PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams2.put("signature", mockSignature2);
 
             /* Override some query param to invalidate the generated signature */
@@ -389,7 +463,7 @@ public class PaytrailPaymentControllerUnitTests {
             String queryParams2 = mockCallbackCheckoutParams2.keySet().stream()
                     .map(key -> key + "=" + mockCallbackCheckoutParams2.get(key))
                     .collect(Collectors.joining("&"));
-
+            queryParams2 += "&" + "merchantId=" + TEST_MERCHANT_ID;
             MvcResult checkReturnUrlResponse2 = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams2)
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -422,14 +496,15 @@ public class PaytrailPaymentControllerUnitTests {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, secretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             /* Convert mock callback checkout params to actual query params */
             String queryParams = mockCallbackCheckoutParams.keySet().stream()
                     .map(key -> key + "=" + mockCallbackCheckoutParams.get(key))
                     .collect(Collectors.joining("&"));
-
+            queryParams += "&" + "merchantId=" + TEST_MERCHANT_ID;
+            
             MvcResult checkReturnUrlResponse = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams)
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -462,13 +537,14 @@ public class PaytrailPaymentControllerUnitTests {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, secretKey);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
             /* Convert mock callback checkout params to actual query params */
             String queryParams = mockCallbackCheckoutParams.keySet().stream()
                     .map(key -> key + "=" + mockCallbackCheckoutParams.get(key))
                     .collect(Collectors.joining("&"));
+            queryParams += "&" + "merchantId=" + TEST_MERCHANT_ID;
 
             MvcResult checkReturnUrlResponse = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams)
@@ -491,24 +567,9 @@ public class PaytrailPaymentControllerUnitTests {
         }
     }
 
-    private Payment mockCreateValidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, String mockPaymentId) {
+    private Payment mockCreateValidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, PaytrailPaymentContext mockPaymentContext, String mockPaymentId) {
         OrderWrapper orderWrapper = paymentRequestDataDto.getOrder();
-        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace());
-        Payment mockPayment = TestPaymentCreator.createDummyPaymentFromGetPaymentRequest(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
-        PaymentItem mockPaymentItem = TestPaymentCreator.createDummyPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
-        Payer mockPayer = TestPaymentCreator.createDummyPayer(mockPaymentId, orderWrapper.getOrder());
-
-        mockCreatePaymentFlow(mockPaymentContext, mockPayment, mockPaymentItem, mockPayer);
-
-        return mockPayment;
-    }
-
-    private Payment mockCreateInvalidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, String mockPaymentId) {
-        OrderWrapper orderWrapper = paymentRequestDataDto.getOrder();
-        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace());
-        mockPaymentContext.setAggregateMerchantId("invalid-123");
-        mockPaymentContext.setShopId("invalid-456");
-        Payment mockPayment = TestPaymentCreator.createDummyPaymentFromGetPaymentRequest(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId);
+        Payment mockPayment = TestPaymentCreator.createDummyPaymentFromGetPaymentRequest(paymentRequestDataDto, orderWrapper.getOrder().getType(), mockPaymentId, mockPaymentContext.isUseShopInShop());
         PaymentItem mockPaymentItem = TestPaymentCreator.createDummyPaymentItem(mockPaymentId, orderWrapper.getItems().get(0));
         Payer mockPayer = TestPaymentCreator.createDummyPayer(mockPaymentId, orderWrapper.getOrder());
 
@@ -519,7 +580,7 @@ public class PaytrailPaymentControllerUnitTests {
 
     private void mockCreatePaymentFlow(PaytrailPaymentContext mockPaymentContext, Payment mockPayment, PaymentItem mockPaymentItem, Payer mockPayer) {
         Mockito.when(paymentPaytrailService.getPaymentRequestData(Mockito.any(GetPaymentRequestDataDto.class))).thenCallRealMethod();
-        Mockito.when(paymentContextBuilder.buildFor(Mockito.any(String.class), Mockito.any(String.class))).thenReturn(mockPaymentContext);
+        Mockito.when(paymentContextBuilder.buildFor(Mockito.any(String.class), Mockito.any(String.class), Mockito.any(boolean.class))).thenReturn(mockPaymentContext);
         Mockito.when(paymentRepository.save(Mockito.any(Payment.class))).thenReturn(mockPayment);
         Mockito.when(paymentItemRepository.save(Mockito.any(PaymentItem.class))).thenReturn(mockPaymentItem);
         Mockito.when(payerRepository.save(Mockito.any(Payer.class))).thenReturn(mockPayer);
@@ -528,7 +589,7 @@ public class PaytrailPaymentControllerUnitTests {
     private Payment mockCheckReturnUrlProcess() throws Exception {
         /* First create mock payment from mock order to make the whole return url check process possible */
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
-        paymentRequestDataDto.setMerchantId("01fde0e9-82b2-4846-acc0-94291625192b");
+        paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
         paymentRequestDataDto.setPaymentMethod("nordea");
         paymentRequestDataDto.setPaymentMethodLabel("Nordea");
@@ -537,7 +598,8 @@ public class PaytrailPaymentControllerUnitTests {
         paymentRequestDataDto.setOrder(orderWrapper);
 
         String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
-        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentId);
+        PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
+        mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
 
         MvcResult createPaymentResponse = this.mockMvc.perform(
                         post("/payment/paytrail/createFromOrder")
@@ -559,7 +621,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     private void mockCheckReturnUrlFlow(Payment mockPayment) {
         Mockito.when(onlinePaymentService.getPayment(Mockito.any(String.class))).thenReturn(mockPayment);
-        Mockito.when(paytrailPaymentReturnValidator.validateChecksum(Mockito.any(Map.class), Mockito.any(String.class), Mockito.any(String.class))).thenCallRealMethod();
+        Mockito.when(paytrailPaymentReturnValidator.validateChecksum(Mockito.any(Map.class), Mockito.any(String.class), Mockito.any(String.class), Mockito.any(String.class))).thenCallRealMethod();
+        Mockito.when(paymentRepository.findById(Mockito.any(String.class))).thenReturn(Optional.of(mockPayment));
+        Mockito.when(commonServiceConfigurationClient.getMerchantPaytrailSecretKey(Mockito.any(String.class))).thenReturn(PAYTRAIL_SECRET_KEY);
         Mockito.when(paytrailPaymentReturnValidator.validateReturnValues(Mockito.any(boolean.class), Mockito.any(String.class), Mockito.nullable(String.class))).thenCallRealMethod();
     }
 
@@ -602,11 +666,12 @@ public class PaytrailPaymentControllerUnitTests {
         return order;
     }
 
-    private PaytrailPaymentContext createMockPaytrailPaymentContext(String namespace) {
+    private PaytrailPaymentContext createMockPaytrailPaymentContext(String namespace, String merchantId) {
         PaytrailPaymentContext mockPaymentContext = new PaytrailPaymentContext();
         mockPaymentContext.setNamespace(namespace);
-        mockPaymentContext.setAggregateMerchantId(aggregateMerchantId);
-        mockPaymentContext.setShopId(shopInShopMerchantId);
+        mockPaymentContext.setInternalMerchantId(merchantId);
+        mockPaymentContext.setPaytrailMerchantId(PAYTRAIL_MERCHANT_ID);
+        mockPaymentContext.setPaytrailSecretKey(PAYTRAIL_SECRET_KEY);
         mockPaymentContext.setDefaultCurrency("EUR");
         mockPaymentContext.setDefaultLanguage("FI");
         mockPaymentContext.setReturnUrl("https://ecom.example.com/cart");
@@ -620,7 +685,7 @@ public class PaytrailPaymentControllerUnitTests {
 
     private Map<String, String> createMockCallbackParams(String paymentId, String transactionId, String status) {
         Map<String, String> mockCallbackCheckoutParams = new HashMap<>();
-        mockCallbackCheckoutParams.put("checkout-account", aggregateMerchantId);
+        mockCallbackCheckoutParams.put("checkout-account", PAYTRAIL_MERCHANT_ID);
         mockCallbackCheckoutParams.put("checkout-algorithm", "sha256");
         mockCallbackCheckoutParams.put("checkout-amount", "2964");
         mockCallbackCheckoutParams.put("checkout-stamp", paymentId);

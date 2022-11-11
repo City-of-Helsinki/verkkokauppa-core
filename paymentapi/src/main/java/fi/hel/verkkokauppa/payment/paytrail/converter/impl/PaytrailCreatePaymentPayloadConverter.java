@@ -70,7 +70,10 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
             paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
             paymentItem.setProductCode(orderItemDto.getProductId());
             paymentItem.setDescription(orderItemDto.getProductName());
-            paymentItem.setOrderId(orderItemDto.getOrderId());
+
+            if (context.isUseShopInShop()) {
+                paymentItem.setOrderId(orderItemDto.getOrderId());
+            }
 
             paymentItems.add(paymentItem);
         }

@@ -1,11 +1,18 @@
 package fi.hel.verkkokauppa.payment.paytrail.validation;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
+import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.constants.PaymentStatus;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.security.InvalidKeyException;
@@ -17,15 +24,26 @@ import java.util.TreeMap;
 @Slf4j
 public class PaytrailPaymentReturnValidator {
 
-    @Value("${paytrail.merchant.secret:}")
-    private String secretKey;
+    @Value("${paytrail.aggregate.merchant.secret:}")
+    private String aggregateSecretKey;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
 
-    public boolean validateChecksum(Map<String,String> checkoutParams, String signature, String orderNumber) {
-        if (buildSignatureFromReturnData(checkoutParams).equals(signature)) {
+    public boolean validateChecksum(Map<String,String> checkoutParams, String merchantId, String signature, String paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow(() -> new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("payment-not-found", "payment with id [" + paymentId + "] not found")
+        ));
+        String createdSignature = buildSignatureFromReturnData(checkoutParams, merchantId, payment.isShopInShopPayment());
+        if (createdSignature.equals(signature)) {
             return true;
         } else {
-            log.debug("paytrail payment validation failed, orderNumber: " + orderNumber);
+            log.debug("paytrail payment validation failed, orderNumber: " + paymentId);
             return false;
         }
     }
@@ -54,11 +72,21 @@ public class PaytrailPaymentReturnValidator {
         return PaymentStatus.OK.getStatus().equals(status);
     }
 
-    private String buildSignatureFromReturnData(Map<String,String> checkoutParams) {
+    private String buildSignatureFromReturnData(Map<String,String> checkoutParams, String merchantId, boolean isShopInShopPayment) {
         TreeMap<String, String> checkoutSignatureParameters = PaytrailSignatureService.filterCheckoutQueryParametersMap(checkoutParams);
 
         try {
-            String calculatedSignature = PaytrailSignatureService.calculateSignature(checkoutSignatureParameters, null, secretKey);
+            String calculatedSignature;
+            if (isShopInShopPayment) {
+                calculatedSignature = PaytrailSignatureService.calculateSignature(checkoutSignatureParameters, null, aggregateSecretKey);
+            } else {
+                String merchantSecretkey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
+                if (StringUtils.isEmpty(merchantSecretkey)) {
+                    log.debug("No paytrail secret key found for merchant {}", merchantId);
+                    return null;
+                }
+                calculatedSignature = PaytrailSignatureService.calculateSignature(checkoutSignatureParameters, null, merchantSecretkey);
+            }
             log.debug("calculatedSignature: " + calculatedSignature);
             return calculatedSignature;
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
