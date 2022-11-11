@@ -39,7 +39,10 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_EMAIL = "merchantEmail";
     public static String MERCHANT_PHONE = "merchantPhone";
     public static String MERCHANT_URL = "merchantUrl";
+    // Paytrail specific merchant keys
     public static String MERCHANT_SHOP_ID = "merchantShopId";
+    public static String MERCHANT_PAYTRAIL_SECRET = "merchantPaytrailSecret";
+
 
 
     // NamespaceModel keys START [KYV-605] (values can be fetched from serviceconfiguration,namespace model)
