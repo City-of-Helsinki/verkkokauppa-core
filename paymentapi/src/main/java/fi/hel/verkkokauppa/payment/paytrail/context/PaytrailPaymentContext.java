@@ -6,6 +6,8 @@ import lombok.Data;
 public class PaytrailPaymentContext {
 
     private String namespace;
+
+    /* merchantId -> internalMerchantId. This is needed to get merchant specific configurations for normal merchant flow */
     private String internalMerchantId;
     private String returnUrl;
     private String notifyUrl;

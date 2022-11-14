@@ -9,26 +9,23 @@ import org.springframework.http.HttpStatus;
 public class PaymentContextValidator {
 
     public static void validateContext(PaytrailPaymentContext context) {
-        if (context.isUseShopInShop()) {
-            if (StringUtils.isEmpty(context.getShopId())) {
-                throw new CommonApiException(
-                        HttpStatus.FORBIDDEN,
-                        new Error(
-                                "validation-failed-for-paytrail-payment-context-without-merchant-shop-id",
-                                "Failed to validate paytrail payment context, merchant shop id not found for merchant [" + context.getInternalMerchantId() + "]"
-                        )
-                );
-            }
-        } else {
-            if (StringUtils.isEmpty(context.getPaytrailMerchantId()) || StringUtils.isEmpty(context.getPaytrailSecretKey())) {
-                throw new CommonApiException(
-                        HttpStatus.FORBIDDEN,
-                        new Error(
-                                "validation-failed-for-paytrail-payment-context-without-paytrail-merchant-credentials",
-                                "Failed to validate paytrail payment context, merchant credentials (merchant ID or secret key) are missing for merchant [" + context.getInternalMerchantId() + "]"
-                        )
-                );
-            }
+        if (context.isUseShopInShop() && StringUtils.isEmpty(context.getShopId())) {
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error(
+                            "validation-failed-for-paytrail-payment-context-without-merchant-shop-id",
+                            "Failed to validate paytrail payment context, merchant shop id not found for merchant [" + context.getInternalMerchantId() + "]"
+                    )
+            );
+        }
+        if (!context.isUseShopInShop() && StringUtils.isEmpty(context.getPaytrailMerchantId()) || StringUtils.isEmpty(context.getPaytrailSecretKey()) ) {
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error(
+                            "validation-failed-for-paytrail-payment-context-without-paytrail-merchant-credentials",
+                            "Failed to validate paytrail payment context, merchant credentials (merchant ID or secret key) are missing for merchant [" + context.getInternalMerchantId() + "]"
+                    )
+            );
         }
     }
 }

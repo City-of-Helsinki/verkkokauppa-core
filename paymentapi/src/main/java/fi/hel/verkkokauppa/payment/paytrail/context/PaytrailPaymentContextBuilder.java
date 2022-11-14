@@ -1,18 +1,14 @@
 package fi.hel.verkkokauppa.payment.paytrail.context;
 
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
-import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
 
-import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,7 +23,13 @@ public class PaytrailPaymentContextBuilder {
     @Autowired
     private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
-
+    /**
+     * Build payment context for paytrail with shop-in-shop or normal merchant flow.
+     * @param namespace Namespace
+     * @param merchantId Internal merchant id
+     * @param useShopInShop flag determines whether to create PaytrailPaymentContext for shop-in-shop or normal merchant flow
+     * @return
+     */
     public PaytrailPaymentContext buildFor(String namespace, String merchantId, boolean useShopInShop) {
         PaytrailPaymentContext defaultContext = new PaytrailPaymentContext();
         defaultContext.setNamespace(namespace);
