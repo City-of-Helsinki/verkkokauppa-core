@@ -136,7 +136,7 @@ public class MerchantService {
         }
     }
 
-    private MerchantModel getMerchantModelByMerchantId(String merchantId) {
+    public MerchantModel getMerchantModelByMerchantId(String merchantId) {
         return merchantRepository
                 .findById(merchantId)
                 .orElseThrow(() -> new CommonApiException(
@@ -162,6 +162,18 @@ public class MerchantService {
         return configuration.map(ConfigurationModel::getValue).orElse(null);
     }
 
+    public String getConfigurationValueByMerchantIdAndKey(String merchantId, String key) {
+        MerchantModel model = getMerchantModelByMerchantId(merchantId);
+        if (model == null) {
+            throw new CommonApiException(
+                    HttpStatus.NOT_FOUND,
+                    new Error("merchant-not-found", "merchant with value: [" + merchantId + "] not found")
+            );
+        }
+        Optional<ConfigurationModel> configuration = getConfigurationWithKeyFromModel(key, model);
+        return configuration.map(ConfigurationModel::getValue).orElse(null);
+    }
+
     /**
      * > Find the merchant with the given merchantId and namespace, then find the configuration with the given key, and
      * return the configuration
@@ -180,6 +192,7 @@ public class MerchantService {
         }
         return null;
     }
+
 
     public Optional<ConfigurationModel> getConfigurationWithKeyFromModel(String key, MerchantModel model) {
         return model.getConfigurations()
@@ -266,5 +279,22 @@ public class MerchantService {
         log.debug("created configuration for merchant namespace: " + namespace + " with configuration: " + config.toString());
 
         return config;
+    }
+
+    public MerchantDto addMerchantConfiguration(String merchantId, String configurationKey, String configurationValue) {
+        MerchantModel foundMerchant = getMerchantModelByMerchantId(merchantId);
+        ArrayList<ConfigurationModel> updateConfig = new ArrayList<>();
+        updateConfig.add(
+                constructConfigByParams(
+                        foundMerchant.getNamespace(),
+                        configurationKey,
+                        configurationValue,
+                        false
+                )
+        );
+        MerchantDto updateDto = new MerchantDto();
+        updateDto.setMerchantId(merchantId);
+        updateDto.setConfigurations(updateConfig);
+        return update(updateDto);
     }
 }
