@@ -75,6 +75,12 @@ import java.util.stream.Collectors;
         PaytrailCreatePaymentPayloadConverter.class
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
+@TestPropertySource(properties = {
+    "payment_default_paytrail_return_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "payment_default_paytrail_return_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "payment_default_paytrail_notify_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "payment_default_paytrail_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5"
+})
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
     
