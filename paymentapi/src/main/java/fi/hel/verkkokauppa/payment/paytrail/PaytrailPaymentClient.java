@@ -50,7 +50,7 @@ public class PaytrailPaymentClient {
     }
 
     public List<PaytrailPaymentMethod> getPaymentMethods(PaytrailPaymentContext context) {
-        PaytrailClient paytrailClient = initPaytrailClient(context);
+        PaytrailClient paytrailClient = createPaytrailClientFromPaymentContext(context);
 
         PaytrailPaymentMethodsRequest.PaymentMethodsPayload payload = new PaytrailPaymentMethodsRequest.PaymentMethodsPayload();
         PaytrailPaymentMethodsRequest request = new PaytrailPaymentMethodsRequest(payload);
@@ -66,7 +66,7 @@ public class PaytrailPaymentClient {
     }
 
     public PaytrailPaymentResponse createPayment(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto) {
-        PaytrailClient paytrailClient = initPaytrailClient(context);
+        PaytrailClient paytrailClient = createPaytrailClientFromPaymentContext(context);
 
         CreatePaymentPayload payload = createPaymentPayloadConverter.convertToPayload(context, orderWrapperDto);
         payload.setStamp(paymentId);
@@ -85,7 +85,7 @@ public class PaytrailPaymentClient {
         }
     }
 
-    private PaytrailClient initPaytrailClient(PaytrailPaymentContext context) {
+    private PaytrailClient createPaytrailClientFromPaymentContext(PaytrailPaymentContext context) {
         PaymentContextValidator.validateContext(context);
         if (context.isUseShopInShop()) {
             return paytrailAuthClientFactory.getShopInShopClient(context.getShopId());
