@@ -1,13 +1,12 @@
 package fi.hel.verkkokauppa.configuration.api.merchant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.configuration.api.merchant.MerchantController;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
 import fi.hel.verkkokauppa.configuration.model.LocaleModel;
-
 import fi.hel.verkkokauppa.configuration.repository.MerchantRepository;
 import fi.hel.verkkokauppa.configuration.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 
 import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
@@ -27,12 +27,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 
 @SpringBootTest
 @Slf4j
+@TestPropertySource(properties = {
+        "merchant.secret.encryption.salt=test-salt",
+})
 public class MerchantControllerTest {
     private ArrayList<String> toBeDeleted = new ArrayList<>();
     @Autowired
@@ -277,6 +278,56 @@ public class MerchantControllerTest {
             add("subscriptionPriceUrl");
         }});
         Assertions.assertEquals(allKeys, responseMerchantKeys.getBody());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void upsertWithValidDataAndCreatePaytrailSecret() throws Exception {
+        MerchantDto merchantDto = new MerchantDto();
+        merchantDto.setNamespace("test-namespace");
+
+        ConfigurationModel configurationModel = new ConfigurationModel();
+
+        createLocalModel(configurationModel);
+
+        createEmptyConfigurationsModel(merchantDto, configurationModel);
+
+        ResponseEntity<MerchantDto> response = merchantController.upsertMerchant(merchantDto);
+
+        MerchantDto responseMerchantDto = response.getBody();
+        Assertions.assertNotNull(responseMerchantDto);
+        String merchantId = responseMerchantDto.getMerchantId();
+        toBeDeleted.add(merchantId);
+        Assertions.assertNotNull(merchantId);
+        // Just an empty configuration
+        Assertions.assertEquals(1, responseMerchantDto.getConfigurations().size());
+
+        String testSecret = "test-secret-value";
+        ResponseEntity<MerchantDto> merchantDtoResponseEntity = merchantController.addPaytrailSecret(merchantId, testSecret);
+        MerchantDto addedSecretDto = merchantDtoResponseEntity.getBody();
+        assert addedSecretDto != null;
+        Assertions.assertEquals(2, addedSecretDto.getConfigurations().size());
+        ConfigurationModel secretConfiguration = addedSecretDto.getConfigurations().get(1);
+        Assertions.assertEquals(ServiceConfigurationKeys.MERCHANT_PAYTRAIL_SECRET, secretConfiguration.getKey());
+        Assertions.assertNotEquals(testSecret, secretConfiguration.getValue());
+        ResponseEntity<String> paytrailSecretResponse = merchantController.getPaytrailSecret(merchantId);
+        Assertions.assertEquals(testSecret, paytrailSecretResponse.getBody());
+
+    }
+
+    private void createEmptyConfigurationsModel(MerchantDto merchantDto, ConfigurationModel configurationModel) {
+        ArrayList<ConfigurationModel> configurationModels = new ArrayList<>();
+        configurationModels.add(configurationModel);
+
+        merchantDto.setConfigurations(configurationModels);
+    }
+
+    private void createLocalModel(ConfigurationModel configurationModel) {
+        LocaleModel locale = new LocaleModel();
+        locale.setFi("test-fi");
+        locale.setSv("test-sv");
+        locale.setEn("test-en");
+        configurationModel.setLocale(locale);
     }
 
 }

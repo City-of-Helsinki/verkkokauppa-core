@@ -5,9 +5,12 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
+import fi.hel.verkkokauppa.configuration.service.DecryptService;
+import fi.hel.verkkokauppa.configuration.service.EncryptService;
 import fi.hel.verkkokauppa.configuration.service.MerchantService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +24,19 @@ import java.util.List;
 @Validated
 @RestController
 public class MerchantController {
-    @Autowired
-    private MerchantService merchantService;
+    private final MerchantService merchantService;
 
+    private final Environment env;
+    private final EncryptService encryptService;
+    private final DecryptService decryptService;
+
+    @Autowired
+    public MerchantController(MerchantService merchantService, Environment env, EncryptService encryptService, DecryptService decryptService) {
+        this.merchantService = merchantService;
+        this.env = env;
+        this.encryptService = encryptService;
+        this.decryptService = decryptService;
+    }
 
     /**
      * > Upserts a merchant
@@ -97,5 +110,36 @@ public class MerchantController {
                                                                @RequestParam(value="namespace") String namespace) {
         MerchantDto merchantDto = merchantService.findByMerchantIdAndNamespace(merchantId, namespace);
         return ResponseEntity.ok(merchantDto);
+    }
+
+    @GetMapping("/merchant/paytrail-secret/add")
+    public ResponseEntity<MerchantDto> addPaytrailSecret(
+            @RequestParam(value = "merchantId") String merchantId,
+            @RequestParam(value = "secret") String secret
+    ) {
+        String salt = env.getRequiredProperty("merchant.secret.encryption.salt");
+
+        String encryptedPaytrailSecret = encryptService.encryptSecret(secret, salt);
+
+        MerchantDto merchantDto = merchantService.addMerchantConfiguration(
+                merchantId,
+                ServiceConfigurationKeys.MERCHANT_PAYTRAIL_SECRET,
+                encryptedPaytrailSecret
+        );
+        return ResponseEntity.ok(merchantDto);
+    }
+
+    @GetMapping("/merchant/paytrail-secret/get")
+    public ResponseEntity<String> getPaytrailSecret(@RequestParam(value = "merchantId") String merchantId) {
+        String salt = env.getRequiredProperty("merchant.secret.encryption.salt");
+
+        String encryptedPaytrailSecret = merchantService.getConfigurationValueByMerchantIdAndKey(
+                merchantId,
+                ServiceConfigurationKeys.MERCHANT_PAYTRAIL_SECRET
+        );
+
+        String paytrailSecret = decryptService.decryptSecret(salt, encryptedPaytrailSecret);
+
+        return ResponseEntity.ok(paytrailSecret);
     }
 }
