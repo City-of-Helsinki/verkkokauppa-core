@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -21,11 +22,10 @@ import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
-import fi.hel.verkkokauppa.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -201,5 +201,13 @@ public class PaymentPaytrailService {
         payer.setEmail(orderDto.getCustomerEmail());
 
         payerRepository.save(payer);
+    }
+
+    public String getPaymentUrl(String transactionId) {
+        return PaytrailClient.PAYMENT_UI_URL + "/payments/" + transactionId;
+    }
+
+    public String getPaymentUrl(Payment payment) {
+        return getPaymentUrl(payment.getPaytrailTransactionId());
     }
 }
