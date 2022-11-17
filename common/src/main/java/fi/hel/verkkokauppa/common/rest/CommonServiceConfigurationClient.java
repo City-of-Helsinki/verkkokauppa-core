@@ -2,9 +2,11 @@ package fi.hel.verkkokauppa.common.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
+import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
 import lombok.Getter;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -149,11 +151,23 @@ public class CommonServiceConfigurationClient {
         }
     }
 
+    public String getMerchantPaytrailSecretKey(String merchantId) {
+        String merchantApiUrl = serviceUrls.getMerchantServiceUrl() + "/merchant/paytrail-secret/get?merchantId=" + merchantId;
+        try {
+            return restServiceClient.queryStringService(merchantApiUrl);
+        } catch (Exception e) {
+            log.debug(e.toString());
+            log.debug("Cant get secret key for merchant {}", merchantId);
+            return null;
+        }
+    }
+
     public String getAuthKey(String namespace) {
         String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "api-access/get?namespace=" + namespace;
 
         return restServiceClient.queryStringService(serviceMappingUrl);
     }
+
 
 }
     

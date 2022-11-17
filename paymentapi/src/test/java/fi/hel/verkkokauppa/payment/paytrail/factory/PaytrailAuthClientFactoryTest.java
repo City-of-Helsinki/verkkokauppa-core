@@ -20,7 +20,7 @@ class PaytrailAuthClientFactoryTest {
 
     @Test
     void getClient() {
-        PaytrailClient client = paytrailAuthClientFactory.getClient("123");
+        PaytrailClient client = paytrailAuthClientFactory.getShopInShopClient("123");
         Assertions.assertEquals(client.getBaseUrl(),"https://services.paytrail.com");
     }
 }

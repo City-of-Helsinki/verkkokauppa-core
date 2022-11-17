@@ -266,6 +266,7 @@ public class MerchantControllerTest {
             add("merchantCity");
             add("merchantEmail");
             add("merchantName");
+            add("merchantPaytrailMerchantId");
             add("merchantPhone");
             add("merchantShopId");
             add("merchantStreet");
