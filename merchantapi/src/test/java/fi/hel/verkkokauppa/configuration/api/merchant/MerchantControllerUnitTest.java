@@ -13,6 +13,8 @@ import fi.hel.verkkokauppa.configuration.model.LocaleModel;
 
 import fi.hel.verkkokauppa.configuration.model.merchant.MerchantModel;
 import fi.hel.verkkokauppa.configuration.repository.MerchantRepository;
+import fi.hel.verkkokauppa.configuration.service.DecryptService;
+import fi.hel.verkkokauppa.configuration.service.EncryptService;
 import fi.hel.verkkokauppa.configuration.service.MerchantService;
 import lombok.extern.slf4j.Slf4j;
 import org.hamcrest.MatcherAssert;
@@ -79,6 +81,12 @@ public class MerchantControllerUnitTest {
     // as new field with @MockBean to controller test.
     @MockBean
     private MerchantService merchantService;
+
+    @MockBean
+    private EncryptService encryptService;
+
+    @MockBean
+    private DecryptService decryptService;
 
     @MockBean
     private MerchantRepository merchantRepository;
