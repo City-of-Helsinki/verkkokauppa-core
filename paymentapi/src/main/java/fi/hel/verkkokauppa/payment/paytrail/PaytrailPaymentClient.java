@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaymentContextValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.mapper.PaytrailPaymentCreateResponseMapper;
@@ -48,8 +49,8 @@ public class PaytrailPaymentClient {
         this.createPaymentPayloadConverter = createPaymentPayloadConverter;
     }
 
-    public List<PaytrailPaymentMethod> getPaymentMethods() {
-        PaytrailClient paytrailClient = paytrailAuthClientFactory.getClient();
+    public List<PaytrailPaymentMethod> getPaymentMethods(PaytrailPaymentContext context) {
+        PaytrailClient paytrailClient = createPaytrailClientFromPaymentContext(context);
 
         PaytrailPaymentMethodsRequest.PaymentMethodsPayload payload = new PaytrailPaymentMethodsRequest.PaymentMethodsPayload();
         PaytrailPaymentMethodsRequest request = new PaytrailPaymentMethodsRequest(payload);
@@ -65,7 +66,7 @@ public class PaytrailPaymentClient {
     }
 
     public PaytrailPaymentResponse createPayment(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto) {
-        PaytrailClient paytrailClient = paytrailAuthClientFactory.getClient(context.getShopId());
+        PaytrailClient paytrailClient = createPaytrailClientFromPaymentContext(context);
 
         CreatePaymentPayload payload = createPaymentPayloadConverter.convertToPayload(context, orderWrapperDto);
         payload.setStamp(paymentId);
@@ -81,6 +82,15 @@ public class PaytrailPaymentClient {
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-paytrail-payment", "Failed to create paytrail payment")
             );
+        }
+    }
+
+    private PaytrailClient createPaytrailClientFromPaymentContext(PaytrailPaymentContext context) {
+        PaymentContextValidator.validateContext(context);
+        if (context.isUseShopInShop()) {
+            return paytrailAuthClientFactory.getShopInShopClient(context.getShopId());
+        } else {
+            return paytrailAuthClientFactory.getClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
         }
     }
 

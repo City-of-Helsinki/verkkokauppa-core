@@ -30,9 +30,7 @@ public class OrderAdminController {
     @GetMapping(value = "/order-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<OrderAggregateDto> getOrder(@RequestParam(value = "orderId") String orderId) {
         try {
-            Order order = orderService.findById(orderId);
             return orderService.orderAggregateDto(orderId);
-
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {

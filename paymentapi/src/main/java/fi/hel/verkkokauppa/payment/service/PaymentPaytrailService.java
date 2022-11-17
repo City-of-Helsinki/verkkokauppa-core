@@ -67,9 +67,9 @@ public class PaymentPaytrailService {
 
     public PaymentMethodDto[] getOnlinePaymentMethodList(String merchantId, String namespace, String currency) {
         if (StringUtils.isNotEmpty(merchantId)) {
-            String shopId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_SHOP_ID);
-            if (StringUtils.isNotEmpty(shopId)) {
-                List<PaytrailPaymentMethod> paymentMethods = paytrailPaymentClient.getPaymentMethods();
+            try {
+                PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId, false);
+                List<PaytrailPaymentMethod> paymentMethods = paytrailPaymentClient.getPaymentMethods(context);
                 return paymentMethods.stream().map(paymentMethod -> new PaymentMethodDto(
                         paymentMethod.getName(),
                         paymentMethod.getId(),
@@ -77,8 +77,11 @@ public class PaymentPaytrailService {
                         paymentMethod.getIcon(),
                         GatewayEnum.ONLINE_PAYTRAIL
                 )).toArray(PaymentMethodDto[]::new);
-            } else {
-                log.debug("shopId cannot be null or empty!");
+            } catch (CommonApiException e) {
+                log.debug("Something went wrong in payment method fetching");
+                Error error = e.getErrors().getErrors().get(0);
+                log.debug(error.getCode());
+                log.debug(error.getMessage());
                 return new PaymentMethodDto[0];
             }
         } else {
@@ -102,10 +105,10 @@ public class PaymentPaytrailService {
         String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
 
         String paymentId = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
-        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId, false);
         PaytrailPaymentResponse createResponse = paytrailPaymentClient.createPayment(context, paymentId, dto.getOrder());
 
-        Payment payment = createPayment(dto, paymentType, paymentId, createResponse.getTransactionId());
+        Payment payment = createPayment(context, dto, paymentType, paymentId, createResponse.getTransactionId());
         if (payment.getPaymentId() == null) {
             throw new RuntimeException("Didn't manage to create paytrail payment.");
         }
@@ -134,7 +137,7 @@ public class PaymentPaytrailService {
         }
     }
 
-    private Payment createPayment(GetPaymentRequestDataDto dto, String type, String paymentId, String transactionId) {
+    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId, String transactionId) {
         OrderDto order = dto.getOrder().getOrder();
         List<OrderItemDto> items = dto.getOrder().getItems();
 
@@ -162,6 +165,7 @@ public class PaymentPaytrailService {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setPaytrailTransactionId(transactionId);
+        payment.setShopInShopPayment(context.isUseShopInShop());
 
         createPayer(order, paymentId);
 

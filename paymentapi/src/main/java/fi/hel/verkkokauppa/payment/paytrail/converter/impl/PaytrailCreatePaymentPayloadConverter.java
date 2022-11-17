@@ -10,6 +10,8 @@ import org.helsinki.paytrail.model.payments.PaymentCallbackUrls;
 import org.helsinki.paytrail.model.payments.PaymentCustomer;
 import org.helsinki.paytrail.model.payments.PaymentItem;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -19,6 +21,8 @@ import java.util.List;
 @Component
 public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> {
 
+    @Autowired
+    private Environment env;
 
     @Override
     public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper) {
@@ -43,12 +47,12 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
 
         /* Set redirect and callback URL:s */
         PaymentCallbackUrls redirectUrls = new PaymentCallbackUrls();
-        redirectUrls.setSuccess(context.getReturnUrl() + "/success");
-        redirectUrls.setCancel(context.getReturnUrl() + "/cancel");
+        redirectUrls.setSuccess(env.getRequiredProperty("payment_default_paytrail_return_success_url"));
+        redirectUrls.setCancel(env.getRequiredProperty("payment_default_paytrail_return_cancel_url"));
 
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
-        callbackUrls.setSuccess(context.getNotifyUrl() + "/success");
-        callbackUrls.setCancel(context.getNotifyUrl() + "/cancel");
+        callbackUrls.setSuccess(env.getRequiredProperty("payment_default_paytrail_notify_success_url"));
+        callbackUrls.setCancel(env.getRequiredProperty("payment_default_paytrail_notify_cancel_url"));
 
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);
@@ -70,7 +74,10 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
             paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
             paymentItem.setProductCode(orderItemDto.getProductId());
             paymentItem.setDescription(orderItemDto.getProductName());
-            paymentItem.setOrderId(orderItemDto.getOrderId());
+
+            if (context.isUseShopInShop()) {
+                paymentItem.setOrderId(orderItemDto.getOrderId());
+            }
 
             paymentItems.add(paymentItem);
         }

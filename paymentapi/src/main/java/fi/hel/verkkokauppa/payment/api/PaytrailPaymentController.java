@@ -51,6 +51,7 @@ public class PaytrailPaymentController {
 
     @GetMapping("/payment/paytrail/check-return-url")
     public ResponseEntity<PaymentReturnDto> checkReturnUrl(
+            @RequestParam(value = "merchantId") String merchantId,
             @RequestParam(value = "signature") String signature,
             @RequestParam(value = "checkout-status") String status,
             @RequestParam(value = "checkout-stamp") String paymentId,
@@ -58,7 +59,7 @@ public class PaytrailPaymentController {
             @RequestParam Map<String,String> checkoutParams
     ) {
         try {
-            boolean isValid = paytrailPaymentReturnValidator.validateChecksum(checkoutParams, signature, paymentId);
+            boolean isValid = paytrailPaymentReturnValidator.validateChecksum(checkoutParams, merchantId, signature, paymentId);
             PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(isValid, status, settlementReference);
             onlinePaymentService.updatePaymentStatus(paymentId, paymentReturnDto);
             Payment payment = onlinePaymentService.getPayment(paymentId);

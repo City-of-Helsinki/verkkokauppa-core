@@ -23,17 +23,24 @@ public class PaytrailPaymentContextBuilder {
     @Autowired
     private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
-
-    public PaytrailPaymentContext buildFor(String namespace, String merchantId) {
+    /**
+     * Build payment context for paytrail with shop-in-shop or normal merchant flow.
+     * @param namespace Namespace
+     * @param merchantId Internal merchant id
+     * @param useShopInShop flag determines whether to create PaytrailPaymentContext for shop-in-shop or normal merchant flow
+     * @return
+     */
+    public PaytrailPaymentContext buildFor(String namespace, String merchantId, boolean useShopInShop) {
         PaytrailPaymentContext defaultContext = new PaytrailPaymentContext();
         defaultContext.setNamespace(namespace);
+        defaultContext.setInternalMerchantId(merchantId);
+        defaultContext.setUseShopInShop(useShopInShop);
 
         // set default values
         defaultContext.setDefaultCurrency(env.getRequiredProperty("payment_default_paytrail_currency"));
         defaultContext.setDefaultLanguage(env.getRequiredProperty("payment_default_paytrail_language"));
         defaultContext.setReturnUrl(env.getRequiredProperty("payment_default_paytrail_return_url"));
         defaultContext.setNotifyUrl(env.getRequiredProperty("payment_default_paytrail_notify_url"));
-        defaultContext.setAggregateMerchantId(env.getRequiredProperty("payment_default_paytrail_aggregate_merchant_id"));
         defaultContext.setCp(env.getRequiredProperty("payment_default_paytrail_cp"));
 
         // fetch namespace and merchant specific service configuration from mapping api
@@ -77,10 +84,20 @@ public class PaytrailPaymentContextBuilder {
 
     private PaytrailPaymentContext enrichWithMerchantConfiguration(PaytrailPaymentContext context, String merchantId) {
         MerchantDto merchantConfiguration = commonServiceConfigurationClient.getMerchantModel(merchantId, context.getNamespace());
-
         if (merchantConfiguration != null) {
-            ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfiguration.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID)
-                    .ifPresent(config -> context.setShopId(config.getValue()));
+            if (context.isUseShopInShop()) {
+                // Paytrail Merchant shop ID (for shop-in-shop flow)
+                ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfiguration.getConfigurations(), ServiceConfigurationKeys.MERCHANT_SHOP_ID)
+                        .ifPresent(config -> context.setShopId(config.getValue()));
+            } else {
+                // Merchant specific Paytrail merchant ID and secret key if merchant ID is present
+                ConfigurationParseUtil.parseConfigurationValueByKey(merchantConfiguration.getConfigurations(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID)
+                        .ifPresent(config -> {
+                            String merchantSecretkey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
+                            context.setPaytrailSecretKey(merchantSecretkey);
+                            context.setPaytrailMerchantId(config.getValue());
+                        });
+            }
         } else {
             log.debug("No merchant configurations found for merchant {} in namespace {}", merchantId, context.getNamespace());
         }

@@ -63,6 +63,13 @@ public class Payment {
 	@Field(type = FieldType.Text)
 	String paytrailTransactionId;
 
+	/**
+	 * There is no way to determine in the paytrail return callback methods if a payment is shopInShop payment or not.
+	 * This new field will be set on payment creation to indicate what type of paytrail flow is used for the specific payment.
+	 */
+	@Field(type = FieldType.Boolean)
+	boolean shopInShopPayment;
+
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
 	}
