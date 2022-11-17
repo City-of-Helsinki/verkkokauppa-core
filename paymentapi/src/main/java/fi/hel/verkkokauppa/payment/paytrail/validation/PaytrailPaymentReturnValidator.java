@@ -35,12 +35,12 @@ public class PaytrailPaymentReturnValidator {
         boolean canRetry = false;
         boolean isAuthorized = false;
 
-        if (isSuccesfull(status) && StringUtils.isNotEmpty(settlementReference)) {
+        if (isSuccesfull(status)) {
             isPaymentPaid = true;
         } else if (isSuccesfull(status) && StringUtils.isEmpty(settlementReference)){
             // This is temporarily set to FALSE until subscription flow is fully implemented.
             // When subscriptions are supported, change this to TRUE
-            isAuthorized = false;
+            //isAuthorized = false;
         } else {
             if (!PaymentStatus.PENDING.getStatus().equals(status)) {
                 canRetry = true;

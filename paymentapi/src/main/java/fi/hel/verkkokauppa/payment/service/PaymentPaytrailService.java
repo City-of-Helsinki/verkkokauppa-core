@@ -204,7 +204,7 @@ public class PaymentPaytrailService {
     }
 
     public String getPaymentUrl(String transactionId) {
-        return PaytrailClient.PAYMENT_UI_URL + "/payments/" + transactionId;
+        return PaytrailClient.PAYMENT_UI_URL + "/pay/" + transactionId;
     }
 
     public String getPaymentUrl(Payment payment) {
