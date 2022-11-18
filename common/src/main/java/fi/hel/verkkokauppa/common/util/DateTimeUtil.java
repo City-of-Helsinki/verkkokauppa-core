@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 
 public class DateTimeUtil {
+    private static final String DATE_TIME_WITH_MILLISECONDS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     private static final DateTimeFormatter DEFAULT_FORMATTER = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd[ HH:mm:ss]")
@@ -55,7 +56,7 @@ public class DateTimeUtil {
     }
 
     public static LocalDateTime fromFormattedDateTimeOptionalString(String localDateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_WITH_MILLISECONDS);
 
         String caseStartDate = formatter.format(ZonedDateTime.now());
         System.out.println(caseStartDate);
