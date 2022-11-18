@@ -93,15 +93,4 @@ public class Order implements Customer, IdentifiableUser {
         this.incrementId = incrementId;
     }
 
-    public Order(String orderId, String namespace, String user, LocalDateTime createdAt, Long incrementId, LocalDateTime lastValidPurchaseDateTime) {
-        this.status = OrderStatus.DRAFT;
-        this.type = OrderType.ORDER;
-
-        this.orderId = orderId;
-        this.namespace = namespace;
-        this.user = user;
-        this.createdAt = createdAt;
-        this.incrementId = incrementId;
-        this.lastValidPurchaseDateTime = lastValidPurchaseDateTime;
-    }
 }

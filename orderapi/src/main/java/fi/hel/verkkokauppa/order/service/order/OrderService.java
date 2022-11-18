@@ -135,7 +135,10 @@ public class OrderService {
         LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
         Long incrementId = this.incrementId.generateOrderIncrementId();
-        Order order = new Order(orderId, namespace, user, createdAt, incrementId, lastValidPurchaseDateTime);
+        Order order = new Order(orderId, namespace, user, createdAt, incrementId);
+        if (StringUtils.isNotEmpty(lastValidPurchaseDateTime.toString())) {
+            order.setLastValidPurchaseDateTime(lastValidPurchaseDateTime);
+        }
 
         orderRepository.save(order);
         log.debug("created new order, orderId: " + orderId);
