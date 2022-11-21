@@ -25,10 +25,11 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
     private Environment env;
 
     @Override
-    public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper) {
+    public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper, String stamp) {
         OrderDto orderDto = orderWrapper.getOrder();
 
         CreatePaymentPayload payload = new CreatePaymentPayload();
+        payload.setStamp(stamp);
         payload.setReference(orderDto.getOrderId());
         payload.setAmount(PaymentUtil.convertToCents(new BigDecimal(orderDto.getPriceTotal())).intValue());
         payload.setCurrency(context.getDefaultCurrency());
@@ -47,12 +48,12 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
 
         /* Set redirect and callback URL:s */
         PaymentCallbackUrls redirectUrls = new PaymentCallbackUrls();
-        redirectUrls.setSuccess(env.getRequiredProperty("payment_default_paytrail_return_success_url"));
-        redirectUrls.setCancel(env.getRequiredProperty("payment_default_paytrail_return_cancel_url"));
+        redirectUrls.setSuccess(env.getRequiredProperty("paytrail_payment_return_success_url"));
+        redirectUrls.setCancel(env.getRequiredProperty("paytrail_payment_return_cancel_url"));
 
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
-        callbackUrls.setSuccess(env.getRequiredProperty("payment_default_paytrail_notify_success_url"));
-        callbackUrls.setCancel(env.getRequiredProperty("payment_default_paytrail_notify_cancel_url"));
+        callbackUrls.setSuccess(env.getRequiredProperty("paytrail_payment_notify_success_url"));
+        callbackUrls.setCancel(env.getRequiredProperty("paytrail_payment_notify_cancel_url"));
 
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);
