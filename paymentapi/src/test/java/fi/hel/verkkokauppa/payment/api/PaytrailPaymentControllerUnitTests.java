@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreateRefundPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentPayloadConverter;
 import fi.hel.verkkokauppa.payment.model.Payer;
@@ -76,10 +77,10 @@ import java.util.stream.Collectors;
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
 @TestPropertySource(properties = {
-    "payment_default_paytrail_return_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
-    "payment_default_paytrail_return_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
-    "payment_default_paytrail_notify_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
-    "payment_default_paytrail_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5"
+    "paytrail_payment_return_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "paytrail_payment_return_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "paytrail_payment_notify_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "paytrail_payment_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5"
 })
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
@@ -97,6 +98,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     @Autowired
     private PaytrailPaymentClient paytrailPaymentClient;
+
+    @MockBean
+    private PaytrailCreateRefundPayloadConverter paytrailCreateRefundPayloadConverter;
 
     @MockBean
     private PaymentPaytrailService paymentPaytrailService;
