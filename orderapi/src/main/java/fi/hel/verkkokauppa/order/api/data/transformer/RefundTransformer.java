@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.api.data.transformer;
 
-import fi.hel.verkkokauppa.order.api.data.refund.RefundAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundDto;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundItemDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import org.modelmapper.ModelMapper;

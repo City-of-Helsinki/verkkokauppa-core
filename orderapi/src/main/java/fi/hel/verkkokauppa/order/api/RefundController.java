@@ -8,13 +8,11 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundDto;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundItemDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.RefundTransformer;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
-import fi.hel.verkkokauppa.order.model.refund.RefundStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundRepository;
 import org.slf4j.Logger;
@@ -27,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class RefundController {
@@ -55,6 +52,9 @@ public class RefundController {
             .build();
   }
 
+  /**
+   * Creates paytrail refund
+   */
   @PostMapping(value = "/refund/create", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<RefundAggregateDto> createRefund(@RequestBody RefundAggregateDto refundAggregateDto) {
     try {
