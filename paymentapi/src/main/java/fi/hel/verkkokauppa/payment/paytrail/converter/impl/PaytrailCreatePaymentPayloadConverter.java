@@ -67,7 +67,11 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
         for (OrderItemDto orderItemDto : orderItemDtos) {
             PaymentItem paymentItem = new PaymentItem();
 
-            paymentItem.setStamp(orderItemDto.getOrderItemId());
+            if (context.isUseShopInShop()) {
+                // TODO: Stamp has to be like: <orderItemId> + _at_ + <timestamp>
+                paymentItem.setStamp(orderItemDto.getOrderItemId());
+                paymentItem.setOrderId(orderItemDto.getOrderId());
+            }
             paymentItem.setReference(orderItemDto.getOrderItemId());
             paymentItem.setMerchant(context.getShopId());
             paymentItem.setUnitPrice(PaymentUtil.convertToCents(orderItemDto.getPriceGross()).intValue());
@@ -75,10 +79,6 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
             paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
             paymentItem.setProductCode(orderItemDto.getProductId());
             paymentItem.setDescription(orderItemDto.getProductName());
-
-            if (context.isUseShopInShop()) {
-                paymentItem.setOrderId(orderItemDto.getOrderId());
-            }
 
             paymentItems.add(paymentItem);
         }
