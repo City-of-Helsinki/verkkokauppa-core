@@ -136,7 +136,7 @@ public class OrderService {
         String orderId = generateOrderId(namespace, user, createdAt);
         Long incrementId = this.incrementId.generateOrderIncrementId();
         Order order = new Order(orderId, namespace, user, createdAt, incrementId);
-        if (StringUtils.isNotEmpty(lastValidPurchaseDateTime.toString())) {
+        if (lastValidPurchaseDateTime != null) {
             order.setLastValidPurchaseDateTime(lastValidPurchaseDateTime);
         }
 

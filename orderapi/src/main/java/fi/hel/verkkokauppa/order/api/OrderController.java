@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -78,7 +79,11 @@ public class OrderController {
                                                          @RequestParam(value = "user") String user,
                                                          @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime) {
         try {
-            Order order = orderService.createByParams(namespace, user, DateTimeUtil.fromFormattedDateTimeOptionalString(lastValidPurchaseDateTime));
+            LocalDateTime formattedLastValidPurchaseDateTime = null;
+            if (lastValidPurchaseDateTime != null) {
+                formattedLastValidPurchaseDateTime = DateTimeUtil.fromFormattedDateTimeOptionalString(lastValidPurchaseDateTime);
+            }
+            Order order = orderService.createByParams(namespace, user, formattedLastValidPurchaseDateTime);
             String orderId = order.getOrderId();
             return orderAggregateDto(orderId);
 
