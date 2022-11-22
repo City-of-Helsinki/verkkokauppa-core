@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.common.util;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
@@ -57,10 +56,6 @@ public class DateTimeUtil {
 
     public static LocalDateTime fromFormattedDateTimeOptionalString(String localDateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_WITH_MILLISECONDS);
-
-        String caseStartDate = formatter.format(ZonedDateTime.now());
-        System.out.println(caseStartDate);
-
         return LocalDateTime.parse(localDateTime, formatter);
     }
 
