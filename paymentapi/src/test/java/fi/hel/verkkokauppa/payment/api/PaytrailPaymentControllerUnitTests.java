@@ -528,7 +528,7 @@ public class PaytrailPaymentControllerUnitTests {
 
             /* Verify correct payment return dto */
             assertTrue(mockPaymentReturnDto.isValid());
-            assertFalse(mockPaymentReturnDto.isPaymentPaid());
+            assertTrue(mockPaymentReturnDto.isPaymentPaid());
             assertFalse(mockPaymentReturnDto.isAuthorized()); // false until subscription flow is fully supported
             assertFalse(mockPaymentReturnDto.isCanRetry());
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
