@@ -646,7 +646,7 @@ class OrderServiceTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void CreateOrderWithLastValidPurchaseDateTime() {
+    public void createOrderWithLastValidPurchaseDateTime() {
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
         OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
         assert createOrderResponse != null;
