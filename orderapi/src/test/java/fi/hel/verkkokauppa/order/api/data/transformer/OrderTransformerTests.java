@@ -6,15 +6,11 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import org.junit.Test;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.Valid;
-import javax.validation.Validator;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class OrderTransformerTests extends DummyData {
     private OrderTransformer orderTransformer = new OrderTransformer();
@@ -38,6 +34,7 @@ public class OrderTransformerTests extends DummyData {
         excludedFields.add("customerPhone");
         excludedFields.add("invoice");
         excludedFields.add("incrementId");
+        excludedFields.add("lastValidPurchaseDateTime");
         final OrderDto dto = generateDummyOrderDto();
         final boolean hasNullFields = TestUtils.hasNullFields(dto, excludedFields);
 
@@ -64,6 +61,7 @@ public class OrderTransformerTests extends DummyData {
         excludedFields.add("endDate");
         excludedFields.add("invoice");
         excludedFields.add("incrementId");
+        excludedFields.add("lastValidPurchaseDateTime");
         final boolean hasNullFields = TestUtils.hasNullFields(entity, excludedFields);
         assertFalse(hasNullFields);
     }

@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -17,7 +18,6 @@ import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
-import fi.hel.verkkokauppa.order.model.invoice.Invoice;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,9 +76,14 @@ public class OrderController {
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
-                                                         @RequestParam(value = "user") String user) {
+                                                         @RequestParam(value = "user") String user,
+                                                         @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime) {
         try {
-            Order order = orderService.createByParams(namespace, user);
+            LocalDateTime formattedLastValidPurchaseDateTime = null;
+            if (lastValidPurchaseDateTime != null) {
+                formattedLastValidPurchaseDateTime = DateTimeUtil.fromFormattedDateTimeOptionalString(lastValidPurchaseDateTime);
+            }
+            Order order = orderService.createByParams(namespace, user, formattedLastValidPurchaseDateTime);
             String orderId = order.getOrderId();
             return orderAggregateDto(orderId);
 
