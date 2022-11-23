@@ -665,5 +665,28 @@ class OrderServiceTest extends TestUtils {
                 fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
         );
     }
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderByParams() {
+        String namespace = "venepaikat";
+        String user = "dummy_user";
+        LocalDateTime localDateTime = LocalDateTime.now();
+
+        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Assertions.assertEquals(namespace, order.getNamespace());
+        Assertions.assertEquals(user, order.getUser());
+        Assertions.assertEquals(
+                localDateTime,
+                order.getLastValidPurchaseDateTime()
+        );
+
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+        Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
+        Assertions.assertEquals(user, fetchedOrder.getUser());
+        Assertions.assertEquals(
+                localDateTime.withNano(0),
+                fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
+        );
+    }
 
 }
