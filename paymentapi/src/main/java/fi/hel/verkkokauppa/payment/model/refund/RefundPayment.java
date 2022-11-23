@@ -13,15 +13,15 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@Document(indexName = "payments")
+@Document(indexName = "refund_payments")
 public class RefundPayment {
 
 	// refundId (Refund model id) + timestamp (Like creating paymentId)
 	@Id
 	String refundPaymentId;
 
-	// fetch paid payment using orderId and add it to this field
-	String paytrailTransactionId;
+	// Paytrail gives this when we create refund for payment
+	String refundTransactionId;
 
 	@Field(type = FieldType.Keyword)
 	String namespace;

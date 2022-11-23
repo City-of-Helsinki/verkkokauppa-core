@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.payment.paytrail.converter.impl;
 
-import fi.hel.verkkokauppa.payment.api.data.RefundDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;

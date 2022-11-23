@@ -12,16 +12,21 @@ import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
+import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
+import fi.hel.verkkokauppa.payment.util.RefundUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.refunds.PaytrailRefundResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -35,7 +40,7 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-public class RefundPaymentService {
+public class PaytrailRefundPaymentService {
 
     @Autowired
     private RefundPaymentRepository refundPaymentRepository;
@@ -46,11 +51,14 @@ public class RefundPaymentService {
     @Autowired
     private SendNotificationService sendNotificationService;
 
-
     @Autowired
     private PaytrailPaymentContextBuilder paytrailPaymentContextBuilder;
 
-    private void isValidUserToCreateRefundPayment(String refundId, String userId) {
+    @Autowired
+    private PaytrailPaymentClient paytrailPaymentClient;
+
+
+    public void isValidUserToCreateRefundPayment(String refundId, String userId) {
         if (userId == null || userId.isEmpty()) {
             log.warn("creating refund payment without user rejected, refundId: " + refundId);
             throw new CommonApiException(
@@ -60,10 +68,10 @@ public class RefundPaymentService {
         }
     }
 
-    private void isValidRefundStatusToCreatePayment(String refundId, String refundStatus) {
+    public void isValidRefundStatusToCreateRefundPayment(String refundId, String refundStatus) {
         // check refund status, can only create refund payment for confirmed refunds
         if (!"confirmed".equals(refundStatus)) {
-            log.warn("creating refund payment for unconfirmed order rejected, refundId: " + refundId);
+            log.warn("creating refund payment for unconfirmed refund rejected, refundId: " + refundId);
             throw new CommonApiException(
                     HttpStatus.FORBIDDEN,
                     new Error("rejected-creating-refund-payment-for-unconfirmed-refund", "rejected creating refund payment for unconfirmed refund, refundId id [" + refundId + "]")
@@ -80,8 +88,8 @@ public class RefundPaymentService {
     public RefundPayment getRefundPaymentForOrder(String orderId) {
         List<RefundPayment> payments = refundPaymentRepository.findByOrderId(orderId);
 
-        RefundPayment paidPayment = selectPaidPayment(payments);
-        RefundPayment payablePayment = selectPayablePayment(payments);
+        RefundPayment paidPayment = selectPaidRefundPayment(payments);
+        RefundPayment payablePayment = selectPayableRefundPayment(payments);
 
         if (paidPayment != null) {
             return paidPayment;
@@ -93,15 +101,15 @@ public class RefundPaymentService {
     }
 
     public List<RefundPayment> getPaymentsForOrder(String orderId, String namepace) {
-        return refundPaymentRepository.findByNamespaceAndOrderId(namepace,orderId);
+        return refundPaymentRepository.findByNamespaceAndOrderId(namepace, orderId);
     }
 
     public List<RefundPayment> getPaymentsWithNamespaceAndOrderIdAndStatus(String orderId, String namepace, String status) {
         return refundPaymentRepository.findByNamespaceAndOrderIdAndStatus(namepace, orderId, status);
     }
 
-    // payment precedence selection from KYV-186
-    private RefundPayment selectPayablePayment(List<RefundPayment> payments) {
+
+    private RefundPayment selectPayableRefundPayment(List<RefundPayment> payments) {
         RefundPayment payablePayment = null;
 
         if (payments != null)
@@ -111,7 +119,7 @@ public class RefundPaymentService {
                     continue;
                 }
 
-                // an earlier selected payment is newer
+                // an earlier selected refund payment is newer
                 if (payablePayment != null && payablePayment.getTimestamp().compareTo(payment.getTimestamp()) > 0) {
                     continue;
                 }
@@ -122,7 +130,7 @@ public class RefundPaymentService {
         return payablePayment;
     }
 
-    private RefundPayment selectPaidPayment(List<RefundPayment> payments) {
+    private RefundPayment selectPaidRefundPayment(List<RefundPayment> payments) {
         if (payments != null) {
             for (RefundPayment payment : payments) {
                 if (Objects.equals(payment.getStatus(), RefundPaymentStatus.PAID_ONLINE)) {
@@ -145,50 +153,78 @@ public class RefundPaymentService {
 
         return payment.get();
     }
+
     // TODO RENAME AND CHECK
-    public RefundPayment getPaymentRequestData(RefundRequestDataDto dto) {
-        OrderDto order = dto.getOrder().getOrder();
-        RefundDto refundDto = dto.getRefundAggregateDto().getRefund();
-        RefundItemDto refundItemDto = dto.getRefundAggregateDto().getItems().get(0);
-        String namespace = refundDto.getNamespace();
+    public RefundPayment createRefundToPaytrailAndCreateRefundPayment(RefundRequestDataDto dto) {
+        RefundDto refundDto = dto.getRefund().getRefund();
         String refundId = refundDto.getRefundId();
-        String orderStatus = refundDto.getStatus();
-        String userId = refundDto.getUser();
 
-        isValidRefundStatusToCreatePayment(refundId, orderStatus);
+        isValidRefundStatusToCreateRefundPayment(
+                refundId,
+                refundDto.getStatus()
+        );
 
-        isValidUserToCreateRefundPayment(refundId, userId);
+        isValidUserToCreateRefundPayment(
+                refundId,
+                refundDto.getUser()
+        );
+        String orderType = getOrderType(dto.getOrder().getOrder());
 
-        // TODO
-        boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
-        String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
-        // TODO
+        PaymentDto paymentDto = dto.getPayment();
+        // Get merchantId from first refund item
+        RefundItemDto refundItemDto = dto.getRefund().getItems().get(0);
+        PaytrailPaymentContext context = createPaytrailRefundContext(refundDto, refundItemDto, paymentDto);
 
-        // TODO TEST merchantId to refundItems!
-        PaytrailPaymentContext context = paytrailPaymentContextBuilder.buildFor(namespace, refundItemDto.getMerchantId(), false);
+        String paymentTransactionId = paymentDto.getPaytrailTransactionId();
+        String refundPaymentId = RefundUtil.generateRefundPaymentId(refundId);
 
-//
-//        ChargeRequest.PaymentTokenPayload tokenRequestPayload = paymentTokenPayloadBuilder.buildFor(dto, context);
-//        log.debug("tokenRequestPayload: " + tokenRequestPayload);
-//
-//        String paymentId = tokenRequestPayload.getOrderNumber();
-//        String token = paymentTokenFetcher.getToken(tokenRequestPayload);
+        PaytrailRefundResponse refundResponse = paytrailPaymentClient.createRefund(
+                context,
+                refundPaymentId,
+                paymentTransactionId,
+                refundDto
+        );
 
-        String paytrailTransactionId = ""; // TODO
-        String paymentId = ""; // TODO
+        if (!refundResponse.isValid()) {
+            throw new RuntimeException("Didn't manage to create refund to paytrail.");
+        }
 
-        RefundPayment refundPayment = createRefundPayment(dto, paymentType, paytrailTransactionId, paymentId);
-        if (refundPayment.getRefundPaymentId() == null) {
+        RefundPayment refundPayment = createRefundPayment(
+                dto,
+                paymentDto,
+                orderType,
+                refundResponse,
+                refundPaymentId
+        );
+        if (refundPayment.getRefundPaymentId() == null || refundPayment.getRefundTransactionId() == null) {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
 
         return refundPayment;
     }
 
+    private String getOrderType(OrderDto order) {
+        boolean isRecurringOrder = order.getType().equals(OrderType.SUBSCRIPTION);
+        return isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
+    }
 
-    private RefundPayment createRefundPayment(RefundRequestDataDto dto, String type, String paytrailTransactionId, String refundId) {
-        OrderDto order = dto.getOrder().getOrder();
-        RefundDto refundDto = dto.getRefundAggregateDto().getRefund();
+    public PaytrailPaymentContext createPaytrailRefundContext(RefundDto refundDto, RefundItemDto refundItemDto, PaymentDto paymentDto) {
+        return paytrailPaymentContextBuilder.buildFor(
+                refundDto.getNamespace(),
+                refundItemDto.getMerchantId(),
+                paymentDto.isShopInShopPayment()
+        );
+    }
+
+
+    private RefundPayment createRefundPayment(
+            RefundRequestDataDto dto,
+            PaymentDto paymentDto,
+            String orderType,
+            PaytrailRefundResponse refundResponse,
+            String refundId
+    ) {
+        RefundDto refundDto = dto.getRefund().getRefund();
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
@@ -196,19 +232,21 @@ public class RefundPaymentService {
         String namespace = refundDto.getNamespace();
 
         RefundPayment refundPayment = new RefundPayment();
-        // TODO CHECK GENERATION
+
         refundPayment.setRefundPaymentId(refundId);
         refundPayment.setNamespace(refundDto.getNamespace());
         refundPayment.setOrderId(refundDto.getOrderId());
         refundPayment.setUserId(refundDto.getUser());
-        refundPayment.setRefundMethod(dto.getPaymentMethod());
+        refundPayment.setRefundMethod(paymentDto.getPaymentMethod());
+        refundPayment.setRefundGateway(RefundGateway.PAYTRAIL);
         refundPayment.setTimestamp(sdf.format(timestamp));
-        refundPayment.setRefundType(type);
+        refundPayment.setRefundType(orderType);
 
-        refundPayment.setPaytrailTransactionId(paytrailTransactionId);
         refundPayment.setTotalExclTax(new BigDecimal(refundDto.getPriceNet()));
         refundPayment.setTaxAmount(new BigDecimal(refundDto.getPriceVat()));
         refundPayment.setTotal(new BigDecimal(refundDto.getPriceTotal()));
+
+        refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
 
         refundPaymentRepository.save(refundPayment);
         log.debug("created refundPayment for namespace: " + namespace + " with refundId: " + refundId);
@@ -270,7 +308,7 @@ public class RefundPaymentService {
         String paymentUserId = refundPayment.getUserId();
         if (!paymentUserId.equals(userId)) {
             log.error("unauthorized attempt to load refundPayment, userId does not match");
-            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + refundId + "] and user id ["+ userId +"] not found from backend");
+            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + refundId + "] and user id [" + userId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 

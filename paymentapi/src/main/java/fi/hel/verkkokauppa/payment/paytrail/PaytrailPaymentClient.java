@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
-import fi.hel.verkkokauppa.payment.api.data.RefundDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
@@ -38,12 +38,12 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class PaytrailPaymentClient {
 
-    private final PaytrailAuthClientFactory paytrailAuthClientFactory;
-    private final PaytrailPaymentMethodsResponseMapper paymentMethodsResponseMapper;
-    private final PaytrailPaymentCreateResponseMapper paymentCreateResponseMapper;
-    private final PaytrailRefundCreateResponseMapper refundCreateResponseMapper;
-    private final IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> paymentPayloadConverter;
-    private final IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> refundPayloadConverter;
+    protected final PaytrailAuthClientFactory paytrailAuthClientFactory;
+    protected final PaytrailPaymentMethodsResponseMapper paymentMethodsResponseMapper;
+    protected final PaytrailPaymentCreateResponseMapper paymentCreateResponseMapper;
+    protected final PaytrailRefundCreateResponseMapper refundCreateResponseMapper;
+    protected final IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> paymentPayloadConverter;
+    protected final IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> refundPayloadConverter;
 
     @Autowired
     public PaytrailPaymentClient(
@@ -87,11 +87,20 @@ public class PaytrailPaymentClient {
             PaytrailPaymentCreateResponse createResponse = paymentCreateResponseMapper.to(response.get());
             return createResponse.getPaymentResponse();
         } catch (InterruptedException | ExecutionException | IllegalArgumentException e) {
-            log.debug("Something went wrong in paytrail payment creation: ", e.getMessage());
+            log.debug("Something went wrong in paytrail payment creation: {}", e.getMessage());
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-paytrail-payment", "Failed to create paytrail payment")
             );
+        }
+    }
+
+    public PaytrailClient createPaytrailClientFromPaymentContext(PaytrailPaymentContext context) {
+        PaymentContextValidator.validateContext(context);
+        if (context.isUseShopInShop()) {
+            return paytrailAuthClientFactory.getShopInShopClient(context.getShopId());
+        } else {
+            return paytrailAuthClientFactory.getClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
         }
     }
 
@@ -104,22 +113,19 @@ public class PaytrailPaymentClient {
 
         try {
             PaytrailRefundCreateResponse createResponse = refundCreateResponseMapper.to(response.get());
+            if (!createResponse.isValid()) {
+                if (createResponse.getErrors().length > 0) {
+                    log.info("createRefund errors {}", (Object) createResponse.getErrors());
+                }
+                throw new IllegalArgumentException("createRefund failed with response : " + createResponse.getResultJson());
+            }
             return createResponse.getRefundResponse();
         } catch (InterruptedException | ExecutionException | IllegalArgumentException e) {
-            log.debug("Something went wrong in paytrail refund creation: ", e.getMessage());
+            log.debug("Something went wrong in paytrail refund creation: {}", e.getMessage());
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-paytrail-refund", "Failed to create paytrail refund")
             );
-        }
-    }
-
-    private PaytrailClient createPaytrailClientFromPaymentContext(PaytrailPaymentContext context) {
-        PaymentContextValidator.validateContext(context);
-        if (context.isUseShopInShop()) {
-            return paytrailAuthClientFactory.getShopInShopClient(context.getShopId());
-        } else {
-            return paytrailAuthClientFactory.getClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
         }
     }
 }
