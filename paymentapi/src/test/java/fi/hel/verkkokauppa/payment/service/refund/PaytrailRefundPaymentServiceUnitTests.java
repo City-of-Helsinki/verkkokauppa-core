@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.api;
+package fi.hel.verkkokauppa.payment.service.refund;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

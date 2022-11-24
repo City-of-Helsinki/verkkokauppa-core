@@ -154,7 +154,6 @@ public class PaytrailRefundPaymentService {
         return payment.get();
     }
 
-    // TODO RENAME AND CHECK
     public RefundPayment createRefundToPaytrailAndCreateRefundPayment(RefundRequestDataDto dto) {
         RefundDto refundDto = dto.getRefund().getRefund();
         String refundId = refundDto.getRefundId();

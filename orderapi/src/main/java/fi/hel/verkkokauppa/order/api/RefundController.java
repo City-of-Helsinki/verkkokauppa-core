@@ -58,7 +58,7 @@ public class RefundController {
   @PostMapping(value = "/refund/create", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<RefundAggregateDto> createRefund(@RequestBody RefundAggregateDto refundAggregateDto) {
     try {
-      Refund refund = new Refund(refundAggregateDto.getRefund());
+      Refund refund = Refund.fromRefundDto(refundAggregateDto.getRefund());
       refundRepository.save(refund);
 
       List<RefundItem> refundItems = new ArrayList<>();

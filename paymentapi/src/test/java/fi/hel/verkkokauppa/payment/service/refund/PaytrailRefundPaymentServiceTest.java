@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.api;
+package fi.hel.verkkokauppa.payment.service.refund;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import fi.hel.verkkokauppa.common.constants.OrderType;
@@ -12,7 +12,6 @@ import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
-import fi.hel.verkkokauppa.payment.service.refund.PaytrailRefundPaymentService;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.utils.PaytrailPaymentCreator;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +46,7 @@ public class PaytrailRefundPaymentServiceTest extends PaytrailPaymentCreator {
         String paymentId = orderId + "_at_" + UUID.randomUUID();
         PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
                 client,
-                10,
+                100,
                 paymentId
         );
         // Manual step for testing -> go to href and then use nordea to approve payment
