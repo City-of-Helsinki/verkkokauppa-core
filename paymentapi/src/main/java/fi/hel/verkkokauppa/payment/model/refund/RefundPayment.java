@@ -36,7 +36,7 @@ public class RefundPayment {
 	@Field(type = FieldType.Text)
 	String status;
 
-	// haetaan orderId:n avulla maksettu payment ja sen paymentMethod
+	// payment.paymentMethod
 	@Field(type = FieldType.Text)
 	String refundMethod;
 
