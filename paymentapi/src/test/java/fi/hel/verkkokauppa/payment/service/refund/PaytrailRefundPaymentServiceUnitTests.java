@@ -13,12 +13,11 @@ import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
-import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailRefundClient;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreateRefundPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
-import fi.hel.verkkokauppa.payment.service.refund.PaytrailRefundPaymentService;
 import fi.hel.verkkokauppa.payment.testing.annotations.UnitTest;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +65,7 @@ public class PaytrailRefundPaymentServiceUnitTests {
     PaytrailRefundPaymentService refundPaymentService;
 
     @MockBean
-    PaytrailPaymentClient paytrailPaymentClient;
+    PaytrailRefundClient paytrailRefundClient;
 
     @MockBean
     PaytrailAuthClientFactory paytrailAuthClientFactory;
@@ -87,11 +86,11 @@ public class PaytrailRefundPaymentServiceUnitTests {
 
     @BeforeEach
     public void setup() {
-        ReflectionTestUtils.setField(paytrailPaymentClient, "paytrailAuthClientFactory", paytrailAuthClientFactory);
-        ReflectionTestUtils.setField(paytrailPaymentClient, "refundPayloadConverter", refundPayloadConverter);
-        ReflectionTestUtils.setField(refundPaymentService, "paytrailPaymentClient", paytrailPaymentClient);
+        ReflectionTestUtils.setField(paytrailRefundClient, "paytrailAuthClientFactory", paytrailAuthClientFactory);
+        ReflectionTestUtils.setField(paytrailRefundClient, "refundPayloadConverter", refundPayloadConverter);
+        ReflectionTestUtils.setField(refundPaymentService, "paytrailRefundClient", paytrailRefundClient);
         ReflectionTestUtils.setField(refundPayloadConverter, "env", env);
-        ReflectionTestUtils.setField(paytrailPaymentClient, "refundCreateResponseMapper", refundCreateResponseMapper);
+        ReflectionTestUtils.setField(paytrailRefundClient, "refundCreateResponseMapper", refundCreateResponseMapper);
         ReflectionTestUtils.setField(refundPaymentService, "refundPaymentRepository", refundPaymentRepository);
     }
 
@@ -151,11 +150,12 @@ public class PaytrailRefundPaymentServiceUnitTests {
                 mockPaymentContext
         );
 
-        when(paytrailPaymentClient.createRefund(any(), any(), any(), any())).thenCallRealMethod();
+        when(paytrailRefundClient.createRefund(any(), any(), any(), any())).thenCallRealMethod();
 
-        when(paytrailPaymentClient.createPaytrailClientFromPaymentContext(any())).thenCallRealMethod();
 
         when(paytrailAuthClientFactory.getClient(any(), any())).thenReturn(paytrailClient);
+
+        when(paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(any())).thenCallRealMethod();
 
         when(refundPayloadConverter.convertToPayload(any(), any(), any())).thenCallRealMethod();
 
@@ -176,7 +176,7 @@ public class PaytrailRefundPaymentServiceUnitTests {
 
         PaytrailRefundCreateResponse refundCreateResponse = new PaytrailRefundCreateResponse();
         PaytrailRefundResponse refundResponse = new PaytrailRefundResponse();
-        refundResponse.setValid(true);
+        refundCreateResponse.setValid(true);
         refundResponse.setTransactionId("setTransactionId");
         refundCreateResponse.setRefundResponse(refundResponse);
         when(refundCreateResponseMapper.to(any())).thenReturn(refundCreateResponse);
@@ -199,7 +199,7 @@ public class PaytrailRefundPaymentServiceUnitTests {
         Assertions.assertEquals(new BigDecimal(refundDto.getPriceNet()), refundPayment.getTotalExclTax());
         Assertions.assertEquals(new BigDecimal(refundDto.getPriceTotal()), refundPayment.getTotal());
         Assertions.assertEquals(new BigDecimal(refundDto.getPriceVat()), refundPayment.getTaxAmount());
-        Assertions.assertEquals(RefundGateway.PAYTRAIL, refundPayment.getRefundGateway());
+        Assertions.assertEquals(RefundGateway.PAYTRAIL.toString(), refundPayment.getRefundGateway());
 
     }
 

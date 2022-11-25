@@ -20,7 +20,7 @@ import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
-import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailRefundClient;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
@@ -36,7 +36,6 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -55,7 +54,7 @@ public class PaytrailRefundPaymentService {
     private PaytrailPaymentContextBuilder paytrailPaymentContextBuilder;
 
     @Autowired
-    private PaytrailPaymentClient paytrailPaymentClient;
+    private PaytrailRefundClient paytrailRefundClient;
 
 
     public void isValidUserToCreateRefundPayment(String refundId, String userId) {
@@ -79,20 +78,20 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public void setPaymentStatus(String paymentId, String status) {
-        RefundPayment payment = getRefund(paymentId);
-        payment.setStatus(status);
-        refundPaymentRepository.save(payment);
+    public void setRefundPaymentStatus(String paymentId, String status) {
+        RefundPayment refundPayment = getRefundPayment(paymentId);
+        refundPayment.setStatus(status);
+        refundPaymentRepository.save(refundPayment);
     }
 
     public RefundPayment getRefundPaymentForOrder(String orderId) {
-        List<RefundPayment> payments = refundPaymentRepository.findByOrderId(orderId);
+        List<RefundPayment> refundPayments = refundPaymentRepository.findByOrderId(orderId);
 
-        RefundPayment paidPayment = selectPaidRefundPayment(payments);
-        RefundPayment payablePayment = selectPayableRefundPayment(payments);
+        RefundPayment paidRefundPayment = selectPaidRefundPayment(refundPayments);
+        RefundPayment payablePayment = selectPayableRefundPayment(refundPayments);
 
-        if (paidPayment != null) {
-            return paidPayment;
+        if (paidRefundPayment != null) {
+            return paidRefundPayment;
         } else if (payablePayment != null) {
             return payablePayment;
         } else {
@@ -111,47 +110,42 @@ public class PaytrailRefundPaymentService {
 
     private RefundPayment selectPayableRefundPayment(List<RefundPayment> payments) {
         RefundPayment payablePayment = null;
-
-        if (payments != null)
-            for (RefundPayment payment : payments) {
-                // in an unpayable state
-                if (Objects.equals(payment.getStatus(), RefundPaymentStatus.PAID_ONLINE) || Objects.equals(payment.getStatus(), RefundPaymentStatus.CANCELLED)) {
-                    continue;
-                }
-
-                // an earlier selected refund payment is newer
-                if (payablePayment != null && payablePayment.getTimestamp().compareTo(payment.getTimestamp()) > 0) {
-                    continue;
-                }
-
-                payablePayment = payment;
+        for (RefundPayment payment : payments) {
+            // in an unpayable state
+            if (Objects.equals(payment.getStatus(), RefundPaymentStatus.PAID_ONLINE) || Objects.equals(payment.getStatus(), RefundPaymentStatus.CANCELLED)) {
+                continue;
             }
+
+            // an earlier selected refund payment is newer
+            if (payablePayment != null && payablePayment.getTimestamp().compareTo(payment.getTimestamp()) > 0) {
+                continue;
+            }
+
+            payablePayment = payment;
+        }
 
         return payablePayment;
     }
 
     private RefundPayment selectPaidRefundPayment(List<RefundPayment> payments) {
-        if (payments != null) {
-            for (RefundPayment payment : payments) {
-                if (Objects.equals(payment.getStatus(), RefundPaymentStatus.PAID_ONLINE)) {
-                    return payment;
-                }
+        for (RefundPayment payment : payments) {
+            if (Objects.equals(payment.getStatus(), RefundPaymentStatus.PAID_ONLINE)) {
+                return payment;
             }
         }
-
         return null;
     }
 
-    public RefundPayment getRefund(String refundId) {
-        Optional<RefundPayment> payment = refundPaymentRepository.findById(refundId);
+    public RefundPayment getRefundPayment(String refundId) {
+        return refundPaymentRepository.findById(refundId).orElseThrow(() -> {
+                    log.debug("refund not found, refundId: " + refundId);
+                    return new CommonApiException(
+                            HttpStatus.NOT_FOUND,
+                            new Error("refund-not-found-from-backend", "refund with refund id [" + refundId + "] not found from backend")
+                    );
+                }
+        );
 
-        if (!payment.isPresent()) {
-            log.debug("refund not found, refundId: " + refundId);
-            Error error = new Error("refund-not-found-from-backend", "refund with refund id [" + refundId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        return payment.get();
     }
 
     public RefundPayment createRefundToPaytrailAndCreateRefundPayment(RefundRequestDataDto dto) {
@@ -177,16 +171,12 @@ public class PaytrailRefundPaymentService {
         String paymentTransactionId = paymentDto.getPaytrailTransactionId();
         String refundPaymentId = RefundUtil.generateRefundPaymentId(refundId);
 
-        PaytrailRefundResponse refundResponse = paytrailPaymentClient.createRefund(
+        PaytrailRefundResponse refundResponse = paytrailRefundClient.createRefund(
                 context,
                 refundPaymentId,
                 paymentTransactionId,
                 refundDto
         );
-
-        if (!refundResponse.isValid()) {
-            throw new RuntimeException("Didn't manage to create refund to paytrail.");
-        }
 
         RefundPayment refundPayment = createRefundPayment(
                 dto,
@@ -195,6 +185,7 @@ public class PaytrailRefundPaymentService {
                 refundResponse,
                 refundPaymentId
         );
+
         if (refundPayment.getRefundPaymentId() == null || refundPayment.getRefundTransactionId() == null) {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
@@ -237,13 +228,14 @@ public class PaytrailRefundPaymentService {
         refundPayment.setOrderId(refundDto.getOrderId());
         refundPayment.setUserId(refundDto.getUser());
         refundPayment.setRefundMethod(paymentDto.getPaymentMethod());
-        refundPayment.setRefundGateway(RefundGateway.PAYTRAIL);
+        refundPayment.setRefundGateway(RefundGateway.PAYTRAIL.toString());
         refundPayment.setTimestamp(sdf.format(timestamp));
         refundPayment.setRefundType(orderType);
 
         refundPayment.setTotalExclTax(new BigDecimal(refundDto.getPriceNet()));
         refundPayment.setTaxAmount(new BigDecimal(refundDto.getPriceVat()));
         refundPayment.setTotal(new BigDecimal(refundDto.getPriceTotal()));
+        refundPayment.setRefundId(refundDto.getRefundId());
 
         refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
 
@@ -253,7 +245,7 @@ public class PaytrailRefundPaymentService {
         return refundPayment;
     }
 
-    public void triggerPaymentPaidEvent(RefundPayment payment) {
+    public void triggerRefundPaymentPaidEvent(RefundPayment payment) {
         String now = DateTimeUtil.getDateTime();
 
         PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
@@ -282,7 +274,7 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public void triggerPaymentFailedEvent(Payment payment) {
+    public void triggerRefundPaymentFailedEvent(Payment payment) {
         PaymentMessage paymentMessage = PaymentMessage.builder()
                 .eventType(EventType.PAYMENT_FAILED)
                 .namespace(payment.getNamespace())
@@ -296,46 +288,46 @@ public class PaytrailRefundPaymentService {
         log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
     }
 
-    public RefundPayment findByIdValidateByUser(String namespace, String refundId, String userId) {
-        RefundPayment refundPayment = getRefundPaymentForOrder(refundId);
+    public RefundPayment findByIdValidateByUser(String namespace, String orderId, String userId) {
+        RefundPayment refundPayment = getRefundPaymentForOrder(orderId);
         if (refundPayment == null) {
-            log.debug("no returnable refundPayment, refundId: " + refundId);
-            Error error = new Error("refund-payment-not-found-from-backend", "paid or payable refundPayment with order id [" + refundId + "] not found from backend");
+            log.debug("no returnable refundPayment, orderId: " + orderId);
+            Error error = new Error("refund-payment-not-found-from-backend", "paid or payable refundPayment with order id [" + orderId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
         String paymentUserId = refundPayment.getUserId();
         if (!paymentUserId.equals(userId)) {
             log.error("unauthorized attempt to load refundPayment, userId does not match");
-            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + refundId + "] and user id [" + userId + "] not found from backend");
+            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + orderId + "] and user id [" + userId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
         return refundPayment;
     }
 
-    public void updatePaymentStatus(String refundId, PaymentReturnDto paymentReturnDto) {
-        RefundPayment payment = getRefund(refundId);
+    public void updateRefundPaymentStatus(String refundId, PaymentReturnDto paymentReturnDto) {
+        RefundPayment refundPayment = getRefundPayment(refundId);
 
         if (paymentReturnDto.isValid()) {
             if (paymentReturnDto.isPaymentPaid()) {
                 // if not already paid earlier
-                if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
-//                    setPaymentStatus(refundId, PaymentStatus.PAID_ONLINE);
-//                    triggerPaymentPaidEvent(payment);
+                if (!PaymentStatus.PAID_ONLINE.equals(refundPayment.getStatus())) {
+//                    setRefundPaymentStatus(refundId, PaymentStatus.PAID_ONLINE);
+//                    triggerRefundPaymentPaidEvent(refundPayment);
                 } else {
-                    log.debug("not triggering events, payment paid earlier, refundId: " + refundId);
+                    log.debug("not triggering events, refundPayment paid earlier, refundId: " + refundId);
                 }
             } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
                 // if not already cancelled earlier
-                if (!PaymentStatus.CANCELLED.equals(payment.getStatus())) {
-//                    setPaymentStatus(refundId, PaymentStatus.CANCELLED);
-//                    triggerPaymentFailedEvent(payment);
+                if (!PaymentStatus.CANCELLED.equals(refundPayment.getStatus())) {
+//                    setRefundPaymentStatus(refundId, PaymentStatus.CANCELLED);
+//                    triggerRefundPaymentFailedEvent(refundPayment);
                 } else {
-                    log.debug("not triggering events, refund payment cancelled earlier, refundId: " + refundId);
+                    log.debug("not triggering events, refund refundPayment cancelled earlier, refundId: " + refundId);
                 }
             } else {
-                log.debug("not triggering events, refund payment not paid but can be retried, refundId: " + refundId);
+                log.debug("not triggering events, refund refundPayment not paid but can be retried, refundId: " + refundId);
             }
         }
     }

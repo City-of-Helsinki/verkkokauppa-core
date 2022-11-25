@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class PaytrailRefundPaymentController {
 
-  PaytrailRefundPaymentService refundPaymentService;
+  private final PaytrailRefundPaymentService refundPaymentService;
 
   @Autowired
   public PaytrailRefundPaymentController(PaytrailRefundPaymentService onlinePaymentService) {

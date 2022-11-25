@@ -1,6 +1,24 @@
 package fi.hel.verkkokauppa.payment.model.refund;
 
-public interface RefundGateway {
-	public static String PAYTRAIL = "paytrail";
-}
+import com.fasterxml.jackson.annotation.JsonValue;
 
+
+public enum RefundGateway {
+    PAYTRAIL("online-paytrail");
+
+    @JsonValue
+    private final String type;
+
+    RefundGateway(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public String toString() {
+        return type;
+    }
+}
