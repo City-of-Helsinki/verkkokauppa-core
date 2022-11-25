@@ -12,5 +12,4 @@ public class RefundRequestDataDto {
 	private OrderWrapper order;
 	private RefundAggregateDto refund;
 	private PaymentDto payment;
-	private String merchantId;
 }
