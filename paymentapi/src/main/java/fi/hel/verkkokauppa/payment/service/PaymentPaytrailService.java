@@ -1,31 +1,31 @@
 package fi.hel.verkkokauppa.payment.service;
 
-import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
-import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
-import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
+import fi.hel.verkkokauppa.payment.model.paytrail.payment.PaytrailPaymentProviderModel;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
-import fi.hel.verkkokauppa.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -41,11 +41,12 @@ import java.util.List;
 public class PaymentPaytrailService {
 
     private final PaytrailPaymentClient paytrailPaymentClient;
-    private final CommonServiceConfigurationClient commonServiceConfigurationClient;
     private final PaytrailPaymentContextBuilder paymentContextBuilder;
     private final PaymentRepository paymentRepository;
     private final PayerRepository payerRepository;
     private final PaymentItemRepository paymentItemRepository;
+
+    private final PaytrailPaymentProviderListMapper paytrailPaymentProviderListMapper;
 
     @Autowired
     PaymentPaytrailService(
@@ -54,14 +55,14 @@ public class PaymentPaytrailService {
             PaytrailPaymentContextBuilder paymentContextBuilder,
             PaymentRepository paymentRepository,
             PayerRepository payerRepository,
-            PaymentItemRepository paymentItemRepository
-    ) {
+            PaymentItemRepository paymentItemRepository,
+            PaytrailPaymentProviderListMapper paytrailPaymentProviderListMapper) {
         this.paytrailPaymentClient = paytrailPaymentClient;
-        this.commonServiceConfigurationClient = commonServiceConfigurationClient;
         this.paymentContextBuilder = paymentContextBuilder;
         this.paymentRepository = paymentRepository;
         this.payerRepository = payerRepository;
         this.paymentItemRepository = paymentItemRepository;
+        this.paytrailPaymentProviderListMapper = paytrailPaymentProviderListMapper;
     }
 
 
@@ -108,7 +109,7 @@ public class PaymentPaytrailService {
         PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId, false);
         PaytrailPaymentResponse createResponse = paytrailPaymentClient.createPayment(context, paymentId, dto.getOrder());
 
-        Payment payment = createPayment(context, dto, paymentType, paymentId, createResponse.getTransactionId());
+        Payment payment = createPayment(context, dto, paymentType, paymentId, createResponse);
         if (payment.getPaymentId() == null) {
             throw new RuntimeException("Didn't manage to create paytrail payment.");
         }
@@ -137,7 +138,7 @@ public class PaymentPaytrailService {
         }
     }
 
-    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId, String transactionId) {
+    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId, PaytrailPaymentResponse paymentResponse) {
         OrderDto order = dto.getOrder().getOrder();
         List<OrderItemDto> items = dto.getOrder().getItems();
 
@@ -164,8 +165,10 @@ public class PaymentPaytrailService {
         payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
-        payment.setPaytrailTransactionId(transactionId);
         payment.setShopInShopPayment(context.isUseShopInShop());
+        payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
+        List<PaytrailPaymentProviderModel> providers = paytrailPaymentProviderListMapper.fromDto(paymentResponse.getProviders());
+        payment.setPaytrailProviders(providers);
 
         createPayer(order, paymentId);
 
