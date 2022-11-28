@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 
 public class DateTimeUtil {
+    private static final String DATE_TIME_WITH_MILLISECONDS = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
     private static final DateTimeFormatter DEFAULT_FORMATTER = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd[ HH:mm:ss]")
@@ -50,6 +51,11 @@ public class DateTimeUtil {
 
     public static LocalDateTime fromFormattedDateTimeString(String localDateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        return LocalDateTime.parse(localDateTime, formatter);
+    }
+
+    public static LocalDateTime fromFormattedDateTimeOptionalString(String localDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_WITH_MILLISECONDS);
         return LocalDateTime.parse(localDateTime, formatter);
     }
 

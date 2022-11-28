@@ -4,19 +4,15 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -32,6 +28,7 @@ public class PaytrailPaymentController {
 
     @Autowired
     private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
+
 
     @PostMapping("/payment/paytrail/createFromOrder")
     public ResponseEntity<Payment> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
@@ -75,4 +72,26 @@ public class PaytrailPaymentController {
             );
         }
     }
+
+    @GetMapping("/payment/paytrail/url")
+    public ResponseEntity<String> getPaymentUrl(
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "orderId") String orderId,
+            @RequestParam(value = "userId") String userId
+    ) {
+        try {
+            Payment payment = onlinePaymentService.findByIdValidateByUser(namespace, orderId, userId);
+            String paymentUrl = paymentPaytrailService.getPaymentUrl(payment);
+            return ResponseEntity.status(HttpStatus.OK).body(paymentUrl);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting paytrail payment url failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-paytrail-payment-url", "failed to get paytrail payment url with order id [" + orderId + "]")
+            );
+        }
+    }
+
 }

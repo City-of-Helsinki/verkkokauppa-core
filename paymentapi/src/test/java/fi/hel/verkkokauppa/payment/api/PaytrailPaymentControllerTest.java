@@ -379,9 +379,9 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
             ResponseEntity<PaymentReturnDto> response = paytrailPaymentController.checkReturnUrl(merchantId, mockSignature, mockStatus, payment.getPaymentId(), null, mockCallbackCheckoutParams);
             PaymentReturnDto paymentReturnDto = response.getBody();
 
-            /* Verify correct payment return dto - should be authorized but not paid */
+            /* Verify correct payment return dto - should be authorized and paid */
             assertTrue(paymentReturnDto.isValid());
-            assertFalse(paymentReturnDto.isPaymentPaid());
+            assertTrue(paymentReturnDto.isPaymentPaid());
             assertFalse(paymentReturnDto.isAuthorized()); // false until subscription flow is fully supported
             assertFalse(paymentReturnDto.isCanRetry());
 

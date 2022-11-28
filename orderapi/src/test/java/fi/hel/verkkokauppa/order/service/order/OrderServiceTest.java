@@ -27,7 +27,6 @@ import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
-import org.json.JSONArray;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -643,6 +642,69 @@ class OrderServiceTest extends TestUtils {
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
         orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderWithLastValidPurchaseDateTime() {
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        LocalDateTime localDateTime = LocalDateTime.now();
+        order.setLastValidPurchaseDateTime(localDateTime);
+        orderRepository.save(order);
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+
+        /* Creating localDateTime with now() uses 6 digit precision with nanoseconds by default.
+           This is automatically rounded on save on db's side to 3 digit precision which causes assertion
+           error if values are asserted as is. Creating a formatter just for this felt excessive, thus
+           nanoseconds are rounded to 0 for "good-enough" assertion. */
+        Assertions.assertEquals(
+                localDateTime.withNano(0),
+                fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
+        );
+    }
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderByParams() {
+        String namespace = "venepaikat";
+        String user = "dummy_user";
+        LocalDateTime localDateTime = LocalDateTime.now();
+
+        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Assertions.assertEquals(namespace, order.getNamespace());
+        Assertions.assertEquals(user, order.getUser());
+        Assertions.assertEquals(
+                localDateTime,
+                order.getLastValidPurchaseDateTime()
+        );
+
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+        Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
+        Assertions.assertEquals(user, fetchedOrder.getUser());
+        Assertions.assertEquals(
+                localDateTime.withNano(0),
+                fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
+        );
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderByParamsWithNullDateTime() {
+        String namespace = "venepaikat";
+        String user = "dummy_user";
+        LocalDateTime localDateTime = null;
+
+        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Assertions.assertEquals(namespace, order.getNamespace());
+        Assertions.assertEquals(user, order.getUser());
+        Assertions.assertNull(order.getLastValidPurchaseDateTime());
+
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+        Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
+        Assertions.assertEquals(user, fetchedOrder.getUser());
+        Assertions.assertNull(order.getLastValidPurchaseDateTime());
     }
 
 }

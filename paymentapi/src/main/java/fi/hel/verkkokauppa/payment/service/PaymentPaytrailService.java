@@ -24,6 +24,7 @@ import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -208,5 +209,13 @@ public class PaymentPaytrailService {
         payer.setEmail(orderDto.getCustomerEmail());
 
         payerRepository.save(payer);
+    }
+
+    public String getPaymentUrl(String transactionId) {
+        return PaytrailClient.PAYMENT_UI_URL + "/pay/" + transactionId;
+    }
+
+    public String getPaymentUrl(Payment payment) {
+        return getPaymentUrl(payment.getPaytrailTransactionId());
     }
 }

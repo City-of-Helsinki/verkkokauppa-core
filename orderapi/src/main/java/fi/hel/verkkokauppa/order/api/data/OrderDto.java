@@ -42,4 +42,6 @@ public class OrderDto {
 
     private Long incrementId;
 
+    private LocalDateTime lastValidPurchaseDateTime;
+
 }
