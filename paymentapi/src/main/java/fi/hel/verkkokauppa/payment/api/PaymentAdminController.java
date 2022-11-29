@@ -60,6 +60,9 @@ public class PaymentAdminController {
     public ResponseEntity<Payment> getPayment(@RequestParam(value = "orderId") String orderId) {
         try {
             Payment payment = onlinePaymentService.getPaymentForOrder(orderId);
+            if (payment == null) {
+                throw new Exception("No payments found with given orderId. payment == null");
+            }
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {
             throw cae;

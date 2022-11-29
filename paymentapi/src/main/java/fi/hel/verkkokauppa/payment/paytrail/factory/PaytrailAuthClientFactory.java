@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.payment.paytrail.factory;
 
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaymentContextValidator;
 import org.helsinki.paytrail.PaytrailClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -32,5 +33,14 @@ public class PaytrailAuthClientFactory {
 	 */
 	public PaytrailClient getClient(String paytrailMerchantId, String paytrailSecretKey) {
 		return new PaytrailClient(paytrailMerchantId, paytrailSecretKey);
+	}
+
+	public PaytrailClient createPaytrailClientFromPaymentContext(PaytrailPaymentContext context) {
+		PaymentContextValidator.validateContext(context);
+		if (context.isUseShopInShop()) {
+			return getShopInShopClient(context.getShopId());
+		} else {
+			return getClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+		}
 	}
 }

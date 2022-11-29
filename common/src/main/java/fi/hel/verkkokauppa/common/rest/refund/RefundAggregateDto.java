@@ -1,9 +1,8 @@
-package fi.hel.verkkokauppa.order.api.data.refund;
+package fi.hel.verkkokauppa.common.rest.refund;
 
 import lombok.*;
 
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.utils;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -7,12 +9,22 @@ import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 
+@Slf4j
 public class TestPaymentCreator {
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @Autowired
+    private ServiceUrls serviceUrls;
+
     public static Payment getDummyPayment(String orderId, String userId, String namespace) {
         Payment payment = new Payment();
         payment.setPaymentId("payment_1");
@@ -83,5 +95,18 @@ public class TestPaymentCreator {
         payer.setLastName(orderDto.getCustomerLastName());
         payer.setEmail(orderDto.getCustomerEmail());
         return payer;
+    }
+
+    public String getFirstMerchantIdFromNamespace(String namespace) {
+
+        String jsonResponse = restServiceClient.getClient().get()
+                .uri(serviceUrls.getMerchantServiceUrl() + "/merchant/list-by-namespace?namespace=" + namespace)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info(jsonResponse);
+        JSONArray result = new JSONArray(jsonResponse);
+        log.info(result.toString());
+        return result.getJSONObject(0).getString("merchantId");
     }
 }

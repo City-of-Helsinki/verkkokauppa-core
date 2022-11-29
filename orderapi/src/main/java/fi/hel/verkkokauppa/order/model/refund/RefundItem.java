@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.model.refund;
 
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundItemDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -19,6 +19,9 @@ public class RefundItem {
   String orderItemId;
   @Field(type = FieldType.Keyword)
   String orderId;
+
+  @Field(type = FieldType.Keyword)
+  String merchantId;
 
   @Field(type = FieldType.Keyword)
   String productId;
@@ -59,6 +62,7 @@ public class RefundItem {
     this.refundItemId = UUIDGenerator.generateType4UUID().toString();
     this.refundId = refundId;
     this.orderItemId = dto.getOrderItemId();
+    this.merchantId = dto.getMerchantId();
     this.orderId = dto.getOrderId();
     this.productId = dto.getProductId();
     this.productName = dto.getProductName();

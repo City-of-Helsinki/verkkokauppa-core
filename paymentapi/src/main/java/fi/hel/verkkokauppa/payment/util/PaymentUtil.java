@@ -2,8 +2,6 @@ package fi.hel.verkkokauppa.payment.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 
 public class PaymentUtil {
 
@@ -24,11 +22,7 @@ public class PaymentUtil {
     }
 
     public static  String generatePaymentOrderNumber(String orderId) {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        String currentMinute = sdf.format(timestamp);
-
-        return orderId + "_at_" + currentMinute;
+        return IdGeneratorUtil.generateIdWithTimestamp(orderId);
     }
 
 }

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api.data.refund;
+package fi.hel.verkkokauppa.common.rest.refund;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +15,7 @@ public class RefundItemDto {
     private String refundId;
     private String orderItemId;
     private String orderId;
+    private String merchantId;
     private String productId;
     private String productName;
     private String productLabel;

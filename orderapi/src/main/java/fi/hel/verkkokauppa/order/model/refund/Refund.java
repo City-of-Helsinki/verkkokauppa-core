@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.model.refund;
 
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.api.data.refund.RefundDto;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
@@ -57,20 +57,25 @@ public class Refund {
   @Field(type = FieldType.Text)
   String priceTotal;
 
-  public Refund(RefundDto dto) {
-    this.status = RefundStatus.DRAFT;
-    this.refundId = UUIDGenerator.generateType4UUID().toString();
-    this.createdAt = DateTimeUtil.getFormattedDateTime();
-    this.orderId = dto.getOrderId();
-    this.namespace = dto.getNamespace();
-    this.user = dto.getUser();
-    this.customerFirstName = dto.getCustomerFirstName();
-    this.customerLastName = dto.getCustomerLastName();
-    this.customerEmail = dto.getCustomerEmail();
-    this.customerPhone = dto.getCustomerPhone();
-    this.refundReason = dto.getRefundReason();
-    this.priceNet = dto.getPriceNet();
-    this.priceVat = dto.getPriceVat();
-    this.priceTotal = dto.getPriceTotal();
+  public Refund() {}
+
+  public static Refund fromRefundDto(RefundDto dto) {
+    Refund refund = new Refund();
+    refund.setStatus(RefundStatus.DRAFT);
+    refund.setRefundId(UUIDGenerator.generateType4UUID().toString());
+    refund.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+    refund.setOrderId(dto.getOrderId());
+    refund.setNamespace(dto.getNamespace());
+    refund.setUser(dto.getUser());
+    refund.setCustomerFirstName(dto.getCustomerFirstName());
+    refund.setCustomerLastName(dto.getCustomerLastName());
+    refund.setCustomerEmail(dto.getCustomerEmail());
+    refund.setCustomerPhone(dto.getCustomerPhone());
+    refund.setRefundReason(dto.getRefundReason());
+    refund.setPriceNet(dto.getPriceNet());
+    refund.setPriceVat(dto.getPriceVat());
+    refund.setPriceTotal(dto.getPriceTotal());
+    return refund;
   }
+
 }

@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.api.data;
+package fi.hel.verkkokauppa.common.rest.refund;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
