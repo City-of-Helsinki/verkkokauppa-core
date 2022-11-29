@@ -18,56 +18,61 @@ public class RefundPayment {
 
 	// refundId (Refund model id) + timestamp (Like creating paymentId)
 	@Id
-	String refundPaymentId;
+	private String refundPaymentId;
 
 	// Paytrail gives this when we create refund for payment
-	String refundTransactionId;
+	@Field(type = FieldType.Text)
+	private String refundTransactionId;
 
 	@Field(type = FieldType.Keyword)
-	String namespace;
+	private String namespace;
 
 	@Field(type = FieldType.Text)
-	String orderId;
+	private String orderId;
 
 	@Field(type = FieldType.Text)
-	String userId;
+	private String userId;
 
 	// RefundPaymentStatus.CREATED
 	@Field(type = FieldType.Text)
-	String status;
+	private String status;
 
 	// payment.paymentMethod
 	@Field(type = FieldType.Text)
-	String refundMethod;
+	private String refundMethod;
 
 	// order or subscription
 	@Field(type = FieldType.Text)
-	String refundType;
+	private String refundType;
 
 	// RefundGateway.PAYTRAIL
 	@Field(type = FieldType.Text)
-	String refundGateway;
+	private String refundGateway;
 
 	// refund.getPriceNet()
 	@Field(type = FieldType.Double)
-	BigDecimal totalExclTax;
+	private BigDecimal totalExclTax;
 
 	// refund.getPriceTotal()
 	@Field(type = FieldType.Double)
-	BigDecimal total;
+	private BigDecimal total;
+
+	// refund.getRefundId()
+	@Field(type = FieldType.Text)
+	private String refundId;
 
 	// refund.getPriceVat()
 	@Field(type = FieldType.Double)
-	BigDecimal taxAmount;
+	private BigDecimal taxAmount;
 
 	@Field(type = FieldType.Text)
-	String timestamp;
+	private String timestamp;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	LocalDateTime createdAt;
+	private LocalDateTime createdAt;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	LocalDateTime updatedAt;
+	private LocalDateTime updatedAt;
 
 
 	public RefundPayment() {

@@ -99,21 +99,22 @@ public class PaytrailRefundPaymentServiceTest extends PaytrailPaymentCreator {
         RefundPayment refundPayment = null;
         try {
             refundPayment = refundPaymentService.createRefundToPaytrailAndCreateRefundPayment(dto);
-            if (paymentResponse.isValid()) {
-                Assertions.assertNotEquals(refundDto.getRefundId(), refundPayment.getRefundPaymentId());
-                Assertions.assertNotNull(refundPayment.getRefundPaymentId());
-                Assertions.assertNotNull(refundPayment.getRefundTransactionId());
-                Assertions.assertNotNull(refundPayment.getCreatedAt());
-                Assertions.assertEquals(namespace, refundPayment.getNamespace());
-                Assertions.assertEquals(orderId, refundPayment.getOrderId());
-                Assertions.assertEquals(user, refundPayment.getUserId());
-                Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
-                Assertions.assertEquals(paymentMethod, refundPayment.getRefundMethod());
-                Assertions.assertEquals(new BigDecimal(refundDto.getPriceNet()), refundPayment.getTotalExclTax());
-                Assertions.assertEquals(new BigDecimal(refundDto.getPriceTotal()), refundPayment.getTotal());
-                Assertions.assertEquals(new BigDecimal(refundDto.getPriceVat()), refundPayment.getTaxAmount());
-                Assertions.assertEquals(RefundGateway.PAYTRAIL, refundPayment.getRefundGateway());
-            }
+
+            Assertions.assertNotEquals(refundDto.getRefundId(), refundPayment.getRefundPaymentId());
+            Assertions.assertNotNull(refundPayment.getRefundPaymentId());
+            Assertions.assertNotNull(refundPayment.getRefundTransactionId());
+            Assertions.assertNotNull(refundPayment.getCreatedAt());
+            Assertions.assertEquals(namespace, refundPayment.getNamespace());
+            Assertions.assertEquals(refundDto.getRefundId(), refundPayment.getRefundId());
+            Assertions.assertEquals(orderId, refundPayment.getOrderId());
+            Assertions.assertEquals(user, refundPayment.getUserId());
+            Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
+            Assertions.assertEquals(paymentMethod, refundPayment.getRefundMethod());
+            Assertions.assertEquals(new BigDecimal(refundDto.getPriceNet()), refundPayment.getTotalExclTax());
+            Assertions.assertEquals(new BigDecimal(refundDto.getPriceTotal()), refundPayment.getTotal());
+            Assertions.assertEquals(new BigDecimal(refundDto.getPriceVat()), refundPayment.getTaxAmount());
+            Assertions.assertEquals(RefundGateway.PAYTRAIL.toString(), refundPayment.getRefundGateway());
+
         } catch (Exception e) {
             // Skip if no manual approval for payment first
             Assertions.assertTrue(true);
