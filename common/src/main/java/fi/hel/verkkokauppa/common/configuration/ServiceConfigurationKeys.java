@@ -51,6 +51,7 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
     public static String ORDER_CANCEL_REDIRECT_URL = "orderCancelRedirectUrl";
     public static String ORDER_SUCCESS_REDIRECT_URL = "orderSuccessRedirectUrl";
+    public static String REFUND_SUCCESS_REDIRECT_URL = "refundSuccessRedirectUrl";
     // Order right of purchase [KYV-233]
     public static String ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE = "orderRightOfPurchaseIsActive";
     public static String ORDER_RIGHT_OF_PURCHASE_URL = "orderRightOfPurchaseUrl";
@@ -113,7 +114,8 @@ public class ServiceConfigurationKeys {
                 MERCHANT_SUBSCRIPTION_WEBHOOK_URL, // must not be overwritten by (merchant)
                 MERCHANT_REFUND_WEBHOOK_URL,       // must not be overwritten by (merchant)
                 ORDER_CANCEL_REDIRECT_URL,         // must not be overwritten by (merchant)
-                ORDER_SUCCESS_REDIRECT_URL         // must not be overwritten by (merchant)
+                ORDER_SUCCESS_REDIRECT_URL,        // must not be overwritten by (merchant)
+                REFUND_SUCCESS_REDIRECT_URL        // must not be overwritten by (merchant)
         ).collect(Collectors.toList());
 
         namespaceKeys.addAll(getOverridableMerchantKeys());
