@@ -4,7 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
@@ -184,7 +184,7 @@ public class PaymentAdminControllerTest {
     @Test
     @RunIfProfile(profile = "local")
     public void whenCreatePaymentMethodWithValidDataThenReturnStatus201() {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
         ResponseEntity<PaymentMethodDto> response = paymentAdminController.createPaymentMethod(paymentMethodDto);
 
         PaymentMethodDto responsePaymentMethodDto = response.getBody();
@@ -201,7 +201,7 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
         Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
         Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
-        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
+        Assertions.assertEquals(PaymentGatewayEnum.VISMA, responsePaymentMethodDto.getGateway());
     }
 
     @Test
@@ -209,7 +209,7 @@ public class PaymentAdminControllerTest {
     public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
         createTestPaymentMethod();
         paymentMethodRepository.findAll().forEach(method -> log.info(method.getCode()));
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
 
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
             paymentAdminController.createPaymentMethod(paymentMethodDto);
@@ -231,7 +231,7 @@ public class PaymentAdminControllerTest {
         createTestPaymentMethod();
 
         String code = "test-payment-code";
-        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
+        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
         updatedPaymentMethodDto.setName("Edited test payment method");
 
         ResponseEntity<PaymentMethodDto> response = paymentAdminController.updatePaymentMethod(code, updatedPaymentMethodDto);
@@ -250,13 +250,13 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
         Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
         Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
-        Assertions.assertEquals(GatewayEnum.OFFLINE, responsePaymentMethodDto.getGateway());
+        Assertions.assertEquals(PaymentGatewayEnum.INVOICE, responsePaymentMethodDto.getGateway());
     }
 
     @Test
     @RunIfProfile(profile = "local")
     public void whenUpdatePaymentMethodThatDoesNotExistThenReturnError404() {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
 
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
             paymentAdminController.updatePaymentMethod(paymentMethodDto.getCode(), paymentMethodDto);
@@ -324,7 +324,7 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
         Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
         Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
-        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
+        Assertions.assertEquals(PaymentGatewayEnum.VISMA, responsePaymentMethodDto.getGateway());
     }
 
     @Test
@@ -374,10 +374,10 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals("test-payment-code", responsePaymentMethodDto.getCode());
         Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
         Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
-        Assertions.assertEquals(GatewayEnum.ONLINE, responsePaymentMethodDto.getGateway());
+        Assertions.assertEquals(PaymentGatewayEnum.VISMA, responsePaymentMethodDto.getGateway());
     }
 
-    private PaymentMethodDto createTestPaymentMethodDto(GatewayEnum gateway) {
+    private PaymentMethodDto createTestPaymentMethodDto(PaymentGatewayEnum gateway) {
         return new PaymentMethodDto("Test payment method",
                 "test-payment-code",
                 "test-payment-group",
@@ -391,7 +391,7 @@ public class PaymentAdminControllerTest {
         paymentMethodModel.setCode("test-payment-code");
         paymentMethodModel.setGroup("test-payment-group");
         paymentMethodModel.setImg("test-payment.jpg");
-        paymentMethodModel.setGateway(GatewayEnum.ONLINE);
+        paymentMethodModel.setGateway(PaymentGatewayEnum.VISMA);
         PaymentMethodModel saved = paymentMethodRepository.save(paymentMethodModel);
         paymentMethodsToBeDeleted.add(saved.getCode());
     }

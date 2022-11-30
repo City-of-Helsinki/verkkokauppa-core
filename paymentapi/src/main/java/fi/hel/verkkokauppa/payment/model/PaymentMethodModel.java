@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.payment.model;
 
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -27,5 +27,5 @@ public class PaymentMethodModel {
     private String img;
 
     @Field(type = FieldType.Text)
-    private GatewayEnum gateway;
+    private PaymentGatewayEnum gateway;
 }

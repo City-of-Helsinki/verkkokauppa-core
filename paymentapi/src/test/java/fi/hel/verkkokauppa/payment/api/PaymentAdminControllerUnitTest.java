@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.mapper.PaymentMethodMapper;
@@ -151,7 +151,7 @@ public class PaymentAdminControllerUnitTest {
      */
     @Test
     public void whenCreatePaymentMethodWithValidDataThenReturnStatus201() throws Exception {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
         PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.createNewPaymentMethod(paymentMethodDto)).thenCallRealMethod();
@@ -201,7 +201,7 @@ public class PaymentAdminControllerUnitTest {
 
     @Test
     public void whenCreatePaymentMethodWithSameCodeThatExistsThenReturnError409() {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
         PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.createNewPaymentMethod(paymentMethodDto)).thenCallRealMethod();
@@ -233,8 +233,8 @@ public class PaymentAdminControllerUnitTest {
     @Test
     public void whenUpdatePaymentMethodWithValidDataThenReturnStatus200() throws Exception {
         String initialCode = "test-payment-code";
-        PaymentMethodDto initialPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
-        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto initialPaymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
+        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
         updatedPaymentMethodDto.setName("Edited test payment method");
         updatedPaymentMethodDto.setCode("test-edit-payment-code");
         updatedPaymentMethodDto.setGroup("test-edit-payment-group");
@@ -291,7 +291,7 @@ public class PaymentAdminControllerUnitTest {
     @Test
     public void whenUpdatePaymentMethodThatDoesNotExistThenReturnError404() {
         String initialCode = "test-payment-code";
-        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto updatedPaymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
         updatedPaymentMethodDto.setName("Edited test payment method");
         updatedPaymentMethodDto.setCode("test-edit-payment-code");
         updatedPaymentMethodDto.setGroup("test-edit-payment-group");
@@ -323,7 +323,7 @@ public class PaymentAdminControllerUnitTest {
     public void whenDeletePaymentMethodThatExistsThenReturnStatus200() throws Exception {
         String code = "test-payment-code";
 
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
         PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.doCallRealMethod().when(paymentMethodService).deletePaymentMethod(code);
@@ -371,7 +371,7 @@ public class PaymentAdminControllerUnitTest {
      */
     @Test
     public void whenGetPaymentMethodByCodeThatDoesNotExistThenReturnStatus200() throws Exception {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
         PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
 
         Mockito.when(paymentMethodService.getPaymenMethodByCode(paymentMethodDto.getCode())).thenCallRealMethod();
@@ -433,8 +433,8 @@ public class PaymentAdminControllerUnitTest {
 
     @Test
     public void whenGetPaymentMethodsThenReturnMoreThanZeroWithStatus200() throws Exception {
-        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(GatewayEnum.OFFLINE);
-        PaymentMethodDto paymentMethodDto2 = createTestPaymentMethodDto(GatewayEnum.ONLINE);
+        PaymentMethodDto paymentMethodDto = createTestPaymentMethodDto(PaymentGatewayEnum.INVOICE);
+        PaymentMethodDto paymentMethodDto2 = createTestPaymentMethodDto(PaymentGatewayEnum.VISMA);
         paymentMethodDto2.setCode("second-payment-code");
 
         PaymentMethodModel paymentMethodModel = mapper.convertValue(paymentMethodDto, PaymentMethodModel.class);
@@ -457,7 +457,7 @@ public class PaymentAdminControllerUnitTest {
 
 
 
-    private PaymentMethodDto createTestPaymentMethodDto(GatewayEnum gateway) {
+    private PaymentMethodDto createTestPaymentMethodDto(PaymentGatewayEnum gateway) {
         return new PaymentMethodDto("Test payment method",
                 "test-payment-code",
                 "test-payment-group",

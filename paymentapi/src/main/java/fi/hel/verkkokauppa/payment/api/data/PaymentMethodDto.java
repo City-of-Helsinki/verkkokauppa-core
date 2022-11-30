@@ -1,6 +1,6 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -13,5 +13,5 @@ public class PaymentMethodDto {
 	private String code;
 	private String group;
 	private String img;
-	private GatewayEnum gateway;
+	private PaymentGatewayEnum gateway;
 }

@@ -9,7 +9,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
@@ -77,7 +77,7 @@ public class PaymentPaytrailService {
                         paymentMethod.getId(),
                         paymentMethod.getGroup(),
                         paymentMethod.getIcon(),
-                        GatewayEnum.ONLINE_PAYTRAIL
+                        PaymentGatewayEnum.PAYTRAIL
                 )).toArray(PaymentMethodDto[]::new);
             } catch (CommonApiException e) {
                 log.debug("Something went wrong in payment method fetching");
@@ -170,6 +170,7 @@ public class PaymentPaytrailService {
         payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
         List<PaytrailPaymentProviderModel> providers = paytrailPaymentProviderListMapper.fromDto(paymentResponse.getProviders());
         payment.setPaytrailProviders(providers);
+        payment.setPaymentGateway(PaymentGatewayEnum.PAYTRAIL);
 
         createPayer(order, paymentId);
 

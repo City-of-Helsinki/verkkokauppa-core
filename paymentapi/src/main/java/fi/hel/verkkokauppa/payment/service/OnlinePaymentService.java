@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.*;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.logic.builder.CardTokenPayloadBuilder;
 import fi.hel.verkkokauppa.payment.logic.builder.PaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.logic.builder.PaymentOnlyChargeCardPayloadBuilder;
@@ -284,6 +285,7 @@ public class OnlinePaymentService {
         payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
+        payment.setPaymentGateway(PaymentGatewayEnum.VISMA);
 
         createPayer(order);
 

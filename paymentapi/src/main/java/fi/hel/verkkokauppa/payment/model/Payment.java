@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.model;
 
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.model.paytrail.payment.PaytrailPaymentProviderModel;
 import lombok.Getter;
 import lombok.Setter;
@@ -74,6 +75,9 @@ public class Payment {
 	// Contains paytrail providers response from paytrail payment create request, these are used to make redirect to payment providers in kassa-ui
 	@Field(type = FieldType.Object)
 	private List<PaytrailPaymentProviderModel> paytrailProviders;
+
+	@Field(type = FieldType.Text)
+	PaymentGatewayEnum paymentGateway;
 
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
