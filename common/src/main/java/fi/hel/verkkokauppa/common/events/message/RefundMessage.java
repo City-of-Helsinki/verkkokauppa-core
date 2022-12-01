@@ -10,11 +10,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RefundMessage implements EventMessage {
-    String eventType;
-    String namespace;
-    String user;
+    private String eventType;
+    private String namespace;
+    private String userId;
 
-    String refundId;
-    String orderId;
-    String timestamp;
+    private String refundId;
+    private String paymentId;
+    private String orderId;
+    private String timestamp;
+
+    public RefundMessage toCustomerWebHook(){
+        return RefundMessage.builder()
+                .eventType(this.eventType)
+                .timestamp(this.timestamp)
+                .paymentId(this.paymentId)
+                .orderId(this.orderId)
+                .refundId(this.refundId)
+                .namespace(this.namespace)
+                .build();
+    }
 }

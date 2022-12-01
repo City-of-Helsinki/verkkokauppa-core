@@ -59,11 +59,10 @@ public class DeadLetterQueueListener {
     @Autowired
     private QueueConfigurations queueConfigurations;
 
-
     /**
      * A DLQ listener that only consumes messages with a property of MsgType = 'PAYMENT_PAID'
      */
-    @JmsListener(destination = "${queue.dlq:DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
+    @JmsListener(destination = "${queue.dlq:DLQ}", selector = MsgSelector.DLQ_SELECTOR)
     public void consumeMessage(TextMessage textMessage) {
         try {
             if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
@@ -98,7 +97,7 @@ public class DeadLetterQueueListener {
      * </p>
      */
     @Profile("local")
-    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = "MsgType = 'PAYMENT_PAID'")
+    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = MsgSelector.DLQ_SELECTOR)
     public void consumeMessageLocal(TextMessage textMessage) {
         try {
             if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
