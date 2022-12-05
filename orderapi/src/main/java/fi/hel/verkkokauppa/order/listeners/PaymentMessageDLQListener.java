@@ -15,7 +15,6 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -24,45 +23,38 @@ import org.springframework.stereotype.Component;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 @Component
 @Slf4j
-public class DeadLetterQueueListener {
-
-    private static final String EMAIL_TEMPLATE_PATH = "email/template_email_dlq_alert.html";
+public class PaymentMessageDLQListener extends BaseDLQEmailNotifier<PaymentMessage> {
 
     @Value("${payment.failed.notification.email:donotreply.checkout@hel.fi}")
     private String paymentFailedNotificationEmail;
 
-    @Autowired
-    private ServiceUrls serviceUrls;
+    private final SendNotificationService sendNotificationService;
+    private final SaveHistoryService saveHistoryService;
+    private final QueueConfigurations queueConfigurations;
 
     @Autowired
-    private ObjectMapper mapper;
-
-    @Autowired
-    private SendNotificationService sendNotificationService;
-
-    @Autowired
-    private SaveHistoryService saveHistoryService;
-
-    @Autowired
-    private RestServiceClient restServiceClient;
-
-    @Autowired
-    private QueueConfigurations queueConfigurations;
+    public PaymentMessageDLQListener(
+            RestServiceClient restServiceClient,
+            ServiceUrls serviceUrls,
+            ObjectMapper mapper,
+            SendNotificationService sendNotificationService,
+            SaveHistoryService saveHistoryService,
+            QueueConfigurations queueConfigurations
+    ) {
+        super(restServiceClient, serviceUrls, mapper);
+        this.sendNotificationService = sendNotificationService;
+        this.saveHistoryService = saveHistoryService;
+        this.queueConfigurations = queueConfigurations;
+    }
 
     /**
      * A DLQ listener that only consumes messages with a property of MsgType = 'PAYMENT_PAID'
      */
-    @JmsListener(destination = "${queue.dlq:DLQ}", selector = MsgSelector.DLQ_SELECTOR)
+    @JmsListener(destination = "${queue.dlq:DLQ}", selector = MsgSelector.PAYMENT_PAID)
     public void consumeMessage(TextMessage textMessage) {
         try {
             if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
@@ -97,11 +89,12 @@ public class DeadLetterQueueListener {
      * </p>
      */
     @Profile("local")
-    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = MsgSelector.DLQ_SELECTOR)
-    public void consumeMessageLocal(TextMessage textMessage) {
+    @JmsListener(destination = "${queue.dlq:ActiveMQ.DLQ}", selector = MsgSelector.PAYMENT_PAID)
+    public void consumePaymentMessageLocal(TextMessage textMessage) {
         try {
             if (textMessage != null && StringUtils.isNotEmpty(textMessage.getText())) {
                 log.info("Consuming PaymentMessage from local DLQ: {}", textMessage.getText());
+
                 PaymentMessage message = getPaymentMessageFromTextMessage(textMessage);
 
                 logMessageData(message);
@@ -126,36 +119,31 @@ public class DeadLetterQueueListener {
 
     private void paymentFailedToProcessAction(PaymentMessage message) throws JsonProcessingException {
         log.info("Starting payment-failed-to-process action for payment: {}", message.toString());
-        sendNotificationToEmail(message);
+        sendPaymentNotificationToEmail(message);
         sendNotificationService.sendToQueue(message, queueConfigurations.getPaymentFailedToProcessQueue());
         log.info("Ending payment-failed-to-process action for payment: {}", message.toString());
     }
 
-    private void sendNotificationToEmail(PaymentMessage paymentMessage) throws JsonProcessingException {
-        JSONObject msgJson = new JSONObject();
-        msgJson.put("id", paymentMessage.getPaymentId());
-        msgJson.put("receiver", paymentFailedNotificationEmail);
-        msgJson.put("header", "DLQ queue alert - " + EventType.PAYMENT_PAID);
-        log.info("Initial mail message without body: {}", msgJson.toString());
+    private void sendPaymentNotificationToEmail(PaymentMessage paymentMessage) throws JsonProcessingException {
         try {
-            String html = readFileAsString(EMAIL_TEMPLATE_PATH);
-            html = html.replace("#EVENT_TYPE#", EventType.PAYMENT_PAID);
-            html = html.replace("#GENERAL_INFORMATION#", "<p>" + paymentMessage.getPaymentId() + "</p>" );
-            html = html.replace("#NAMESPACE#", paymentMessage.getNamespace());
-            html = html.replace("#EVENT_PAYLOAD#", mapper.writeValueAsString(paymentMessage));
-
-            msgJson.put("body", html);
+            sendNotificationToEmail(
+                    paymentMessage.getPaymentId(),
+                    paymentFailedNotificationEmail,
+                    paymentMessage.getEventType(),
+                    paymentMessage.getPaymentId(),
+                    paymentMessage.getNamespace(),
+                    paymentMessage
+            );
+            log.info("Payment with id {} failed. Sending email notification to {}", paymentMessage.getPaymentId(), paymentFailedNotificationEmail);
         } catch (IOException e) {
-            log.info("Failed to serialize email template: {}", mapper.writeValueAsString(e));
-            throw new DLQPaymentMessageProcessingException("Failed to serialize email template - not sending email", paymentMessage);
+            log.info("Failed to read email template: {}", mapper.writeValueAsString(e));
+            throw new DLQPaymentMessageProcessingException("Failed to read email template - not sending email", paymentMessage);
         }
-        log.info("Payment with id {} failed. Sending email notification to {}", paymentMessage.getPaymentId(), paymentFailedNotificationEmail);
-        restServiceClient.makePostCall(serviceUrls.getMessageServiceUrl() + "/message/send/email", msgJson.toString());
     }
 
     private PaymentMessage getPaymentMessageFromTextMessage(TextMessage textMessage) throws JMSException, JsonProcessingException {
         String jsonMessage = textMessage.getText();
-        log.info(DeadLetterQueueListener.class + "{}", jsonMessage);
+        log.info(PaymentMessageDLQListener.class + "{}", jsonMessage);
 
         return mapper.readValue(jsonMessage, PaymentMessage.class);
     }
@@ -165,21 +153,6 @@ public class DeadLetterQueueListener {
      */
     private void logMessageData(PaymentMessage message) throws JsonProcessingException {
         log.info("DLQ-Message: " + mapper.writeValueAsString(message));
-    }
-
-    private String readFileAsString(String filePath) throws IOException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        InputStream inputStream = classLoader.getResourceAsStream(filePath);
-
-        StringBuilder sb = new StringBuilder();
-        try (Reader reader = new BufferedReader(new InputStreamReader
-                (inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
-            int c = 0;
-            while ((c = reader.read()) != -1) {
-                sb.append((char) c);
-            }
-        }
-        return sb.toString();
     }
 
 }

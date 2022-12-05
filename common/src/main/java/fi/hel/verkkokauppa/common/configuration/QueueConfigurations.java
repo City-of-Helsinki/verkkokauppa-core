@@ -26,6 +26,9 @@ public class QueueConfigurations {
     @Value("${queue.payment.failed.to.process:payment-failed-to-process}")
     String paymentFailedToProcessQueue;
 
+    @Value("${queue.refund.failed.to.process:refund-failed-to-process}")
+    String refundFailedToProcessQueue;
+
     @Value("${queue.subscription.renewals:subscription-renewals}")
     String subscriptionRenewalsQueue;
 
@@ -36,6 +39,8 @@ public class QueueConfigurations {
         allQueus.add(paymentNotificationsQueue);
         allQueus.add(subscriptionRenewalsQueue);
         allQueus.add(paymentFailedToProcessQueue);
+        allQueus.add(refundNotificationsQueue);
+        allQueus.add(refundFailedToProcessQueue);
         return allQueus;
     }
 }
