@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * > This class is a Spring component that maps a PaymentMethodModel objects to a PaymentMethodDTO objects and back
+ * > This class is a Spring component that maps a PaytrailPaymentProviderModel objects to a Provider objects and back
  */
 @Component
 public class PaytrailPaymentProviderListMapper extends AbstractModelMapper<PaytrailPaymentProviderModel, Provider> {
