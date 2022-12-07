@@ -170,7 +170,7 @@ public class PaytrailPaymentControllerUnitTests {
     }
 
     @Test
-    public void whenCreateFromOrderWithInvalidPaymentContextThenReturnStatus403() {
+    public void whenCreateFromOrderWithInvalidPaymentContextThenReturnStatus500() {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
         paymentRequestDataDto.setMerchantId(TEST_MERCHANT_ID);
         paymentRequestDataDto.setLanguage("FI");
@@ -182,7 +182,7 @@ public class PaytrailPaymentControllerUnitTests {
 
         String mockPaymentId = PaymentUtil.generatePaymentOrderNumber(orderWrapper.getOrder().getOrderId());
         PaytrailPaymentContext mockPaymentContext = createMockPaytrailPaymentContext(orderWrapper.getOrder().getNamespace(), paymentRequestDataDto.getMerchantId());
-        mockPaymentContext.setPaytrailMerchantId("");
+        mockPaymentContext.setPaytrailMerchantId("invalid-123");
         mockCreateValidPaymentFromOrder(paymentRequestDataDto, mockPaymentContext, mockPaymentId);
 
         Exception exception = assertThrows(Exception.class, () -> {
@@ -193,17 +193,16 @@ public class PaytrailPaymentControllerUnitTests {
                     .content(mapper.writeValueAsString(paymentRequestDataDto))
             )
             .andDo(print())
-            .andExpect(status().isForbidden())
-            .andExpect(status().is(403))
+            .andExpect(status().is5xxServerError())
+            .andExpect(status().is(500))
             .andReturn();
         });
 
         CommonApiException cause = (CommonApiException) exception.getCause();
         assertEquals(CommonApiException.class, cause.getClass());
-        assertEquals(HttpStatus.FORBIDDEN, cause.getStatus());
-        assertEquals("validation-failed-for-paytrail-payment-context-without-paytrail-merchant-credentials", cause.getErrors().getErrors().get(0).getCode());
-        String merchantId = paymentRequestDataDto.getMerchantId();
-        assertEquals("Failed to validate paytrail payment context, merchant credentials (merchant ID or secret key) are missing for merchant [" + merchantId + "]", cause.getErrors().getErrors().get(0).getMessage());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, cause.getStatus());
+        assertEquals("failed-to-create-paytrail-payment", cause.getErrors().getErrors().get(0).getCode());
+        assertEquals("failed to create paytrail payment", cause.getErrors().getErrors().get(0).getMessage());
     }
 
     @Test
