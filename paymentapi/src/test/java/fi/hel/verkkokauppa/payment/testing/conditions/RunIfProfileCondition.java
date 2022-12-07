@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.payment.testing.conditions;
 
 
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
-import lombok.var;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;

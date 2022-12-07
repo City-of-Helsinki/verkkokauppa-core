@@ -35,6 +35,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Objects;
 
 
 @Service
@@ -167,9 +168,24 @@ public class PaymentPaytrailService {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setShopInShopPayment(context.isUseShopInShop());
+
         payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
         List<PaytrailPaymentProviderModel> providers = paytrailPaymentProviderListMapper.fromDto(paymentResponse.getProviders());
-        payment.setPaytrailProviders(providers);
+
+        PaytrailPaymentProviderModel provider = providers
+                .stream()
+                .filter(providerModel -> Objects.equals(providerModel.getId(), dto.getPaymentMethod()))
+                .findFirst()
+                .orElseThrow(() -> {
+                    log.error("paytrail-payment-providers {}", paymentResponse.getProviders());
+                    return new CommonApiException(
+                            HttpStatus.NOT_FOUND,
+                            new Error("paytrail-payment-provider-not-found", "Cant find paytrail payment provider to orderId [" + order.getOrderId() + "] ")
+                    );
+                });
+
+        payment.setPaytrailProvider(provider);
+
         payment.setPaymentGateway(PaymentGatewayEnum.PAYTRAIL);
 
         createPayer(order, paymentId);
@@ -182,6 +198,10 @@ public class PaymentPaytrailService {
         log.debug("created payment for namespace: " + namespace + " with paymentId: " + paymentId);
 
         return payment;
+    }
+
+    private void addPaytrailPaymentCreateResponseDataToPayment(PaytrailPaymentResponse paymentResponse, Payment payment) {
+
     }
 
     private void createPaymentItem(OrderItemDto itemDto, String paymentId, String orderId) {
