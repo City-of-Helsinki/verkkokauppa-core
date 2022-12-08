@@ -3,21 +3,17 @@ package fi.hel.verkkokauppa.payment.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
-import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
-import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
-import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreateRefundPayloadConverter;
-import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
-import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentPayloadConverter;
+import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
+import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreatePaymentPayloadConverter;
+import fi.hel.verkkokauppa.payment.paytrail.converter.impl.PaytrailCreateRefundPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
@@ -32,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -45,27 +40,19 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.math.BigDecimal;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.math.BigDecimal;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @WebMvcTest(PaytrailPaymentController.class)
@@ -207,14 +194,15 @@ public class PaytrailPaymentControllerUnitTests {
             )
             .andDo(print())
             .andExpect(status().is5xxServerError())
-            .andExpect(status().is(500));
+            .andExpect(status().is(500))
+            .andReturn();
         });
 
         CommonApiException cause = (CommonApiException) exception.getCause();
         assertEquals(CommonApiException.class, cause.getClass());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, cause.getStatus());
         assertEquals("failed-to-create-paytrail-payment", cause.getErrors().getErrors().get(0).getCode());
-        assertEquals("Failed to create paytrail payment", cause.getErrors().getErrors().get(0).getMessage());
+        assertEquals("failed to create paytrail payment", cause.getErrors().getErrors().get(0).getMessage());
     }
 
     @Test
