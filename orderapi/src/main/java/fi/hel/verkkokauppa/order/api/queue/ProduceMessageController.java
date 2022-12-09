@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -94,12 +95,28 @@ public class ProduceMessageController {
     ) {
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
-            String orderMessageAsJson = mapper.writeValueAsString(paymentMessage);
+            String refundMessageAsJson = mapper.writeValueAsString(paymentMessage);
 
-            jmsTemplate.convertAndSend(queue, orderMessageAsJson);
+            jmsTemplate.convertAndSend(queue, refundMessageAsJson);
         } catch (Exception e) {
             log.error("/queue/send/payment-message error {}", e.getMessage());
         }
         return paymentMessage;
+    }
+
+    @PostMapping(value = "queue/send/refund-message")
+    public RefundMessage sendRefundMessage(
+            @RequestBody RefundMessage refundMessage,
+            @RequestParam(value = "toQueue") String toQueue
+    ) {
+        try {
+            ActiveMQQueue queue = new ActiveMQQueue(toQueue);
+            String refundMessageAsJson = mapper.writeValueAsString(refundMessage);
+
+            jmsTemplate.convertAndSend(queue, refundMessageAsJson);
+        } catch (Exception e) {
+            log.error("/queue/send/refund-message error {}", e.getMessage());
+        }
+        return refundMessage;
     }
 }
