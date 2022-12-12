@@ -60,7 +60,7 @@ public class RefundNotificationsQueueListener {
             );
 
             if (response.getStatusCode() != HttpStatus.OK) {
-                throw new RefundMessageProcessingException("Webhook call failed", message);
+                throw new RefundMessageProcessingException("Refund notification webhook call failed", message);
             }
         }
     }
