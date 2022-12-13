@@ -45,7 +45,7 @@ public class RefundController {
     return RefundMessage.builder()
             .eventType(eventType)
             .namespace(refund.getNamespace())
-            .user(refund.getUser())
+            .userId(refund.getUser())
             .refundId(refund.getRefundId())
             .orderId(refund.getOrderId())
             .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
@@ -67,10 +67,6 @@ public class RefundController {
         refundItemRepository.save(refundItem);
         refundItems.add(refundItem);
       }
-
-      RefundMessage refundMessage = createRefundMessage(EventType.REFUND_CREATED, refund);
-      sendEventService.sendEventMessage(TopicName.REFUNDS, refundMessage);
-      saveHistoryService.saveRefundMessageHistory(refundMessage);
 
       return ResponseEntity.ok().body(refundTransformer.transformToDto(refund, refundItems));
     } catch (CommonApiException cae) {

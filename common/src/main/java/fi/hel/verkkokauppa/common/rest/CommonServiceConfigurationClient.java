@@ -85,7 +85,7 @@ public class CommonServiceConfigurationClient {
         try {
             JSONObject namespaceServiceConfiguration = restServiceClient.queryJsonService(restServiceClient.getClient(), merchantApiUrl);
             log.debug("namespaceConfigurationValue: " + namespaceServiceConfiguration);
-
+            
             return namespaceServiceConfiguration.getJSONObject("configuration").optString("value", null);
         } catch (Exception exception) {
             log.info(exception.toString());

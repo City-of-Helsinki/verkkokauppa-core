@@ -2,9 +2,9 @@ package fi.hel.verkkokauppa.common.queue.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
-import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.EventMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -63,6 +63,24 @@ public class SendNotificationService {
             PaymentMessage message
     ) {
         String toQueue = queueConfigurations.getPaymentNotificationsQueue();
+        try {
+            ActiveMQQueue queue = new ActiveMQQueue(toQueue);
+            String messageAsJsonString = mapper.writeValueAsString(message);
+            log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
+            jmsTemplate.convertAndSend(queue, messageAsJsonString, msg -> {
+                msg.setStringProperty("MsgType", message.getEventType());
+                return msg;
+            });
+        } catch (Exception e) {
+            log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
+        }
+
+    }
+
+    public void sendRefundMessageNotification(
+            RefundMessage message
+    ) {
+        String toQueue = queueConfigurations.getRefundNotificationsQueue();
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             String messageAsJsonString = mapper.writeValueAsString(message);

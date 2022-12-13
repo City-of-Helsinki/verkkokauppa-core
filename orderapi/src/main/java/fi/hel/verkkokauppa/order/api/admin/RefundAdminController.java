@@ -49,7 +49,7 @@ public class RefundAdminController {
         return RefundMessage.builder()
                 .eventType(eventType)
                 .namespace(refund.getNamespace())
-                .user(refund.getUser())
+                .userId(refund.getUser())
                 .refundId(refund.getRefundId())
                 .orderId(refund.getOrderId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
