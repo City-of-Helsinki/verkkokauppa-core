@@ -36,7 +36,8 @@ public class ServiceConfigurationKeysTest {
                 "merchantOrderWebhookUrl",
                 "merchantPaymentWebhookUrl",
                 "merchantSubscriptionWebhookUrl",
-                "merchantRefundWebhookUrl"
+                "merchantRefundWebhookUrl",
+                "refundSuccessRedirectUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -73,6 +74,7 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
+                "refundSuccessRedirectUrl",
                 "payment_api_key",
                 "payment_api_version",
                 "payment_cp",
@@ -146,7 +148,8 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
-                "subscriptionPriceUrl"
+                "subscriptionPriceUrl",
+                "refundSuccessRedirectUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());

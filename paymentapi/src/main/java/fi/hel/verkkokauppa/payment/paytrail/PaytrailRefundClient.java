@@ -50,7 +50,7 @@ public class PaytrailRefundClient {
         try {
             PaytrailRefundCreateResponse createResponse = refundCreateResponseMapper.to(response.get());
             if (!createResponse.isValid()) {
-                if (createResponse.getErrors().length > 0) {
+                if (createResponse.getErrors().length > 0 || createResponse.getErrors() != null) {
                     log.info("createRefund errors {}", (Object) createResponse.getErrors());
                 }
                 throw new IllegalArgumentException("createRefund failed with response : " + createResponse.getResultJson());
