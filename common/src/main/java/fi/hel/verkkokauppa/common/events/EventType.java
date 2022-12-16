@@ -10,9 +10,8 @@ public class EventType {
     public static String SUBSCRIPTION_RENEWAL_VALIDATION_FAILED = "SUBSCRIPTION_RENEWAL_VALIDATION_FAILED";
     public static String SUBSCRIPTION_CARD_EXPIRED = "SUBSCRIPTION_CARD_EXPIRED";
     public static String SUBSCRIPTION_CARD_RENEWAL_CREATED = "SUBSCRIPTION_CARD_RENEWAL_CREATED";
-    public static String ORDER_CREATED = "ORDER_CREATED";
     public static String ORDER_CANCELLED = "ORDER_CANCELLED";
-    public static String REFUND_CREATED = "REFUND_CREATED";
     public static String REFUND_CONFIRMED = "REFUND_CONFIRMED";
+    public static String REFUND_PAID = "REFUND_PAID";
     public static String INTERNAL_ERROR = "INTERNAL_ERROR";
 }

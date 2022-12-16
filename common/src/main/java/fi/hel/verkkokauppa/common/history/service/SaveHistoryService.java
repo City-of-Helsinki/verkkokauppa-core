@@ -63,7 +63,7 @@ public class SaveHistoryService {
     public JSONObject saveRefundMessageHistory(RefundMessage message){
         try {
             String request = historyUtil.toString(historyFactory.fromRefundMessage(message));
-            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
+            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create", request);
         } catch (Exception e) {
             log.info("saveRefundMessageHistory processing error: " + e.getMessage());
         }

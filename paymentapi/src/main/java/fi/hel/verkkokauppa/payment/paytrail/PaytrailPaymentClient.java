@@ -76,6 +76,12 @@ public class PaytrailPaymentClient {
 
         try {
             PaytrailPaymentCreateResponse createResponse = paymentCreateResponseMapper.to(response.get());
+            if (!createResponse.isValid()) {
+                if (createResponse.getErrors().length > 0 || createResponse.getErrors() != null) {
+                    log.info("createPayment errors {}", (Object) createResponse.getErrors());
+                }
+                throw new IllegalArgumentException("createPayment failed with response : " + createResponse.getResultJson());
+            }
             return createResponse.getPaymentResponse();
         } catch (InterruptedException | ExecutionException | IllegalArgumentException e) {
             log.debug("Something went wrong in paytrail payment creation: {}", e.getMessage());
