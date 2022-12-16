@@ -11,10 +11,12 @@ import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
+import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
@@ -73,6 +75,9 @@ public class OrderController {
 
 	@Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
+
+    @Autowired
+    private OrderTransformer orderTransformer;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -479,6 +484,23 @@ public class OrderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-send-order-cancelled-event", "failed to call order cancelled webhook for order with id [" + message.getOrderId() + "]")
+            );
+        }
+    }
+
+    @PostMapping("/order/{orderId}/flowSteps")
+    public ResponseEntity<FlowStepDto> saveFlowStepsToOrder(@PathVariable String orderId,
+                                                            @RequestBody FlowStepDto flowSteps) {
+        try {
+            FlowStepDto flowStepDto = orderService.saveFlowStepsByOrderId(orderId, flowSteps);
+            return ResponseEntity.ok().body(flowStepDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("flow step saving failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-save-flow-steps", "failed to save flow steps for order with id [" + orderId + "]")
             );
         }
     }

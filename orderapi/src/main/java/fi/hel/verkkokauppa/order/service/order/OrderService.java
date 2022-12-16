@@ -17,19 +17,22 @@ import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
+import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
+import fi.hel.verkkokauppa.order.mapper.FlowStepMapper;
+import fi.hel.verkkokauppa.order.model.FlowStep;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +60,12 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private FlowStepRepository flowStepRepository;
+
+    @Autowired
+    private FlowStepMapper flowStepMapper;
+
+    @Autowired
     private OrderItemService orderItemService;
 
     @Autowired
@@ -76,16 +85,6 @@ public class OrderService {
 
     @Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
-
-    @Autowired
-    private HistoryFactory historyFactory;
-    @Autowired
-    private HistoryUtil historyUtil;
-
-    @Autowired
-    private RestServiceClient restServiceClient;
-    @Autowired
-    private ServiceUrls serviceUrl;
 
     @Autowired
     private IncrementId incrementId;
@@ -109,9 +108,24 @@ public class OrderService {
             List<OrderItem> items = this.orderItemService.findByOrderId(orderId);
             List<OrderItemMeta> metas = this.orderItemMetaService.findByOrderId(orderId);
             orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items, metas);
+
+            FlowStep flowStep = getFlowStepsByOrderId(orderId);
+            if (flowStep != null) {
+                orderAggregateDto.setFlowSteps(flowStepMapper.toDto(flowStep));
+            }
         }
 
         return orderAggregateDto;
+    }
+
+    public FlowStep getFlowStepsByOrderId(String orderId) {
+        List<FlowStep> flowStep = flowStepRepository.findByOrderId(orderId);
+        if (flowStep.size() > 0) {
+            return flowStep.get(0);
+        }
+
+        log.debug("flow step not found, orderId: " + orderId);
+        return null;
     }
 
     public String generateOrderId(String namespace, String user, LocalDateTime timestamp) {
@@ -159,23 +173,6 @@ public class OrderService {
         return orderRepository.findByUser(userId);
     }
 
-    public Order findByNamespaceAndUser(String namespace, String user) {
-        List<Order> matchingOrders = orderRepository.findByNamespaceAndUser(namespace, user);
-
-        if (matchingOrders.size() > 0)
-            return matchingOrders.get(0);
-
-        log.debug("order not found, namespace: " + namespace + " user: " + user);
-        return null;
-    }
-
-
-    public void setCustomer(String orderId, CustomerDto customerDto) {
-        Order order = findById(orderId);
-        if (order != null)
-            setCustomer(order, customerDto.getCustomerFirstName(), customerDto.getCustomerLastName(), customerDto.getCustomerEmail(), customerDto.getCustomerPhone());
-    }
-
     public void setCustomer(Order order, CustomerDto customerDto) {
         setCustomer(order, customerDto.getCustomerFirstName(), customerDto.getCustomerLastName(), customerDto.getCustomerEmail(), customerDto.getCustomerPhone());
     }
@@ -188,12 +185,6 @@ public class OrderService {
 
         orderRepository.save(order);
         log.debug("saved order customer details, orderId: " + order.getOrderId());
-    }
-
-    public void setTotals(String orderId, String priceNet, String priceVat, String priceTotal) {
-        Order order = findById(orderId);
-        if (order != null)
-            setTotals(order, priceNet, priceVat, priceTotal);        
     }
 
     public void setTotals(Order order, String priceNet, String priceVat, String priceTotal) {
@@ -391,24 +382,41 @@ public class OrderService {
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
 
-    public JSONObject saveOrderMessageHistory(OrderMessage message){
-        try {
-            String request = historyUtil.toString(historyFactory.fromOrderMessage(message));
-            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
-        } catch (Exception e) {
-            log.error("saveOrderMessageHistory processing error: " + e.getMessage());
+    public FlowStepDto saveFlowStepsByOrderId(String orderId, FlowStepDto flowStepDto) {
+        if (flowStepDto == null) {
+            throw new RuntimeException("Failed to save flow steps, no data provided to save");
         }
-        return null;
-    }
+        orderRepository.findById(orderId)
+                .orElseThrow(() -> new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("order-not-found", "order with id [" + orderId + "] not found")
+                ));
 
-    public JSONObject savePaymentMessageHistory(PaymentMessage message){
-        try {
-            String request = historyUtil.toString(historyFactory.fromPaymentMessage(message));
-            return restServiceClient.makePostCall(serviceUrl.getHistoryServiceUrl() + "/history/create",request);
-        } catch (Exception e) {
-            log.info("savePaymentMessageHistory processing error: " + e.getMessage());
+        // Update existing flow step or create new by orderId
+        Optional<FlowStep> existingFlowStep = flowStepRepository.findByOrderId(orderId).stream().findFirst();
+        if (existingFlowStep.isPresent()) {
+            FlowStep flowStepToUpdate = existingFlowStep.get();
+            flowStepToUpdate.setActiveStep(flowStepDto.getActiveStep());
+            flowStepToUpdate.setTotalSteps(flowStepDto.getTotalSteps());
+
+            FlowStep saved = flowStepRepository.save(flowStepToUpdate);
+            if (saved == null) {
+                throw new RuntimeException("Failed to update existing flow steps with orderId [" + orderId + "]");
+            }
+            return flowStepMapper.toDto(saved);
+        } else {
+            FlowStep flowStep = flowStepMapper.fromDto(flowStepDto);
+            flowStep.setFlowStepId(UUIDGenerator.generateType4UUID().toString());
+            flowStep.setOrderId(orderId);
+
+            FlowStep saved = flowStepRepository.save(flowStep);
+            if (saved == null) {
+                throw new RuntimeException("Failed to save new flow steps with orderId [" + orderId + "]");
+            }
+            return flowStepMapper.toDto(saved);
         }
-        return null;
+
+
     }
 
 }

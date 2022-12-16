@@ -20,4 +20,6 @@ public class OrderAggregateDto {
     @Size(min = 1, message = "items required")
     private List<OrderItemDto> items = new ArrayList<>();
 
+    private FlowStepDto flowSteps;
+
 }
