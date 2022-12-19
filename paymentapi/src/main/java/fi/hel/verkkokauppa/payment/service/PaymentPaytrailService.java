@@ -200,10 +200,6 @@ public class PaymentPaytrailService {
         return payment;
     }
 
-    private void addPaytrailPaymentCreateResponseDataToPayment(PaytrailPaymentResponse paymentResponse, Payment payment) {
-
-    }
-
     private void createPaymentItem(OrderItemDto itemDto, String paymentId, String orderId) {
         PaymentItem item = new PaymentItem();
         item.setPaymentId(paymentId);
