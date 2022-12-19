@@ -9,7 +9,7 @@ import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodFilter;
-import fi.hel.verkkokauppa.payment.constant.GatewayEnum;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.mapper.PaymentMethodMapper;
 import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
@@ -58,7 +58,7 @@ public class PaymentMethodService {
                     paymentMethod.getSelectedValue(),
                     paymentMethod.getGroup(),
                     paymentMethod.getImg(),
-                    GatewayEnum.ONLINE
+                    PaymentGatewayEnum.VISMA
             )).toArray(PaymentMethodDto[]::new);
 
         } catch (RuntimeException e) {
@@ -74,7 +74,7 @@ public class PaymentMethodService {
                 return new PaymentMethodDto[]{};
             }
 
-            List<PaymentMethodModel> paymentMethodModels = paymentMethodRepository.findByGateway(GatewayEnum.OFFLINE);
+            List<PaymentMethodModel> paymentMethodModels = paymentMethodRepository.findByGateway(PaymentGatewayEnum.INVOICE);
             return paymentMethodModels.stream()
                     .map(paymentMethodMapper::toDto)
                     .toArray(PaymentMethodDto[]::new);

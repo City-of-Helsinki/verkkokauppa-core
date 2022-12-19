@@ -21,18 +21,11 @@ import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -40,11 +33,10 @@ import org.springframework.http.ResponseEntity;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Slf4j
 public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
@@ -103,10 +95,12 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     @RunIfProfile(profile = "local")
     public void testCreatePaymentFromOrder() {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setPaymentMethod("nordea");
         OrderWrapper orderWrapper = createDummyOrderWrapper();
         OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
         paymentRequestDataDto.setOrder(orderWrapper);
 
+        paymentRequestDataDto.setPaymentMethod("nordea");
         String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
         paymentRequestDataDto.setMerchantId(merchantId);
 
@@ -268,6 +262,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     public void testCheckReturnUrl() {
         /* First create payment from mock order to make the whole return url check process possible*/
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setPaymentMethod("nordea");
         OrderWrapper orderWrapper = createDummyOrderWrapper();
         paymentRequestDataDto.setOrder(orderWrapper);
 
@@ -316,6 +311,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     public void testCheckReturnUrlWithInvalidSignature() {
         /* First create payment from mock order to make the whole return url check process possible*/
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setPaymentMethod("nordea");
         OrderWrapper orderWrapper = createDummyOrderWrapper();
         paymentRequestDataDto.setOrder(orderWrapper);
 
@@ -357,6 +353,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     public void testCheckReturnUrlWithEmptySettlement() {
         /* First create payment from mock order to make the whole return url check process possible*/
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setPaymentMethod("nordea");
         OrderWrapper orderWrapper = createDummyOrderWrapper();
         paymentRequestDataDto.setOrder(orderWrapper);
 
@@ -400,6 +397,7 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     public void testCheckReturnUrlWithFailStatus() {
         /* First create payment from mock order to make the whole return url check process possible */
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        paymentRequestDataDto.setPaymentMethod("nordea");
         OrderWrapper orderWrapper = createDummyOrderWrapper();
         paymentRequestDataDto.setOrder(orderWrapper);
 

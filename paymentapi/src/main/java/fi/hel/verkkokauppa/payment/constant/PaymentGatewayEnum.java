@@ -2,15 +2,15 @@ package fi.hel.verkkokauppa.payment.constant;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum GatewayEnum {
-    ONLINE("online"),
-    ONLINE_PAYTRAIL("online-paytrail"),
-    OFFLINE("offline");
+public enum PaymentGatewayEnum {
+    VISMA("online"),
+    PAYTRAIL("online-paytrail"),
+    INVOICE("offline");
 
     @JsonValue
     private final String type;
 
-    GatewayEnum(String type) {
+    PaymentGatewayEnum(String type) {
         this.type = type;
     }
 

@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.model;
 
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.payment.model.paytrail.payment.PaytrailPaymentProviderModel;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -8,7 +10,6 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -69,6 +70,13 @@ public class Payment {
 	 */
 	@Field(type = FieldType.Boolean)
 	boolean shopInShopPayment;
+
+	// Contains paytrail provider response from paytrail payment create request, used to make redirect to payment provider in kassa-ui
+	@Field(type = FieldType.Object)
+	private PaytrailPaymentProviderModel paytrailProvider;
+
+	@Field(type = FieldType.Text)
+	PaymentGatewayEnum paymentGateway;
 
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
