@@ -15,11 +15,11 @@ public class RefundMessage implements EventMessage {
     private String eventType;
     private String namespace;
     private String userId;
-
     private String refundId;
     private String paymentId;
     private String orderId;
     private String timestamp;
+    private String refundType;
 
     public RefundMessage toCustomerWebHook(){
         return RefundMessage.builder()

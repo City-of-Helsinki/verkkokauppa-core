@@ -13,5 +13,6 @@ public class EventType {
     public static String ORDER_CANCELLED = "ORDER_CANCELLED";
     public static String REFUND_CONFIRMED = "REFUND_CONFIRMED";
     public static String REFUND_PAID = "REFUND_PAID";
+    public static String REFUND_FAILED = "REFUND_FAILED";
     public static String INTERNAL_ERROR = "INTERNAL_ERROR";
 }
