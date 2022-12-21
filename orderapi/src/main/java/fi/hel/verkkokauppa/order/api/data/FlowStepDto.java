@@ -1,10 +1,8 @@
 package fi.hel.verkkokauppa.order.api.data;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class FlowStepDto {
     private String flowStepId;
     private String orderId;

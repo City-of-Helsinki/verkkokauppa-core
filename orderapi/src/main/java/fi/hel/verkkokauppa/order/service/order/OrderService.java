@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.order.service.order;
 
-import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -8,16 +7,12 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.history.factory.HistoryFactory;
-import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
 import fi.hel.verkkokauppa.common.id.IncrementId;
-import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
-import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
@@ -29,7 +24,6 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
-import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
@@ -60,7 +54,7 @@ public class OrderService {
     private OrderRepository orderRepository;
 
     @Autowired
-    private FlowStepRepository flowStepRepository;
+    private FlowStepService flowStepService;
 
     @Autowired
     private FlowStepMapper flowStepMapper;
@@ -109,23 +103,13 @@ public class OrderService {
             List<OrderItemMeta> metas = this.orderItemMetaService.findByOrderId(orderId);
             orderAggregateDto = orderTransformerUtils.transformToOrderAggregateDto(order, items, metas);
 
-            FlowStep flowStep = getFlowStepsByOrderId(orderId);
-            if (flowStep != null) {
-                orderAggregateDto.setFlowSteps(flowStepMapper.toDto(flowStep));
+            Optional<FlowStep> flowStepOpt = flowStepService.getFlowStepsByOrderId(orderId);
+            if (flowStepOpt.isPresent()) {
+                orderAggregateDto.setFlowSteps(flowStepMapper.toDto(flowStepOpt.get()));
             }
         }
 
         return orderAggregateDto;
-    }
-
-    public FlowStep getFlowStepsByOrderId(String orderId) {
-        List<FlowStep> flowStep = flowStepRepository.findByOrderId(orderId);
-        if (flowStep.size() > 0) {
-            return flowStep.get(0);
-        }
-
-        log.debug("flow step not found, orderId: " + orderId);
-        return null;
     }
 
     public String generateOrderId(String namespace, String user, LocalDateTime timestamp) {
@@ -381,42 +365,4 @@ public class OrderService {
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
-
-    public FlowStepDto saveFlowStepsByOrderId(String orderId, FlowStepDto flowStepDto) {
-        if (flowStepDto == null) {
-            throw new RuntimeException("Failed to save flow steps, no data provided to save");
-        }
-        orderRepository.findById(orderId)
-                .orElseThrow(() -> new CommonApiException(
-                        HttpStatus.NOT_FOUND,
-                        new Error("order-not-found", "order with id [" + orderId + "] not found")
-                ));
-
-        // Update existing flow step or create new by orderId
-        Optional<FlowStep> existingFlowStep = flowStepRepository.findByOrderId(orderId).stream().findFirst();
-        if (existingFlowStep.isPresent()) {
-            FlowStep flowStepToUpdate = existingFlowStep.get();
-            flowStepToUpdate.setActiveStep(flowStepDto.getActiveStep());
-            flowStepToUpdate.setTotalSteps(flowStepDto.getTotalSteps());
-
-            FlowStep saved = flowStepRepository.save(flowStepToUpdate);
-            if (saved == null) {
-                throw new RuntimeException("Failed to update existing flow steps with orderId [" + orderId + "]");
-            }
-            return flowStepMapper.toDto(saved);
-        } else {
-            FlowStep flowStep = flowStepMapper.fromDto(flowStepDto);
-            flowStep.setFlowStepId(UUIDGenerator.generateType4UUID().toString());
-            flowStep.setOrderId(orderId);
-
-            FlowStep saved = flowStepRepository.save(flowStep);
-            if (saved == null) {
-                throw new RuntimeException("Failed to save new flow steps with orderId [" + orderId + "]");
-            }
-            return flowStepMapper.toDto(saved);
-        }
-
-
-    }
-
 }

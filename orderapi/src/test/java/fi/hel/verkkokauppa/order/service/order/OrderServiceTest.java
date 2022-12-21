@@ -66,6 +66,9 @@ class OrderServiceTest extends TestUtils {
     private OrderService orderService;
 
     @Autowired
+    private FlowStepService flowStepService;
+
+    @Autowired
     private OrderItemService orderItemService;
 
     @Autowired
@@ -649,7 +652,6 @@ class OrderServiceTest extends TestUtils {
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
         orderRepository.save(order);
-        ordersToBeDeleted.add(order);
     }
 
     @Test
@@ -731,7 +733,7 @@ class OrderServiceTest extends TestUtils {
         FlowStepDto flowStepsDto = new FlowStepDto();
         flowStepsDto.setActiveStep(2);
         flowStepsDto.setTotalSteps(5);
-        FlowStepDto savedFlowSteps = orderService.saveFlowStepsByOrderId(fetchedOrder.getOrderId(), flowStepsDto);
+        FlowStepDto savedFlowSteps = flowStepService.saveFlowStepsByOrderId(fetchedOrder.getOrderId(), flowStepsDto);
 
         Assertions.assertNotNull(savedFlowSteps.getFlowStepId());
         Assertions.assertEquals(fetchedOrder.getOrderId(), savedFlowSteps.getOrderId());
@@ -739,7 +741,7 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(5, savedFlowSteps.getTotalSteps());
 
         ordersToBeDeleted.add(fetchedOrder);
-        flowStepsToBeDeleted.add(orderService.getFlowStepsByOrderId(fetchedOrder.getOrderId()));
+        flowStepsToBeDeleted.add(flowStepService.getFlowStepsByOrderId(fetchedOrder.getOrderId()).get());
     }
 
     @Test
@@ -752,7 +754,7 @@ class OrderServiceTest extends TestUtils {
         String orderIdNotExist = UUID.randomUUID().toString();
 
         CommonApiException exception = assertThrows(CommonApiException.class, () -> {
-            orderService.saveFlowStepsByOrderId(orderIdNotExist, flowStepsDto);
+            flowStepService.saveFlowStepsByOrderId(orderIdNotExist, flowStepsDto);
         });
 
         assertEquals(CommonApiException.class, exception.getClass());

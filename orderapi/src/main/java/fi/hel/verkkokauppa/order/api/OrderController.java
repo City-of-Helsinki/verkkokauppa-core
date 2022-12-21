@@ -22,6 +22,7 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
+import fi.hel.verkkokauppa.order.service.order.FlowStepService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -48,6 +49,9 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private FlowStepService flowStepService;
 
     @Autowired
     private InvoiceService invoiceService;
@@ -492,7 +496,7 @@ public class OrderController {
     public ResponseEntity<FlowStepDto> saveFlowStepsToOrder(@PathVariable String orderId,
                                                             @RequestBody FlowStepDto flowSteps) {
         try {
-            FlowStepDto flowStepDto = orderService.saveFlowStepsByOrderId(orderId, flowSteps);
+            FlowStepDto flowStepDto = flowStepService.saveFlowStepsByOrderId(orderId, flowSteps);
             return ResponseEntity.ok().body(flowStepDto);
         } catch (CommonApiException cae) {
             throw cae;
