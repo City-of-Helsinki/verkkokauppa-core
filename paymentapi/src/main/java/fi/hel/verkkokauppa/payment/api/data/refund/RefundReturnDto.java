@@ -1,18 +1,15 @@
 package fi.hel.verkkokauppa.payment.api.data.refund;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
 public class RefundReturnDto {
     private boolean isValid;        // checksum ok
     private boolean isRefundPaid;   // status values confirm refund
     private boolean canRetry;       // not all failures can be retried
-    private String paymentType;     // PaymentType constant.
-
-    public RefundReturnDto() {
-    }
+    private String refundType;      // RefundType constant.
 
     public RefundReturnDto(boolean isValid, boolean isRefundPaid, boolean canRetry) {
         this.isValid = isValid;

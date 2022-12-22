@@ -70,15 +70,15 @@ public class PaytrailRefundReturnValidator {
             String calculatedSignature;
             String merchantSecretKey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
             if (StringUtils.isEmpty(merchantSecretKey)) {
-                log.debug("No paytrail secret key found for merchant {}", merchantId);
+                log.debug("No paytrail secret key found for refund for merchant {}", merchantId);
                 return null;
             }
             calculatedSignature = PaytrailSignatureService.calculateSignature(checkoutSignatureParameters, null, merchantSecretKey);
 
-            log.debug("calculatedSignature: " + calculatedSignature);
+            log.debug("Calculated refund signature: " + calculatedSignature);
             return calculatedSignature;
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            log.debug("Failed to create signature from return data", e);
+            log.debug("Failed to create refund signature from return data", e);
             log.debug(e.getMessage());
             return null;
         }

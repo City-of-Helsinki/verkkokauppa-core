@@ -250,7 +250,7 @@ public class PaytrailRefundPaymentService {
                 .timestamp(now)
                 .namespace(refundPayment.getNamespace())
                 .refundId((refundPayment.getRefundId()))
-                .paymentId(refundPayment.getRefundPaymentId())
+                .refundPaymentId(refundPayment.getRefundPaymentId())
                 .orderId(refundPayment.getOrderId())
                 .userId(refundPayment.getUserId());
 
@@ -275,7 +275,7 @@ public class PaytrailRefundPaymentService {
                 .eventType(EventType.REFUND_FAILED)
                 .timestamp(now)
                 .namespace(refundPayment.getNamespace())
-                .paymentId(refundPayment.getRefundId())
+                .refundId(refundPayment.getRefundId())
                 .orderId(refundPayment.getOrderId())
                 .userId(refundPayment.getUserId())
                 .refundType(refundPayment.getRefundType());
