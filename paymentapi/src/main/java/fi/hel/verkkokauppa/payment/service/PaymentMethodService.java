@@ -254,4 +254,14 @@ public class PaymentMethodService {
         return orderPaymentMethodMapper.toDto(saved);
     }
 
+    public OrderPaymentMethodDto getPaymentMethodForOrder(String orderId) {
+        OrderPaymentMethod orderPaymentMethod = orderPaymentMethodRepository.findByOrderId(orderId).stream()
+                .findFirst()
+                .orElseThrow(() -> new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("order-payment-method-not-found", "payment method for order with id [" + orderId + "] not found")
+                ));
+        return orderPaymentMethodMapper.toDto(orderPaymentMethod);
+    }
+
 }
