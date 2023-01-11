@@ -2,31 +2,31 @@ package fi.hel.verkkokauppa.order.service.order;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.OrderController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
+import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
+import fi.hel.verkkokauppa.order.model.FlowStep;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
+import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
-import fi.hel.verkkokauppa.order.service.subscription.CreateOrderFromSubscriptionCommand;
-import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -44,9 +44,14 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -61,6 +66,9 @@ class OrderServiceTest extends TestUtils {
     private OrderService orderService;
 
     @Autowired
+    private FlowStepService flowStepService;
+
+    @Autowired
     private OrderItemService orderItemService;
 
     @Autowired
@@ -68,8 +76,10 @@ class OrderServiceTest extends TestUtils {
 
     @Autowired
     private OrderRepository orderRepository;
+
     @Autowired
-    private OrderController orderController;
+    private FlowStepRepository flowStepRepository;
+
     @Autowired
     private NextDateCalculator nextDateCalculator;
 
@@ -79,21 +89,10 @@ class OrderServiceTest extends TestUtils {
     private SubscriptionController subscriptionController;
 
     @Autowired
-    private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
-
-    @Autowired
-    private GetSubscriptionQuery getSubscriptionQuery;
-
-    @Autowired
     private SubscriptionRenewalService subscriptionRenewalService;
+
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
-
-    @Autowired
-    private RestServiceClient restServiceClient;
-
-    @Autowired
-    private ServiceUrls serviceUrls;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -101,9 +100,20 @@ class OrderServiceTest extends TestUtils {
     private Order foundOrder;
     private Subscription foundSubscription;
 
-    @Test
-    public void assertTrue() {
-        Assertions.assertTrue(true);
+    private List<Order> ordersToBeDeleted = new ArrayList();
+    private List<FlowStep> flowStepsToBeDeleted = new ArrayList();
+
+    @AfterEach
+    public void tearDown() {
+        try {
+            orderRepository.deleteAll(ordersToBeDeleted);
+            flowStepRepository.deleteAll(flowStepsToBeDeleted);
+            ordersToBeDeleted = new ArrayList<>();
+            flowStepsToBeDeleted = new ArrayList<>();
+        } catch (Exception e) {
+            log.info("delete error {}", e.toString());
+        }
+
     }
 
     @Test
@@ -664,6 +674,7 @@ class OrderServiceTest extends TestUtils {
                 localDateTime.withNano(0),
                 fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
         );
+        ordersToBeDeleted.add(fetchedOrder);
     }
     @Test
     @RunIfProfile(profile = "local")
@@ -687,6 +698,7 @@ class OrderServiceTest extends TestUtils {
                 localDateTime.withNano(0),
                 fetchedOrder.getLastValidPurchaseDateTime().withNano(0)
         );
+        ordersToBeDeleted.add(fetchedOrder);
     }
 
     @Test
@@ -705,6 +717,49 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
         Assertions.assertEquals(user, fetchedOrder.getUser());
         Assertions.assertNull(order.getLastValidPurchaseDateTime());
+        ordersToBeDeleted.add(fetchedOrder);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createFlowStepsByOrderId() {
+        String namespace = "venepaikat";
+        String user = "dummy_user";
+        LocalDateTime localDateTime = null;
+
+        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+
+        FlowStepDto flowStepsDto = new FlowStepDto();
+        flowStepsDto.setActiveStep(2);
+        flowStepsDto.setTotalSteps(5);
+        FlowStepDto savedFlowSteps = flowStepService.saveFlowStepsByOrderId(fetchedOrder.getOrderId(), flowStepsDto);
+
+        Assertions.assertNotNull(savedFlowSteps.getFlowStepId());
+        Assertions.assertEquals(fetchedOrder.getOrderId(), savedFlowSteps.getOrderId());
+        Assertions.assertEquals(2, savedFlowSteps.getActiveStep());
+        Assertions.assertEquals(5, savedFlowSteps.getTotalSteps());
+
+        ordersToBeDeleted.add(fetchedOrder);
+        flowStepsToBeDeleted.add(flowStepService.getFlowStepsByOrderId(fetchedOrder.getOrderId()).get());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createFlowStepsByOrderIdThatDoesNotExist() {
+        FlowStepDto flowStepsDto = new FlowStepDto();
+        flowStepsDto.setActiveStep(2);
+        flowStepsDto.setTotalSteps(5);
+
+        String orderIdNotExist = UUID.randomUUID().toString();
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            flowStepService.saveFlowStepsByOrderId(orderIdNotExist, flowStepsDto);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals("order-not-found", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("order with id [" + orderIdNotExist + "] not found", exception.getErrors().getErrors().get(0).getMessage());
     }
 
 }
