@@ -18,10 +18,12 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.mapper.FlowStepMapper;
+import fi.hel.verkkokauppa.order.mapper.OrderPaymentMethodMapper;
 import fi.hel.verkkokauppa.order.model.FlowStep;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
+import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -81,6 +83,12 @@ public class OrderService {
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
 
     @Autowired
+    private OrderPaymentMethodService orderPaymentMethodService;
+
+    @Autowired
+    private OrderPaymentMethodMapper orderPaymentMethodMapper;
+
+    @Autowired
     private IncrementId incrementId;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
@@ -106,6 +114,11 @@ public class OrderService {
             Optional<FlowStep> flowStepOpt = flowStepService.getFlowStepsByOrderId(orderId);
             if (flowStepOpt.isPresent()) {
                 orderAggregateDto.setFlowSteps(flowStepMapper.toDto(flowStepOpt.get()));
+            }
+
+            Optional<OrderPaymentMethod> orderPaymentMethodOpt = orderPaymentMethodService.getPaymentMethodForOrder(orderId);
+            if (orderPaymentMethodOpt.isPresent()) {
+                orderAggregateDto.setPaymentMethod(orderPaymentMethodMapper.toDto(orderPaymentMethodOpt.get()));
             }
         }
 

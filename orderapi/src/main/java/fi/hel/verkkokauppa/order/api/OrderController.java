@@ -530,23 +530,6 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/paymentmethod/order/{orderId}")
-    public ResponseEntity<OrderPaymentMethodDto> getPaymentMethodForOrder(@PathVariable String orderId) {
-        try {
-            OrderPaymentMethodDto paymentMethodDto = orderPaymentMethodService.getPaymentMethodForOrder(orderId);
-            return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDto);
-        } catch (CommonApiException cae) {
-            throw cae;
-        } catch (Exception e) {
-            log.error("order payment method fetching failed", e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-get-order-payment-method", "failed to get order payment method")
-            );
-        }
-
-    }
-
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         return orderService.orderAggregateDto(orderId);
     }
