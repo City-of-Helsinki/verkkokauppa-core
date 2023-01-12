@@ -1,9 +1,9 @@
-package fi.hel.verkkokauppa.payment.mapper;
+package fi.hel.verkkokauppa.order.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.mapper.AbstractModelMapper;
-import fi.hel.verkkokauppa.payment.api.data.OrderPaymentMethodDto;
-import fi.hel.verkkokauppa.payment.model.OrderPaymentMethod;
+import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
+import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

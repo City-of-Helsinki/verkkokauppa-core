@@ -7,15 +7,11 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentMethodListRequest;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderPaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodFilter;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
-import fi.hel.verkkokauppa.payment.mapper.OrderPaymentMethodMapper;
 import fi.hel.verkkokauppa.payment.mapper.PaymentMethodMapper;
-import fi.hel.verkkokauppa.payment.model.OrderPaymentMethod;
 import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
-import fi.hel.verkkokauppa.payment.repository.OrderPaymentMethodRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
 import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentMethodListFetcher;
@@ -35,27 +31,21 @@ import java.util.stream.StreamSupport;
 public class PaymentMethodService {
 
     private final PaymentMethodRepository paymentMethodRepository;
-    private final OrderPaymentMethodRepository orderPaymentMethodRepository;
     private final PaymentMethodListFetcher paymentMethodListFetcher;
     private final Environment env;
     private final PaymentMethodMapper paymentMethodMapper;
-    private final OrderPaymentMethodMapper orderPaymentMethodMapper;
 
     @Autowired
     PaymentMethodService(
             PaymentMethodRepository paymentMethodRepository,
-            OrderPaymentMethodRepository orderPaymentMethodRepository,
             PaymentMethodListFetcher paymentMethodListFetcher,
             Environment env,
-            PaymentMethodMapper paymentMethodMapper,
-            OrderPaymentMethodMapper orderPaymentMethodMapper
+            PaymentMethodMapper paymentMethodMapper
     ) {
         this.paymentMethodRepository = paymentMethodRepository;
-        this.orderPaymentMethodRepository = orderPaymentMethodRepository;
         this.paymentMethodListFetcher = paymentMethodListFetcher;
         this.env = env;
         this.paymentMethodMapper = paymentMethodMapper;
-        this.orderPaymentMethodMapper = orderPaymentMethodMapper;
     }
 
     public PaymentMethodDto[] getOnlinePaymentMethodList(String currency) {
@@ -233,35 +223,4 @@ public class PaymentMethodService {
                 ));
         paymentMethodRepository.delete(exsistingMethod);
     }
-
-    public OrderPaymentMethodDto upsertOrderPaymentMethod(OrderPaymentMethodDto dto) {
-        Optional<OrderPaymentMethod> orderPaymentMethodOpt = orderPaymentMethodRepository.findByOrderId(dto.getOrderId()).stream().findFirst();
-        OrderPaymentMethod paymentMethodToSave;
-        if (orderPaymentMethodOpt.isPresent()) {
-            try {
-                paymentMethodToSave = orderPaymentMethodMapper.updateFromDtoToModel(orderPaymentMethodOpt.get(), dto);
-            } catch (JsonProcessingException e) {
-                throw new CommonApiException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        new Error("failed-to-set-order-payment-method-properties", "failed to set order payment method properties")
-                );
-            }
-        } else {
-            paymentMethodToSave = orderPaymentMethodMapper.fromDto(dto);
-        }
-        OrderPaymentMethod saved = orderPaymentMethodRepository.save(paymentMethodToSave);
-
-        return orderPaymentMethodMapper.toDto(saved);
-    }
-
-    public OrderPaymentMethodDto getPaymentMethodForOrder(String orderId) {
-        OrderPaymentMethod orderPaymentMethod = orderPaymentMethodRepository.findByOrderId(orderId).stream()
-                .findFirst()
-                .orElseThrow(() -> new CommonApiException(
-                        HttpStatus.NOT_FOUND,
-                        new Error("order-payment-method-not-found", "payment method for order with id [" + orderId + "] not found")
-                ));
-        return orderPaymentMethodMapper.toDto(orderPaymentMethod);
-    }
-
 }

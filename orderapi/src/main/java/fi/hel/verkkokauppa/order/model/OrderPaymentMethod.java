@@ -1,9 +1,7 @@
-package fi.hel.verkkokauppa.payment.model;
+package fi.hel.verkkokauppa.order.model;
 
-import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
-import lombok.AllArgsConstructor;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;

@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.OrderDto;
+import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
 import fi.hel.verkkokauppa.order.api.data.TotalsDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
@@ -25,6 +26,7 @@ import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
 import fi.hel.verkkokauppa.order.service.order.FlowStepService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import fi.hel.verkkokauppa.order.service.order.OrderPaymentMethodService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
@@ -79,6 +81,9 @@ public class OrderController {
 
 	@Autowired
     private OrderRightOfPurchaseService orderRightOfPurchaseService;
+
+    @Autowired
+    private OrderPaymentMethodService orderPaymentMethodService;
 
     @Autowired
     private OrderTransformer orderTransformer;
@@ -507,6 +512,39 @@ public class OrderController {
                     new Error("failed-to-save-flow-steps", "failed to save flow steps for order with id [" + orderId + "]")
             );
         }
+    }
+
+    @PostMapping("/order/setPaymentMethod")
+    public ResponseEntity<OrderPaymentMethodDto> upsertPaymentMethodToOrder(@RequestBody OrderPaymentMethodDto dto) {
+        try {
+            OrderPaymentMethodDto savedDto = orderPaymentMethodService.upsertOrderPaymentMethod(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("order payment method setting failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-payment-method", "failed to set order payment method")
+            );
+        }
+    }
+
+    @GetMapping("/paymentmethod/order/{orderId}")
+    public ResponseEntity<OrderPaymentMethodDto> getPaymentMethodForOrder(@PathVariable String orderId) {
+        try {
+            OrderPaymentMethodDto paymentMethodDto = orderPaymentMethodService.getPaymentMethodForOrder(orderId);
+            return ResponseEntity.status(HttpStatus.OK).body(paymentMethodDto);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("order payment method fetching failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-order-payment-method", "failed to get order payment method")
+            );
+        }
+
     }
 
     private ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {

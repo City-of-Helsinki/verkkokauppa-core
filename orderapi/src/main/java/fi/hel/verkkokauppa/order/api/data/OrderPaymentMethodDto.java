@@ -1,6 +1,6 @@
-package fi.hel.verkkokauppa.payment.api.data;
+package fi.hel.verkkokauppa.order.api.data;
 
-import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

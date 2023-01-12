@@ -1,30 +1,28 @@
-package fi.hel.verkkokauppa.payment.api;
+package fi.hel.verkkokauppa.order.service.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.payment.api.data.OrderPaymentMethodDto;
-import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
-import fi.hel.verkkokauppa.payment.mapper.OrderPaymentMethodMapper;
-import fi.hel.verkkokauppa.payment.model.OrderPaymentMethod;
-import fi.hel.verkkokauppa.payment.repository.OrderPaymentMethodRepository;
-import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
-import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
-import lombok.extern.slf4j.Slf4j;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
+import fi.hel.verkkokauppa.order.mapper.OrderPaymentMethodMapper;
+import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderPaymentMethodRepository;
+import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
+import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,31 +30,25 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PaymentMethodController.class) // Change and uncomment
-@Import(PaymentMethodController.class) // Change and uncomment
+@ExtendWith(SpringExtension.class)
+@UnitTest
+@WebMvcTest(OrderPaymentMethodService.class)
 @ContextConfiguration(classes = AutoMockBeanFactory.class) // This automatically mocks missing beans
-@AutoConfigureMockMvc // This activates auto configuration to call mocked api endpoints.
-@Slf4j
 @EnableAutoConfiguration(exclude = {
         ActiveMQAutoConfiguration.class,
         KafkaAutoConfiguration.class
 })
-public class PaymentMethodControllerUnitTests {
-
-    @Autowired
-    private MockMvc mockMvc;
+public class OrderPaymentMethodServiceUnitTest {
 
     @Autowired
     private ObjectMapper mapper;
 
-    // You need to add all dependencies in controller with @Autowired annotation
-    // as new field with @MockBean to controller test.
     @MockBean
-    private PaymentMethodService paymentMethodService;
+    private OrderPaymentMethodService orderPaymentMethodService;
+
+    @MockBean
+    private OrderService orderService;
 
     @MockBean
     private OrderPaymentMethodRepository orderPaymentMethodRepository;
@@ -66,33 +58,24 @@ public class PaymentMethodControllerUnitTests {
 
     @BeforeEach
     public void setup() {
-        ReflectionTestUtils.setField(paymentMethodService, "orderPaymentMethodRepository", orderPaymentMethodRepository);
-        ReflectionTestUtils.setField(paymentMethodService, "orderPaymentMethodMapper", orderPaymentMethodMapper);
+        ReflectionTestUtils.setField(orderPaymentMethodService, "orderService", orderService);
+        ReflectionTestUtils.setField(orderPaymentMethodService, "orderPaymentMethodRepository", orderPaymentMethodRepository);
+        ReflectionTestUtils.setField(orderPaymentMethodService, "orderPaymentMethodMapper", orderPaymentMethodMapper);
     }
 
     @Test
-    public void whenUpsertCreateNewPaymentMethodWithValidDataThenReturnStatus201() throws Exception {
+    public void whenUpsertCreateNewPaymentMethodWithValidDataThenReturnStatus201() {
         String testOrderId = "order-id-123";
         OrderPaymentMethodDto dto = createTestOrderPaymentMethodDto(testOrderId, PaymentGatewayEnum.PAYTRAIL);
         OrderPaymentMethod model = mapper.convertValue(dto, OrderPaymentMethod.class);
 
-        Mockito.when(paymentMethodService.upsertOrderPaymentMethod(any(OrderPaymentMethodDto.class))).thenCallRealMethod();
+        Mockito.when(orderPaymentMethodService.upsertOrderPaymentMethod(any(OrderPaymentMethodDto.class))).thenCallRealMethod();
         Mockito.when(orderPaymentMethodRepository.findByOrderId(dto.getOrderId())).thenReturn(Collections.emptyList());
         Mockito.when(orderPaymentMethodRepository.save(model)).thenReturn(model);
         Mockito.when(orderPaymentMethodMapper.fromDto(dto)).thenReturn(model);
         Mockito.when(orderPaymentMethodMapper.toDto(model)).thenReturn(dto);
 
-        MvcResult response = this.mockMvc.perform(
-                        post("/paymentmethod/order/setPaymentMethod")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .accept(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(dto))
-                )
-                .andDo(print())
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(status().is(201))
-                .andReturn();
-        OrderPaymentMethodDto responseDto = mapper.readValue(response.getResponse().getContentAsString(), OrderPaymentMethodDto.class);
+        OrderPaymentMethodDto responseDto = orderPaymentMethodService.upsertOrderPaymentMethod(dto);
         assertNotNull(responseDto);
         assertEquals(responseDto, dto);
 
@@ -120,23 +103,13 @@ public class PaymentMethodControllerUnitTests {
         updatedMethodMockDto.setImg("edit-method.jpg");
         OrderPaymentMethod updatedMethodMock = mapper.convertValue(updatedMethodMockDto, OrderPaymentMethod.class);
 
-        Mockito.when(paymentMethodService.upsertOrderPaymentMethod(any(OrderPaymentMethodDto.class))).thenCallRealMethod();
+        Mockito.when(orderPaymentMethodService.upsertOrderPaymentMethod(any(OrderPaymentMethodDto.class))).thenCallRealMethod();
         Mockito.when(orderPaymentMethodRepository.findByOrderId(testOrderId)).thenReturn(Arrays.asList(existingMethodMock));
         Mockito.when(orderPaymentMethodRepository.save(any(OrderPaymentMethod.class))).thenReturn(updatedMethodMock);
         Mockito.when(orderPaymentMethodMapper.updateFromDtoToModel(any(OrderPaymentMethod.class), any(OrderPaymentMethodDto.class))).thenReturn(updatedMethodMock);
         Mockito.when(orderPaymentMethodMapper.toDto(any(OrderPaymentMethod.class))).thenReturn(updatedMethodMockDto);
 
-        MvcResult response = this.mockMvc.perform(
-                        post("/paymentmethod/order/setPaymentMethod")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .accept(MediaType.APPLICATION_JSON)
-                                .content(mapper.writeValueAsString(updatedMethodMockDto))
-                )
-                .andDo(print())
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(status().is(201))
-                .andReturn();
-        OrderPaymentMethodDto responseDto = mapper.readValue(response.getResponse().getContentAsString(), OrderPaymentMethodDto.class);
+        OrderPaymentMethodDto responseDto = orderPaymentMethodService.upsertOrderPaymentMethod(updatedMethodMockDto);
         assertNotNull(responseDto);
         assertEquals(responseDto, updatedMethodMockDto);
 
