@@ -22,4 +22,6 @@ public class OrderAggregateDto {
 
     private FlowStepDto flowSteps;
 
+    private OrderPaymentMethodDto paymentMethod;
+
 }
