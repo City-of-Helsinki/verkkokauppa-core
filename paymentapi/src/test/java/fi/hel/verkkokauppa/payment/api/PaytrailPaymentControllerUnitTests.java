@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.payment.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.*;
@@ -71,7 +72,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
-    
+
     private static final String TEST_MERCHANT_ID = "01fde0e9-82b2-4846-acc0-94291625192b";
     private static final String PAYTRAIL_MERCHANT_ID = "375917";
     private static final String PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
@@ -112,6 +113,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     @MockBean
     private PaymentItemRepository paymentItemRepository;
+
+    @MockBean
+    private ExperienceUrls experienceUrls;
 
     @BeforeEach
     public void setup() {
@@ -502,7 +506,7 @@ public class PaytrailPaymentControllerUnitTests {
                     .map(key -> key + "=" + mockCallbackCheckoutParams.get(key))
                     .collect(Collectors.joining("&"));
             queryParams += "&" + "merchantId=" + TEST_MERCHANT_ID;
-            
+
             MvcResult checkReturnUrlResponse = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams)
                                     .contentType(MediaType.APPLICATION_JSON)

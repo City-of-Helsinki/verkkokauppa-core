@@ -9,4 +9,7 @@ import org.springframework.stereotype.Component;
 public class ExperienceUrls {
     @Value("${order.experience.url:http://order-experience-api:8080/v1/order/}")
     private String orderExperienceUrl;
+
+    @Value("${payment.experience.url:http://payment-experience-api:8080/v1/payment/}")
+    private String paymentExperienceUrl;
 }
