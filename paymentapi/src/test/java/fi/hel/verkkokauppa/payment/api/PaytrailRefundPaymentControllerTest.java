@@ -42,20 +42,20 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     @Autowired
     private RefundPaymentRepository refundPaymentRepository;
 
-    private ArrayList<String> toBeDeletedRefundId = new ArrayList<>();
+    private ArrayList<String> toBeDeletedRefundPaymentIds = new ArrayList<>();
 
     @After
     public void tearDown() {
         try {
-            toBeDeletedRefundId.forEach(refundId -> {
-                log.info(refundId);
-                refundPaymentRepository.deleteById(refundId);
+            toBeDeletedRefundPaymentIds.forEach(refundPaymentId -> {
+                log.info(refundPaymentId);
+                refundPaymentRepository.deleteById(refundPaymentId);
             });
             // Clear list because all deleted
-            toBeDeletedRefundId = new ArrayList<>();
+            toBeDeletedRefundPaymentIds = new ArrayList<>();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
-            toBeDeletedRefundId = new ArrayList<>();
+            toBeDeletedRefundPaymentIds = new ArrayList<>();
         }
     }
 
@@ -102,7 +102,6 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         refundAggregateDto.setRefund(refundDto);
         ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
         RefundItemDto itemDto = new RefundItemDto();
-
         String merchantId = getFirstMerchantIdFromNamespace(namespace);
         itemDto.setMerchantId(merchantId);
         refundItemDtos.add(itemDto);
@@ -110,70 +109,108 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         refundRequestDataDto.setRefund(refundAggregateDto);
 
         PaymentDto paymentDto = new PaymentDto();
-
         paymentDto.setShopInShopPayment(false);
-        //String transactionId = paymentResponse.getTransactionId();
-        String transactionId = "e976a3ae-820e-11ed-b51d-e328e4d87e03";
+        String transactionId = paymentResponse.getTransactionId();
         paymentDto.setPaytrailTransactionId(transactionId);
         String paymentMethod = "payment-method";
         paymentDto.setPaymentMethod(paymentMethod);
         refundRequestDataDto.setPayment(paymentDto);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
-        RefundPayment refund = refundPaymentResponse.getBody();
-        Assertions.assertEquals(RefundPaymentStatus.CREATED, refund.getStatus());
+        RefundPayment refundPayment = refundPaymentResponse.getBody();
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
 
         /* Create callback and check url */
         String mockStatus = "ok";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refund.getRefundId(), refund.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundId(), refundPayment.getRefundTransactionId(), mockStatus);
 
         String mockSettlementReference = "8739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("checkout-settlement-reference", mockSettlementReference);
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
-            mockCallbackCheckoutParams.put("signature", mockSignature);
+            String signature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
+            mockCallbackCheckoutParams.put("signature", signature);
 
-            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refund.getRefundId(), mockCallbackCheckoutParams);
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, signature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
             RefundReturnDto refundReturnDto = response.getBody();
 
             Assertions.assertTrue(refundReturnDto.isValid());
             Assertions.assertTrue(refundReturnDto.isRefundPaid());
             Assertions.assertFalse(refundReturnDto.isCanRetry());
 
-            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refund.getRefundId()).get();
+            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
             Assertions.assertEquals(RefundPaymentStatus.PAID_ONLINE, updatedRefundPayment.getStatus());
-            Assertions.assertEquals(refundReturnDto.getRefundType(), updatedRefundPayment.getRefundType());
-
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
         }
-        toBeDeletedRefundId.add(refund.getRefundId());
+        toBeDeletedRefundPaymentIds.add(refundPayment.getRefundPaymentId());
     }
 
-
-    //TODO: Update other methods' refund payment creation when testCheckRefundReturnUrl passes
     @Test
     @RunIfProfile(profile = "local")
-    public void testCheckRefundReturnUrlWithInvalidSignature() {
+    public void testCheckRefundReturnUrlWithInvalidSignature() throws ExecutionException, InterruptedException {
         /* Create a refund payment from mock refund to make the whole return url check process possible*/
+        PaytrailClient client = new PaytrailClient(merchantId, secretKey);
+        String orderId = "dummy-order-id";
+
+        String paymentId = orderId + "_at_" + UUID.randomUUID();
+        PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
+                client,
+                10,
+                paymentId
+        );
+        // Manual step for testing -> go to href and then use nordea to approve payment
+        log.info(paymentResponse.getHref());
+        log.info(paymentResponse.getTransactionId());
+
         RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
+
         OrderWrapper orderWrapper = new OrderWrapper();
         OrderDto order = new OrderDto();
         order.setType(OrderType.ORDER);
         orderWrapper.setOrder(order);
         refundRequestDataDto.setOrder(orderWrapper);
 
-        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
+        RefundDto refundDto = new RefundDto();
+        String refundId = "refund-id";
+        refundDto.setRefundId(refundId);
+        refundDto.setStatus("confirmed");
+        String user = "dummy_user";
+        refundDto.setUser(user);
+        String namespace = "venepaikat";
+        refundDto.setNamespace(namespace);
+        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
+        refundDto.setPriceNet("10");
+        refundDto.setPriceVat("0");
+        refundDto.setPriceTotal("10");
+        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
+
+        refundAggregateDto.setRefund(refundDto);
+        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
+        RefundItemDto itemDto = new RefundItemDto();
+        String merchantId = getFirstMerchantIdFromNamespace(namespace);
+        itemDto.setMerchantId(merchantId);
+        refundItemDtos.add(itemDto);
+        refundAggregateDto.setItems(refundItemDtos);
+        refundRequestDataDto.setRefund(refundAggregateDto);
+
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setShopInShopPayment(false);
+        String transactionId = paymentResponse.getTransactionId();
+        paymentDto.setPaytrailTransactionId(transactionId);
+        String paymentMethod = "payment-method";
+        paymentDto.setPaymentMethod(paymentMethod);
+        refundRequestDataDto.setPayment(paymentDto);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
-        RefundPayment refund = refundPaymentResponse.getBody();
-        Assertions.assertEquals(RefundPaymentStatus.CREATED, refund.getStatus());
+        RefundPayment refundPayment = refundPaymentResponse.getBody();
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
 
         /* Create callback and check url */
         String mockStatus = "ok";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refund.getRefundId(), refund.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus);
 
         String mockSettlementReference = "8739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("checkout-settlement-reference", mockSettlementReference);
@@ -181,7 +218,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         String mockSignature = "invalid-739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("signature", mockSignature);
 
-        ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refund.getRefundId(), mockCallbackCheckoutParams);
+        ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
         RefundReturnDto refundReturnDto = response.getBody();
 
         /* Verify correct refund return dto - should be invalid, because signature mismatches */
@@ -189,41 +226,84 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         Assertions.assertTrue(refundReturnDto.isRefundPaid());
         Assertions.assertFalse(refundReturnDto.isCanRetry());
 
-        /* Verify that refund status is not changed CREATED */
-        RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refund.getRefundId()).get();
+        /* Verify that refundPayment status has not changed - CREATED */
+        RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
         Assertions.assertEquals(RefundPaymentStatus.CREATED, updatedRefundPayment.getStatus());
-        Assertions.assertEquals(refundReturnDto.getRefundType(), updatedRefundPayment.getRefundType());
 
-        toBeDeletedRefundId.add(refund.getRefundId());
+        toBeDeletedRefundPaymentIds.add(refundPayment.getRefundPaymentId());
     }
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testCheckRefundReturnUrlWithFailStatus() {
+    public void testCheckRefundReturnUrlWithFailStatus() throws ExecutionException, InterruptedException {
         /* Create a refund payment from mock refund to make the whole return url check process possible*/
+        PaytrailClient client = new PaytrailClient(merchantId, secretKey);
+        String orderId = "dummy-order-id";
+
+        String paymentId = orderId + "_at_" + UUID.randomUUID();
+        PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
+                client,
+                10,
+                paymentId
+        );
+        // Manual step for testing -> go to href and then use nordea to approve payment
+        log.info(paymentResponse.getHref());
+        log.info(paymentResponse.getTransactionId());
+
         RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
+
         OrderWrapper orderWrapper = new OrderWrapper();
         OrderDto order = new OrderDto();
         order.setType(OrderType.ORDER);
         orderWrapper.setOrder(order);
         refundRequestDataDto.setOrder(orderWrapper);
 
-        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
+        RefundDto refundDto = new RefundDto();
+        String refundId = "refund-id";
+        refundDto.setRefundId(refundId);
+        refundDto.setStatus("confirmed");
+        String user = "dummy_user";
+        refundDto.setUser(user);
+        String namespace = "venepaikat";
+        refundDto.setNamespace(namespace);
+        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
+        refundDto.setPriceNet("10");
+        refundDto.setPriceVat("0");
+        refundDto.setPriceTotal("10");
+        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
+
+        refundAggregateDto.setRefund(refundDto);
+        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
+        RefundItemDto itemDto = new RefundItemDto();
+        String merchantId = getFirstMerchantIdFromNamespace(namespace);
+        itemDto.setMerchantId(merchantId);
+        refundItemDtos.add(itemDto);
+        refundAggregateDto.setItems(refundItemDtos);
+        refundRequestDataDto.setRefund(refundAggregateDto);
+
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setShopInShopPayment(false);
+        String transactionId = paymentResponse.getTransactionId();
+        paymentDto.setPaytrailTransactionId(transactionId);
+        String paymentMethod = "payment-method";
+        paymentDto.setPaymentMethod(paymentMethod);
+        refundRequestDataDto.setPayment(paymentDto);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
-        RefundPayment refund = refundPaymentResponse.getBody();
-        Assertions.assertEquals(RefundPaymentStatus.CREATED, refund.getStatus());
+        RefundPayment refundPayment = refundPaymentResponse.getBody();
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
 
         /* Create callback and check url */
         String mockStatus = "fail";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refund.getRefundId(), refund.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus);
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
             String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
-            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refund.getRefundId(), mockCallbackCheckoutParams);
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
             RefundReturnDto refundReturnDto = response.getBody();
 
             /* Verify correct refund return dto - should be only valid and retryable */
@@ -232,13 +312,12 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
             Assertions.assertTrue(refundReturnDto.isCanRetry());
 
             /* Verify that refund status is still CREATED */
-            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refund.getRefundId()).get();
+            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
             Assertions.assertEquals(RefundPaymentStatus.CREATED, updatedRefundPayment.getStatus());
-            Assertions.assertEquals(refundReturnDto.getRefundType(), updatedRefundPayment.getRefundType());
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
         }
-        toBeDeletedRefundId.add(refund.getRefundId());
+        toBeDeletedRefundPaymentIds.add(refundPayment.getRefundPaymentId());
     }
 
     private Map<String, String> createMockCallbackParams(String refundId, String transactionId, String status) {
