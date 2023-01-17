@@ -9,7 +9,6 @@ public class RefundReturnDto {
     private boolean isValid;        // checksum ok
     private boolean isRefundPaid;   // status values confirm refund
     private boolean canRetry;       // not all failures can be retried
-    private String refundType;      // RefundType constant.
 
     public RefundReturnDto(boolean isValid, boolean isRefundPaid, boolean canRetry) {
         this.isValid = isValid;

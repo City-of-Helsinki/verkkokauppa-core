@@ -227,7 +227,6 @@ public class PaytrailRefundPaymentService {
         refundPayment.setRefundMethod(paymentDto.getPaymentMethod());
         refundPayment.setRefundGateway(RefundGateway.PAYTRAIL.toString());
         refundPayment.setTimestamp(sdf.format(timestamp));
-        refundPayment.setRefundType(orderType);
 
         refundPayment.setTotalExclTax(new BigDecimal(refundDto.getPriceNet()));
         refundPayment.setTaxAmount(new BigDecimal(refundDto.getPriceVat()));
@@ -277,8 +276,7 @@ public class PaytrailRefundPaymentService {
                 .namespace(refundPayment.getNamespace())
                 .refundId(refundPayment.getRefundId())
                 .orderId(refundPayment.getOrderId())
-                .userId(refundPayment.getUserId())
-                .refundType(refundPayment.getRefundType());
+                .userId(refundPayment.getUserId());
 
         RefundMessage refundMessage = refundMessageBuilder.build();
 

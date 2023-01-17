@@ -41,10 +41,6 @@ public class RefundPayment {
 	@Field(type = FieldType.Text)
 	private String refundMethod;
 
-	// order or subscription
-	@Field(type = FieldType.Text)
-	private String refundType;
-
 	// RefundGateway.PAYTRAIL
 	@Field(type = FieldType.Text)
 	private String refundGateway;
