@@ -30,10 +30,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Before running tests - ensure that following endpoints have been called
+ *   so data needed for tests has been initialized:
+ * - .../namespace/init/merchant/initialize-test-data
+ * - .../merchant/paytrail-secret/add"
+ * */
 @SpringBootTest
 @Slf4j
 class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
+    private static final String NAMESPACE = "venepaikat";
     private static final String TEST_PAYTRAIL_MERCHANT_ID = "375917";
     private static final String TEST_PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
 
@@ -76,45 +83,8 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
-
-        OrderWrapper orderWrapper = new OrderWrapper();
-        OrderDto order = new OrderDto();
-        order.setType(OrderType.ORDER);
-        orderWrapper.setOrder(order);
-        refundRequestDataDto.setOrder(orderWrapper);
-
-        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
-        RefundDto refundDto = new RefundDto();
-        String refundId = "refund-id";
-        refundDto.setRefundId(refundId);
-        refundDto.setStatus("confirmed");
-        String user = "dummy_user";
-        refundDto.setUser(user);
-        String namespace = "venepaikat";
-        refundDto.setNamespace(namespace);
-        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
-        refundDto.setPriceNet("10");
-        refundDto.setPriceVat("0");
-        refundDto.setPriceTotal("10");
-        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
-
-        refundAggregateDto.setRefund(refundDto);
-        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
-        RefundItemDto itemDto = new RefundItemDto();
-        String merchantId = getFirstMerchantIdFromNamespace(namespace);
-        itemDto.setMerchantId(merchantId);
-        refundItemDtos.add(itemDto);
-        refundAggregateDto.setItems(refundItemDtos);
-        refundRequestDataDto.setRefund(refundAggregateDto);
-
-        PaymentDto paymentDto = new PaymentDto();
-        paymentDto.setShopInShopPayment(false);
-        String transactionId = paymentResponse.getTransactionId();
-        paymentDto.setPaytrailTransactionId(transactionId);
-        String paymentMethod = "payment-method";
-        paymentDto.setPaymentMethod(paymentMethod);
-        refundRequestDataDto.setPayment(paymentDto);
+        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -164,45 +134,8 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
-
-        OrderWrapper orderWrapper = new OrderWrapper();
-        OrderDto order = new OrderDto();
-        order.setType(OrderType.ORDER);
-        orderWrapper.setOrder(order);
-        refundRequestDataDto.setOrder(orderWrapper);
-
-        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
-        RefundDto refundDto = new RefundDto();
-        String refundId = "refund-id";
-        refundDto.setRefundId(refundId);
-        refundDto.setStatus("confirmed");
-        String user = "dummy_user";
-        refundDto.setUser(user);
-        String namespace = "venepaikat";
-        refundDto.setNamespace(namespace);
-        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
-        refundDto.setPriceNet("10");
-        refundDto.setPriceVat("0");
-        refundDto.setPriceTotal("10");
-        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
-
-        refundAggregateDto.setRefund(refundDto);
-        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
-        RefundItemDto itemDto = new RefundItemDto();
-        String merchantId = getFirstMerchantIdFromNamespace(namespace);
-        itemDto.setMerchantId(merchantId);
-        refundItemDtos.add(itemDto);
-        refundAggregateDto.setItems(refundItemDtos);
-        refundRequestDataDto.setRefund(refundAggregateDto);
-
-        PaymentDto paymentDto = new PaymentDto();
-        paymentDto.setShopInShopPayment(false);
-        String transactionId = paymentResponse.getTransactionId();
-        paymentDto.setPaytrailTransactionId(transactionId);
-        String paymentMethod = "payment-method";
-        paymentDto.setPaymentMethod(paymentMethod);
-        refundRequestDataDto.setPayment(paymentDto);
+        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -250,45 +183,8 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
-
-        OrderWrapper orderWrapper = new OrderWrapper();
-        OrderDto order = new OrderDto();
-        order.setType(OrderType.ORDER);
-        orderWrapper.setOrder(order);
-        refundRequestDataDto.setOrder(orderWrapper);
-
-        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
-        RefundDto refundDto = new RefundDto();
-        String refundId = "refund-id";
-        refundDto.setRefundId(refundId);
-        refundDto.setStatus("confirmed");
-        String user = "dummy_user";
-        refundDto.setUser(user);
-        String namespace = "venepaikat";
-        refundDto.setNamespace(namespace);
-        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
-        refundDto.setPriceNet("10");
-        refundDto.setPriceVat("0");
-        refundDto.setPriceTotal("10");
-        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
-
-        refundAggregateDto.setRefund(refundDto);
-        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
-        RefundItemDto itemDto = new RefundItemDto();
-        String merchantId = getFirstMerchantIdFromNamespace(namespace);
-        itemDto.setMerchantId(merchantId);
-        refundItemDtos.add(itemDto);
-        refundAggregateDto.setItems(refundItemDtos);
-        refundRequestDataDto.setRefund(refundAggregateDto);
-
-        PaymentDto paymentDto = new PaymentDto();
-        paymentDto.setShopInShopPayment(false);
-        String transactionId = paymentResponse.getTransactionId();
-        paymentDto.setPaytrailTransactionId(transactionId);
-        String paymentMethod = "payment-method";
-        paymentDto.setPaymentMethod(paymentMethod);
-        refundRequestDataDto.setPayment(paymentDto);
+        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -332,6 +228,47 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         mockCallbackCheckoutParams.put("checkout-provider", "nordea");
 
         return mockCallbackCheckoutParams;
+    }
+
+    private RefundRequestDataDto createRefundRequestDto(String transactionId, String merchantId) {
+        RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
+
+        OrderWrapper orderWrapper = new OrderWrapper();
+        OrderDto order = new OrderDto();
+        order.setType(OrderType.ORDER);
+        orderWrapper.setOrder(order);
+        refundRequestDataDto.setOrder(orderWrapper);
+
+        RefundAggregateDto refundAggregateDto = new RefundAggregateDto();
+        RefundDto refundDto = new RefundDto();
+        String refundId = "refund-id";
+        refundDto.setRefundId(refundId);
+        refundDto.setStatus("confirmed");
+        String user = "dummy_user";
+        refundDto.setUser(user);
+        refundDto.setNamespace(NAMESPACE);
+        refundDto.setOrderId(orderWrapper.getOrder().getOrderId());
+        refundDto.setPriceNet("10");
+        refundDto.setPriceVat("0");
+        refundDto.setPriceTotal("10");
+        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
+        refundAggregateDto.setRefund(refundDto);
+
+        ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();
+        RefundItemDto itemDto = new RefundItemDto();
+        itemDto.setMerchantId(merchantId);
+        refundItemDtos.add(itemDto);
+        refundAggregateDto.setItems(refundItemDtos);
+        refundRequestDataDto.setRefund(refundAggregateDto);
+
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setShopInShopPayment(false);
+        paymentDto.setPaytrailTransactionId(transactionId);
+        String paymentMethod = "payment-method";
+        paymentDto.setPaymentMethod(paymentMethod);
+        refundRequestDataDto.setPayment(paymentDto);
+
+        return refundRequestDataDto;
     }
 
 }
