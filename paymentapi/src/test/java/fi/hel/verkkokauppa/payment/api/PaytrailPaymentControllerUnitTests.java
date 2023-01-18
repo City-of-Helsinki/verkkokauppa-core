@@ -34,6 +34,7 @@ import org.springframework.boot.autoconfigure.validation.ValidationAutoConfigura
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -70,7 +71,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "paytrail_payment_return_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
     "paytrail_payment_return_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
     "paytrail_payment_notify_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
-    "paytrail_payment_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5"
+    "paytrail_payment_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "paytrail_card_redirect_success_url=url1",
+    "paytrail_card_redirect_cancel_url=url2",
+    "paytrail_card_callback_success_url=url3",
+    "paytrail_card_callback_cancel_url=url4"
 })
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
@@ -81,7 +86,10 @@ public class PaytrailPaymentControllerUnitTests {
     private static final String PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
     private static final String PAYTRAIL_AGGREGATE_SECRET_KEY = "MONISAIPPUAKAUPPIAS";
 
-    private static final String PAYMENT_EXPERIENCE_URL = "paymentexpurl";
+    private static final String PAYTRAIL_CARD_REDIRECT_SUCCESS_URL = "url1";
+    private static final String PAYTRAIL_CARD_REDIRECT_CANCEL_URL = "url2";
+    private static final String PAYTRAIL_CARD_CALLBACK_SUCCESS_URL = "url3";
+    private static final String PAYTRAIL_CARD_CALLBACK_CANCEL_URL = "url4";
 
     @Autowired
     private MockMvc mockMvc;
@@ -118,9 +126,6 @@ public class PaytrailPaymentControllerUnitTests {
 
     @MockBean
     private PaymentItemRepository paymentItemRepository;
-
-    @MockBean
-    private ExperienceUrls experienceUrls;
 
     @BeforeEach
     public void setup() {
@@ -578,7 +583,6 @@ public class PaytrailPaymentControllerUnitTests {
     public void whenGetCardFormParametersReturnStatus200() throws Exception {
         Mockito.when(commonServiceConfigurationClient.getMerchantConfigurationValue(TEST_MERCHANT_ID, TEST_NAMESPACE, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID)).thenReturn(PAYTRAIL_MERCHANT_ID);
         Mockito.when(commonServiceConfigurationClient.getMerchantPaytrailSecretKey(TEST_MERCHANT_ID)).thenReturn(PAYTRAIL_SECRET_KEY);
-        Mockito.when(experienceUrls.getPaymentExperienceUrl()).thenReturn(PAYMENT_EXPERIENCE_URL);
 
         MvcResult response = this.mockMvc.perform(
                         get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
@@ -596,10 +600,10 @@ public class PaytrailPaymentControllerUnitTests {
         assertEquals(parameters.get("checkout-method"), "POST");
         assertNotNull(parameters.get("checkout-nonce"));
         assertNotNull(parameters.get("checkout-timestamp"));
-        assertEquals(parameters.get("checkout-redirect-success-url"), String.format("%spaytrailCard/redirect/success", PAYMENT_EXPERIENCE_URL));
-        assertEquals(parameters.get("checkout-redirect-cancel-url"), String.format("%spaytrailCard/redirect/cancel", PAYMENT_EXPERIENCE_URL));
-        assertEquals(parameters.get("checkout-callback-success-url"), String.format("%spaytrailCard/callback/success", PAYMENT_EXPERIENCE_URL));
-        assertEquals(parameters.get("checkout-callback-cancel-url"), String.format("%spaytrailCard/callback/cancel", PAYMENT_EXPERIENCE_URL));
+        assertEquals(parameters.get("checkout-redirect-success-url"), "url1");
+        assertEquals(parameters.get("checkout-redirect-cancel-url"), "url2");
+        assertEquals(parameters.get("checkout-callback-success-url"), "url3");
+        assertEquals(parameters.get("checkout-callback-cancel-url"), "url4");
         assertNotNull(parameters.get("signature"));
     }
 

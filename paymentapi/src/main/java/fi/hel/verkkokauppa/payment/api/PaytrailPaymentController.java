@@ -1,6 +1,5 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
@@ -17,6 +16,7 @@ import org.helsinki.paytrail.constants.CheckoutAlgorithm;
 import org.helsinki.paytrail.constants.CheckoutMethod;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,10 +39,10 @@ public class PaytrailPaymentController {
     private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
 
     @Autowired
-    private ExperienceUrls experienceUrls;
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Autowired
-    private CommonServiceConfigurationClient commonServiceConfigurationClient;
+    private Environment env;
 
     @PostMapping("/payment/paytrail/createFromOrder")
     public ResponseEntity<Payment> createPaymentFromOrder(@RequestBody GetPaymentRequestDataDto dto) {
@@ -132,19 +132,16 @@ public class PaytrailPaymentController {
                 );
             }
 
-
-            String paymentExperienceUrl = experienceUrls.getPaymentExperienceUrl();
-
             TreeMap<String, String> parameters = new TreeMap<>();
             parameters.put("checkout-account", paytrailMerchantId);
             parameters.put("checkout-algorithm", CheckoutAlgorithm.SHA256.toString());
             parameters.put("checkout-method", CheckoutMethod.POST.toString());
             parameters.put("checkout-nonce", UUIDGenerator.generateType4UUID().toString());
             parameters.put("checkout-timestamp", Instant.now().toString());
-            parameters.put("checkout-redirect-success-url", String.format("%spaytrailCard/redirect/success", paymentExperienceUrl));
-            parameters.put("checkout-redirect-cancel-url", String.format("%spaytrailCard/redirect/cancel", paymentExperienceUrl));
-            parameters.put("checkout-callback-success-url", String.format("%spaytrailCard/callback/success", paymentExperienceUrl));
-            parameters.put("checkout-callback-cancel-url", String.format("%spaytrailCard/callback/cancel", paymentExperienceUrl));
+            parameters.put("checkout-redirect-success-url", env.getRequiredProperty("paytrail_card_redirect_success_url"));
+            parameters.put("checkout-redirect-cancel-url", env.getRequiredProperty("paytrail_card_redirect_cancel_url"));
+            parameters.put("checkout-callback-success-url", env.getRequiredProperty("paytrail_card_callback_success_url"));
+            parameters.put("checkout-callback-cancel-url", env.getRequiredProperty("paytrail_card_callback_cancel_url"));
             parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, secretKey));
 
             return ResponseEntity.status(HttpStatus.OK).body(parameters);
