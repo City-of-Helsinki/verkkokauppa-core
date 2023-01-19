@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.*;
+import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
@@ -60,7 +61,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         PaytrailPaymentController.class,
         PaytrailPaymentClient.class,
         PaytrailAuthClientFactory.class,
-        PaytrailCreatePaymentPayloadConverter.class
+        PaytrailCreatePaymentPayloadConverter.class,
+        PaytrailPaymentProviderListMapper.class
 })
 @ContextConfiguration(classes = {AutoMockBeanFactory.class, ValidationAutoConfiguration.class}) // This automatically mocks missing beans
 @TestPropertySource(properties = {
@@ -85,6 +87,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     @Autowired
     private PaytrailPaymentClient paytrailPaymentClient;
+
+    @Autowired
+    private PaytrailPaymentProviderListMapper paytrailPaymentProviderListMapper;
 
     @MockBean
     private PaytrailCreateRefundPayloadConverter paytrailCreateRefundPayloadConverter;
@@ -121,6 +126,7 @@ public class PaytrailPaymentControllerUnitTests {
         ReflectionTestUtils.setField(paymentPaytrailService, "paymentRepository", paymentRepository);
         ReflectionTestUtils.setField(paymentPaytrailService, "paymentItemRepository", paymentItemRepository);
         ReflectionTestUtils.setField(paymentPaytrailService, "payerRepository", payerRepository);
+        ReflectionTestUtils.setField(paymentPaytrailService, "paytrailPaymentProviderListMapper", paytrailPaymentProviderListMapper);
         ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "aggregateSecretKey", PAYTRAIL_AGGREGATE_SECRET_KEY);
         ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "commonServiceConfigurationClient", commonServiceConfigurationClient);
         ReflectionTestUtils.setField(paytrailPaymentReturnValidator, "paymentRepository", paymentRepository);
