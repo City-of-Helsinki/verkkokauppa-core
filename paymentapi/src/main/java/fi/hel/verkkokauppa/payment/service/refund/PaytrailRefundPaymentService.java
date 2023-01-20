@@ -76,7 +76,7 @@ public class PaytrailRefundPaymentService {
     }
 
     public void setRefundPaymentStatus(String paymentId, String status) {
-        RefundPayment refundPayment = getRefundPayment(paymentId);
+        RefundPayment refundPayment = getRefundPaymentWithRefundId(paymentId);
         refundPayment.setStatus(status);
         refundPaymentRepository.save(refundPayment);
     }
@@ -133,7 +133,7 @@ public class PaytrailRefundPaymentService {
         return null;
     }
 
-    public RefundPayment getRefundPayment(String refundId) {
+    public RefundPayment getRefundPaymentWithRefundId(String refundId) {
         return refundPaymentRepository.findById(refundId).orElseThrow(() -> {
                     log.debug("refund not found, refundId: " + refundId);
                     return new CommonApiException(
@@ -256,7 +256,7 @@ public class PaytrailRefundPaymentService {
         RefundMessage refundMessage = refundMessageBuilder.build();
 
         refundWebHookAction(refundMessage);
-        log.debug("triggered event REFUND_PAID for refundId: " + refundPayment.getRefundPaymentId());
+        log.debug("triggered event REFUND_PAID for refundPaymentId: " + refundPayment.getRefundPaymentId());
     }
 
     protected void refundWebHookAction(RefundMessage message) {
@@ -274,6 +274,7 @@ public class PaytrailRefundPaymentService {
                 .eventType(EventType.REFUND_FAILED)
                 .timestamp(now)
                 .namespace(refundPayment.getNamespace())
+                .refundPaymentId(refundPayment.getRefundPaymentId())
                 .refundId(refundPayment.getRefundId())
                 .orderId(refundPayment.getOrderId())
                 .userId(refundPayment.getUserId());
@@ -303,7 +304,7 @@ public class PaytrailRefundPaymentService {
     }
 
     public void updateRefundPaymentStatus(String refundId, RefundReturnDto refundReturnDto) {
-        RefundPayment refundPayment = getRefundPayment(refundId);
+        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
 
         if (refundReturnDto.isValid()) {
             if (refundReturnDto.isRefundPaid()) {

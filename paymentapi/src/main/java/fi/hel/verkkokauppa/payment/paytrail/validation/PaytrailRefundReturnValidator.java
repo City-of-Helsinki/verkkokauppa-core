@@ -1,17 +1,12 @@
 package fi.hel.verkkokauppa.payment.paytrail.validation;
 
-import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundReturnDto;
-import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
-import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.constants.RefundStatus;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.security.InvalidKeyException;
@@ -25,16 +20,9 @@ import java.util.TreeMap;
 public class PaytrailRefundReturnValidator {
 
     @Autowired
-    private RefundPaymentRepository refundPaymentRepository;
-
-    @Autowired
     private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     public boolean validatePaytrailChecksum(Map<String,String> checkoutParams, String merchantId, String signature, String refundId) {
-        RefundPayment refund = refundPaymentRepository.findById(refundId).orElseThrow(() -> new CommonApiException(
-                HttpStatus.NOT_FOUND,
-                new Error("refund-not-found", "refund with id [" + refundId + "] not found")
-        ));
         String createdSignature = buildSignatureFromReturnData(checkoutParams, merchantId);
         if (signature.equals(createdSignature)) {
             return true;
