@@ -75,8 +75,8 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public void setRefundPaymentStatus(String paymentId, String status) {
-        RefundPayment refundPayment = getRefundPaymentWithRefundId(paymentId);
+    public void setRefundPaymentStatus(String refundId, String status) {
+        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
         refundPayment.setStatus(status);
         refundPaymentRepository.save(refundPayment);
     }
