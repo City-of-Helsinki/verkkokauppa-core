@@ -15,17 +15,17 @@ public class RefundMessage implements EventMessage {
     private String eventType;
     private String namespace;
     private String userId;
-
     private String refundId;
-    private String paymentId;
+    private String refundPaymentId;
     private String orderId;
     private String timestamp;
+    private String refundType;
 
     public RefundMessage toCustomerWebHook(){
         return RefundMessage.builder()
                 .eventType(this.eventType)
                 .timestamp(this.timestamp)
-                .paymentId(this.paymentId)
+                .refundPaymentId(this.refundPaymentId)
                 .orderId(this.orderId)
                 .refundId(this.refundId)
                 .namespace(this.namespace)

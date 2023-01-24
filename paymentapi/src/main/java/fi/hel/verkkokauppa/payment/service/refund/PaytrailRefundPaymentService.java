@@ -5,18 +5,15 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
-import fi.hel.verkkokauppa.common.events.TopicName;
-import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
-import fi.hel.verkkokauppa.payment.model.Payment;
-import fi.hel.verkkokauppa.payment.model.PaymentStatus;
+import fi.hel.verkkokauppa.payment.api.data.refund.RefundReturnDto;
 import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
@@ -78,8 +75,8 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public void setRefundPaymentStatus(String paymentId, String status) {
-        RefundPayment refundPayment = getRefundPayment(paymentId);
+    public void setRefundPaymentStatus(String refundId, String status) {
+        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
         refundPayment.setStatus(status);
         refundPaymentRepository.save(refundPayment);
     }
@@ -136,7 +133,7 @@ public class PaytrailRefundPaymentService {
         return null;
     }
 
-    public RefundPayment getRefundPayment(String refundId) {
+    public RefundPayment getRefundPaymentWithRefundId(String refundId) {
         return refundPaymentRepository.findById(refundId).orElseThrow(() -> {
                     log.debug("refund not found, refundId: " + refundId);
                     return new CommonApiException(
@@ -230,7 +227,6 @@ public class PaytrailRefundPaymentService {
         refundPayment.setRefundMethod(paymentDto.getPaymentMethod());
         refundPayment.setRefundGateway(RefundGateway.PAYTRAIL.toString());
         refundPayment.setTimestamp(sdf.format(timestamp));
-        refundPayment.setRefundType(orderType);
 
         refundPayment.setTotalExclTax(new BigDecimal(refundDto.getPriceNet()));
         refundPayment.setTaxAmount(new BigDecimal(refundDto.getPriceVat()));
@@ -245,47 +241,48 @@ public class PaytrailRefundPaymentService {
         return refundPayment;
     }
 
-    public void triggerRefundPaymentPaidEvent(RefundPayment payment) {
+    public void triggerRefundPaymentPaidEvent(RefundPayment refundPayment) {
         String now = DateTimeUtil.getDateTime();
 
-        PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
-                .eventType(EventType.PAYMENT_PAID)
-                .eventTimestamp(now)
-                .namespace(payment.getNamespace())
-                .paymentId(payment.getRefundPaymentId())
-                .orderId(payment.getOrderId())
-                .userId(payment.getUserId())
-                .paymentPaidTimestamp(now)
-                .orderType(payment.getRefundType());
+        RefundMessage.RefundMessageBuilder refundMessageBuilder = RefundMessage.builder()
+                .eventType(EventType.REFUND_PAID)
+                .timestamp(now)
+                .namespace(refundPayment.getNamespace())
+                .refundId((refundPayment.getRefundId()))
+                .refundPaymentId(refundPayment.getRefundPaymentId())
+                .orderId(refundPayment.getOrderId())
+                .userId(refundPayment.getUserId());
 
-        PaymentMessage paymentMessage = paymentMessageBuilder.build();
+        RefundMessage refundMessage = refundMessageBuilder.build();
 
-        orderPaidWebHookAction(paymentMessage);
-
-        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-        log.debug("triggered event REFUND_PAID for refundId: " + payment.getRefundPaymentId());
+        refundWebHookAction(refundMessage);
+        log.debug("triggered event REFUND_PAID for refundPaymentId: " + refundPayment.getRefundPaymentId());
     }
 
-    protected void orderPaidWebHookAction(PaymentMessage message) {
+    protected void refundWebHookAction(RefundMessage message) {
         try {
-            sendNotificationService.sendPaymentMessageNotification(message);
+            sendNotificationService.sendRefundMessageNotification(message);
         } catch (Exception e) {
             log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
         }
     }
 
-    public void triggerRefundPaymentFailedEvent(Payment payment) {
-        PaymentMessage paymentMessage = PaymentMessage.builder()
-                .eventType(EventType.PAYMENT_FAILED)
-                .namespace(payment.getNamespace())
-                .paymentId(payment.getPaymentId())
-                .orderId(payment.getOrderId())
-                .userId(payment.getUserId())
-                //.paymentPaidTimestamp(payment.getTimestamp())
-                .orderType(payment.getPaymentType())
-                .build();
-        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-        log.debug("triggered event PAYMENT_FAILED for paymentId: " + payment.getPaymentId());
+    public void triggerRefundPaymentFailedEvent(RefundPayment refundPayment) {
+        String now = DateTimeUtil.getDateTime();
+
+        RefundMessage.RefundMessageBuilder refundMessageBuilder = RefundMessage.builder()
+                .eventType(EventType.REFUND_FAILED)
+                .timestamp(now)
+                .namespace(refundPayment.getNamespace())
+                .refundPaymentId(refundPayment.getRefundPaymentId())
+                .refundId(refundPayment.getRefundId())
+                .orderId(refundPayment.getOrderId())
+                .userId(refundPayment.getUserId());
+
+        RefundMessage refundMessage = refundMessageBuilder.build();
+
+        refundWebHookAction(refundMessage);
+        log.debug("triggered event REFUND_FAILED for refundId: " + refundPayment.getRefundId());
     }
 
     public RefundPayment findByIdValidateByUser(String namespace, String orderId, String userId) {
@@ -306,23 +303,23 @@ public class PaytrailRefundPaymentService {
         return refundPayment;
     }
 
-    public void updateRefundPaymentStatus(String refundId, PaymentReturnDto paymentReturnDto) {
-        RefundPayment refundPayment = getRefundPayment(refundId);
+    public void updateRefundPaymentStatus(String refundId, RefundReturnDto refundReturnDto) {
+        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
 
-        if (paymentReturnDto.isValid()) {
-            if (paymentReturnDto.isPaymentPaid()) {
+        if (refundReturnDto.isValid()) {
+            if (refundReturnDto.isRefundPaid()) {
                 // if not already paid earlier
-                if (!PaymentStatus.PAID_ONLINE.equals(refundPayment.getStatus())) {
-//                    setRefundPaymentStatus(refundId, PaymentStatus.PAID_ONLINE);
-//                    triggerRefundPaymentPaidEvent(refundPayment);
+                if (!RefundPaymentStatus.PAID_ONLINE.equals(refundPayment.getStatus())) {
+                    setRefundPaymentStatus(refundId, RefundPaymentStatus.PAID_ONLINE);
+                    triggerRefundPaymentPaidEvent(refundPayment);
                 } else {
                     log.debug("not triggering events, refundPayment paid earlier, refundId: " + refundId);
                 }
-            } else if (!paymentReturnDto.isPaymentPaid() && !paymentReturnDto.isCanRetry()) {
+            } else if (!refundReturnDto.isRefundPaid() && !refundReturnDto.isCanRetry()) {
                 // if not already cancelled earlier
-                if (!PaymentStatus.CANCELLED.equals(refundPayment.getStatus())) {
-//                    setRefundPaymentStatus(refundId, PaymentStatus.CANCELLED);
-//                    triggerRefundPaymentFailedEvent(refundPayment);
+                if (!RefundPaymentStatus.CANCELLED.equals(refundPayment.getStatus())) {
+                    setRefundPaymentStatus(refundId, RefundPaymentStatus.CANCELLED);
+                    triggerRefundPaymentFailedEvent(refundPayment);
                 } else {
                     log.debug("not triggering events, refund refundPayment cancelled earlier, refundId: " + refundId);
                 }
