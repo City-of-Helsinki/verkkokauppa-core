@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.payment.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.*;
@@ -33,6 +35,7 @@ import org.springframework.boot.autoconfigure.validation.ValidationAutoConfigura
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -50,6 +53,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -69,15 +73,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "paytrail_payment_return_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
     "paytrail_payment_return_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
     "paytrail_payment_notify_success_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
-    "paytrail_payment_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5"
+    "paytrail_payment_notify_cancel_url=https://webhook.site/ef83f10a-721b-44ab-bac8-241e381a98e5",
+    "paytrail_card_redirect_success_url=url1",
+    "paytrail_card_redirect_cancel_url=url2",
+    "paytrail_card_callback_success_url=url3",
+    "paytrail_card_callback_cancel_url=url4"
 })
 @Slf4j
 public class PaytrailPaymentControllerUnitTests {
-    
+
     private static final String TEST_MERCHANT_ID = "01fde0e9-82b2-4846-acc0-94291625192b";
+    private static final String TEST_NAMESPACE  = "ns1";
     private static final String PAYTRAIL_MERCHANT_ID = "375917";
     private static final String PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
     private static final String PAYTRAIL_AGGREGATE_SECRET_KEY = "MONISAIPPUAKAUPPIAS";
+
+    private static final String PAYTRAIL_CARD_REDIRECT_SUCCESS_URL = "url1";
+    private static final String PAYTRAIL_CARD_REDIRECT_CANCEL_URL = "url2";
+    private static final String PAYTRAIL_CARD_CALLBACK_SUCCESS_URL = "url3";
+    private static final String PAYTRAIL_CARD_CALLBACK_CANCEL_URL = "url4";
 
     @Autowired
     private MockMvc mockMvc;
@@ -508,7 +522,7 @@ public class PaytrailPaymentControllerUnitTests {
                     .map(key -> key + "=" + mockCallbackCheckoutParams.get(key))
                     .collect(Collectors.joining("&"));
             queryParams += "&" + "merchantId=" + TEST_MERCHANT_ID;
-            
+
             MvcResult checkReturnUrlResponse = this.mockMvc.perform(
                             get("/payment/paytrail/check-return-url?" + queryParams)
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -569,6 +583,75 @@ public class PaytrailPaymentControllerUnitTests {
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void whenGetCardFormParametersReturnStatus200() throws Exception {
+        Mockito.when(commonServiceConfigurationClient.getMerchantConfigurationValue(TEST_MERCHANT_ID, TEST_NAMESPACE, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID)).thenReturn(PAYTRAIL_MERCHANT_ID);
+        Mockito.when(commonServiceConfigurationClient.getMerchantPaytrailSecretKey(TEST_MERCHANT_ID)).thenReturn(PAYTRAIL_SECRET_KEY);
+
+        MvcResult response = this.mockMvc.perform(
+                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().is(200))
+                .andReturn();
+        Map<?, ?> parameters = mapper.readValue(response.getResponse().getContentAsString(), HashMap.class);
+        assertEquals(parameters.size(), 10);
+        assertEquals(parameters.get("checkout-account"), PAYTRAIL_MERCHANT_ID);
+        assertEquals(parameters.get("checkout-algorithm"), "sha256");
+        assertEquals(parameters.get("checkout-method"), "POST");
+        assertNotNull(parameters.get("checkout-nonce"));
+        assertNotNull(parameters.get("checkout-timestamp"));
+        assertEquals(parameters.get("checkout-redirect-success-url"), "url1");
+        assertEquals(parameters.get("checkout-redirect-cancel-url"), "url2");
+        assertEquals(parameters.get("checkout-callback-success-url"), "url3");
+        assertEquals(parameters.get("checkout-callback-cancel-url"), "url4");
+        assertNotNull(parameters.get("signature"));
+    }
+
+    @Test
+    public void whenGetCardFormParametersWithMissingPaytrailMerchantIdReturnStatus500() throws Exception {
+        Mockito.when(commonServiceConfigurationClient.getMerchantConfigurationValue(TEST_MERCHANT_ID, TEST_NAMESPACE, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID)).thenReturn(null);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is(500))
+                .andReturn();
+        });
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, cause.getStatus());
+        assertEquals("failed-to-get-paytrail-merchant-id", cause.getErrors().getErrors().get(0).getCode());
+    }
+
+    @Test
+    public void whenGetCardFormParametersWithMissingPaytrailSecretReturnStatus500() throws Exception {
+        Mockito.when(commonServiceConfigurationClient.getMerchantConfigurationValue(TEST_MERCHANT_ID, TEST_NAMESPACE, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID)).thenReturn(PAYTRAIL_MERCHANT_ID);
+        Mockito.when(commonServiceConfigurationClient.getMerchantPaytrailSecretKey(TEST_MERCHANT_ID)).thenReturn(null);
+
+        Exception exception = assertThrows(Exception.class, () -> {
+            this.mockMvc.perform(
+                            get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .accept(MediaType.APPLICATION_JSON)
+                    )
+                    .andDo(print())
+                    .andExpect(status().is(500))
+                    .andReturn();
+        });
+        CommonApiException cause = (CommonApiException) exception.getCause();
+        assertEquals(CommonApiException.class, cause.getClass());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, cause.getStatus());
+        assertEquals("failed-to-get-merchant-paytrail-secret-key", cause.getErrors().getErrors().get(0).getCode());
     }
 
     private Payment mockCreateValidPaymentFromOrder(GetPaymentRequestDataDto paymentRequestDataDto, PaytrailPaymentContext mockPaymentContext, String mockPaymentId) {
