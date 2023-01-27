@@ -111,7 +111,8 @@ public class PaytrailPaymentController {
     @GetMapping("/subscription/get/card-form-parameters")
     public ResponseEntity<TreeMap<String, String>> getCardFormParameters(
             @RequestParam(value = "merchantId") String merchantId,
-            @RequestParam(value = "namespace") String namespace
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "orderId") String orderId
     ) {
         try {
             String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID);
@@ -132,16 +133,21 @@ public class PaytrailPaymentController {
                 );
             }
 
+            String redirectSuccessUrl = env.getRequiredProperty("paytrail_card_redirect_success_url");
+            String redirectCancelUrl = env.getRequiredProperty("paytrail_card_redirect_cancel_url");
+            String callbackSuccessUrl = env.getRequiredProperty("paytrail_card_callback_success_url");
+            String callbackCancelUrl = env.getRequiredProperty("paytrail_card_callback_cancel_url");
+
             TreeMap<String, String> parameters = new TreeMap<>();
             parameters.put("checkout-account", paytrailMerchantId);
             parameters.put("checkout-algorithm", CheckoutAlgorithm.SHA256.toString());
             parameters.put("checkout-method", CheckoutMethod.POST.toString());
             parameters.put("checkout-nonce", UUIDGenerator.generateType4UUID().toString());
             parameters.put("checkout-timestamp", Instant.now().toString());
-            parameters.put("checkout-redirect-success-url", env.getRequiredProperty("paytrail_card_redirect_success_url"));
-            parameters.put("checkout-redirect-cancel-url", env.getRequiredProperty("paytrail_card_redirect_cancel_url"));
-            parameters.put("checkout-callback-success-url", env.getRequiredProperty("paytrail_card_callback_success_url"));
-            parameters.put("checkout-callback-cancel-url", env.getRequiredProperty("paytrail_card_callback_cancel_url"));
+            parameters.put("checkout-redirect-success-url", redirectSuccessUrl + (redirectSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+            parameters.put("checkout-redirect-cancel-url", redirectCancelUrl + (redirectCancelUrl.endsWith("/") ? "" : "/") + orderId);
+            parameters.put("checkout-callback-success-url", callbackSuccessUrl + (callbackSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+            parameters.put("checkout-callback-cancel-url", callbackCancelUrl + (callbackCancelUrl.endsWith("/") ? "" : "/") + orderId);
             parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, secretKey));
 
             return ResponseEntity.status(HttpStatus.OK).body(parameters);

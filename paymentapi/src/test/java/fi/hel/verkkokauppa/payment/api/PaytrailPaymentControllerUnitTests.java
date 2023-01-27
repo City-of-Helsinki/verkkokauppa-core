@@ -591,7 +591,7 @@ public class PaytrailPaymentControllerUnitTests {
         Mockito.when(commonServiceConfigurationClient.getMerchantPaytrailSecretKey(TEST_MERCHANT_ID)).thenReturn(PAYTRAIL_SECRET_KEY);
 
         MvcResult response = this.mockMvc.perform(
-                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE + "&orderId=oid1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON)
                 )
@@ -606,10 +606,10 @@ public class PaytrailPaymentControllerUnitTests {
         assertEquals(parameters.get("checkout-method"), "POST");
         assertNotNull(parameters.get("checkout-nonce"));
         assertNotNull(parameters.get("checkout-timestamp"));
-        assertEquals(parameters.get("checkout-redirect-success-url"), "url1");
-        assertEquals(parameters.get("checkout-redirect-cancel-url"), "url2");
-        assertEquals(parameters.get("checkout-callback-success-url"), "url3");
-        assertEquals(parameters.get("checkout-callback-cancel-url"), "url4");
+        assertEquals(parameters.get("checkout-redirect-success-url"), "url1/oid1");
+        assertEquals(parameters.get("checkout-redirect-cancel-url"), "url2/oid1");
+        assertEquals(parameters.get("checkout-callback-success-url"), "url3/oid1");
+        assertEquals(parameters.get("checkout-callback-cancel-url"), "url4/oid1");
         assertNotNull(parameters.get("signature"));
     }
 
@@ -619,7 +619,7 @@ public class PaytrailPaymentControllerUnitTests {
 
         Exception exception = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
-                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                        get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE + "&orderId=oid1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON)
                 )
@@ -640,7 +640,7 @@ public class PaytrailPaymentControllerUnitTests {
 
         Exception exception = assertThrows(Exception.class, () -> {
             this.mockMvc.perform(
-                            get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE)
+                            get("/subscription/get/card-form-parameters?merchantId=" + TEST_MERCHANT_ID + "&namespace=" + TEST_NAMESPACE + "&orderId=oid1")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .accept(MediaType.APPLICATION_JSON)
                     )
