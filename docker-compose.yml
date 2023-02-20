@@ -299,7 +299,7 @@ services:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xmx2g -Xms2g"
+      - "ES_JAVA_OPTS=-Xmx3g -Xms3g"
       - discovery.type=single-node
     volumes:
       - esdata1:/usr/share/elasticsearch/data

@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public abstract class BaseFunctionalTest {
 
     @Autowired
     protected CommonServiceConfigurationClient commonServiceConfigurationClient;
+
+    private static final String PAYTRAIL_MERCHANT_ID = "375917";
+    private static final String PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
 
     protected String getFirstMerchantIdFromNamespace(String namespace) {
         List<MerchantDto> merchants = commonServiceConfigurationClient.getMerchantsForNamespace(namespace);
@@ -69,5 +73,20 @@ public abstract class BaseFunctionalTest {
 
         order.setItems(items);
         return order;
+    }
+
+    protected PaytrailPaymentContext createMockPaytrailPaymentContext(String namespace, String merchantId) {
+        PaytrailPaymentContext mockPaymentContext = new PaytrailPaymentContext();
+        mockPaymentContext.setNamespace(namespace);
+        mockPaymentContext.setInternalMerchantId(merchantId);
+        mockPaymentContext.setPaytrailMerchantId(PAYTRAIL_MERCHANT_ID);
+        mockPaymentContext.setPaytrailSecretKey(PAYTRAIL_SECRET_KEY);
+        mockPaymentContext.setDefaultCurrency("EUR");
+        mockPaymentContext.setDefaultLanguage("FI");
+        mockPaymentContext.setReturnUrl("https://ecom.example.com/cart");
+        mockPaymentContext.setNotifyUrl("https://ecom.example.com/cart");
+        mockPaymentContext.setCp("PRO-31312-1");
+
+        return mockPaymentContext;
     }
 }
