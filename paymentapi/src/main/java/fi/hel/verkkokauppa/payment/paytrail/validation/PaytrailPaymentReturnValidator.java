@@ -72,7 +72,7 @@ public class PaytrailPaymentReturnValidator {
         return PaymentStatus.OK.getStatus().equals(status);
     }
 
-    private String buildSignatureFromReturnData(Map<String,String> checkoutParams, String merchantId, boolean isShopInShopPayment) {
+    public String buildSignatureFromReturnData(Map<String,String> checkoutParams, String merchantId, boolean isShopInShopPayment) {
         TreeMap<String, String> checkoutSignatureParameters = PaytrailSignatureService.filterCheckoutQueryParametersMap(checkoutParams);
 
         try {
