@@ -244,6 +244,7 @@ public class PaymentPaytrailService {
 
         Payment payment = createPayment(context, dto, paymentType, paymentId);
         payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
+        payment.setStatus(PaymentStatus.PAID_ONLINE);
 
         paymentRepository.save(payment);
         log.debug("created payment with paymentId: " + paymentId);

@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.mapper.PaytrailCreatePaymentPayloadMapper;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
@@ -29,7 +30,6 @@ import org.helsinki.paytrail.response.paymentmethods.PaytrailPaymentMethodsRespo
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateMitChargeResponse;
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateResponse;
 import org.helsinki.paytrail.response.tokenization.PaytrailGetTokenResponse;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -51,13 +51,15 @@ public class PaytrailPaymentClient {
     private final PaytrailGetTokenResponseMapper getTokenResponseMapper;
 
     private final PaytrailPaymentCreateMitChargeResponseMapper createMitChargeResponseMapper;
+    private final PaytrailCreatePaymentPayloadMapper paytrailCreatePaymentPayloadMapper;
 
     @Autowired
     public PaytrailPaymentClient(
             PaytrailAuthClientFactory paytrailAuthClientFactory,
             ObjectMapper mapper,
             IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> paytrailCreatePaymentPayloadConverter,
-            IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> paytrailCreateRefundPayloadConverter
+            IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> paytrailCreateRefundPayloadConverter,
+            PaytrailCreatePaymentPayloadMapper paytrailCreatePaymentPayloadMapper
     ) {
         this.paytrailAuthClientFactory = paytrailAuthClientFactory;
         this.paymentMethodsResponseMapper = new PaytrailPaymentMethodsResponseMapper(mapper);
@@ -65,6 +67,7 @@ public class PaytrailPaymentClient {
         this.paymentPayloadConverter = paytrailCreatePaymentPayloadConverter;
         this.getTokenResponseMapper = new PaytrailGetTokenResponseMapper(mapper);
         this.createMitChargeResponseMapper = new PaytrailPaymentCreateMitChargeResponseMapper(mapper);
+        this.paytrailCreatePaymentPayloadMapper = paytrailCreatePaymentPayloadMapper;
     }
 
     public List<PaytrailPaymentMethod> getPaymentMethods(PaytrailPaymentContext context) {
@@ -85,8 +88,7 @@ public class PaytrailPaymentClient {
 
     public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto, String token) throws ExecutionException, InterruptedException {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
-        CreateMitChargePayload payload = new CreateMitChargePayload();
-        BeanUtils.copyProperties(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId), payload);
+        CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId));
         payload.setToken(token);
         PaytrailPaymentCreateMitChargeRequest request = new PaytrailPaymentCreateMitChargeRequest(payload);
         CompletableFuture<PaytrailPaymentCreateMitChargeResponse> response = paytrailClient.sendRequest(request);

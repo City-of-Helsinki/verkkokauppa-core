@@ -74,16 +74,7 @@ public class PaytrailPaymentController {
         try {
             String namespace = dto.getOrder().getOrder().getNamespace();
             String merchantId = dto.getMerchantId();
-            boolean signatureIsValid = signature.equals(
-                paytrailPaymentReturnValidator.buildSignatureFromReturnData(params, merchantId, false)
-            );
-            if (!signatureIsValid) {
-                throw new CommonApiException(
-                    HttpStatus.FORBIDDEN,
-                    new Error("invalid-signature",
-                            "paytrail signature is invalid")
-                );
-            }
+            paytrailPaymentReturnValidator.validateSignature(merchantId, params, signature);
             PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(namespace, merchantId);
             PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
             paymentPaytrailService.validateOrder(dto.getOrder().getOrder());
