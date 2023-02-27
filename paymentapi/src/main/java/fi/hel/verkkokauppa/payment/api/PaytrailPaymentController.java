@@ -8,12 +8,16 @@ import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.constants.CheckoutAlgorithm;
 import org.helsinki.paytrail.constants.CheckoutMethod;
+import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
+import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -56,6 +60,36 @@ public class PaytrailPaymentController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-paytrail-payment", "failed to create paytrail payment")
+            );
+        }
+    }
+
+    @PostMapping("/payment/paytrail/check-card-return-url")
+    public ResponseEntity<Payment> checkCardReturnUrl(
+            @RequestBody GetPaymentRequestDataDto dto,
+            @RequestParam Map<String, String> params,
+            @RequestParam(value = "signature") String signature,
+            @RequestParam(value = "checkout-tokenization-id") String tokenizationId
+    ) {
+        try {
+            String namespace = dto.getOrder().getOrder().getNamespace();
+            String merchantId = dto.getMerchantId();
+            paytrailPaymentReturnValidator.validateSignature(merchantId, params, signature);
+            PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(namespace, merchantId);
+            PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
+            paymentPaytrailService.validateOrder(dto.getOrder().getOrder());
+            String paymentId = PaymentUtil.generatePaymentOrderNumber(dto.getOrder().getOrder().getOrderId());
+            PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, paymentId, dto.getOrder(), card.getToken());
+            Payment payment = paymentPaytrailService.createPayment(context, dto, paymentId, mitCharge);
+            paymentPaytrailService.triggerPaymentPaidEvent(payment, card);
+            return ResponseEntity.status(HttpStatus.OK).body(payment);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("checking card return response failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-check-card-return-response", "failed to check card return response")
             );
         }
     }

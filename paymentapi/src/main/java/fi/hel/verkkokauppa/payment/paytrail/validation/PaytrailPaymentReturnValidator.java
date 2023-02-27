@@ -72,6 +72,17 @@ public class PaytrailPaymentReturnValidator {
         return PaymentStatus.OK.getStatus().equals(status);
     }
 
+    public void validateSignature(String merchantId, Map<String,String> params, String signature) {
+        boolean signatureIsValid = signature.equals(buildSignatureFromReturnData(params, merchantId, false));
+        if (!signatureIsValid) {
+            throw new CommonApiException(
+                    HttpStatus.FORBIDDEN,
+                    new Error("invalid-signature",
+                            "paytrail signature is invalid")
+            );
+        }
+    }
+
     private String buildSignatureFromReturnData(Map<String,String> checkoutParams, String merchantId, boolean isShopInShopPayment) {
         TreeMap<String, String> checkoutSignatureParameters = PaytrailSignatureService.filterCheckoutQueryParametersMap(checkoutParams);
 

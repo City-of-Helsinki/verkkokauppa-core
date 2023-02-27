@@ -5,21 +5,31 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+import fi.hel.verkkokauppa.payment.mapper.PaytrailCreatePaymentPayloadMapper;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.paytrail.factory.PaytrailAuthClientFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
+import org.helsinki.paytrail.mapper.PaytrailGetTokenResponseMapper;
+import org.helsinki.paytrail.mapper.PaytrailPaymentCreateMitChargeResponseMapper;
 import org.helsinki.paytrail.mapper.PaytrailPaymentCreateResponseMapper;
 import org.helsinki.paytrail.mapper.PaytrailPaymentMethodsResponseMapper;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
+import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
+import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.helsinki.paytrail.request.paymentmethods.PaytrailPaymentMethodsRequest;
+import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateMitChargeRequest;
+import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.helsinki.paytrail.request.refunds.PaytrailRefundCreateRequest.CreateRefundPayload;
+import org.helsinki.paytrail.request.tokenization.PaytrailGetTokenRequest;
 import org.helsinki.paytrail.response.paymentmethods.PaytrailPaymentMethodsResponse;
+import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateMitChargeResponse;
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateResponse;
+import org.helsinki.paytrail.response.tokenization.PaytrailGetTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -38,17 +48,26 @@ public class PaytrailPaymentClient {
     private final PaytrailPaymentCreateResponseMapper paymentCreateResponseMapper;
     private final IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> paymentPayloadConverter;
 
+    private final PaytrailGetTokenResponseMapper getTokenResponseMapper;
+
+    private final PaytrailPaymentCreateMitChargeResponseMapper createMitChargeResponseMapper;
+    private final PaytrailCreatePaymentPayloadMapper paytrailCreatePaymentPayloadMapper;
+
     @Autowired
     public PaytrailPaymentClient(
             PaytrailAuthClientFactory paytrailAuthClientFactory,
             ObjectMapper mapper,
             IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> paytrailCreatePaymentPayloadConverter,
-            IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> paytrailCreateRefundPayloadConverter
+            IPaytrailPayloadConverter<CreateRefundPayload, RefundDto> paytrailCreateRefundPayloadConverter,
+            PaytrailCreatePaymentPayloadMapper paytrailCreatePaymentPayloadMapper
     ) {
         this.paytrailAuthClientFactory = paytrailAuthClientFactory;
         this.paymentMethodsResponseMapper = new PaytrailPaymentMethodsResponseMapper(mapper);
         this.paymentCreateResponseMapper = new PaytrailPaymentCreateResponseMapper(mapper);
         this.paymentPayloadConverter = paytrailCreatePaymentPayloadConverter;
+        this.getTokenResponseMapper = new PaytrailGetTokenResponseMapper(mapper);
+        this.createMitChargeResponseMapper = new PaytrailPaymentCreateMitChargeResponseMapper(mapper);
+        this.paytrailCreatePaymentPayloadMapper = paytrailCreatePaymentPayloadMapper;
     }
 
     public List<PaytrailPaymentMethod> getPaymentMethods(PaytrailPaymentContext context) {
@@ -65,6 +84,20 @@ public class PaytrailPaymentClient {
             log.warn("getting paytrail payment methods failed ", e);
             return Collections.emptyList();
         }
+    }
+
+    public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto, String token) throws ExecutionException, InterruptedException {
+        PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
+        CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId));
+        payload.setToken(token);
+        PaytrailPaymentCreateMitChargeRequest request = new PaytrailPaymentCreateMitChargeRequest(payload);
+        CompletableFuture<PaytrailPaymentCreateMitChargeResponse> response = paytrailClient.sendRequest(request);
+        PaytrailPaymentCreateMitChargeResponse createResponse = createMitChargeResponseMapper.to(response.get());
+        if (!createResponse.isValid()) {
+            log.info("createMitCharge errors {}", createResponse);
+            throw new IllegalArgumentException("createMitCharge failed with response : " + createResponse.getResultJson());
+        }
+        return createResponse.getSuccess();
     }
 
     public PaytrailPaymentResponse createPayment(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto) {
@@ -92,4 +125,15 @@ public class PaytrailPaymentClient {
         }
     }
 
+    public PaytrailTokenResponse getToken(PaytrailPaymentContext context, String tokenizationId) throws ExecutionException, InterruptedException {
+        PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
+        PaytrailGetTokenRequest request = new PaytrailGetTokenRequest(tokenizationId);
+        CompletableFuture<PaytrailGetTokenResponse> response = paytrailClient.sendRequest(request);
+        PaytrailGetTokenResponse getTokenResponse = getTokenResponseMapper.to(response.get());
+        if (!getTokenResponse.isValid()) {
+            log.info("getToken errors {}", getTokenResponse);
+            throw new IllegalArgumentException("getToken failed with response : " + getTokenResponse.getResultJson());
+        }
+        return getTokenResponse.getTokenResponse();
+    }
 }

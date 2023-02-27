@@ -3,12 +3,15 @@ package fi.hel.verkkokauppa.payment.service;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.SendEventService;
+import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
+import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.model.Payer;
@@ -26,8 +29,12 @@ import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
+import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
+import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
+import org.helsinki.paytrail.response.tokenization.PaytrailGetTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +43,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 
 @Service
@@ -49,6 +57,12 @@ public class PaymentPaytrailService {
     private final PaymentItemRepository paymentItemRepository;
 
     private final PaytrailPaymentProviderListMapper paytrailPaymentProviderListMapper;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
+
+    @Autowired
+    private SendEventService sendEventService;
 
     @Autowired
     PaymentPaytrailService(
@@ -119,6 +133,18 @@ public class PaymentPaytrailService {
         return payment;
     }
 
+    public PaytrailPaymentContext buildPaytrailContext(String namespace, String merchantId) {
+        return paymentContextBuilder.buildFor(namespace, merchantId, false);
+    }
+
+    public PaytrailTokenResponse getToken(PaytrailPaymentContext context, String tokenizationId) throws ExecutionException, InterruptedException {
+        return paytrailPaymentClient.getToken(context, tokenizationId);
+    }
+
+    public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper order, String token) throws ExecutionException, InterruptedException {
+        return paytrailPaymentClient.createMitCharge(context, paymentId, order, token);
+    }
+
     private void isValidUserToCreatePayment(String orderId, String userId) {
         if (userId == null || userId.isEmpty()) {
             log.warn("creating paytrail payment without user rejected, orderId: " + orderId);
@@ -140,7 +166,12 @@ public class PaymentPaytrailService {
         }
     }
 
-    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId, PaytrailPaymentResponse paymentResponse) {
+    public void validateOrder(OrderDto order) {
+        isValidOrderStatusToCreatePayment(order.getOrderId(), order.getStatus());
+        isValidUserToCreatePayment(order.getOrderId(), order.getUser());
+    }
+
+    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId) {
         OrderDto order = dto.getOrder().getOrder();
         List<OrderItemDto> items = dto.getOrder().getItems();
 
@@ -168,6 +199,21 @@ public class PaymentPaytrailService {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setShopInShopPayment(context.isUseShopInShop());
+        payment.setPaymentGateway(PaymentGatewayEnum.PAYTRAIL);
+
+        createPayer(order, paymentId);
+
+        for (OrderItemDto item : items) {
+            createPaymentItem(item, paymentId, order.getOrderId());
+        }
+
+        log.debug("creating payment for namespace: " + namespace + " with paymentId: " + paymentId);
+
+        return payment;
+    }
+
+    private Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String type, String paymentId, PaytrailPaymentResponse paymentResponse) {
+        Payment payment = createPayment(context, dto, type, paymentId);
 
         payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
         List<PaytrailPaymentProviderModel> providers = paytrailPaymentProviderListMapper.fromDto(paymentResponse.getProviders());
@@ -180,22 +226,28 @@ public class PaymentPaytrailService {
                     log.error("paytrail-payment-providers {}", paymentResponse.getProviders());
                     return new CommonApiException(
                             HttpStatus.NOT_FOUND,
-                            new Error("paytrail-payment-provider-not-found", "Cant find paytrail payment provider to orderId [" + order.getOrderId() + "] ")
+                            new Error("paytrail-payment-provider-not-found", "Cant find paytrail payment provider to orderId [" + dto.getOrder().getOrder().getOrderId() + "] ")
                     );
                 });
 
         payment.setPaytrailProvider(provider);
 
-        payment.setPaymentGateway(PaymentGatewayEnum.PAYTRAIL);
+        paymentRepository.save(payment);
+        log.debug("created payment with paymentId: " + paymentId);
 
-        createPayer(order, paymentId);
+        return payment;
+    }
 
-        for (OrderItemDto item : items) {
-            createPaymentItem(item, paymentId, order.getOrderId());
-        }
+    public Payment createPayment(PaytrailPaymentContext context, GetPaymentRequestDataDto dto, String paymentId, PaytrailPaymentMitChargeSuccessResponse paymentResponse) {
+        boolean isRecurringOrder = dto.getOrder().getOrder().getType().equals(OrderType.SUBSCRIPTION);
+        String paymentType = isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
+
+        Payment payment = createPayment(context, dto, paymentType, paymentId);
+        payment.setPaytrailTransactionId(paymentResponse.getTransactionId());
+        payment.setStatus(PaymentStatus.PAID_ONLINE);
 
         paymentRepository.save(payment);
-        log.debug("created payment for namespace: " + namespace + " with paymentId: " + paymentId);
+        log.debug("created payment with paymentId: " + paymentId);
 
         return payment;
     }
@@ -234,5 +286,28 @@ public class PaymentPaytrailService {
 
     public String getPaymentUrl(Payment payment) {
         return getPaymentUrl(payment.getPaytrailTransactionId());
+    }
+
+    public void triggerPaymentPaidEvent(Payment payment, PaytrailTokenResponse card) {
+        String now = DateTimeUtil.getDateTime();
+        String encryptedToken = EncryptorUtil.encryptValue(card.getToken(), cardTokenEncryptionPassword);
+
+        PaymentMessage paymentMessage = PaymentMessage.builder()
+                .eventType(EventType.PAYMENT_PAID)
+                .eventTimestamp(now)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .paymentPaidTimestamp(now)
+                .orderType(payment.getPaymentType())
+                .encryptedCardToken(encryptedToken)
+                .cardTokenExpYear(Short.parseShort(card.getCard().getExpireYear()))
+                .cardTokenExpMonth(Byte.parseByte(card.getCard().getExpireMonth()))
+                .cardLastFourDigits(card.getCard().getPartialPan())
+                .build();
+
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
     }
 }

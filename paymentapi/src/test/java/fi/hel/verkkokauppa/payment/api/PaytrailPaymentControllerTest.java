@@ -45,6 +45,8 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
     private static final String TEST_PAYTRAIL_MERCHANT_ID = "375917";
     private static final String TEST_PAYTRAIL_SECRET_KEY = "SAIPPUAKAUPPIAS";
 
+    private static final String TOKENIZATION_ID = "d8bd8f8d-df32-447f-bd1a-3e85bd69256f";
+
     @Autowired
     private PaytrailPaymentController paytrailPaymentController;
 
@@ -256,6 +258,74 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         assertEquals(TEST_PAYTRAIL_MERCHANT_ID, validPaytrailMerchantIdConfig.getValue());
     }
 
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testCheckCardReturnUrl() throws NoSuchAlgorithmException, InvalidKeyException {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();;
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
+        paymentRequestDataDto.setOrder(orderWrapper);
+        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        paymentRequestDataDto.setMerchantId(merchantId);
+
+        Map<String, String> params = createMockCallbackParams("", "", "");
+        params.put("checkout-tokenization-id", TOKENIZATION_ID);
+        String signature = PaytrailSignatureService.calculateSignature(PaytrailSignatureService.filterCheckoutQueryParametersMap(params), null, TEST_PAYTRAIL_SECRET_KEY);
+        params.put("signature", signature);
+
+        ResponseEntity<Payment> response = paytrailPaymentController.checkCardReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        Payment payment = response.getBody();
+
+        assertNotNull(payment);
+        assertNotNull(payment.getPaymentId());
+
+        /* Check payment */
+        assertEquals(orderWrapper.getOrder().getOrderId(), payment.getOrderId());
+        assertNotNull(payment.getPaytrailTransactionId());
+
+        /* Check payment items */
+        String paymentId = payment.getPaymentId();
+        List<PaymentItem> paymentItems = paymentItemRepository.findByPaymentId(payment.getPaymentId());
+        assertEquals(1, paymentItems.size());
+
+        PaymentItem paymentItem = paymentItems.get(0);
+        assertEquals(orderWrapper.getOrder().getOrderId(), paymentItem.getOrderId());
+        assertEquals(dummyOrderItem.getProductId(), paymentItem.getProductId());
+
+        /* Check payer */
+        List<Payer> payers = payerRepository.findByPaymentId(payment.getPaymentId());
+        assertEquals(1, payers.size());
+
+        Payer payer = payers.get(0);
+        assertEquals(orderWrapper.getOrder().getCustomerFirstName(), payer.getFirstName());
+        assertEquals(orderWrapper.getOrder().getCustomerLastName(), payer.getLastName());
+        assertEquals(orderWrapper.getOrder().getCustomerEmail(), payer.getEmail());
+
+        toBeDeletedPaymentId.add(paymentId);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testCheckCardReturnUrlWithInvalidSignature() {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();;
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
+        paymentRequestDataDto.setOrder(orderWrapper);
+        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        paymentRequestDataDto.setMerchantId(merchantId);
+
+        Map<String, String> params = createMockCallbackParams("", "", "");
+        params.put("checkout-tokenization-id", TOKENIZATION_ID);
+        String signature = "signature";
+        params.put("signature", signature);
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paytrailPaymentController.checkCardReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
 
     @Test
     @RunIfProfile(profile = "local")
