@@ -296,6 +296,7 @@ public class AccountingSlipService {
 
     private String formatSum(Double sum) {
         DecimalFormat decimalFormat = new DecimalFormat("0.00");
+        decimalFormat.setNegativePrefix("-");
 
         return decimalFormat.format(-sum).replace(".", ",");
     }
