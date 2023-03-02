@@ -34,6 +34,8 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import static org.springframework.util.ObjectUtils.isEmpty;
+
 @Service
 @Slf4j
 public class SearchAfterService {
@@ -90,29 +92,26 @@ public class SearchAfterService {
     public SearchHit[] executeSearchRequest(SearchRequest searchRequest) throws IOException {
         SearchHit[] resultHits;
         Object[] searchAfterSortValues;
+        int searchAfterPageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
         // First search for one page
         SearchResponse response = highLevelClient.search(searchRequest, RequestOptions.DEFAULT);
         SearchHits searchHits = response.getHits();
         resultHits = searchHits.getHits();
-        searchAfterSortValues = resultHits[resultHits.length-1].getSortValues();
 
-        // Then loop through rest of the pages until all hits have been collected
-        while(searchHits.getTotalHits().value > resultHits.length){
 
+        // if we got full page do another search just in case
+        if( resultHits.length == searchAfterPageSize ){
             // add search after parameters to search request
+            searchAfterSortValues = resultHits[resultHits.length-1].getSortValues();
             searchRequest.source().searchAfter(searchAfterSortValues);
 
-            response = highLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-
-            searchHits = response.getHits();
-            final SearchHit[] hits = searchHits.getHits();
-            searchAfterSortValues = hits[hits.length-1].getSortValues();
+            // call this method to do another search
+            final SearchHit[] hits = executeSearchRequest(searchRequest);
 
             // add new hits to results
             resultHits = Stream.concat(Arrays.stream(resultHits), Arrays.stream(hits))
                     .toArray(size -> (SearchHit[]) Array.newInstance(hits.getClass().getComponentType(), size));
-
         }
 
         return resultHits;

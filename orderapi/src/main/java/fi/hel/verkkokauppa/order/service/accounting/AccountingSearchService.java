@@ -62,24 +62,7 @@ public class AccountingSearchService {
             }
         }).collect(Collectors.toList());
 
-        log.info(objectMapper.writeValueAsString(exportData));
-
-
-
-//        static <T> T[] concatWithStream(T[] array1, T[] array2) {
-//            return Stream.concat(Arrays.stream(array1), Arrays.stream(array2))
-//                    .toArray(size -> (T[]) Array.newInstance(array1.getClass().getComponentType(), size));
-//        }
-
-
-//        SearchHits<AccountingExportData> hits = operations.search(queryOld, AccountingExportData.class);
-
-//        SearchPage<AccountingExportData> searchHits = SearchHitSupport.searchPageFor(hits, query.getPageable());
-//
-//        final List<AccountingExportData> exportData = searchHits.stream()
-//                .map(SearchHit::getContent)
-//                .collect(Collectors.toList());
-//        exportData.addAll(exportData);
+        //log.info(objectMapper.writeValueAsString(exportData));
 
         if (exportData.isEmpty()) {
             return new ArrayList<>();

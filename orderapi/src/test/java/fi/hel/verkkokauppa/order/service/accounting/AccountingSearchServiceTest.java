@@ -42,13 +42,14 @@ import java.util.List;
 import java.util.UUID;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 
 @RunWith(SpringJUnit4ClassRunner.class )
 @SpringBootTest
 @RunIfProfile(profile = "local")
-@TestPropertySource(properties = { "elasticsearch.search-after-page-size = 2" })
+//@TestPropertySource(properties = { "elasticsearch.search-after-page-size = 2" })
 @ComponentScan("fi.hel.verkkokauppa.order.service.elasticsearch")
 @Slf4j
 public class AccountingSearchServiceTest {
@@ -80,12 +81,17 @@ public class AccountingSearchServiceTest {
     public void whenGetNotExportedAccountingExportData_thenSuccess() throws Exception {
         log.info("running whenGetNotExportedAccountingExportData_thenSuccess");
         List<AccountingExportData> resultList;
+        long expectedTotalHits = accountingExportDataCount();
 
         try{
             log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
             resultList = searchServiceToTest.getNotExportedAccountingExportData();
-            log.info(resultList.toString());
+            log.info("Result list size: "+resultList.size());
             assertFalse("Result list should not be empty",resultList.isEmpty());
+            if(expectedTotalHits < 10000) {
+                // maximum number of total hits we can receive is 10 000. Cannot test with 10000 or more
+                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", accountingExportDataCount(), resultList.size());
+            }
 
         }
         catch (Exception e){
@@ -96,7 +102,7 @@ public class AccountingSearchServiceTest {
     // test utility method for creating  accounting export data to Elasticsearch
     // usable for local testing of services
     private void createAccountingExportData (){
-        long testRecordsCount = 3; // wanted number of test data
+        long testRecordsCount = 10; // wanted number of test data
 
         // if there are less than wanted amount of accountingexportdatas records then create more
         long actualDataCount = accountingExportDataCount();
@@ -105,7 +111,7 @@ public class AccountingSearchServiceTest {
             long newRecordCount = testRecordsCount-actualDataCount;
             log.info("Creating " + newRecordCount + " more test records for accountingexportdatas");
 
-            for(int i=0; i < actualDataCount; i++) {
+            for(long i=0; i < newRecordCount; i++) {
                 accountingExportDataService.createAccountingExportData(
                         new AccountingExportDataDto(UUID.randomUUID().toString(), LocalDate.now(), "Some text " + i)
                 );
