@@ -1,40 +1,22 @@
 package fi.hel.verkkokauppa.order.service.elasticsearch;
 
-
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.*;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.client.ClientConfiguration;
-import org.springframework.data.elasticsearch.client.RestClients;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
-import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
-import javax.naming.directory.SearchResult;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.stream.Stream;
-
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 @Service
 @Slf4j
@@ -53,10 +35,16 @@ public class SearchAfterService {
      * for search after they are needed.
      */
 
-    public SearchRequest buildSearchAfterSearchRequest(String indices,
-                                                       NativeSearchQuery query,
-                                                       SortBuilder[] sorts) throws Exception {
+    public SearchRequest buildSearchAfterSearchRequest(NativeSearchQuery query,
+                                                       SortBuilder[] sorts,
+                                                       String... indices) throws Exception {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+        if( indices == null || indices.length == 0 )
+        {
+            // throw exception, indice is needed
+            throw new Exception("buildSearchAfterSearchRequest: at least one indice is needed");
+        }
 
         if( query != null && !query.toString().isEmpty() )
         {
@@ -79,9 +67,14 @@ public class SearchAfterService {
     }
 
 
-    public SearchHit[] executeSearchRequest(SearchRequest searchRequest) throws IOException {
+    public SearchHit[] executeSearchRequest(SearchRequest searchRequest) throws Exception {
         SearchHit[] resultHits;
         Object[] searchAfterSortValues;
+
+        if(searchRequest.indices() == null || searchRequest.indices().length == 0){
+            throw new Exception("SearchRequest should have at least one indice.");
+        }
+
         int searchAfterPageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
         // First search for one page
