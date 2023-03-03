@@ -195,7 +195,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Test
     public void whenSortAndMultipleIndices_thenSuccess() {
         log.info("running whenSort_thenSuccess");
-        long expectedTotalHits = accountingExportDataCount();
+        long expectedTotalHits = accountingExportDataCount() + notAccountedOrderCount();
 
         try{
             log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
