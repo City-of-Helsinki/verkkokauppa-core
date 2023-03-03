@@ -48,8 +48,7 @@ public class AccountingSearchService {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 "accountingexportdatas",
                 query,
-                new FieldSortBuilder("_id").order(SortOrder.DESC), // cannot sort with text field (accountingSlipId) so using _id
-                new FieldSortBuilder("timestamp").order(SortOrder.DESC));
+                new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)});
 
         log.info(searchRequest.toString());
         org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
@@ -70,20 +69,27 @@ public class AccountingSearchService {
         return exportData;
     }
 
-    public List<Order> findNotAccounted() {
+    public List<Order> findNotAccounted() throws Exception {
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
-                .withQuery(qb)
-                .withPageable(PageRequest.of(0, 10000))
-                .build();
-        SearchHits<Order> hits = operations.search(query, Order.class);
+                .withQuery(qb).build();
 
-        SearchPage<Order> searchHits = SearchHitSupport.searchPageFor(hits, query.getPageable());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                "orders",
+                query,
+                new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)});
 
-        final List<Order> exportData = searchHits.stream()
-                .map(SearchHit::getContent)
-                .collect(Collectors.toList());
+        log.info(searchRequest.toString());
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+
+        final List<Order> exportData = Arrays.stream(hits).map(org.elasticsearch.search.SearchHit::getSourceAsString).map(s -> {
+            try {
+                return objectMapper.readValue(s,Order.class);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
 
         if (exportData.isEmpty()) {
             return new ArrayList<>();

@@ -68,7 +68,7 @@ public class AccountingSlipService {
     @Autowired
     private AccountingSearchService accountingSearchService;
 
-    public List<AccountingSlipDto> createAccountingData() {
+    public List<AccountingSlipDto> createAccountingData() throws Exception {
         List<Order> ordersToAccount = accountingSearchService.findNotAccounted();
         Map<LocalDate, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
 

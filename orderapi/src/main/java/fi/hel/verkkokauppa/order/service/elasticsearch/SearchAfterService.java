@@ -55,8 +55,7 @@ public class SearchAfterService {
 
     public SearchRequest buildSearchAfterSearchRequest(String indices,
                                                        NativeSearchQuery query,
-                                                       SortBuilder businessSort,
-                                                       SortBuilder tiebreakerSort) throws Exception {
+                                                       SortBuilder[] sorts) throws Exception {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 
         if( query != null && !query.toString().isEmpty() )
@@ -65,22 +64,13 @@ public class SearchAfterService {
             searchSourceBuilder.query(query.getQuery());
         }
 
-        if( businessSort != null && !businessSort.toString().isEmpty() )
+        if( sorts != null )
         {
-            // set businessSort
-            searchSourceBuilder.sort(businessSort);
+            // set sorts
+            for (SortBuilder sort : sorts) {
+                searchSourceBuilder.sort(sort);
+            }
         }
-
-        if( tiebreakerSort != null && !tiebreakerSort.toString().isEmpty() )
-        {
-            // set tiebreakerSort
-            searchSourceBuilder.sort(tiebreakerSort);
-        }
-
-//        if (businessSortMarker != null && tiebreakerSortMarker != null) {
-//            // set search after
-//            searchSourceBuilder.searchAfter(new Object[]{businessSortMarker, tiebreakerSortMarker});
-//        }
 
         // set number of records retrieved with one query
         searchSourceBuilder.size(Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size")));
@@ -99,19 +89,22 @@ public class SearchAfterService {
         SearchHits searchHits = response.getHits();
         resultHits = searchHits.getHits();
 
-
         // if we got full page do another search just in case
         if( resultHits.length == searchAfterPageSize ){
             // add search after parameters to search request
             searchAfterSortValues = resultHits[resultHits.length-1].getSortValues();
-            searchRequest.source().searchAfter(searchAfterSortValues);
+            // can only do search after if we get sort values
+            if( searchAfterSortValues != null && searchAfterSortValues.length > 0 ) {
 
-            // call this method to do another search
-            final SearchHit[] hits = executeSearchRequest(searchRequest);
+                searchRequest.source().searchAfter(searchAfterSortValues);
 
-            // add new hits to results
-            resultHits = Stream.concat(Arrays.stream(resultHits), Arrays.stream(hits))
-                    .toArray(size -> (SearchHit[]) Array.newInstance(hits.getClass().getComponentType(), size));
+                // call this method to do another search
+                final SearchHit[] hits = executeSearchRequest(searchRequest);
+
+                // add new hits to results
+                resultHits = Stream.concat(Arrays.stream(resultHits), Arrays.stream(hits))
+                        .toArray(size -> (SearchHit[]) Array.newInstance(hits.getClass().getComponentType(), size));
+            }
         }
 
         return resultHits;
