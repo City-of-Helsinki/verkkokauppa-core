@@ -16,8 +16,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 
 @RunWith(SpringJUnit4ClassRunner.class )
@@ -37,16 +36,29 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     @Autowired
     AccountingExportDataService accountingExportDataService;
 
-    @Before
-    public void initTests(){
-        // creates test data to Elasticsearch if none exists
-        createAccountingExportData(10);
-        createOrder(10);
+
+    @Test
+    public void whenGetNotExportedAccountingExportDataAndNoHits_thenSuccess() throws Exception {
+        log.info("running whenGetNotExportedAccountingExportDataAndNoHits_thenSuccess");
+        clearAccountingExportData();
+        List<AccountingExportData> resultList;
+
+        try{
+            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
+            resultList = searchServiceToTest.getNotExportedAccountingExportData();
+            log.info("Result list size: "+resultList.size());
+
+            assertTrue("Result list be empty",resultList.isEmpty());
+        }
+        catch (Exception e){
+            assertFalse("Exception: " + e.getMessage(),true);
+        }
     }
 
     @Test
     public void whenGetNotExportedAccountingExportData_thenSuccess() throws Exception {
         log.info("running whenGetNotExportedAccountingExportData_thenSuccess");
+        createAccountingExportData(10);
         List<AccountingExportData> resultList;
         long expectedTotalHits = accountingExportDataCount();
 
@@ -69,8 +81,27 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
+    public void whenFindNotAccountedNoHits_thenSuccess() throws Exception {
+        log.info("running whenFindNotAccountedNoHits_thenSuccess");
+        deleteNotAccountedOrders();
+        List<Order> resultList;
+
+        try{
+            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
+            resultList = searchServiceToTest.findNotAccounted();
+            log.info("Result list size: "+resultList.size());
+
+            assertTrue("Result list should be empty",resultList.isEmpty());
+        }
+        catch (Exception e){
+            assertFalse("Exception: " + e.getMessage(),true);
+        }
+    }
+
+    @Test
     public void whenFindNotAccounted_thenSuccess() throws Exception {
         log.info("running whenFindNotAccounted_thenSuccess");
+        createOrder(10);
         List<Order> resultList;
         long expectedTotalHits = notAccountedOrderCount();
 

@@ -265,4 +265,39 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         }
     }
 
+    @Test
+    public void whenNoHits_thenSuccess() {
+        log.info("running whenNoSort_thenSuccess");
+        int pageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
+
+        try{
+            log.info("elasticsearch.search-after-page-size: " + pageSize);
+            // query something impossible
+            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("timestamp"));
+
+            NativeSearchQuery query = new NativeSearchQueryBuilder()
+                    .withQuery(qb).build();
+
+            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                    query,
+                    null,
+                    "accountingexportdatas"
+            );
+            log.info(searchRequest.toString());
+
+            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+
+            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+
+            log.info("Result list size: " + hits.length);
+
+            assertTrue("Result list should be empty", (hits.length==0));
+
+        }
+        catch (Exception e){
+            assertFalse("Exception: " + e.getMessage(),true);
+        }
+    }
+
 }

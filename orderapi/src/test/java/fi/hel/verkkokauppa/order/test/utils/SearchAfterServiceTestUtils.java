@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.test.utils;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
+import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportDataService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingSearchService;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,9 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Component;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -29,6 +32,9 @@ public class SearchAfterServiceTestUtils extends TestUtils {
 
     @Autowired
     private ElasticsearchOperations operations;
+
+    @Autowired
+    private AccountingExportDataRepository exportDataRepository;
 
 
     // test utility method for creating accounting export data to Elasticsearch
@@ -49,6 +55,13 @@ public class SearchAfterServiceTestUtils extends TestUtils {
             }
 
         }
+    }
+
+    // test utility method for removing all accounting export data to Elasticsearch
+    // usable for local testing of services
+    public void clearAccountingExportData (){
+
+        exportDataRepository.deleteAll();
     }
 
     // returns number of AccountingExportData records in Elasticsearch
@@ -79,6 +92,17 @@ public class SearchAfterServiceTestUtils extends TestUtils {
                 createNewOrderToDatabase(1);
             }
         }
+    }
+
+    // deletes all order records
+    public void deleteNotAccountedOrders(){
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
+
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb)
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+        operations.delete(query, Order.class);
     }
 
     // returns number of order records that have not been Accounted
