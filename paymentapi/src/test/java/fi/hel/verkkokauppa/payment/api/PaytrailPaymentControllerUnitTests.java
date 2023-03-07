@@ -1,11 +1,11 @@
 package fi.hel.verkkokauppa.payment.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.*;
+import fi.hel.verkkokauppa.payment.mapper.PaytrailCreatePaymentPayloadMapper;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
@@ -35,7 +35,6 @@ import org.springframework.boot.autoconfigure.validation.ValidationAutoConfigura
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ContextConfiguration;
@@ -53,7 +52,6 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -131,6 +129,9 @@ public class PaytrailPaymentControllerUnitTests {
 
     @MockBean
     private PaymentItemRepository paymentItemRepository;
+
+    @MockBean
+    private PaytrailCreatePaymentPayloadMapper paytrailCreatePaymentPayloadMapper;
 
     @BeforeEach
     public void setup() {

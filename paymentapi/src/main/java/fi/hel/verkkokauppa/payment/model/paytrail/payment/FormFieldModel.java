@@ -8,9 +8,9 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class FormFieldModel {
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String name;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String value;
 }
