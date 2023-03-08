@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.events.message;
 
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class OrderMessage implements EventMessage {
     public String vatPercentage;
 
     public String cardToken;
+    public PaymentGatewayEnum paymentGateway;
 
     public Boolean isSubscriptionRenewalOrder;
     public String subscriptionId;

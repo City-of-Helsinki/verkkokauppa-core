@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.subscription;
 
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
@@ -45,6 +46,7 @@ public class SubscriptionDto extends BaseIdentifiableDto implements Serializable
     private String unit;
     private String orderItemId;
     // Payment data
+    private PaymentGatewayEnum paymentGateway;
     private String paymentMethod;
     private String paymentMethodToken;
     private Short paymentMethodExpirationYear;

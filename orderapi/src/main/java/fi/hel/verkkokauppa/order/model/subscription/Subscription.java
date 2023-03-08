@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.model.subscription;
 
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Customer;
 import fi.hel.verkkokauppa.order.interfaces.IdentifiableUser;
@@ -65,6 +66,9 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 
 //	@Field(type = FieldType.Integer)
 //	private Integer daysPastDue; // TODO: needed?
+
+	@Field(type = FieldType.Text)
+	private PaymentGatewayEnum paymentGateway;
 
 	@Field(type = FieldType.Text)
 	private String paymentMethod;

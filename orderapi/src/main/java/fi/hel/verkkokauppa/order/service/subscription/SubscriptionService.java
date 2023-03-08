@@ -101,6 +101,11 @@ public class SubscriptionService {
         subscriptionRepository.save(subscription);
     }
 
+    public void setPaymentGateway(Subscription subscription, PaymentMessage message) {
+        subscription.setPaymentGateway(message.getPaymentGateway());
+        subscriptionRepository.save(subscription);
+    }
+
 
     public void afterFirstPaymentPaidEventActions(Set<String> subscriptionsFromOrderId, PaymentMessage message) {
         Objects.requireNonNull(subscriptionsFromOrderId).forEach(subscriptionId -> {
@@ -113,6 +118,8 @@ public class SubscriptionService {
             // All subscriptions have payment type "creditcards" for now
             setPaymentMethodCreditCards(subscription);
             updateCardInfoToSubscription(subscriptionId, message);
+
+            setPaymentGateway(subscription, message);
 
             triggerSubscriptionCreatedEvent(subscription);
         });
