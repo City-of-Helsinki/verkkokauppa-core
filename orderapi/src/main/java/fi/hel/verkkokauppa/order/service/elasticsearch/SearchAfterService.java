@@ -71,14 +71,10 @@ public class SearchAfterService {
         SearchHit[] resultHits;
         Object[] searchAfterSortValues;
 
-        if(searchRequest.indices() == null || searchRequest.indices().length == 0){
-            throw new Exception("SearchRequest should have at least one indice.");
-        }
-
         int searchAfterPageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
         // First search for one page
-        SearchResponse response = highLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+        SearchResponse response = this.search(searchRequest, RequestOptions.DEFAULT);
         SearchHits searchHits = response.getHits();
         resultHits = searchHits.getHits();
 
@@ -103,7 +99,13 @@ public class SearchAfterService {
         return resultHits;
     }
 
+    public SearchResponse search(SearchRequest searchRequest, RequestOptions options) throws Exception{
+        if(searchRequest.indices() == null || searchRequest.indices().length == 0){
+            throw new Exception("SearchRequest should have at least one indice.");
+        }
 
+        return highLevelClient.search(searchRequest, options);
+    }
 
 
 
