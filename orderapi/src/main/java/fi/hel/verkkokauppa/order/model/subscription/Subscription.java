@@ -67,7 +67,7 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 //	@Field(type = FieldType.Integer)
 //	private Integer daysPastDue; // TODO: needed?
 
-	@Field(type = FieldType.Text)
+	@Field(type = FieldType.Keyword)
 	private PaymentGatewayEnum paymentGateway;
 
 	@Field(type = FieldType.Text)

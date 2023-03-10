@@ -117,9 +117,9 @@ public class SubscriptionService {
 
             // All subscriptions have payment type "creditcards" for now
             setPaymentMethodCreditCards(subscription);
-            updateCardInfoToSubscription(subscriptionId, message);
-
             setPaymentGateway(subscription, message);
+
+            updateCardInfoToSubscription(subscriptionId, message);
 
             triggerSubscriptionCreatedEvent(subscription);
         });
