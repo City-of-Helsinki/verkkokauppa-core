@@ -14,22 +14,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.core.env.Environment;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
-
-@RunWith(SpringJUnit4ClassRunner.class )
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 @RunIfProfile(profile = "local")
-@TestPropertySource(properties = { "elasticsearch.search-after-page-size = 8" })
+@TestPropertySource(properties = {"elasticsearch.search-after-page-size = 8"})
 @ComponentScan("fi.hel.verkkokauppa.order.service.elasticsearch")
 @Slf4j
 public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
@@ -38,266 +40,212 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     private SearchAfterService searchAfterService;
 
     @Autowired
-    private Environment env;
-
-    @Autowired
     AccountingExportDataService accountingExportDataService;
 
+    @Value("${elasticsearch.search-after-page-size}")
+    private int elasticsearchSearchAfterPageSize;
+
     @Before
-    public void initTests(){
+    public void initTests() {
         // creates test data to Elasticsearch if none exists
         createAccountingExportData(10);
         createOrder(10);
     }
 
     @Test
-    public void whenNoSort_thenSuccess()  {
+    public void whenNoSort_thenSuccess() throws Exception {
         log.info("running whenNoSort_thenSuccess");
-        int pageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + pageSize);
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    null,
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                null,
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertTrue("sorts should be empty", (sorts == null || sorts.size() == 0));
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        assertNotEquals("Result list should not be empty", 0, hits.length);
 
-            assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", pageSize, hits.length);
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", elasticsearchSearchAfterPageSize, hits.length);
     }
 
     @Test
-    public void whenSort_thenSuccess() {
+    public void whenSort_thenSuccess() throws Exception {
         log.info("running whenSort_thenSuccess");
         long expectedTotalHits = accountingExportDataCount();
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNotNull("sorts should not be empty", sorts);
+        assertNotEquals("sorts should not be empty", 0, sorts.size());
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        assertNotEquals("Result list should not be empty", 0, hits.length);
 
-            // maximum number of total hits we can receive is 10 000. Cannot verify counts with 10000 or more
-            if(expectedTotalHits < 10000) {
-                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
     }
 
     @Test
-    public void whenNoQuery_thenSuccess() {
+    public void whenNoQuery_thenSuccess() throws Exception {
         log.info("running whenNoQuery_thenSuccess");
         long expectedTotalHits = accountingExportDataCount();
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    null,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                null,
+                new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertFalse("sorts should not be empty", (sorts == null || sorts.size() == 0));
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        assertNotEquals("Result list should not be empty", 0, hits.length);
 
-            // maximum number of total hits we can receive is 10 000. Cannot verify counts with 10000 or more
-            if(expectedTotalHits < 10000) {
-                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
     }
 
     @Test
     public void whenNoIndice_thenFail() {
-        log.info("running whenNoQuery_thenSuccess");
-        long expectedTotalHits = accountingExportDataCount();
+        log.info("running whenNoIndice_thenFail");
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
+        Exception exception = assertThrows(Exception.class, () -> {
+            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                    null,
+                    searchAfterService.buildSortWithId(),
+                    null);
+        });
 
-            try {
-                SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                        null,
-                        new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                        null);
-                log.info(searchRequest.toString());
+        String expectedMessage = "at least one indice is needed";
+        String actualMessage = exception.getMessage();
 
-                assertFalse("Empty indices should throw exception", true);
-            }catch (Exception e){
-                // should receive exception when no indices
-                log.info("Pass : " + e.getMessage());
-            }
+        assertTrue("Not expected Exception. Exception message: " + exception.getMessage(), actualMessage.contains(expectedMessage));
 
-            try {
-                org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(new SearchRequest());
-                assertFalse("Empty indices should throw exception", true);
-            } catch (Exception e){
-                // should receive exception when no indices
-                log.info("Pass : " + e.getMessage());
-            }
+        exception = assertThrows(Exception.class, () -> {
+            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(
+                    new SearchRequest()
+            );
+        });
 
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        expectedMessage = "SearchRequest should have at least one indice";
+        actualMessage = exception.getMessage();
+
+        assertTrue("Not expected Exception. Exception message: " + exception.getMessage(), actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void whenSortAndMultipleIndices_thenSuccess() {
+    public void whenSortAndMultipleIndices_thenSuccess() throws Exception {
         log.info("running whenSort_thenSuccess");
         long expectedTotalHits = accountingExportDataCount() + notAccountedOrderCount();
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas","orders");
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
+                "accountingexportdatas", "orders");
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertFalse("sorts should not be empty", (sorts == null || sorts.size() == 0));
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        assertNotEquals("Result list should not be empty", 0, hits.length);
 
-            // maximum number of total hits we can receive is 10 000. Cannot verify counts with 10000 or more
-            if(expectedTotalHits < 10000) {
-                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, hits.length);
     }
 
     @Test
-    public void whenNoSortAndMultipleIndices_thenSuccess() {
+    public void whenNoSortAndMultipleIndices_thenSuccess() throws Exception {
         log.info("running whenNoSort_thenSuccess");
-        int pageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + pageSize);
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    null,
-                    "accountingexportdatas","orders");
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                null,
+                "accountingexportdatas", "orders");
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertTrue("sorts should be empty", (sorts == null || sorts.size() == 0));
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        assertNotEquals("Result list should not be empty", 0, hits.length);
 
-            assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", pageSize, hits.length);
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", elasticsearchSearchAfterPageSize, hits.length);
     }
 
     @Test
-    public void whenNoHits_thenSuccess() {
+    public void whenNoHits_thenSuccess() throws Exception {
         log.info("running whenNoSort_thenSuccess");
-        int pageSize = Integer.parseInt(env.getProperty("elasticsearch.search-after-page-size"));
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + pageSize);
-            // query something impossible
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("timestamp"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        // query something impossible
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("timestamp"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    null,
-                    "accountingexportdatas"
-            );
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                null,
+                "accountingexportdatas"
+        );
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNull("sorts should be empty", sorts);
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertTrue("Result list should be empty", (hits.length==0));
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Result list should be empty", 0, hits.length);
     }
 
 }

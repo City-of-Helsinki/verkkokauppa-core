@@ -62,7 +62,7 @@ public abstract class BaseFunctionalTest {
         orderItem.setQuantity(1);
         orderItem.setVatPercentage("24");
         orderItem.setProductId("test-product-id");
-        orderItem.setProductName("productName");
+        orderItem.setProductName("productNäme");
         orderItem.setOrderId(orderId);
 
         items.add(orderItem);

@@ -5,30 +5,25 @@ import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.test.utils.SearchAfterServiceTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.core.env.Environment;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 import java.util.List;
 
 import static org.junit.Assert.*;
 
-
-@RunWith(SpringJUnit4ClassRunner.class )
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 @RunIfProfile(profile = "local")
-@TestPropertySource(properties = { "elasticsearch.search-after-page-size = 7" })
-@ComponentScan("fi.hel.verkkokauppa.order.service.elasticsearch")
+@TestPropertySource(properties = {"elasticsearch.search-after-page-size = 7"})
 @Slf4j
 public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
-
-    @Autowired
-    private Environment env;
 
     @Autowired
     AccountingSearchService searchServiceToTest;
@@ -36,6 +31,8 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     @Autowired
     AccountingExportDataService accountingExportDataService;
 
+    @Value("${elasticsearch.search-after-page-size}")
+    private int elasticsearchSearchAfterPageSize;
 
     @Test
     public void whenGetNotExportedAccountingExportDataAndNoHits_thenSuccess() throws Exception {
@@ -43,16 +40,11 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         clearAccountingExportData();
         List<AccountingExportData> resultList;
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            resultList = searchServiceToTest.getNotExportedAccountingExportData();
-            log.info("Result list size: "+resultList.size());
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        resultList = searchServiceToTest.getNotExportedAccountingExportData();
+        log.info("Result list size: " + resultList.size());
 
-            assertTrue("Result list be empty",resultList.isEmpty());
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertTrue("Result list be empty", resultList.isEmpty());
     }
 
     @Test
@@ -62,22 +54,13 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         List<AccountingExportData> resultList;
         long expectedTotalHits = accountingExportDataCount();
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            resultList = searchServiceToTest.getNotExportedAccountingExportData();
-            log.info("Result list size: "+resultList.size());
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        resultList = searchServiceToTest.getNotExportedAccountingExportData();
+        log.info("Result list size: " + resultList.size());
 
-            assertFalse("Result list should not be empty",resultList.isEmpty());
+        assertFalse("Result list should not be empty", resultList.isEmpty());
 
-            // maximum number of total hits we can receive is 10 000. Cannot verify counts with 10000 or more
-            if(expectedTotalHits < 10000) {
-                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, resultList.size());
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, resultList.size());
     }
 
     @Test
@@ -86,16 +69,11 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         deleteNotAccountedOrders();
         List<Order> resultList;
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            resultList = searchServiceToTest.findNotAccounted();
-            log.info("Result list size: "+resultList.size());
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        resultList = searchServiceToTest.findNotAccounted();
+        log.info("Result list size: " + resultList.size());
 
-            assertTrue("Result list should be empty",resultList.isEmpty());
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertTrue("Result list should be empty", resultList.isEmpty());
     }
 
     @Test
@@ -105,23 +83,12 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         List<Order> resultList;
         long expectedTotalHits = notAccountedOrderCount();
 
-        try{
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            resultList = searchServiceToTest.findNotAccounted();
-            log.info("Result list size: "+resultList.size());
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        resultList = searchServiceToTest.findNotAccounted();
+        log.info("Result list size: " + resultList.size());
 
-            assertFalse("Result list should not be empty",resultList.isEmpty());
+        assertFalse("Result list should not be empty", resultList.isEmpty());
 
-            // maximum number of total hits we can receive is 10 000. Cannot verify counts with 10000 or more
-            if(expectedTotalHits < 10000) {
-                assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, resultList.size());
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, resultList.size());
     }
-
-
 }

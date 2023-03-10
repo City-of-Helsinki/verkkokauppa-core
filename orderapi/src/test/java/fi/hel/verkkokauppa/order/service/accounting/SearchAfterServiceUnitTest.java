@@ -8,39 +8,41 @@ import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchResponseSections;
-import org.elasticsearch.client.*;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.env.Environment;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 
-@RunWith(SpringJUnit4ClassRunner.class )
+@RunWith(SpringJUnit4ClassRunner.class)
 @UnitTest
 @WebMvcTest(SearchAfterService.class)
 @ContextConfiguration(classes = AutoMockBeanFactory.class)
+@TestPropertySource(properties = {"elasticsearch.search-after-page-size = 10000"})
 @Slf4j
-public class SearchAfterServiceUnitTest{
+public class SearchAfterServiceUnitTest {
 
     @MockBean
     private RestHighLevelClient highLevelClientMock;
@@ -48,274 +50,213 @@ public class SearchAfterServiceUnitTest{
     @MockBean
     private SearchAfterService searchAfterService;
 
-    @Mock
-    private Environment env;
+    @Value("${elasticsearch.search-after-page-size}")
+    private int elasticsearchSearchAfterPageSize;
 
+    @Before
+    public void setupTests() throws Exception {
+        ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
+        ReflectionTestUtils.setField(searchAfterService, "elasticsearchSearchAfterPageSize", elasticsearchSearchAfterPageSize);
 
-
+        when(searchAfterService.buildSearchAfterSearchRequest(any(), any(), any())).thenCallRealMethod();
+        when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
+        when(searchAfterService.buildSortWithId()).thenCallRealMethod();
+    }
 
     @Test
-    public void whenNoSort_thenSuccess()  {
+    public void whenNoSort_thenSuccess() throws Exception {
         log.info("running whenNoSort_thenSuccess");
         SearchRequest searchRequest;
-        try{
-            SearchResponse mockedResponse = getTestSearchResponse(2);
-            doReturn("3").when(env).getProperty("elasticsearch.search-after-page-size");
-            ReflectionTestUtils.setField(searchAfterService, "env", env);
-            ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
 
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        SearchResponse mockedResponse = getTestSearchResponse(2);
+        when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    null,
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+        searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                null,
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNull("sorts should be empty", sorts);
 
-            log.info("Result list size: " + hits.length);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        log.info("Result list size: " + hits.length);
 
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertNotEquals("Result list should not be empty", 0, hits.length);
     }
 
     @Test
-    public void whenSort_thenSuccess() {
+    public void whenSort_thenSuccess() throws Exception {
         log.info("running whenSort_thenSuccess");
 
+        SearchResponse mockedResponse = getTestSearchResponse(2);
+        when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
 
-        try{
-            SearchResponse mockedResponse = getTestSearchResponse(2);
-            doReturn("3").when(env).getProperty("elasticsearch.search-after-page-size");
-            ReflectionTestUtils.setField(searchAfterService, "env", env);
-            ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                searchAfterService.buildSortWithId(),
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNotNull("sorts should not be empty", sorts);
+        assertNotEquals("sorts should not be empty", 0, sorts.size());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
-
-            log.info("Result list size: " + hits.length);
-
-            assertFalse("Result list should not be empty", (hits.length==0));
-
-
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertNotEquals("Result list should not be empty", 0, hits.length);
     }
 
     @Test
-    public void whenNoQuery_thenSuccess() {
+    public void whenNoQuery_thenSuccess() throws Exception {
         log.info("running whenNoQuery_thenSuccess");
 
-        try{
-            SearchResponse mockedResponse = getTestSearchResponse(2);
-            doReturn("3").when(env).getProperty("elasticsearch.search-after-page-size");
-            ReflectionTestUtils.setField(searchAfterService, "env", env);
-            ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
+        SearchResponse mockedResponse = getTestSearchResponse(2);
+        when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
 
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
 
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                null,
+                searchAfterService.buildSortWithId(),
+                "accountingexportdatas");
+        log.info(searchRequest.toString());
+
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNotNull("sorts should not be empty", sorts);
+        assertNotEquals("sorts should not be empty", 0, sorts.size());
+
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+
+        log.info("Result list size: " + hits.length);
+
+        assertNotEquals("Result list should not be empty", 0, hits.length);
+    }
+
+    @Test
+    public void whenNoIndice_thenFail() throws Exception {
+        log.info("running whenNoIndice_thenFail");
+
+        when(searchAfterService.search(any(), any())).thenCallRealMethod();
+
+        Exception exception = assertThrows(Exception.class, () -> {
             SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                     null,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas");
-            log.info(searchRequest.toString());
+                    searchAfterService.buildSortWithId(),
+                    null);
+        });
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        String expectedMessage = "at least one indice is needed";
+        String actualMessage = exception.getMessage();
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        assertTrue("Not expected Exception. Exception message: " + exception.getMessage(), actualMessage.contains(expectedMessage));
 
-            log.info("Result list size: " + hits.length);
+        exception = assertThrows(Exception.class, () -> {
+            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(
+                    new SearchRequest()
+            );
+        });
 
-            assertFalse("Result list should not be empty", (hits.length==0));
+        expectedMessage = "SearchRequest should have at least one indice";
+        actualMessage = exception.getMessage();
 
-
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertTrue("Not expected Exception. Exception message: " + exception.getMessage(), actualMessage.contains(expectedMessage));
     }
 
     @Test
-    public void whenNoIndice_thenFail() {
-        log.info("running whenNoQuery_thenSuccess");
-        try{
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(),any())).thenCallRealMethod();
-
-            try {
-                SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                        null,
-                        new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                        null);
-                log.info(searchRequest.toString());
-
-                assertFalse("Empty indices should throw exception", true);
-            }catch (Exception e){
-                // should receive exception when no indices
-                log.info("Pass. Exception received : " + e.getMessage());
-            }
-
-            try {
-                org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(new SearchRequest());
-                assertFalse("Empty indices should throw exception", true);
-            } catch (Exception e){
-                // should receive exception when no indices
-                log.info("Pass. Exception received : " + e.getMessage());
-            }
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
-    }
-
-    @Test
-    public void whenMoreThanMaxPageHits_thenSuccess() {
+    public void whenMoreThanMaxPageHits_thenSuccess() throws Exception {
         log.info("running whenMoreThanMaxPageHits_thenSuccess");
 
-        try{
-            int expectedTotalHits = 22500; // total amount to compare to
-            SearchResponse mockedResponse = getTestSearchResponse(10000);
-            SearchResponse mockedResponse2 = getTestSearchResponse(10000);
-            SearchResponse mockedResponse3 = getTestSearchResponse(2500);
-            doReturn("10000").when(env).getProperty("elasticsearch.search-after-page-size");
-            ReflectionTestUtils.setField(searchAfterService, "env", env);
-            ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class)))
-                    .thenReturn(mockedResponse)
-                    .thenReturn(mockedResponse2)
-                    .thenReturn(mockedResponse3);
-            log.info("elasticsearch.search-after-page-size: " + env.getProperty("elasticsearch.search-after-page-size"));
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+        int expectedTotalHits = 22500; // total amount to compare to
+        SearchResponse mockedResponse = getTestSearchResponse(10000);
+        SearchResponse mockedResponse2 = getTestSearchResponse(10000);
+        SearchResponse mockedResponse3 = getTestSearchResponse(2500);
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class)))
+                .thenReturn(mockedResponse)
+                .thenReturn(mockedResponse2)
+                .thenReturn(mockedResponse3);
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                    "accountingexportdatas","orders");
-            log.info(searchRequest.toString());
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertFalse("sorts should not be empty", (sorts==null || sorts.size()==0));
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                searchAfterService.buildSortWithId(),
+                "accountingexportdatas", "orders");
+        log.info(searchRequest.toString());
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNotNull("sorts should not be empty", sorts);
+        assertNotEquals("sorts should not be empty", 0, sorts.size());
 
-            log.info("Result list size: " + hits.length);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            assertFalse("Result list should not be empty", (hits.length==0));
-
-
-            assertEquals("Number of results is not the same as number of hits there should be", expectedTotalHits, hits.length);
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Number of results is not the same as number of hits there should be", expectedTotalHits, hits.length);
     }
 
     @Test
-    public void whenNoHits_thenSuccess() {
+    public void whenNoHits_thenSuccess() throws Exception {
         log.info("running whenNoSort_thenSuccess");
 
-        try{
-            SearchResponse mockedResponse = getTestSearchResponse(0);
-            doReturn("3").when(env).getProperty("elasticsearch.search-after-page-size");
-            ReflectionTestUtils.setField(searchAfterService, "env", env);
-            ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
-            when(searchAfterService.buildSearchAfterSearchRequest(any(),any(),any())).thenCallRealMethod();
-            when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-            when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
+        SearchResponse mockedResponse = getTestSearchResponse(0);
+        when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
 
-            // query something impossible
-            BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("timestamp"));
+        // query something impossible
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("timestamp"));
 
-            NativeSearchQuery query = new NativeSearchQueryBuilder()
-                    .withQuery(qb).build();
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
 
-            SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                    query,
-                    null,
-                    "accountingexportdatas"
-            );
-            log.info(searchRequest.toString());
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                null,
+                "accountingexportdatas"
+        );
+        log.info(searchRequest.toString());
 
-            List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-            assertTrue("sorts should be empty", (sorts==null || sorts.size()==0));
+        List<SortBuilder<?>> sorts = searchRequest.source().sorts();
+        assertNull("sorts should be empty", sorts);
 
-            org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-            log.info("Result list size: " + hits.length);
+        log.info("Result list size: " + hits.length);
 
-            assertTrue("Result list should be empty", (hits.length==0));
-
-        }
-        catch (Exception e){
-            assertFalse("Exception: " + e.getMessage(),true);
-        }
+        assertEquals("Result list should be empty", 0, hits.length);
     }
 
 
     // test utility method for creating SearchResponse
-    private SearchResponse getTestSearchResponse(int hitCount){
+    private SearchResponse getTestSearchResponse(int hitCount) {
 
         // create array of hits
         SearchHit[] testHits = new SearchHit[hitCount];
-        for (int i=0; i<hitCount; i++){
+        for (int i = 0; i < hitCount; i++) {
             testHits[i] = new SearchHit(i);
             //  put in some sort values so new page can be searched for
             testHits[i].sortValues(
                     new Object[]{"111"},
                     new DocValueFormat[]{DocValueFormat.RAW}
-                    );
+            );
         }
 
         // create number of totalHits
-        int totalHits = (hitCount<=10000?hitCount:10000);
+        int totalHits = (hitCount <= 10000 ? hitCount : 10000);
 
         SearchResponse response = new SearchResponse(
                 new SearchResponseSections(
@@ -339,6 +280,4 @@ public class SearchAfterServiceUnitTest{
 
         return response;
     }
-
-
 }

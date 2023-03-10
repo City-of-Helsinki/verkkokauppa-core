@@ -40,15 +40,16 @@ public class AccountingSearchService {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "accountingexportdatas");
+                searchAfterService.buildSortWithId(),
+                "accountingexportdatas"
+        );
 
         log.info(searchRequest.toString());
         SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
         final List<AccountingExportData> exportData = Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
             try {
-                return objectMapper.readValue(s,AccountingExportData.class);
+                return objectMapper.readValue(s, AccountingExportData.class);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -68,15 +69,16 @@ public class AccountingSearchService {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                new SortBuilder[] {new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "orders");
+                searchAfterService.buildSortWithId(),
+                "orders"
+        );
 
         log.info(searchRequest.toString());
         SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
         final List<Order> exportData = Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
             try {
-                return objectMapper.readValue(s,Order.class);
+                return objectMapper.readValue(s, Order.class);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
