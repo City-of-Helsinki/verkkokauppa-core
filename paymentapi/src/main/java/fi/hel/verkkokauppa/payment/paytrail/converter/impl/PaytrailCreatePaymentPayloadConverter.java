@@ -1,11 +1,14 @@
 package fi.hel.verkkokauppa.payment.paytrail.converter.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.payments.PaymentCallbackUrls;
 import org.helsinki.paytrail.model.payments.PaymentCustomer;
 import org.helsinki.paytrail.model.payments.PaymentItem;
@@ -19,10 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadConverter<CreatePaymentPayload, OrderWrapper> {
 
     @Autowired
     private Environment env;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Override
     public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper, String stamp) {
@@ -58,6 +65,11 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);
 
+        try {
+            log.info("convertToPayload request payload: {}", mapper.writeValueAsString(payload));
+        } catch (JsonProcessingException e) {
+            log.info(e.getMessage());
+        }
         return payload;
     }
 
