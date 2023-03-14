@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class OrderService {
-        
+
     private Logger log = LoggerFactory.getLogger(OrderService.class);
 
     @Autowired
@@ -158,7 +158,7 @@ public class OrderService {
 
     public Order findById(String orderId) {
         Optional<Order> mapping = orderRepository.findById(orderId);
-        
+
         if (mapping.isPresent())
             return mapping.get();
 
@@ -202,7 +202,7 @@ public class OrderService {
 
     public void setType(Order order, String type) {
         order.setType(type);
-        
+
         orderRepository.save(order);
         log.debug("set order type, orderId: " + order.getOrderId() + " type: " + order.getType());
     }
@@ -344,7 +344,8 @@ public class OrderService {
                     .productQuantity(orderItem.getQuantity().toString())
                     .isSubscriptionRenewalOrder(true)
                     .subscriptionId(order.getSubscriptionId())
-                    .userId(order.getUser());
+                    .userId(order.getUser())
+                    .paymentGateway(subscription.getPaymentGateway());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();

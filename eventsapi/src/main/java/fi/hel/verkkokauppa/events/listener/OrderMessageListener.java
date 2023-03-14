@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.events.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
@@ -58,7 +59,9 @@ public class OrderMessageListener {
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) {
         try {
-            String url = paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
+            String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
+                    paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
+                    paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
             callApi(message, url);
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);

@@ -64,7 +64,7 @@ public abstract class DummyData {
                 orderItemId,
                 order.getOrderId(),
                 "9876",
-                "36a5ec5a-cd89-3912-ba03-83e8504e7b20",
+                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
                 "productName",
                 "productLabel",
                 "productDescription",

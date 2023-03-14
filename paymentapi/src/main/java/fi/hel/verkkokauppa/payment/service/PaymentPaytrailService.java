@@ -32,7 +32,6 @@ import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
-import org.helsinki.paytrail.response.tokenization.PaytrailGetTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -305,6 +304,7 @@ public class PaymentPaytrailService {
                 .cardTokenExpYear(Short.parseShort(card.getCard().getExpireYear()))
                 .cardTokenExpMonth(Byte.parseByte(card.getCard().getExpireMonth()))
                 .cardLastFourDigits(card.getCard().getPartialPan())
+                .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
                 .build();
 
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);

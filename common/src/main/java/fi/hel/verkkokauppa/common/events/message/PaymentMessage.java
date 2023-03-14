@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.common.events.message;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +27,8 @@ public class PaymentMessage implements EventMessage {
     public Short cardTokenExpYear;
     public Byte cardTokenExpMonth;
     public String cardLastFourDigits;
+
+    public PaymentGatewayEnum paymentGateway;
 
     public PaymentMessage toCustomerWebHook(){
         return PaymentMessage.builder()

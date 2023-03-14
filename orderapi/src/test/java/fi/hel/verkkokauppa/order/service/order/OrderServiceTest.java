@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.order;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -233,6 +234,8 @@ class OrderServiceTest extends TestUtils {
         String firstSubscriptionId = order1.getSubscriptionId();
         // Fetch subscription
         Subscription firstSubscription = subscriptionService.findById(firstSubscriptionId);
+
+        Assertions.assertNull(firstSubscription.getPaymentGateway());
 
         // Checks merchant Id is added to subscription
         Assertions.assertNotNull(firstSubscription.getMerchantId());
@@ -762,4 +765,31 @@ class OrderServiceTest extends TestUtils {
         assertEquals("order with id [" + orderIdNotExist + "] not found", exception.getErrors().getErrors().get(0).getMessage());
     }
 
+    @Test
+    @RunIfProfile(profile = "local")
+    void testSubscriptionPaytrailGateway() {
+        Order order1 = orderService.findById(
+            generateSubscriptionOrderData(1, 1L, Period.DAILY, 2).getBody().getOrder().getOrderId()
+        );
+        SubscriptionIdsDto subscriptionIds = subscriptionController.paymentPaidEventCallback(
+            PaymentMessage
+                    .builder()
+                    .paymentId("1")
+                    .orderId(order1.getOrderId())
+                    .namespace(order1.getNamespace())
+                    .userId(order1.getUser())
+                    .orderType(order1.getType())
+                    .paymentPaidTimestamp(DateTimeUtil.getDateTime())
+                    .paymentGateway(PaymentGatewayEnum.PAYTRAIL)
+                    .build()
+        ).getBody();
+
+        Assertions.assertEquals(subscriptionIds.getSubscriptionIds().size(), 1);
+
+        Subscription subscription = subscriptionService.findById(subscriptionIds.getSubscriptionIds().iterator().next());
+
+        Assertions.assertEquals(subscription.getPaymentGateway(), PaymentGatewayEnum.PAYTRAIL);
+
+        subscriptionRenewalService.renewSubscription(subscription.getSubscriptionId());
+    }
 }
