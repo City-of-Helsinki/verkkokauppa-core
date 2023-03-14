@@ -22,7 +22,6 @@ import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.helsinki.paytrail.request.paymentmethods.PaytrailPaymentMethodsRequest;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateMitChargeRequest;
-import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.helsinki.paytrail.request.refunds.PaytrailRefundCreateRequest.CreateRefundPayload;
@@ -90,7 +89,7 @@ public class PaytrailPaymentClient {
         }
     }
 
-    private PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailClient client, CreateMitChargePayload payload) throws ExecutionException, InterruptedException {
+    private PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailClient client, PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload) throws ExecutionException, InterruptedException {
         PaytrailPaymentCreateMitChargeRequest request = new PaytrailPaymentCreateMitChargeRequest(payload);
         CompletableFuture<PaytrailPaymentCreateMitChargeResponse> response = client.sendRequest(request);
         PaytrailPaymentCreateMitChargeResponse createResponse = createMitChargeResponseMapper.to(response.get());
@@ -103,14 +102,14 @@ public class PaytrailPaymentClient {
 
     public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto, String token) throws ExecutionException, InterruptedException {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
-        CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId));
+        PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId));
         payload.setToken(token);
         return createMitCharge(paytrailClient, payload);
     }
 
     public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderMessage message, String token) throws ExecutionException, InterruptedException {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
-        CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(createPaymentPayloadFromOrderMessage.convertToPayload(context, message, paymentId));
+        PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(createPaymentPayloadFromOrderMessage.convertToPayload(context, message, paymentId));
         payload.setToken(token);
         return createMitCharge(paytrailClient, payload);
     }
