@@ -176,7 +176,7 @@ public class OnlinePaymentService {
 
 
     public String getPaymentUrl(String token) {
-        return VismaPayClient.API_URL + "/token/" + token; 
+        return VismaPayClient.API_URL + "/token/" + token;
     }
 
     public String getPaymentUrl(Payment payment) {
@@ -186,6 +186,12 @@ public class OnlinePaymentService {
     public void setPaymentStatus(String paymentId, String status) {
         Payment payment = getPayment(paymentId);
         payment.setStatus(status);
+        paymentRepository.save(payment);
+    }
+
+    public void setPaytrailTransactionId(String paymentId, String transactionId) {
+        Payment payment = getPayment(paymentId);
+        payment.setPaytrailTransactionId(transactionId);
         paymentRepository.save(payment);
     }
 
@@ -378,7 +384,7 @@ public class OnlinePaymentService {
         return paymentCardToken;
     }
 
-    public void triggerPaymentPaidEvent(Payment payment) {
+    public void triggerPaymentPaidEvent(Payment payment, PaymentCardInfoDto card) {
         String now = DateTimeUtil.getDateTime();
 
         PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
@@ -392,16 +398,24 @@ public class OnlinePaymentService {
                 .orderType(payment.getPaymentType());
 
         if (PaymentType.CREDIT_CARDS.equalsIgnoreCase(payment.getPaymentMethod())) {
-            PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId());
-
-            if (paymentCardInfo != null) {
-                String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfo.getCardToken(), cardTokenEncryptionPassword);
-
+            if (card != null) {
                 paymentMessageBuilder
-                        .encryptedCardToken(encryptedToken)
-                        .cardTokenExpYear(paymentCardInfo.getExpYear())
-                        .cardTokenExpMonth(paymentCardInfo.getExpMonth())
-                        .cardLastFourDigits(paymentCardInfo.getCardLastFourDigits());
+                        .encryptedCardToken(card.getCardToken())
+                        .cardTokenExpYear(card.getExpYear())
+                        .cardTokenExpMonth(card.getExpMonth())
+                        .cardLastFourDigits(card.getCardLastFourDigits());
+            } else {
+                PaymentCardInfoDto paymentCardInfo = getPaymentCardInfo(payment.getNamespace(), payment.getOrderId(), payment.getUserId());
+
+                if (paymentCardInfo != null) {
+                    String encryptedToken = EncryptorUtil.encryptValue(paymentCardInfo.getCardToken(), cardTokenEncryptionPassword);
+
+                    paymentMessageBuilder
+                            .encryptedCardToken(encryptedToken)
+                            .cardTokenExpYear(paymentCardInfo.getExpYear())
+                            .cardTokenExpMonth(paymentCardInfo.getExpMonth())
+                            .cardLastFourDigits(paymentCardInfo.getCardLastFourDigits());
+                }
             }
         }
 
@@ -475,6 +489,10 @@ public class OnlinePaymentService {
     }
 
     public void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
+        updatePaymentStatus(paymentId, paymentReturnDto, null);
+    }
+
+    public void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto, PaymentCardInfoDto card) {
         Payment payment = getPayment(paymentId);
 
         if (paymentReturnDto.isValid()) {
@@ -482,7 +500,7 @@ public class OnlinePaymentService {
                 // if not already paid earlier
                 if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
                     setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
-                    triggerPaymentPaidEvent(payment);
+                    triggerPaymentPaidEvent(payment, card);
                 } else {
                     log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
                 }

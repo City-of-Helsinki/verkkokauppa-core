@@ -35,6 +35,17 @@ public class OrderMessage implements EventMessage {
     public String subscriptionId;
     public String userId;
 
+    // Fields required by paytrail mit charge
+    public String merchantId;
+    public String customerEmail;
+    public String customerFirstName;
+    public String customerLastName;
+    public String productId;
+    public String priceGross;
+    public String cardExpYear;
+    public String cardExpMonth;
+    public String cardLastFourDigits;
+
     public OrderMessage toCustomerWebhook() {
         return OrderMessage
                 .builder()

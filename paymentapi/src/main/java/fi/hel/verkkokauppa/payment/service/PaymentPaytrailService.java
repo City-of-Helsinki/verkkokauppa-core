@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -142,6 +143,11 @@ public class PaymentPaytrailService {
 
     public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper order, String token) throws ExecutionException, InterruptedException {
         return paytrailPaymentClient.createMitCharge(context, paymentId, order, token);
+    }
+
+    public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderMessage message) throws ExecutionException, InterruptedException {
+        String decryptedToken = EncryptorUtil.decryptValue(message.getCardToken(), cardTokenEncryptionPassword);
+        return paytrailPaymentClient.createMitCharge(context, paymentId, message, decryptedToken);
     }
 
     private void isValidUserToCreatePayment(String orderId, String userId) {

@@ -1,6 +1,11 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.OrderMessage;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
@@ -20,6 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +33,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -51,6 +58,8 @@ public class PaymentAdminControllerTest {
 
     @Autowired
     private PaymentFilterRepository paymentFilterRepository;
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
 
     @AfterEach
     void tearDown() {
@@ -375,6 +384,42 @@ public class PaymentAdminControllerTest {
         Assertions.assertEquals("test-payment-group", responsePaymentMethodDto.getGroup());
         Assertions.assertEquals("test-payment.jpg", responsePaymentMethodDto.getImg());
         Assertions.assertEquals(PaymentGatewayEnum.VISMA, responsePaymentMethodDto.getGateway());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testPaytrailSubscriptionRenewalOrderCreatedEvent() {
+        paymentAdminController.orderCreatedEventCallbackPaytrail(
+            OrderMessage
+                .builder()
+                    .eventType(EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED)
+                    .namespace("venepaikat")
+                    .orderId(UUIDGenerator.generateType4UUID().toString())
+                    .timestamp(DateTimeUtil.getDateTime())
+                    .orderType(OrderType.SUBSCRIPTION)
+                    .priceTotal("100")
+                    .priceNet("100")
+                    .priceVat("0")
+                    .cardToken(EncryptorUtil.encryptValue("2f4de4b9-94ec-4bd5-ab39-45f1f164bda0", cardTokenEncryptionPassword))
+                    .cardExpYear("2023")
+                    .cardExpMonth("11")
+                    .cardLastFourDigits("0354")
+                    .orderItemId(UUIDGenerator.generateType4UUID().toString())
+                    .vatPercentage("0")
+                    .productName("productName")
+                    .productQuantity("1")
+                    .isSubscriptionRenewalOrder(true)
+                    .subscriptionId(UUIDGenerator.generateType4UUID().toString())
+                    .userId("user")
+                    .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
+                    .merchantId("0_YrloUBVL9Yu6dzAXua")
+                    .productId("489834c0-255e-3ee2-a66b-99d092bf81f4")
+                    .priceGross("100")
+                    .customerEmail(UUID.randomUUID().toString() + "@ambientia.fi")
+                    .customerFirstName("dummy_firstname")
+                    .customerLastName("dummy_lastname")
+                .build()
+        );
     }
 
     private PaymentMethodDto createTestPaymentMethodDto(PaymentGatewayEnum gateway) {
