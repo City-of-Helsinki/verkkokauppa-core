@@ -120,7 +120,7 @@ public class SearchAfterService {
     }
 
     public <T> List<T> buildListFromHits(SearchHit[] hits, Class<T> objectClass) {
-        final List<T> exportData = Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
+        final List<T> foundObjects = Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
             try {
                 return objectMapper.readValue(s, objectClass);
             } catch (JsonProcessingException e) {
@@ -128,10 +128,10 @@ public class SearchAfterService {
             }
         }).collect(Collectors.toList());
 
-        if (exportData.isEmpty()) {
+        if (foundObjects.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return exportData;
+        return foundObjects;
     }
 }

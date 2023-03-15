@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
@@ -77,8 +78,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenNoSort_thenSuccess() throws Exception {
-        log.info("running whenNoSort_thenSuccess");
+    public void testSearchWithoutSort() throws Exception {
+        log.info("running testSearchWithoutSort");
         SearchRequest searchRequest;
 
         SearchResponse mockedResponse = getTestSearchResponse(2);
@@ -92,7 +93,7 @@ public class SearchAfterServiceUnitTest {
         searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 null,
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -106,8 +107,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenSort_thenSuccess() throws Exception {
-        log.info("running whenSort_thenSuccess");
+    public void testSearchWithSort() throws Exception {
+        log.info("running testSearchWithSort");
 
         SearchResponse mockedResponse = getTestSearchResponse(2);
         when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
@@ -121,7 +122,7 @@ public class SearchAfterServiceUnitTest {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 searchAfterService.buildSortWithId(),
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -134,8 +135,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenNoQuery_thenSuccess() throws Exception {
-        log.info("running whenNoQuery_thenSuccess");
+    public void testSearchWithoutQuery() throws Exception {
+        log.info("running testSearchWithoutQuery");
 
         SearchResponse mockedResponse = getTestSearchResponse(2);
         when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
@@ -145,7 +146,7 @@ public class SearchAfterServiceUnitTest {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 null,
                 searchAfterService.buildSortWithId(),
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -160,8 +161,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenNoIndice_thenFail() throws Exception {
-        log.info("running whenNoIndice_thenFail");
+    public void testSearchWithoutIndices() throws Exception {
+        log.info("running testSearchWithoutIndices");
 
         when(searchAfterService.search(any(), any())).thenCallRealMethod();
 
@@ -190,8 +191,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenMoreThanMaxPageHits_thenSuccess() throws Exception {
-        log.info("running whenMoreThanMaxPageHits_thenSuccess");
+    public void testSearchWithMultiplePages() throws Exception {
+        log.info("running testSearchWithMultiplePages");
 
         int expectedTotalHits = 22500; // total amount to compare to
         SearchResponse mockedResponse = getTestSearchResponse(10000);
@@ -211,7 +212,8 @@ public class SearchAfterServiceUnitTest {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 searchAfterService.buildSortWithId(),
-                "accountingexportdatas", "orders");
+                AccountingExportData.INDEX_NAME, Order.INDEX_NAME
+        );
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -224,8 +226,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenNoHits_thenSuccess() throws Exception {
-        log.info("running whenNoSort_thenSuccess");
+    public void testSearchWithoutHits() throws Exception {
+        log.info("running testSearchWithoutHits");
 
         SearchResponse mockedResponse = getTestSearchResponse(0);
         when(searchAfterService.search(any(SearchRequest.class), any(RequestOptions.class))).thenReturn(mockedResponse);
@@ -239,7 +241,7 @@ public class SearchAfterServiceUnitTest {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 null,
-                "accountingexportdatas"
+                AccountingExportData.INDEX_NAME
         );
         log.info(searchRequest.toString());
 
@@ -254,8 +256,8 @@ public class SearchAfterServiceUnitTest {
     }
 
     @Test
-    public void whenBuildListFromHits_thenSuccess() throws IOException {
-        log.info("running whenBuildListFromHits_thenSuccess");
+    public void testBuildListFromHits() throws IOException {
+        log.info("running testBuildListFromHits");
         int testHitCount = 5;
 
         SearchResponse mockedResponse = getTestSearchResponse(testHitCount);

@@ -31,7 +31,7 @@ public class AccountingSearchService {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 searchAfterService.buildSortWithId(),
-                "accountingexportdatas"
+                AccountingExportData.INDEX_NAME
         );
 
         log.info(searchRequest.toString());
@@ -51,7 +51,7 @@ public class AccountingSearchService {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 searchAfterService.buildSortWithId(),
-                "orders"
+                Order.INDEX_NAME
         );
 
         log.info(searchRequest.toString());

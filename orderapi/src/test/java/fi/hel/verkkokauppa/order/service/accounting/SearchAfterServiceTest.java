@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.test.utils.SearchAfterServiceTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -48,35 +50,26 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Value("${elasticsearch.search-after-page-size}")
     private int elasticsearchSearchAfterPageSize;
 
-
-    private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedAccountingById = new ArrayList<>();
-
     @Before
     public void initTests() {
         // creates test data to Elasticsearch if none exists
-        createAccountingExportData(10, toBeDeletedAccountingById);
-        createOrder(10, toBeDeletedOrderById);
+        createAccountingExportData(10);
+        createOrder(10);
     }
 
     @After
     public void tearDown() {
         try {
-            deleteNotAccountedOrders(toBeDeletedOrderById);
-            clearAccountingExportData(toBeDeletedAccountingById);
-            // Clear list because all deleted
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedAccountingById = new ArrayList<>();
+            deleteNotAccountedOrders();
+            clearAccountingExportData();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedAccountingById = new ArrayList<>();
         }
     }
 
     @Test
-    public void whenNoSort_thenSuccess() throws Exception {
-        log.info("running whenNoSort_thenSuccess");
+    public void testSearchWithoutSort() throws Exception {
+        log.info("running testSearchWithoutSort");
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
@@ -87,13 +80,13 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 null,
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
-        assertTrue("sorts should be empty", (sorts == null || sorts.size() == 0));
+        assertNull("sorts should be empty", sorts);
 
-        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
         log.info("Result list size: " + hits.length);
 
@@ -103,8 +96,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenSort_thenSuccess() throws Exception {
-        log.info("running whenSort_thenSuccess");
+    public void testSearchWithSort() throws Exception {
+        log.info("running testSearchWithSort");
         long expectedTotalHits = accountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
@@ -116,7 +109,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -133,8 +126,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenNoQuery_thenSuccess() throws Exception {
-        log.info("running whenNoQuery_thenSuccess");
+    public void testSearchWithoutQuery() throws Exception {
+        log.info("running testSearchWithoutQuery");
         long expectedTotalHits = accountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
@@ -142,7 +135,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 null,
                 new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "accountingexportdatas");
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -158,8 +151,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenNoIndice_thenFail() {
-        log.info("running whenNoIndice_thenFail");
+    public void testSearchWithoutIndices() {
+        log.info("running testSearchWithoutIndices");
 
         Exception exception = assertThrows(Exception.class, () -> {
             SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
@@ -186,8 +179,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenSortAndMultipleIndices_thenSuccess() throws Exception {
-        log.info("running whenSort_thenSuccess");
+    public void testSearchWithSortAndMultipleIndices() throws Exception {
+        log.info("running testSearchWithSortAndMultipleIndices");
         long expectedTotalHits = accountingExportDataCount() + notAccountedOrderCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
@@ -199,7 +192,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "accountingexportdatas", "orders");
+                AccountingExportData.INDEX_NAME, Order.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
@@ -215,8 +208,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenNoSortAndMultipleIndices_thenSuccess() throws Exception {
-        log.info("running whenNoSort_thenSuccess");
+    public void testSearchWithNoSortAndMultipleIndices() throws Exception {
+        log.info("running testSearchWithNoSortAndMultipleIndices");
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
@@ -227,13 +220,13 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 null,
-                "accountingexportdatas", "orders");
+                AccountingExportData.INDEX_NAME, Order.INDEX_NAME);
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
         assertTrue("sorts should be empty", (sorts == null || sorts.size() == 0));
 
-        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
         log.info("Result list size: " + hits.length);
 
@@ -243,8 +236,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenNoHits_thenSuccess() throws Exception {
-        log.info("running whenNoSort_thenSuccess");
+    public void testSearchWithNoHits() throws Exception {
+        log.info("running testSearchWithNoHits");
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         // query something impossible
@@ -256,14 +249,14 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 null,
-                "accountingexportdatas"
+                AccountingExportData.INDEX_NAME
         );
         log.info(searchRequest.toString());
 
         List<SortBuilder<?>> sorts = searchRequest.source().sorts();
         assertNull("sorts should be empty", sorts);
 
-        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
         log.info("Result list size: " + hits.length);
 
@@ -271,8 +264,8 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenBuildListFromHits_thenSuccess() throws Exception {
-        log.info("running whenBuildListFromHitsWithMultipleIndices_thenSuccess");
+    public void testBuildListFromHits() throws Exception {
+        log.info("running testBuildListFromHits");
         long expectedTotalHits = notAccountedOrderCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
@@ -284,9 +277,9 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                "orders");
+                Order.INDEX_NAME);
         log.info(searchRequest.toString());
-        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
         log.info("Result list size: " + hits.length);
 
         final List<Order> exportData = searchAfterService.buildListFromHits(hits, Order.class);

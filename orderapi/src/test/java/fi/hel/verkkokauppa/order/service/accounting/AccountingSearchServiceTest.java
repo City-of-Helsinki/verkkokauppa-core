@@ -35,28 +35,20 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     @Value("${elasticsearch.search-after-page-size}")
     private int elasticsearchSearchAfterPageSize;
 
-    private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedAccountingById = new ArrayList<>();
-
     @After
     public void tearDown() {
         try {
-            deleteNotAccountedOrders(toBeDeletedOrderById);
-            clearAccountingExportData(toBeDeletedAccountingById);
-            // Clear list because all deleted
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedAccountingById = new ArrayList<>();
+            deleteNotAccountedOrders();
+            clearAccountingExportData();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedAccountingById = new ArrayList<>();
         }
     }
 
     @Test
-    public void whenGetNotExportedAccountingExportData_thenSuccess() throws Exception {
-        log.info("running whenGetNotExportedAccountingExportData_thenSuccess");
-        createAccountingExportData(10, toBeDeletedAccountingById);
+    public void testGetNotExportedAccountingExportData() throws Exception {
+        log.info("running testGetNotExportedAccountingExportData");
+        createAccountingExportData(10);
         List<AccountingExportData> resultList;
         long expectedTotalHits = accountingExportDataCount();
 
@@ -70,9 +62,9 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void whenFindNotAccounted_thenSuccess() throws Exception {
-        log.info("running whenFindNotAccounted_thenSuccess");
-        createOrder(10, toBeDeletedOrderById);
+    public void testFindNotAccounted() throws Exception {
+        log.info("running testFindNotAccounted");
+        createOrder(10);
         List<Order> resultList;
         long expectedTotalHits = notAccountedOrderCount();
 

@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 @Setter
 @Getter
 public class Order implements Customer, IdentifiableUser {
+
+    public static final String INDEX_NAME = "orders";
     @Id
     String orderId;
 

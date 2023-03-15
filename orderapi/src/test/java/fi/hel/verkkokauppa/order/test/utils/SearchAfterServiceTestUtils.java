@@ -46,20 +46,23 @@ public class SearchAfterServiceTestUtils extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
+    private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedAccountingById = new ArrayList<>();
+
 
     // test utility method for creating accounting export data to Elasticsearch
     // usable for local testing of services
-    public void createAccountingExportData (long testRecordsCount, ArrayList<String> toBeDeletedAccountingById){
+    public void createAccountingExportData(long testRecordsCount) {
 
         // if there are less than wanted amount of accountingexportdatas records then create more
         long actualDataCount = accountingExportDataCount();
         log.info("Number of existing test data rows " + actualDataCount);
-        if ( actualDataCount < testRecordsCount ) {
-            long newRecordCount = testRecordsCount-actualDataCount;
+        if (actualDataCount < testRecordsCount) {
+            long newRecordCount = testRecordsCount - actualDataCount;
             log.info("Creating " + newRecordCount + " more test records for accountingexportdatas");
 
-            for(long i=0; i < newRecordCount; i++) {
-                String uuid = UUID.randomUUID().toString()+"-testaccounting";
+            for (long i = 0; i < newRecordCount; i++) {
+                String uuid = UUID.randomUUID().toString() + "-testaccounting";
                 toBeDeletedAccountingById.add(uuid);
                 accountingExportDataService.createAccountingExportData(
                         new AccountingExportDataDto(uuid, LocalDate.now(), "Some text " + i)
@@ -71,16 +74,17 @@ public class SearchAfterServiceTestUtils extends TestUtils {
 
     // test utility method for removing all created accounting export data to Elasticsearch
     // usable for local testing of services
-    public void clearAccountingExportData (ArrayList<String> toBeDeletedAccountingById){
+    public void clearAccountingExportData() {
 
-        for (String id:toBeDeletedAccountingById) {
+        for (String id : toBeDeletedAccountingById) {
             exportDataRepository.deleteById(id);
-            toBeDeletedAccountingById.remove(id);
         }
+        toBeDeletedAccountingById = new ArrayList<>();
+
     }
 
     // returns number of AccountingExportData records in Elasticsearch
-    public long accountingExportDataCount(){
+    public long accountingExportDataCount() {
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
@@ -94,32 +98,32 @@ public class SearchAfterServiceTestUtils extends TestUtils {
 
     // test utility method for creating orders that have not been accounted
     // usable for local testing of services
-    public void createOrder (long testRecordsCount, ArrayList<String> toBeDeletedOrderById){
+    public void createOrder(long testRecordsCount) {
 
         // if there are less than wanted amount of order records then create more
         long actualDataCount = notAccountedOrderCount();
         log.info("Number of existing test data rows " + actualDataCount);
-        if ( actualDataCount < testRecordsCount ) {
-            long newRecordCount = testRecordsCount-actualDataCount;
+        if (actualDataCount < testRecordsCount) {
+            long newRecordCount = testRecordsCount - actualDataCount;
             log.info("Creating " + newRecordCount + " more test records for accountingexportdatas");
 
-            for(long i=0; i < newRecordCount; i++) {
+            for (long i = 0; i < newRecordCount; i++) {
                 ResponseEntity<OrderAggregateDto> response = createNewOrderToDatabase(1);
-                toBeDeletedOrderById.add(response.getBody().getPaymentMethod().getOrderId());
+                toBeDeletedOrderById.add(response.getBody().getOrder().getOrderId());
             }
         }
     }
 
     // deletes all created order records
-    public void deleteNotAccountedOrders(ArrayList<String> toBeDeletedOrderById){
-        for (String id:toBeDeletedOrderById) {
+    public void deleteNotAccountedOrders() {
+        for (String id : toBeDeletedOrderById) {
             orderRepository.deleteById(id);
-            toBeDeletedOrderById.remove(id);
         }
+        toBeDeletedOrderById = new ArrayList<>();
     }
 
     // returns number of order records that have not been Accounted
-    public long notAccountedOrderCount(){
+    public long notAccountedOrderCount() {
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
