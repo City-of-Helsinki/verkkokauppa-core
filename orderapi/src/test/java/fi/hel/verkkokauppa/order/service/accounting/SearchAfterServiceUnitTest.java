@@ -1,8 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
@@ -13,10 +11,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchResponseSections;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.document.DocumentField;
-import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.DocValueFormat;
@@ -37,12 +31,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.any;
