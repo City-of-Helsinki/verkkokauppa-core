@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.test.utils.SearchAfterServiceTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -10,6 +11,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +24,7 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -45,11 +48,30 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Value("${elasticsearch.search-after-page-size}")
     private int elasticsearchSearchAfterPageSize;
 
+
+    private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedAccountingById = new ArrayList<>();
+
     @Before
     public void initTests() {
         // creates test data to Elasticsearch if none exists
-        createAccountingExportData(10);
-        createOrder(10);
+        createAccountingExportData(10, toBeDeletedAccountingById);
+        createOrder(10, toBeDeletedOrderById);
+    }
+
+    @After
+    public void tearDown() {
+        try {
+            deleteNotAccountedOrders(toBeDeletedOrderById);
+            clearAccountingExportData(toBeDeletedAccountingById);
+            // Clear list because all deleted
+            toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedAccountingById = new ArrayList<>();
+        } catch (Exception e) {
+            log.info("delete error {}", e.toString());
+            toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedAccountingById = new ArrayList<>();
+        }
     }
 
     @Test
@@ -246,6 +268,31 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         log.info("Result list size: " + hits.length);
 
         assertEquals("Result list should be empty", 0, hits.length);
+    }
+
+    @Test
+    public void whenBuildListFromHits_thenSuccess() throws Exception {
+        log.info("running whenBuildListFromHitsWithMultipleIndices_thenSuccess");
+        long expectedTotalHits = notAccountedOrderCount();
+
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
+
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb).build();
+
+        SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
+                query,
+                new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
+                "orders");
+        log.info(searchRequest.toString());
+        org.elasticsearch.search.SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
+        log.info("Result list size: " + hits.length);
+
+        final List<Order> exportData = searchAfterService.buildListFromHits(hits, Order.class);
+
+        assertNotEquals("Result list should not be empty", 0, exportData.size());
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, exportData.size());
     }
 
 }

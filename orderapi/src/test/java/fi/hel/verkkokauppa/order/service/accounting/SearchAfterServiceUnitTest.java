@@ -1,5 +1,8 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
@@ -10,6 +13,10 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchResponseSections;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.document.DocumentField;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.DocValueFormat;
@@ -19,6 +26,7 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -29,7 +37,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.any;
@@ -50,6 +63,9 @@ public class SearchAfterServiceUnitTest {
     @MockBean
     private SearchAfterService searchAfterService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${elasticsearch.search-after-page-size}")
     private int elasticsearchSearchAfterPageSize;
 
@@ -57,6 +73,7 @@ public class SearchAfterServiceUnitTest {
     public void setupTests() throws Exception {
         ReflectionTestUtils.setField(searchAfterService, "highLevelClient", highLevelClientMock);
         ReflectionTestUtils.setField(searchAfterService, "elasticsearchSearchAfterPageSize", elasticsearchSearchAfterPageSize);
+        ReflectionTestUtils.setField(searchAfterService, "objectMapper", objectMapper);
 
         when(searchAfterService.buildSearchAfterSearchRequest(any(), any(), any())).thenCallRealMethod();
         when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
@@ -240,14 +257,15 @@ public class SearchAfterServiceUnitTest {
         assertEquals("Result list should be empty", 0, hits.length);
     }
 
-
     // test utility method for creating SearchResponse
     private SearchResponse getTestSearchResponse(int hitCount) {
 
         // create array of hits
         SearchHit[] testHits = new SearchHit[hitCount];
         for (int i = 0; i < hitCount; i++) {
+
             testHits[i] = new SearchHit(i);
+
             //  put in some sort values so new page can be searched for
             testHits[i].sortValues(
                     new Object[]{"111"},
@@ -280,4 +298,6 @@ public class SearchAfterServiceUnitTest {
 
         return response;
     }
+
+
 }

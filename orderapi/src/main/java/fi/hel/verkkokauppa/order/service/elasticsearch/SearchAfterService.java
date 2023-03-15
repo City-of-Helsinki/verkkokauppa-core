@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.service.elasticsearch;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -21,7 +22,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -120,13 +123,19 @@ public class SearchAfterService {
         return sortBuilder;
     }
 
-//    public List<T> buildListFromHits(SearchHit[] hits, Class<T> objectClass){
-//        Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
-//            try {
-//                return objectMapper.readValue(s, objectClass);
-//            } catch (JsonProcessingException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }).collect(Collectors.toList());
-//    }
+    public <T> List<T> buildListFromHits(SearchHit[] hits, Class<T> objectClass) {
+        final List<T> exportData = Arrays.stream(hits).map(SearchHit::getSourceAsString).map(s -> {
+            try {
+                return objectMapper.readValue(s, objectClass);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+
+        if (exportData.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return exportData;
+    }
 }
