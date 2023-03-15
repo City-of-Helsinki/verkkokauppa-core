@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 public class Order implements Customer, IdentifiableUser {
 
     public static final String INDEX_NAME = "orders";
+
     @Id
     String orderId;
 
