@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import fi.hel.verkkokauppa.order.testing.annotations.UnitTest;
 import fi.hel.verkkokauppa.order.testing.utils.AutoMockBeanFactory;
@@ -11,6 +12,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchResponseSections;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.DocValueFormat;
@@ -31,7 +35,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.any;
@@ -246,6 +253,21 @@ public class SearchAfterServiceUnitTest {
         assertEquals("Result list should be empty", 0, hits.length);
     }
 
+    @Test
+    public void whenBuildListFromHits_thenSuccess() throws IOException {
+        log.info("running whenBuildListFromHits_thenSuccess");
+        int testHitCount = 5;
+
+        SearchResponse mockedResponse = getTestSearchResponse(testHitCount);
+        when(searchAfterService.buildListFromHits(any(), any())).thenCallRealMethod();
+
+        final List<AccountingExportData> exportData = searchAfterService.buildListFromHits(mockedResponse.getHits().getHits(), AccountingExportData.class);
+
+        assertNotEquals("Result list should not be empty", 0, exportData.size());
+        assertEquals("Wrong amount of records in export data", testHitCount, exportData.size());
+    }
+
+
     // test utility method for creating SearchResponse
     private SearchResponse getTestSearchResponse(int hitCount) {
 
@@ -253,7 +275,22 @@ public class SearchAfterServiceUnitTest {
         SearchHit[] testHits = new SearchHit[hitCount];
         for (int i = 0; i < hitCount; i++) {
 
-            testHits[i] = new SearchHit(i);
+            // create dummy source for parsing
+            BytesReference source = new BytesArray("{\n" +
+                    "    \"_class\" : \"fi.hel.verkkokauppa.order.model.accounting.AccountingExportData\",\n" +
+                    "    \"accountingSlipId\" : \"ae192394-df3f-42ed-8d9e-8834c16cce4e-testaccounting\",\n" +
+                    "    \"timestamp\" : \"2023-03-09\",\n" +
+                    "    \"xml\" : \"Some text 9\"\n" +
+                    "  }");
+
+            Map<String, Object> data = new HashMap<>();
+
+            data.put("_index", "accountingexportdatas");
+            data.put("_type", new Text("_doc"));
+            data.put("_id", Integer.toString(i));
+            data.put("_source", source);
+
+            testHits[i] = SearchHit.createFromMap(data);
 
             //  put in some sort values so new page can be searched for
             testHits[i].sortValues(
