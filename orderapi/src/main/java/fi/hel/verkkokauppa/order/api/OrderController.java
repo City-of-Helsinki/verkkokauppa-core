@@ -91,7 +91,8 @@ public class OrderController {
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
                                                          @RequestParam(value = "user") String user,
-                                                         @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime) {
+                                                         @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime
+    ) {
         try {
             LocalDateTime formattedLastValidPurchaseDateTime = null;
             if (lastValidPurchaseDateTime != null) {
@@ -378,7 +379,8 @@ public class OrderController {
     public ResponseEntity<OrderAggregateDto> createWithItems(@RequestBody OrderAggregateDto orderAggregateDto) {
         try {
             OrderDto orderDto = orderAggregateDto.getOrder();
-            Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser());
+
+            Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser(), orderDto.getLastValidPurchaseDateTime());
             String orderId = order.getOrderId();
 
             String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(orderAggregateDto.getItems());
