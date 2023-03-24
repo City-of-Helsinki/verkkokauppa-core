@@ -112,7 +112,7 @@ public class PaymentAdminController {
             if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
                 log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
             } else {
-                if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.getCardToken() != null && message.getCardExpYear() != null && message.getCardExpMonth() != null && message.getCardLastFourDigits() != null) {
+                if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.isCardDefined()) {
                     Payment payment = onlinePaymentService.createSubscriptionRenewalPayment(message);
                     PaymentCardInfoDto card = new PaymentCardInfoDto(message.getCardToken(), message.getCardExpYear(), message.getCardExpMonth(), message.getCardLastFourDigits());
                     try {

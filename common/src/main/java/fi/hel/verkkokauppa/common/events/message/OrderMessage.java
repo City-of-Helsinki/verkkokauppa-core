@@ -56,4 +56,8 @@ public class OrderMessage implements EventMessage {
                 .build();
     }
 
+    public boolean isCardDefined() {
+        return this.getCardToken() != null && this.getCardExpYear() != null &&
+                this.getCardExpMonth() != null && this.getCardLastFourDigits() != null;
+    }
 }
