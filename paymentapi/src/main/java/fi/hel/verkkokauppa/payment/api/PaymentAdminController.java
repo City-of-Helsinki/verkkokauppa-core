@@ -4,19 +4,18 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
-import fi.hel.verkkokauppa.payment.api.data.ChargeCardTokenRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
-import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
+import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
 import org.slf4j.Logger;
@@ -39,18 +38,21 @@ public class PaymentAdminController {
     private final CancelPaymentFetcher cancelPaymentFetcher;
     private final PaymentReturnValidator paymentReturnValidator;
     private final SaveHistoryService saveHistoryService;
+    private final PaymentPaytrailService paymentPaytrailService;
 
     @Autowired
     public PaymentAdminController(OnlinePaymentService onlinePaymentService,
                                   PaymentMethodService paymentMethodService,
                                   CancelPaymentFetcher cancelPaymentFetcher,
                                   PaymentReturnValidator paymentReturnValidator,
-                                  SaveHistoryService saveHistoryService) {
+                                  SaveHistoryService saveHistoryService,
+                                  PaymentPaytrailService paymentPaytrailService) {
         this.onlinePaymentService = onlinePaymentService;
         this.paymentMethodService = paymentMethodService;
         this.cancelPaymentFetcher = cancelPaymentFetcher;
         this.paymentReturnValidator = paymentReturnValidator;
         this.saveHistoryService = saveHistoryService;
+        this.paymentPaytrailService = paymentPaytrailService;
     }
 
     @Autowired
@@ -96,6 +98,45 @@ public class PaymentAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-payments", "failed to get payments with order id [" + orderId + "]")
+            );
+        }
+    }
+
+    @PostMapping(value = "/payment-admin/paytrail/subscription-renewal-order-created-event", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> orderCreatedEventCallbackPaytrail(@RequestBody OrderMessage message) {
+        log.debug("orderCreatedEventCallback OrderMessage: {}", message);
+        try {
+            log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
+
+            Payment existingPayment = onlinePaymentService.getPaymentForOrder(message.getOrderId());
+            if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
+                log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
+            } else {
+                if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.isCardDefined()) {
+                    Payment payment = onlinePaymentService.createSubscriptionRenewalPayment(message);
+                    PaymentCardInfoDto card = new PaymentCardInfoDto(message.getCardToken(), message.getCardExpYear(), message.getCardExpMonth(), message.getCardLastFourDigits());
+                    try {
+                        PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(message.getNamespace(), message.getMerchantId());
+                        PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, payment.getPaymentId(), message);
+                        onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), mitCharge.getTransactionId());
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, true, false, false), card);
+                    } catch (Exception e) {
+                        log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false), card);
+                    }
+                } else {
+                    log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());
+                }
+            }
+            saveHistoryService.saveOrderMessageHistory(message);
+            return ResponseEntity.ok().build();
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("subscription renewal payment failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("subscription-renewal-payment-failed", "subscription renewal payment failed")
             );
         }
     }

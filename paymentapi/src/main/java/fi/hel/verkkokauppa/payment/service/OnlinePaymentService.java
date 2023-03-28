@@ -176,7 +176,7 @@ public class OnlinePaymentService {
 
 
     public String getPaymentUrl(String token) {
-        return VismaPayClient.API_URL + "/token/" + token; 
+        return VismaPayClient.API_URL + "/token/" + token;
     }
 
     public String getPaymentUrl(Payment payment) {
@@ -186,6 +186,12 @@ public class OnlinePaymentService {
     public void setPaymentStatus(String paymentId, String status) {
         Payment payment = getPayment(paymentId);
         payment.setStatus(status);
+        paymentRepository.save(payment);
+    }
+
+    public void setPaytrailTransactionId(String paymentId, String transactionId) {
+        Payment payment = getPayment(paymentId);
+        payment.setPaytrailTransactionId(transactionId);
         paymentRepository.save(payment);
     }
 
@@ -378,6 +384,36 @@ public class OnlinePaymentService {
         return paymentCardToken;
     }
 
+    public void triggerPaymentPaidEvent(Payment payment, PaymentCardInfoDto card) {
+        String now = DateTimeUtil.getDateTime();
+
+        PaymentMessage.PaymentMessageBuilder paymentMessageBuilder = PaymentMessage.builder()
+                .eventType(EventType.PAYMENT_PAID)
+                .eventTimestamp(now)
+                .namespace(payment.getNamespace())
+                .paymentId(payment.getPaymentId())
+                .orderId(payment.getOrderId())
+                .userId(payment.getUserId())
+                .paymentPaidTimestamp(now)
+                .orderType(payment.getPaymentType());
+
+        if (PaymentType.CREDIT_CARDS.equalsIgnoreCase(payment.getPaymentMethod())) {
+            paymentMessageBuilder
+                    .encryptedCardToken(card.getCardToken())
+                    .cardTokenExpYear(card.getExpYear())
+                    .cardTokenExpMonth(card.getExpMonth())
+                    .cardLastFourDigits(card.getCardLastFourDigits());
+        }
+
+        PaymentMessage paymentMessage = paymentMessageBuilder.build();
+
+        orderPaidWebHookAction(paymentMessage);
+
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
+        log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+    }
+
+    // Fetches card from VISMA
     public void triggerPaymentPaidEvent(Payment payment) {
         String now = DateTimeUtil.getDateTime();
 
@@ -475,6 +511,10 @@ public class OnlinePaymentService {
     }
 
     public void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto) {
+        updatePaymentStatus(paymentId, paymentReturnDto, null);
+    }
+
+    public void updatePaymentStatus(String paymentId, PaymentReturnDto paymentReturnDto, PaymentCardInfoDto card) {
         Payment payment = getPayment(paymentId);
 
         if (paymentReturnDto.isValid()) {
@@ -482,7 +522,11 @@ public class OnlinePaymentService {
                 // if not already paid earlier
                 if (!PaymentStatus.PAID_ONLINE.equals(payment.getStatus())) {
                     setPaymentStatus(paymentId, PaymentStatus.PAID_ONLINE);
-                    triggerPaymentPaidEvent(payment);
+                    if (card != null) {
+                        triggerPaymentPaidEvent(payment, card);
+                    } else {
+                        triggerPaymentPaidEvent(payment);
+                    }
                 } else {
                     log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
                 }

@@ -338,6 +338,9 @@ public class OrderService {
 
             orderMessageBuilder
                     .cardToken(paymentMethodToken)
+                    .cardExpYear(String.valueOf(subscription.getPaymentMethodExpirationYear()))
+                    .cardExpMonth(String.valueOf(subscription.getPaymentMethodExpirationMonth()))
+                    .cardLastFourDigits(subscription.getPaymentMethodCardLastFourDigits())
                     .orderItemId(orderItem.getOrderItemId())
                     .vatPercentage(orderItem.getVatPercentage())
                     .productName(orderItem.getProductName())
@@ -345,7 +348,13 @@ public class OrderService {
                     .isSubscriptionRenewalOrder(true)
                     .subscriptionId(order.getSubscriptionId())
                     .userId(order.getUser())
-                    .paymentGateway(subscription.getPaymentGateway());
+                    .paymentGateway(subscription.getPaymentGateway())
+                    .merchantId(orderItem.getMerchantId())
+                    .productId(orderItem.getProductId())
+                    .priceGross(orderItem.getPriceGross())
+                    .customerEmail(order.getCustomerEmail())
+                    .customerFirstName(order.getCustomerFirstName())
+                    .customerLastName(order.getCustomerLastName());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();
