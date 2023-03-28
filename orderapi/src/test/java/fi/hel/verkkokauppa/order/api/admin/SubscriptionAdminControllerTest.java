@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -23,12 +24,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@Slf4j
 @RunIfProfile(profile = "local")
 class SubscriptionAdminControllerTest extends TestUtils {
-
-    private Logger log = LoggerFactory.getLogger(SubscriptionAdminControllerTest.class);
 
     @Autowired
     private SubscriptionRepository subscriptionRepository;
@@ -129,6 +131,16 @@ class SubscriptionAdminControllerTest extends TestUtils {
                                 firstSubscription.getSubscriptionId()))
                 .collect(Collectors.toList()).get(0);
         Assertions.assertNotNull(filteredOne);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void checkRenewalsWhenRenewalsExist() throws InterruptedException {
+        subscriptionAdminController.checkRenewals();
+
+
+//        assertEquals(SubscriptionStatus.ACTIVE, firstSubscription.getStatus());
+
     }
 
 
