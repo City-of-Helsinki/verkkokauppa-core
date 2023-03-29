@@ -42,6 +42,8 @@ public class ErrorEmailNotificationListenerTest {
     @Value("${error.notification.email:jarkko.amb@gmail.com}")
     private String receivers;
 
+    private String mailHogUrl = "http://localhost:8025";
+
     @Test
     public void testErrorNotificationSending() throws InterruptedException {
         log.info("Running testErrorNotificationSending");
@@ -55,22 +57,22 @@ public class ErrorEmailNotificationListenerTest {
 
         // get number of emails before test
         JSONObject mailHogResponse;
-        mailHogResponse = restServiceClient.makeGetCall("http://localhost:8025/api/v2/messages");
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
         int totalMailsBefore = Integer.parseInt(mailHogResponse.get("total").toString());
 
         sendNotificationService.sendToQueue(queueMessage, queueConfigurations.getErrorEmailNotificationsQueue());
         sleep(3000);
 
         // get eMails from MailHog
-        mailHogResponse = restServiceClient.makeGetCall("http://localhost:8025/api/v2/messages");
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
         int totalMailsAfter = Integer.parseInt(mailHogResponse.get("total").toString());
-        JSONArray items = mailHogResponse.getJSONArray("items");
 
+        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
+
+        JSONArray items = mailHogResponse.getJSONArray("items");
         // latest email is in index 0
         JSONObject email = items.getJSONObject(0);
         JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
-
-        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
 
         assertEquals("Email Subject does not match.",
                 EventType.ERROR_EMAIL_NOTIFICATION,

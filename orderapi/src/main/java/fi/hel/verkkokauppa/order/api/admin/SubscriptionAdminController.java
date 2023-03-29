@@ -3,8 +3,6 @@ package fi.hel.verkkokauppa.order.api.admin;
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.events.EventType;
-import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
@@ -126,15 +124,11 @@ public class SubscriptionAdminController {
             renewalService.createRenewalRequests(renewableSubscriptions);
             return ResponseEntity.ok().build();
         } else {
-            ErrorMessage queueMessage = ErrorMessage.builder()
-                    .eventType(EventType.ERROR_EMAIL_NOTIFICATION)
-                    .eventTimestamp(DateTimeUtil.getDateTime())
-                    .message("Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests")
-                    .cause("checkRenevals (subscription) called before previous reneval requests were handled.")
-                    .build();
-
-            log.warn(queueMessage.getMessage());
-            sendNotificationService.sendToQueue(queueMessage, queueConfigurations.getErrorEmailNotificationsQueue());
+            sendNotificationService.sendErrorNotification(
+                    "/subscription-admin/check-renewals",
+                    "All subscription renewal requests not processed yet, not creating new requests",
+                    "checkRenevals (subscription) called before previous reneval requests were handled."
+            );
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
@@ -146,16 +140,11 @@ public class SubscriptionAdminController {
                 renewalService.batchProcessNextRenewalRequests();
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
             } catch (InterruptedException e) {
-                log.error("processing subscription renewals interrupted", e);
-
-                ErrorMessage queueMessage = ErrorMessage.builder()
-                        .eventType(EventType.ERROR_EMAIL_NOTIFICATION)
-                        .eventTimestamp(DateTimeUtil.getDateTime())
-                        .message("Endpoint: /subscription-admin/start-processing-renewals. Processing subscription renewals interrupted. " + e.getMessage())
-                        .cause(e.getStackTrace().toString())
-                        .build();
-
-                sendNotificationService.sendToQueue(queueMessage, queueConfigurations.getErrorEmailNotificationsQueue());
+                sendNotificationService.sendErrorNotification(
+                        "/subscription-admin/start-processing-renewals",
+                        "Processing subscription renewals interrupted.",
+                        e
+                );
             }
         }
 

@@ -124,18 +124,6 @@
 			<artifactId>spring-boot-devtools</artifactId>
 			<optional>true</optional>
 		</dependency>
-        <dependency>
-            <groupId>com.github.kirviq</groupId>
-            <artifactId>dumbster</artifactId>
-            <version>1.7.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>fi.hel.verkkokauppa</groupId>
-            <artifactId>message</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

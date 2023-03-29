@@ -47,7 +47,9 @@ public abstract class BaseEmailNotifier<T> {
         html = html.replace("#EVENT_TYPE#", header);
         html = html.replace("#GENERAL_INFORMATION#", "<p>" + generalInfo + "</p>");
         html = html.replace("#CALLSTACK#", "<p>" + callstack + "</p>");
-        html = html.replace("#EVENT_PAYLOAD#", mapper.writeValueAsString(eventPayload));
+        html = html.replace("#EVENT_PAYLOAD#",
+                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(eventPayload)
+        );
 
         msgJson.put("body", html);
 
