@@ -189,7 +189,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
-    void testStartProcessingRenewals() throws InterruptedException {
+    void testStartProcessingRenewalsErrorNotification() throws InterruptedException {
         ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
         when(renewalServiceMock.renewalRequestsExist()).thenReturn(true).thenReturn(false);
 

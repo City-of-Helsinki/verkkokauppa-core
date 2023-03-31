@@ -125,8 +125,7 @@ public class SubscriptionAdminController {
             return ResponseEntity.ok().build();
         } else {
             sendNotificationService.sendErrorNotification(
-                    "/subscription-admin/check-renewals",
-                    "All subscription renewal requests not processed yet, not creating new requests",
+                    "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
                     "checkRenevals (subscription) called before previous reneval requests were handled."
             );
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -141,8 +140,7 @@ public class SubscriptionAdminController {
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
             } catch (InterruptedException e) {
                 sendNotificationService.sendErrorNotification(
-                        "/subscription-admin/start-processing-renewals",
-                        "Processing subscription renewals interrupted.",
+                        "Endpoint: /subscription-admin/start-processing-renewals. Processing subscription renewals interrupted.",
                         e
                 );
             }
@@ -313,7 +311,7 @@ public class SubscriptionAdminController {
 
     /**
      * "Get all active subscriptions that are expiring in the next X days."
-     * <p>
+     *
      * The function is called from a scheduled task that runs every X day
      *
      * @return A list of subscriptions with expiring cards.

@@ -95,19 +95,16 @@ public class SendNotificationService {
     }
 
     public void sendErrorNotification(
-            String endpoint,
             String message,
             Exception exception
     ) {
         sendErrorNotification(
-                endpoint,
                 message + " " + exception.getMessage(),
                 exception.getStackTrace().toString()
         );
     }
 
     public void sendErrorNotification(
-            String endpoint,
             String message,
             String cause
     ) {
@@ -117,7 +114,7 @@ public class SendNotificationService {
             ErrorMessage queueMessage = ErrorMessage.builder()
                     .eventType(EventType.ERROR_EMAIL_NOTIFICATION)
                     .eventTimestamp(DateTimeUtil.getDateTime())
-                    .message("Endpoint: " + endpoint + ". " + message)
+                    .message(message)
                     .cause(cause)
                     .build();
             String messageAsJsonString = mapper.writeValueAsString(queueMessage);
