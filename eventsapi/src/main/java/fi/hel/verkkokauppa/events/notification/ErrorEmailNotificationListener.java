@@ -23,7 +23,7 @@ import java.util.UUID;
 @Slf4j
 public class ErrorEmailNotificationListener extends BaseEmailNotifier<ErrorMessage> {
 
-    @Value("${error.notification.email:jarkko.amb@gmail.com}")
+    @Value("${error.notification.email:donotreply.checkout@hel.fi}")
     private String receivers;
 
     private final SendNotificationService sendNotificationService;

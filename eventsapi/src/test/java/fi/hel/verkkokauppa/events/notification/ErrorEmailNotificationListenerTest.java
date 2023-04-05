@@ -39,7 +39,7 @@ public class ErrorEmailNotificationListenerTest {
     @Autowired
     private RestServiceClient restServiceClient;
 
-    @Value("${error.notification.email:jarkko.amb@gmail.com}")
+    @Value("${error.notification.email:test.email@test.fi}")
     private String receivers;
 
     private String mailHogUrl = "http://localhost:8025";

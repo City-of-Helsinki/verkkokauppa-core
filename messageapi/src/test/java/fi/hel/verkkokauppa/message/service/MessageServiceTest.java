@@ -5,7 +5,10 @@ import com.dumbster.smtp.SmtpMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.message.dto.MessageDto;
 import fi.hel.verkkokauppa.message.model.Message;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
@@ -39,10 +43,11 @@ import static org.mockito.Mockito.when;
         "spring.mail.host=127.0.0.1",
         "spring.mail.username=donotreply.checkout@hel.fi",
         "spring.mail.password=",
-        "spring.mail.port=1025",
+        "spring.mail.port=1026",
         "spring.mail.properties.mail.smtp.auth=",
         "spring.mail.properties.mail.smtp.starttls.enable=false",
 })
+@Slf4j
 public class MessageServiceTest {
     // bind the above RANDOM_PORT
     @LocalServerPort
@@ -57,7 +62,19 @@ public class MessageServiceTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private static final Integer PORT_SMTP = 1025;
+    private static final Integer PORT_SMTP = 1026;
+
+    public static SimpleSmtpServer dumbster;
+
+    @Before
+    public void testInit() throws IOException {
+        dumbster = SimpleSmtpServer.start(PORT_SMTP);
+    }
+
+    @After
+    public void testCleanup() {
+        dumbster.close();
+    }
 
     @Bean
     @Primary
@@ -84,8 +101,6 @@ public class MessageServiceTest {
 
         HttpEntity<MessageDto> request = new HttpEntity<>(messageDto);
 
-        SimpleSmtpServer dumbster = SimpleSmtpServer.start(PORT_SMTP);
-
         ResponseEntity<String> result = this.restTemplate.postForEntity(uri, request, String.class);
 
         // Verify request succeed
@@ -96,7 +111,7 @@ public class MessageServiceTest {
 
         // Verify sent email values
         List<SmtpMessage> emails = dumbster.getReceivedEmails();
-        dumbster.close();
+
         SmtpMessage email = emails.get(0);
         assertThat(email.getHeaderValue("Subject"), is(header));
         assertThat(email.getBody(), is("Body"));
@@ -124,8 +139,6 @@ public class MessageServiceTest {
 
         HttpEntity<MessageDto> request = new HttpEntity<>(messageDto);
 
-        SimpleSmtpServer dumbster = SimpleSmtpServer.start(PORT_SMTP);
-
         ResponseEntity<String> result = this.restTemplate.postForEntity(uri, request, String.class);
 
         // Verify request succeed
@@ -136,7 +149,7 @@ public class MessageServiceTest {
 
         // Verify sent email values
         List<SmtpMessage> emails = dumbster.getReceivedEmails();
-        dumbster.close();
+
         SmtpMessage email = emails.get(0);
         assertThat(email.getHeaderValue("Subject"), is(header));
         assertThat(email.getBody(), is("Body"));
