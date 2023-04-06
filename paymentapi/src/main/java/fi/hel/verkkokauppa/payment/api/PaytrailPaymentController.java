@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
+import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
@@ -72,13 +73,15 @@ public class PaytrailPaymentController {
             @RequestParam(value = "checkout-tokenization-id") String tokenizationId
     ) {
         try {
-            String namespace = dto.getOrder().getOrder().getNamespace();
+            OrderDto orderDto = dto.getOrder().getOrder();
+            paymentPaytrailService.validateOrder(orderDto);
+
+            String namespace = orderDto.getNamespace();
             String merchantId = dto.getMerchantId();
             paytrailPaymentReturnValidator.validateSignature(merchantId, params, signature);
             PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(namespace, merchantId);
             PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
-            paymentPaytrailService.validateOrder(dto.getOrder().getOrder());
-            String paymentId = PaymentUtil.generatePaymentOrderNumber(dto.getOrder().getOrder().getOrderId());
+            String paymentId = PaymentUtil.generatePaymentOrderNumber(orderDto.getOrderId());
             PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, paymentId, dto.getOrder(), card.getToken());
             Payment payment = paymentPaytrailService.createPayment(context, dto, paymentId, mitCharge);
             paymentPaytrailService.triggerPaymentPaidEvent(payment, card);

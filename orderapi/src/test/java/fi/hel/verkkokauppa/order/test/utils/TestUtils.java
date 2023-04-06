@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -24,6 +26,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +75,8 @@ public class TestUtils extends DummyData {
 
     @Autowired
     private ServiceUrls serviceUrls;
+    @Autowired
+    private ObjectMapper objectMapper;
 
 
     /**
@@ -121,8 +126,11 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setPeriodCount(periodCount);
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
         orderItems.get(0).setStartDate(LocalDateTime.now());
-        orderItems.get(0).setPriceGross("124");
-        orderItems.get(0).setMerchantId("merchantId");
+        orderItems.get(0).setPriceGross("100");
+        orderItems.get(0).setPriceNet("100");
+        orderItems.get(0).setPriceVat("0");
+        orderItems.get(0).setProductId("productId");
+        orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
@@ -264,5 +272,26 @@ public class TestUtils extends DummyData {
         JSONArray result = new JSONArray(jsonResponse);
         log.info(result.toString());
         return result.getJSONObject(0).getString("merchantId");
+    }
+
+    public JSONObject createMockAccountingForProductId(String productId) throws JsonProcessingException {
+
+        JSONObject productAccounting = new JSONObject();
+
+        productAccounting.put("productId", productId);
+        productAccounting.put("companyCode", "companyCode");
+        productAccounting.put("mainLedgerAccount", "mainLedgerAccount");
+        productAccounting.put("vatCode", "vatCode");
+        productAccounting.put("internalOrder", "internalOrder");
+        productAccounting.put("profitCenter", "profitCenter");
+        productAccounting.put("project", "project");
+        productAccounting.put("operationArea", "operationArea");
+
+        JSONObject jsonResponse = restServiceClient.makePostCall(
+                serviceUrls.getProductServiceUrl() + "/product/" + productId + "/accounting",
+                productAccounting.toString()
+        );
+        log.info(jsonResponse.toString());
+        return jsonResponse;
     }
 }
