@@ -15,4 +15,5 @@ public class EventType {
     public static String REFUND_PAID = "REFUND_PAID";
     public static String REFUND_FAILED = "REFUND_FAILED";
     public static String INTERNAL_ERROR = "INTERNAL_ERROR";
+    public static String ERROR_EMAIL_NOTIFICATION = "ERROR_EMAIL_NOTIFICATION";
 }
