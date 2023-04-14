@@ -28,6 +28,9 @@ public class ProductAccounting extends BaseModel {
     private String profitCenter;
 
     @Field(type = FieldType.Text)
+    private String balanceProfitCenter;
+
+    @Field(type = FieldType.Text)
     private String project;
 
     @Field(type = FieldType.Text)
