@@ -145,7 +145,7 @@ public class PaytrailRefundPaymentService {
 
     }
 
-    public RefundPayment createRefundToPaytrailAndCreateRefundPayment(RefundRequestDataDto dto) {
+    public RefundPayment createRefundToPaytrailAndCreateRefundPayment(RefundRequestDataDto dto) throws CommonApiException{
         RefundDto refundDto = dto.getRefund().getRefund();
         String refundId = refundDto.getRefundId();
 
@@ -195,7 +195,7 @@ public class PaytrailRefundPaymentService {
         return isRecurringOrder ? OrderType.SUBSCRIPTION : OrderType.ORDER;
     }
 
-    public PaytrailPaymentContext createPaytrailRefundContext(RefundDto refundDto, RefundItemDto refundItemDto, PaymentDto paymentDto) {
+    public PaytrailPaymentContext createPaytrailRefundContext(RefundDto refundDto, RefundItemDto refundItemDto, PaymentDto paymentDto) throws CommonApiException{
         return paytrailPaymentContextBuilder.buildFor(
                 refundDto.getNamespace(),
                 refundItemDto.getMerchantId(),

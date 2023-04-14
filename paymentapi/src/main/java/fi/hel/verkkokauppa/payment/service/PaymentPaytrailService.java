@@ -12,6 +12,7 @@ import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
@@ -29,20 +30,27 @@ import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
+import org.helsinki.paytrail.constants.CheckoutAlgorithm;
+import org.helsinki.paytrail.constants.CheckoutMethod;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
+import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
 
@@ -55,7 +63,6 @@ public class PaymentPaytrailService {
     private final PaymentRepository paymentRepository;
     private final PayerRepository payerRepository;
     private final PaymentItemRepository paymentItemRepository;
-
     private final PaytrailPaymentProviderListMapper paytrailPaymentProviderListMapper;
 
     @Value("${payment.card_token.encryption.password}")
@@ -63,6 +70,9 @@ public class PaymentPaytrailService {
 
     @Autowired
     private SendEventService sendEventService;
+
+    @Autowired
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Autowired
     PaymentPaytrailService(
@@ -133,7 +143,7 @@ public class PaymentPaytrailService {
         return payment;
     }
 
-    public PaytrailPaymentContext buildPaytrailContext(String namespace, String merchantId) {
+    public PaytrailPaymentContext buildPaytrailContext(String namespace, String merchantId) throws CommonApiException {
         return paymentContextBuilder.buildFor(namespace, merchantId, false);
     }
 
@@ -315,5 +325,59 @@ public class PaymentPaytrailService {
 
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
         log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+    }
+
+    public TreeMap<String, String> getCardReturnParameters(
+            String merchantId,
+            String namespace,
+            String orderId
+    ) throws NoSuchAlgorithmException, InvalidKeyException, CommonApiException {
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId, false);
+
+        String redirectSuccessUrl = context.getCardRedirectSuccessUrl();
+        String redirectCancelUrl = context.getCardRedirectCancelUrl();
+        String callbackSuccessUrl = context.getCardCallbackSuccessUrl();
+        String callbackCancelUrl = context.getCardCallbackCancelUrl();
+
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put("checkout-account", context.getPaytrailMerchantId());
+        parameters.put("checkout-algorithm", CheckoutAlgorithm.SHA256.toString());
+        parameters.put("checkout-method", CheckoutMethod.POST.toString());
+        parameters.put("checkout-nonce", UUIDGenerator.generateType4UUID().toString());
+        parameters.put("checkout-timestamp", Instant.now().toString());
+        parameters.put("checkout-redirect-success-url", redirectSuccessUrl + (redirectSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-redirect-cancel-url", redirectCancelUrl + (redirectCancelUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-callback-success-url", callbackSuccessUrl + (callbackSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-callback-cancel-url", callbackCancelUrl + (callbackCancelUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, context.getPaytrailSecretKey()));
+
+        return parameters;
+    }
+
+    public TreeMap<String, String> getUpdateCardReturnParameters(
+            String merchantId,
+            String namespace,
+            String orderId
+    ) throws NoSuchAlgorithmException, InvalidKeyException {
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(namespace, merchantId, false);
+
+        String redirectSuccessUrl = context.getUpdateCardRedirectSuccessUrl();
+        String redirectCancelUrl = context.getUpdateCardRedirectCancelUrl();
+        String callbackSuccessUrl = context.getUpdateCardCallbackSuccessUrl();
+        String callbackCancelUrl = context.getUpdateCardCallbackCancelUrl();
+
+        TreeMap<String, String> parameters = new TreeMap<>();
+        parameters.put("checkout-account", context.getPaytrailMerchantId());
+        parameters.put("checkout-algorithm", CheckoutAlgorithm.SHA256.toString());
+        parameters.put("checkout-method", CheckoutMethod.POST.toString());
+        parameters.put("checkout-nonce", UUIDGenerator.generateType4UUID().toString());
+        parameters.put("checkout-timestamp", Instant.now().toString());
+        parameters.put("checkout-redirect-success-url", redirectSuccessUrl + (redirectSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-redirect-cancel-url", redirectCancelUrl + (redirectCancelUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-callback-success-url", callbackSuccessUrl + (callbackSuccessUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("checkout-callback-cancel-url", callbackCancelUrl + (callbackCancelUrl.endsWith("/") ? "" : "/") + orderId);
+        parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, context.getPaytrailSecretKey()));
+
+        return parameters;
     }
 }
