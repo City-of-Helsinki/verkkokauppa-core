@@ -37,6 +37,7 @@ services:
       - "${HOME}/.m2:/root/.m2"
       - "./infra/eventsapi/src/main/resources/application.properties:/app/eventsapi/src/main/resources/application.properties"
       - "./infra/eventsapi/src/main/resources/application-local.properties:/app/eventsapi/src/main/resources/application-local.properties"
+      - "./infra/eventsapi/src/main/resources/email/template_email_notification.html:/app/eventsapi/src/main/resources/email/template_email_notification.html"
     working_dir: /app
     command: "sh ./eventsapi/run.sh"
     ports:
@@ -389,7 +390,7 @@ services:
       ACTIVEMQ_JMX_LOGIN: jmx
       ACTIVEMQ_JMX_PASSWORD: password
       ACTIVEMQ_STATIC_TOPICS: static-topic-1
-      ACTIVEMQ_STATIC_QUEUES: subscription-renewals;order-notifications;subscription-notifications;demo-single-msg-queue;DLQ;payment-failed-to-process;refund-notifications;refund-failed-to-process
+      ACTIVEMQ_STATIC_QUEUES: subscription-renewals;order-notifications;subscription-notifications;demo-single-msg-queue;DLQ;payment-failed-to-process;refund-notifications;refund-failed-to-process;error-email-notifications;error-email-notifications-sent
       ACTIVEMQ_ENABLED_SCHEDULER: "true"
       ACTIVEMQ_MIN_MEMORY: 512
       ACTIVEMQ_MAX_MEMORY: 2048

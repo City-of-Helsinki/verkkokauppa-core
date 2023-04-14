@@ -28,7 +28,6 @@ import javax.validation.Valid;
 public class MessageController {
     private final Logger log = LoggerFactory.getLogger(MessageController.class);
 
-
     @Autowired
     private MessageService service;
 
@@ -47,5 +46,4 @@ public class MessageController {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
-
 }
