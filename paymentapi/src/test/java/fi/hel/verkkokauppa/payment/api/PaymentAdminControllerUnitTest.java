@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.payment.api.data.PaymentFilterDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
@@ -16,6 +17,7 @@ import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 
 import lombok.extern.slf4j.Slf4j;
@@ -107,6 +109,10 @@ public class PaymentAdminControllerUnitTest {
     private PaymentFilterService filterService;
     @MockBean
     private PaymentMethodMapper paymentMethodMapper;
+    @MockBean
+    private SendNotificationService sendNotificationService;
+    @MockBean
+    private PaymentPaytrailService paymentPaytrailService;
 
 
     @BeforeEach

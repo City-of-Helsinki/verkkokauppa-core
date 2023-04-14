@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.fetcher.CancelPaymentFetcher;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
@@ -12,8 +13,8 @@ import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
-import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
+import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.vismapay.response.VismaPayResponse;
@@ -39,6 +40,8 @@ public class PaymentAdminController {
     private final PaymentReturnValidator paymentReturnValidator;
     private final SaveHistoryService saveHistoryService;
     private final PaymentPaytrailService paymentPaytrailService;
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     @Autowired
     public PaymentAdminController(OnlinePaymentService onlinePaymentService,
@@ -117,10 +120,20 @@ public class PaymentAdminController {
                     PaymentCardInfoDto card = new PaymentCardInfoDto(message.getCardToken(), message.getCardExpYear(), message.getCardExpMonth(), message.getCardLastFourDigits());
                     try {
                         PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(message.getNamespace(), message.getMerchantId());
-                        PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, payment.getPaymentId(), message);
-                        onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), mitCharge.getTransactionId());
-                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, true, false, false), card);
+                        try {
+
+                            PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, payment.getPaymentId(), message);
+                            onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), mitCharge.getTransactionId());
+                            onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, true, false, false), card);
+                        } catch (Exception e) {
+                            log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
+                            onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false), card);
+                        }
                     } catch (Exception e) {
+                        sendNotificationService.sendErrorNotification(
+                                "Endpoint: /payment-admin/paytrail/subscription-renewal-order-created-event. Subscription renewal handling failed with exception for order: " + payment.getOrderId(),
+                                e
+                        );
                         log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
                         onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false), card);
                     }
@@ -158,7 +171,7 @@ public class PaymentAdminController {
                     ChargeCardTokenRequestDataDto request = onlinePaymentService.createChargeCardTokenRequestDataDto(message, payment.getPaymentId());
 
                     try {
-                        ChargeCardTokenResponse chargeCardTokenResponse = onlinePaymentService.chargeCardToken(request,payment);
+                        ChargeCardTokenResponse chargeCardTokenResponse = onlinePaymentService.chargeCardToken(request, payment);
 
                         PaymentReturnDto paymentReturnDto = paymentReturnValidator.validateReturnValues(
                                 true,
