@@ -31,6 +31,7 @@ import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateMitChargeRes
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateResponse;
 import org.helsinki.paytrail.response.tokenization.PaytrailGetTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +43,9 @@ import java.util.concurrent.ExecutionException;
 @Component
 @Slf4j
 public class PaytrailPaymentClient {
+
+    @Value("${paytrail_callback_delay:60}")
+    private int callbackDelay;
 
     private final PaytrailAuthClientFactory paytrailAuthClientFactory;
     private final PaytrailPaymentMethodsResponseMapper paymentMethodsResponseMapper;
@@ -90,6 +94,7 @@ public class PaytrailPaymentClient {
     }
 
     private PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailClient client, PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload) throws ExecutionException, InterruptedException {
+        payload.setCallbackDelay(callbackDelay);
         PaytrailPaymentCreateMitChargeRequest request = new PaytrailPaymentCreateMitChargeRequest(payload);
         CompletableFuture<PaytrailPaymentCreateMitChargeResponse> response = client.sendRequest(request);
         PaytrailPaymentCreateMitChargeResponse createResponse = createMitChargeResponseMapper.to(response.get());
@@ -103,6 +108,7 @@ public class PaytrailPaymentClient {
     public PaytrailPaymentMitChargeSuccessResponse createMitCharge(PaytrailPaymentContext context, String paymentId, OrderWrapper orderWrapperDto, String token) throws ExecutionException, InterruptedException {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
         PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId));
+        payload.setCallbackDelay(callbackDelay);
         payload.setToken(token);
         return createMitCharge(paytrailClient, payload);
     }
@@ -111,6 +117,7 @@ public class PaytrailPaymentClient {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
         PaytrailPaymentCreateMitChargeRequest.CreateMitChargePayload payload = paytrailCreatePaymentPayloadMapper.toDto(createPaymentPayloadFromOrderMessage.convertToPayload(context, message, paymentId));
         payload.setToken(token);
+        payload.setCallbackDelay(callbackDelay);
         return createMitCharge(paytrailClient, payload);
     }
 
@@ -118,6 +125,7 @@ public class PaytrailPaymentClient {
         PaytrailClient paytrailClient = paytrailAuthClientFactory.createPaytrailClientFromPaymentContext(context);
 
         CreatePaymentPayload payload = paymentPayloadConverter.convertToPayload(context, orderWrapperDto, paymentId);
+        payload.setCallbackDelay(callbackDelay);
         PaytrailPaymentCreateRequest request = new PaytrailPaymentCreateRequest(payload);
         CompletableFuture<PaytrailPaymentCreateResponse> response = paytrailClient.sendRequest(request);
 
