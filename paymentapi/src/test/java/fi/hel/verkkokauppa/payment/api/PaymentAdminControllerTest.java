@@ -18,6 +18,7 @@ import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @RunIfProfile(profile = "local")
 @SpringBootTest
 @Slf4j
-public class PaymentAdminControllerTest {
+public class PaymentAdminControllerTest extends BaseFunctionalTest {
 
     private ArrayList<String> paymentMethodsToBeDeleted = new ArrayList<>();
     private List<String> paymentFiltersToBeDeleted = new ArrayList<>();
@@ -412,7 +413,7 @@ public class PaymentAdminControllerTest {
                     .subscriptionId(UUIDGenerator.generateType4UUID().toString())
                     .userId("user")
                     .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
-                    .merchantId("0_YrloUBVL9Yu6dzAXua")
+                    .merchantId(getFirstMerchantIdFromNamespace("venepaikat"))
                     .productId("489834c0-255e-3ee2-a66b-99d092bf81f4")
                     .priceGross("100")
                     .customerEmail(UUID.randomUUID().toString() + "@ambientia.fi")

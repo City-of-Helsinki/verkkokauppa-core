@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -32,7 +31,7 @@ public class MessageService {
 
     public Message createSendableEmailMessage(MessageDto messageDto) {
         return new Message(
-                UUIDGenerator.generateType4UUID() + ":" +  messageDto.getId(),
+                UUIDGenerator.generateType4UUID() + ":" + messageDto.getId(),
                 messageDto.getBody(),
                 messageDto.getReceiver(),
                 env.getRequiredProperty("email.bcc"),
@@ -48,8 +47,11 @@ public class MessageService {
         boolean multipart = message.getAttachments().size() > 0;
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
 
-        helper.setText(message.getMessageText(),true);
-        helper.setTo(message.getSendTo());
+        // split string of email addresses delimited with comma
+        String[] receivers = message.getSendTo().split(",");
+        helper.setTo(receivers);
+
+        helper.setText(message.getMessageText(), true);
         helper.setBcc(env.getRequiredProperty("email.bcc"));
         helper.setSubject(message.getHeader());
         helper.setFrom(message.getFrom());

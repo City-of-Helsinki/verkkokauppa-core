@@ -2,10 +2,9 @@ package fi.hel.verkkokauppa.common.queue.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
-import fi.hel.verkkokauppa.common.events.message.EventMessage;
-import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.events.message.RefundMessage;
-import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.*;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,4 +94,34 @@ public class SendNotificationService {
 
     }
 
+    public void sendErrorNotification(
+            String message,
+            Exception exception
+    ) {
+        sendErrorNotification(
+                message + " " + exception.getMessage(),
+                exception.getStackTrace().toString()
+        );
+    }
+
+    public void sendErrorNotification(
+            String message,
+            String cause
+    ) {
+        String toQueue = queueConfigurations.getErrorEmailNotificationsQueue();
+        try {
+            ActiveMQQueue queue = new ActiveMQQueue(toQueue);
+            ErrorMessage queueMessage = ErrorMessage.builder()
+                    .eventType(EventType.ERROR_EMAIL_NOTIFICATION)
+                    .eventTimestamp(DateTimeUtil.getDateTime())
+                    .message(message)
+                    .cause(cause)
+                    .build();
+            String messageAsJsonString = mapper.writeValueAsString(queueMessage);
+            log.info("Received notification to queue {} message {}", toQueue, messageAsJsonString);
+            jmsTemplate.convertAndSend(queue, messageAsJsonString);
+        } catch (Exception e) {
+            log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
+        }
+    }
 }

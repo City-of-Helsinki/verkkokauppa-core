@@ -24,7 +24,6 @@ public class MessageDto extends BaseDto {
     private String sender;
 
     @NotEmpty
-    @Email
     private String receiver;
 
     @NotBlank

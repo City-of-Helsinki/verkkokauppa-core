@@ -11,6 +11,7 @@ import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.OrderDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
@@ -27,6 +28,7 @@ import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -649,12 +651,36 @@ class OrderServiceTest extends TestUtils {
         log.info("Created order with orderId: {}", order.getOrderId());
         log.info("Created order with userId: {}", order.getUser());
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
-        log.info("Kassa URL: {}", "http://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
         order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
         order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
         orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createSubsriptionOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        JSONObject response = createMockAccountingForProductId("productId");
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+        OrderDto order = Objects.requireNonNull(orderResponse.getBody()).getOrder();
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+
+        Order order1 = orderRepository.findById(order.getOrderId()).orElse(null);
+        assert order1 != null;
+        OrderItemDto orderItem = orderResponse.getBody().getItems().get(0);
+        String price = "100";
+        order1.setPriceNet(String.valueOf(new BigDecimal(price)));
+        order1.setPriceVat(String.valueOf(new BigDecimal(price)));
+        order1.setPriceTotal(String.valueOf(new BigDecimal(price)));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+
+        orderRepository.save(order1);
     }
 
     @Test

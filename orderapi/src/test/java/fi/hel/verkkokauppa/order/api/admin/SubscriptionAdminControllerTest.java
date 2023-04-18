@@ -1,20 +1,26 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
+import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
+import lombok.extern.slf4j.Slf4j;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,12 +29,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
+@Slf4j
 @RunIfProfile(profile = "local")
 class SubscriptionAdminControllerTest extends TestUtils {
-
-    private Logger log = LoggerFactory.getLogger(SubscriptionAdminControllerTest.class);
 
     @Autowired
     private SubscriptionRepository subscriptionRepository;
@@ -38,6 +47,14 @@ class SubscriptionAdminControllerTest extends TestUtils {
 
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    @MockBean
+    private SubscriptionRenewalService renewalServiceMock;
+
+    private String mailHogUrl = "http://localhost:8025";
 
     @Test
     public void assertTrue() {
@@ -131,5 +148,79 @@ class SubscriptionAdminControllerTest extends TestUtils {
         Assertions.assertNotNull(filteredOne);
     }
 
+    @Test
+    @RunIfProfile(profile = "local")
+    void checkRenewalsWhenRenewalsExist() throws InterruptedException {
+        ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
+        when(renewalServiceMock.renewalRequestsExist()).thenReturn(true);
 
+        // get number of emails before test
+        JSONObject mailHogResponse;
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsBefore = Integer.parseInt(mailHogResponse.get("total").toString());
+
+        // generate checkRenewals error notification
+        subscriptionAdminController.checkRenewals();
+        sleep(3000);
+
+        // get eMails from MailHog
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsAfter = Integer.parseInt(mailHogResponse.get("total").toString());
+        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
+
+        JSONArray items = mailHogResponse.getJSONArray("items");
+        // latest email is in index 0
+        JSONObject email = items.getJSONObject(0);
+        JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
+
+        assertEquals("Email Subject does not match.",
+                EventType.ERROR_EMAIL_NOTIFICATION,
+                headers.getJSONArray("Subject").getString(0));
+
+        // Verify Body
+        String body = email.getJSONObject("Content").getString("Body");
+        Assertions.assertTrue(
+                body.contains("Endpoint: /subscription-admin/check-renewals.")
+        );
+        Assertions.assertTrue(
+                body.contains("checkRenevals (subscription) called before previous reneval requests were handled.")
+        );
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void testStartProcessingRenewalsErrorNotification() throws InterruptedException {
+        ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
+        when(renewalServiceMock.renewalRequestsExist()).thenReturn(true).thenReturn(false);
+
+        // get number of emails before test
+        JSONObject mailHogResponse;
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsBefore = Integer.parseInt(mailHogResponse.get("total").toString());
+
+        // set interrupted flag for thread
+        Thread.currentThread().interrupt();
+        subscriptionAdminController.startProcessingRenewals();
+        sleep(3000);
+
+        // get eMails from MailHog
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsAfter = Integer.parseInt(mailHogResponse.get("total").toString());
+        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
+
+        JSONArray items = mailHogResponse.getJSONArray("items");
+        // latest email is in index 0
+        JSONObject email = items.getJSONObject(0);
+        JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
+
+        assertEquals("Email Subject does not match.",
+                EventType.ERROR_EMAIL_NOTIFICATION,
+                headers.getJSONArray("Subject").getString(0));
+
+        // Verify Body
+        String body = email.getJSONObject("Content").getString("Body");
+        Assertions.assertTrue(
+                body.contains("Endpoint: /subscription-admin/start-processing-renewals.")
+        );
+    }
 }

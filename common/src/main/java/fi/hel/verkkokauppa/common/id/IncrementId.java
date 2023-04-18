@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.id;
 
+import fi.hel.verkkokauppa.common.constants.TypePrefix;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -28,7 +29,8 @@ public class IncrementId {
 
   public Long generateOrderIncrementId() {
     try {
-      return this.generateIncrementId("order");
+      Long incrementId = this.generateIncrementId("order");
+      return Long.valueOf(TypePrefix.ORDER.number + String.format("%09d", incrementId));
     } catch (Exception e) {
       log.error("failed to generate order increment id", e);
       return null;

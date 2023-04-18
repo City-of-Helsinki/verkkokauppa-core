@@ -17,6 +17,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class AccountingExportData {
 
+    public static final String INDEX_NAME = "accountingexportdatas";
+
     @Id
     private String accountingSlipId;
 

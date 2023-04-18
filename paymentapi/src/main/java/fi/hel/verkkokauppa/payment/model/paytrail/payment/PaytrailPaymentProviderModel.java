@@ -11,22 +11,22 @@ import java.util.List;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaytrailPaymentProviderModel {
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String url;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String icon;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String svg;
 
     @Field(type = FieldType.Auto)
     private PaymentMethodGroup group;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String name;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String id;
 
     @Field(type = FieldType.Object)

@@ -1,9 +1,11 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
+import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
@@ -69,6 +71,12 @@ public class SubscriptionAdminController {
     @Autowired
     private SubscriptionCardExpiredService subscriptionCardExpiredService;
 
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
+    @Autowired
+    private QueueConfigurations queueConfigurations;
+
     @GetMapping(value = "/subscription-admin/get", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionDto> getSubscription(@RequestParam(value = "id") String id) {
         try {
@@ -116,7 +124,10 @@ public class SubscriptionAdminController {
             renewalService.createRenewalRequests(renewableSubscriptions);
             return ResponseEntity.ok().build();
         } else {
-            log.warn("all subscription renewal requests not processed yet, not creating new requests");
+            sendNotificationService.sendErrorNotification(
+                    "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
+                    "checkRenevals (subscription) called before previous reneval requests were handled."
+            );
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
@@ -128,7 +139,10 @@ public class SubscriptionAdminController {
                 renewalService.batchProcessNextRenewalRequests();
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
             } catch (InterruptedException e) {
-                log.error("processing subscription renewals interrupted", e);
+                sendNotificationService.sendErrorNotification(
+                        "Endpoint: /subscription-admin/start-processing-renewals. Processing subscription renewals interrupted.",
+                        e
+                );
             }
         }
 
@@ -192,20 +206,20 @@ public class SubscriptionAdminController {
      * It creates a new `SubscriptionCardExpiredDto` object and returns it as a response
      *
      * @param subscriptionId the id of the subscription
-     * @param namespace the namespace of the subscription
+     * @param namespace      the namespace of the subscription
      * @return A subscriptionCardExpiredDto object
      */
     @GetMapping(value = "/subscription-admin/create-card-expired-email-entity", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<SubscriptionCardExpiredDto> subscriptionCreateCardExpiredEmailEntity(
             @RequestParam(value = "subscriptionId") String subscriptionId,
             @RequestParam(value = "namespace") String namespace
-            ) {
+    ) {
         log.debug("subscription-api /subscription-admin/create-card-expired-email-entity for subscriptionId: {}", subscriptionId);
         try {
             SubscriptionCardExpiredDto cardExpiredDto = subscriptionCardExpiredService.createAndTransformToDto(
                     subscriptionId,
                     namespace
-                    );
+            );
             return ResponseEntity.ok().body(cardExpiredDto);
         } catch (CommonApiException cae) {
             throw cae;

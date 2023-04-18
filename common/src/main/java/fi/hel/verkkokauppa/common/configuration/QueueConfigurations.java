@@ -32,15 +32,23 @@ public class QueueConfigurations {
     @Value("${queue.subscription.renewals:subscription-renewals}")
     String subscriptionRenewalsQueue;
 
+    @Value("${queue.error.email.notifications:error-email-notifications}")
+    String errorEmailNotificationsQueue;
+
+    @Value("${queue.error.email.notifications.sent:error-email-notifications-sent}")
+    String errorEmailNotificationsSentQueue;
+
     public List<String> getAll() {
-        ArrayList<String> allQueus = new ArrayList<>();
-        allQueus.add(orderNotificationsQueue);
-        allQueus.add(subscriptionNotificationsQueue);
-        allQueus.add(paymentNotificationsQueue);
-        allQueus.add(subscriptionRenewalsQueue);
-        allQueus.add(paymentFailedToProcessQueue);
-        allQueus.add(refundNotificationsQueue);
-        allQueus.add(refundFailedToProcessQueue);
-        return allQueus;
+        ArrayList<String> allQueues = new ArrayList<>();
+        allQueues.add(orderNotificationsQueue);
+        allQueues.add(subscriptionNotificationsQueue);
+        allQueues.add(paymentNotificationsQueue);
+        allQueues.add(subscriptionRenewalsQueue);
+        allQueues.add(paymentFailedToProcessQueue);
+        allQueues.add(refundNotificationsQueue);
+        allQueues.add(refundFailedToProcessQueue);
+        allQueues.add(errorEmailNotificationsQueue);
+        allQueues.add(errorEmailNotificationsSentQueue);
+        return allQueues;
     }
 }
