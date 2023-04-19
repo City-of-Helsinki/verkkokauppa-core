@@ -51,18 +51,36 @@ public class ProductAccountingControllerTest {
     @RunIfProfile(profile = "local")
     public void testCreateProductAccounting() {
         ProductAccountingDto productAccountingDtoMock = createMockProductAccountingDto();
-        String productId = createProductId();
+        String productId = productAccountingDtoMock.getProductId();
 
-        productAccountingController.createProductAccounting(productId, productAccountingDtoMock);
+        productAccountingController.createProductAccounting(
+                productId,
+                productAccountingDtoMock);
         ProductAccounting productAccounting = readProductAccounting(productId);
 
         assertNotNull(productAccounting);
         assertEquals(productAccountingDtoMock.getBalanceProfitCenter(), productAccounting.getBalanceProfitCenter());
+        assertEquals(productAccountingDtoMock.getMainLedgerAccount(), productAccounting.getMainLedgerAccount());
+        assertEquals(productAccountingDtoMock.getProject(), productAccounting.getProject());
+        assertEquals(productAccountingDtoMock.getCompanyCode(), productAccounting.getCompanyCode());
+        assertEquals(productAccountingDtoMock.getInternalOrder(), productAccounting.getInternalOrder());
+        assertEquals(productAccountingDtoMock.getVatCode(), productAccounting.getVatCode());
+        assertEquals(productAccountingDtoMock.getOperationArea(), productAccounting.getOperationArea());
+        assertEquals(productAccountingDtoMock.getProfitCenter(), productAccounting.getProfitCenter());
 
     }
 
     private ProductAccountingDto createMockProductAccountingDto() {
         ProductAccountingDto productAccountingMock = new ProductAccountingDto();
+
+        productAccountingMock.setProductId(createProductId());
+
+        productAccountingMock.setMainLedgerAccount("1234");
+        productAccountingMock.setProject("project");
+        productAccountingMock.setCompanyCode("12345");
+        productAccountingMock.setOperationArea("opArea");
+        productAccountingMock.setVatCode("VAT10");
+        productAccountingMock.setInternalOrder("order1");
 
         productAccountingMock.setProfitCenter("profitCenter");
         productAccountingMock.setBalanceProfitCenter("balanceProfitCenter");
