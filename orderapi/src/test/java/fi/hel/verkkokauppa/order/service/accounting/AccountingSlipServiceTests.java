@@ -64,17 +64,17 @@ public class AccountingSlipServiceTests extends DummyData {
 
         String companyCode1 = "1234";
         OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting("1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
-                "profitCenter", "project 1", "Area A");
+                "profitCenter", "balanceProfitCenter", "project 1", "Area A");
         OrderItemAccounting orderItemAccounting2 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
         OrderItemAccounting orderItemAccounting3 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
 
         String companyCode2 = "5678";
         OrderItemAccounting orderItemAccounting4 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
         OrderItemAccounting orderItemAccounting5 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
 
         List<OrderItemAccounting> list = new ArrayList<>();
         list.add(orderItemAccounting2);
@@ -94,7 +94,7 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderItemAccountingDto> resultListForCompanyCode1 = new ArrayList<>(dtosForCompanyCode1);
 
         List<OrderItemAccountingDto> expectedListForCompanyCode1 = new ArrayList<>();
-        expectedListForCompanyCode1.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode1.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
         expectedListForCompanyCode1.add(new OrderItemAccountingTransformer().transformToDto(orderItemAccounting1));
 
         assertEquals(expectedListForCompanyCode1, resultListForCompanyCode1);
@@ -103,7 +103,7 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderItemAccountingDto> resultListForCompanyCode2 = new ArrayList<>(dtosForCompanyCode2);
 
         List<OrderItemAccountingDto> expectedListForCompanyCode2 = new ArrayList<>();
-        expectedListForCompanyCode2.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode2.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
 
         assertEquals(expectedListForCompanyCode2, resultListForCompanyCode2);
     }

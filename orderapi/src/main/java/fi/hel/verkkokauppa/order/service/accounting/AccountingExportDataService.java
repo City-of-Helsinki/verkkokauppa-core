@@ -93,11 +93,14 @@ public class AccountingExportDataService {
     private void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
         double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
 
+        // each row added to sum should have same balance profit center
+        String balanceProfitCenter = originalRows.get(0).getBalanceProfitCenter();
+
         AccountingSlipRowDto incomeEntryRow = AccountingSlipRowDto.builder()
                 .amountInDocumentCurrency(formatIncomeEntrySum(sum))
                 .lineText(lineText)
                 .glAccount(INCOME_ENTRY_GL_ACCOUNT)
-                .profitCenter(INCOME_ENTRY_PROFIT_CENTER)
+                .profitCenter(balanceProfitCenter)
                 .build();
 
         rows.add(incomeEntryRow);

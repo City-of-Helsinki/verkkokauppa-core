@@ -48,6 +48,8 @@ public class OrderItemAccountingDto {
 
     private String profitCenter;
 
+    private String balanceProfitCenter;
+
     private String project;
 
     private String operationArea;
@@ -63,6 +65,7 @@ public class OrderItemAccountingDto {
         this.vatCode = productAccountingDto.getVatCode();
         this.internalOrder = productAccountingDto.getInternalOrder();
         this.profitCenter = productAccountingDto.getProfitCenter();
+        this.balanceProfitCenter = productAccountingDto.getBalanceProfitCenter();
         this.project = productAccountingDto.getProject();
         this.operationArea = productAccountingDto.getOperationArea();
     }

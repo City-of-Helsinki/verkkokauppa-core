@@ -42,6 +42,9 @@ public class AccountingSlipRow {
     private String profitCenter;
 
     @Field(type = FieldType.Text)
+    private String balanceProfitCenter;
+
+    @Field(type = FieldType.Text)
     private String orderItemNumber;
 
     @Field(type = FieldType.Text)
