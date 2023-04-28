@@ -80,10 +80,10 @@ public class PaytrailPaymentContextBuilderUnitTests {
         assertEquals(PAYTRAIL_MERCHANT_ID, context.getPaytrailMerchantId());
         assertEquals(PAYTRAIL_SECRET_KEY, context.getPaytrailSecretKey());
 
-        assertEquals("return_success_url", context.getRedirectSuccessUrl());
-        assertEquals("return_cancel_url", context.getRedirectCancelUrl());
-        assertEquals("notify_success_url", context.getCallbackSuccessUrl());
-        assertEquals("notify_cancel_url", context.getCallbackCancelUrl());
+        assertEquals("return_success_url", context.getPaymentRedirectSuccessUrl());
+        assertEquals("return_cancel_url", context.getPaymentRedirectCancelUrl());
+        assertEquals("notify_success_url", context.getPaymentCallbackSuccessUrl());
+        assertEquals("notify_cancel_url", context.getPaymentCallbackCancelUrl());
 
         assertEquals("url1", context.getCardRedirectSuccessUrl());
         assertEquals("url2", context.getCardRedirectCancelUrl());

@@ -57,10 +57,10 @@ public class PaytrailPaymentContextBuilder {
         defaultContext.setUpdateCardCallbackSuccessUrl(env.getRequiredProperty("paytrail_update_card_callback_success_url"));
         defaultContext.setUpdateCardCallbackCancelUrl(env.getRequiredProperty("paytrail_update_card_callback_cancel_url"));
 
-        defaultContext.setRedirectSuccessUrl(env.getRequiredProperty("paytrail_payment_return_success_url"));
-        defaultContext.setRedirectCancelUrl(env.getRequiredProperty("paytrail_payment_return_cancel_url"));
-        defaultContext.setCallbackSuccessUrl(env.getRequiredProperty("paytrail_payment_notify_success_url"));
-        defaultContext.setCallbackCancelUrl(env.getRequiredProperty("paytrail_payment_notify_cancel_url"));
+        defaultContext.setPaymentRedirectSuccessUrl(env.getRequiredProperty("paytrail_payment_return_success_url"));
+        defaultContext.setPaymentRedirectCancelUrl(env.getRequiredProperty("paytrail_payment_return_cancel_url"));
+        defaultContext.setPaymentCallbackSuccessUrl(env.getRequiredProperty("paytrail_payment_notify_success_url"));
+        defaultContext.setPaymentCallbackCancelUrl(env.getRequiredProperty("paytrail_payment_notify_cancel_url"));
 
         // fetch namespace and merchant specific service configuration from mapping api
         try {
