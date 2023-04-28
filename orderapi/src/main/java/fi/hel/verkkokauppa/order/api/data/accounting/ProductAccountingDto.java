@@ -33,6 +33,8 @@ public class ProductAccountingDto {
 
     private String profitCenter;
 
+    private String balanceProfitCenter;
+
     private String project;
 
     private String operationArea;

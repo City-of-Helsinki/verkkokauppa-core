@@ -36,6 +36,8 @@ public class ProductAccountingDto extends BaseDto {
 
     private String profitCenter;
 
+    private String balanceProfitCenter;
+
     private String project;
 
     private String operationArea;

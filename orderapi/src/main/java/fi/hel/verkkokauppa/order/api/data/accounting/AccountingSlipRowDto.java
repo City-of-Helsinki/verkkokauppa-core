@@ -40,6 +40,8 @@ public class AccountingSlipRowDto {
     @JacksonXmlProperty(localName = "ProfitCenter")
     private String profitCenter;
 
+    private String balanceProfitCenter;
+
     @JacksonXmlProperty(localName = "OrderItemNumber")
     private String orderItemNumber;
 
@@ -74,6 +76,7 @@ public class AccountingSlipRowDto {
         this.lineText = other.getLineText();
         this.glAccount = other.getGlAccount();
         this.profitCenter = other.getProfitCenter();
+        this.balanceProfitCenter = other.getBalanceProfitCenter();
         this.orderItemNumber = other.getOrderItemNumber();
         this.wbsElement = other.getWbsElement();
         this.functionalArea = other.getFunctionalArea();

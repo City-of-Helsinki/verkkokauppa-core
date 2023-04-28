@@ -45,6 +45,9 @@ public class OrderItemAccounting {
     private String profitCenter;
 
     @Field(type = FieldType.Text)
+    private String balanceProfitCenter;
+
+    @Field(type = FieldType.Text)
     private String project;
 
     @Field(type = FieldType.Text)

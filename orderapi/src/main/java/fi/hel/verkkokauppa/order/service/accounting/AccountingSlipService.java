@@ -257,6 +257,7 @@ public class AccountingSlipService {
                     .orderItemNumber(summedItemAccounting.getInternalOrder())
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
+                    .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
                     .build();
 
             rows.add(accountingSlipRowDto);

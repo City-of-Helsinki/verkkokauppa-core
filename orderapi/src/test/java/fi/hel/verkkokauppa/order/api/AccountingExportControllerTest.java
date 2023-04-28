@@ -1,8 +1,8 @@
 package fi.hel.verkkokauppa.order.api;
 
-import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
+import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
@@ -13,26 +13,18 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 // start local sftp server:
 // verkkokauppa-core/docker compose up sftp
@@ -41,11 +33,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK
 )
-@AutoConfigureMockMvc
 @Slf4j
-public class AccountingControllerTest extends DummyData {
+public class AccountingExportControllerTest extends DummyData {
+
     @Autowired
-    private MockMvc mockMvc;
+    private AccountingController accountingController;
+
+    @Autowired
+    private AccountingExportController accountingExportController;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -126,17 +121,18 @@ public class AccountingControllerTest extends DummyData {
         orderItemAccounting5 = orderItemAccountingRepository.save(orderItemAccounting5);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting5.getOrderItemId());
 
-        this.mockMvc.perform(
-                get("/accounting/create")
-            )
-            .andDo(print())
-            .andExpect(status().is2xxSuccessful())
-            .andExpect(status().is(200))
-            .andReturn();
+        ResponseEntity<List<AccountingSlipDto>> response = accountingController.createAccountingData();
+        String slipId = response.getBody().get(0).getAccountingSlipId();
+        ResponseEntity<AccountingExportDataDto> response2 = accountingExportController.generateAccountingExportData(slipId);
 
-        order1 = orderRepository.findById(order1.getOrderId()).orElseThrow();
-        assertNotNull(order1.getAccounted());
-        order2 = orderRepository.findById(order2.getOrderId()).orElseThrow();
-        assertNotNull(order2.getAccounted());
+        AccountingExportDataDto accountingExportDataDto = response2.getBody();
+        String accountingXml = accountingExportDataDto.getXml();
+
+        assertNotNull(accountingXml);
+        assertTrue(accountingXml.contains("<ProfitCenter>profitCenter</ProfitCenter>"));
+        assertTrue(accountingXml.contains("<ProfitCenter/>"));
+        assertTrue(accountingXml.contains("<ProfitCenter>balanceProfitCenter</ProfitCenter>"));
+        assertEquals(slipId, accountingExportDataDto.getAccountingSlipId());
+
     }
 }
