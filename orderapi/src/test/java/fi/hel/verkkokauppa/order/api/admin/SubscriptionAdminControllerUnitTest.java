@@ -1,9 +1,11 @@
 package fi.hel.verkkokauppa.order.api.admin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCardExpiredDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionCriteria;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -82,6 +84,12 @@ public class SubscriptionAdminControllerUnitTest {
 
     @MockBean
     private SubscriptionCardExpiredRepository subscriptionCardExpiredRepository;
+
+    @MockBean
+    private SendNotificationService sendNotificationService;
+
+    @MockBean
+    private QueueConfigurations queueConfigurations;
 
     /**
      * It tests that when the service is called with a subscriptionId and namespace, it returns a
