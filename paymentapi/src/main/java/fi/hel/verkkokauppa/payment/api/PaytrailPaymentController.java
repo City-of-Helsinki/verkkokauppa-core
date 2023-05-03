@@ -1,10 +1,7 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
-import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
@@ -15,18 +12,14 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.helsinki.paytrail.constants.CheckoutAlgorithm;
-import org.helsinki.paytrail.constants.CheckoutMethod;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
-import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -42,9 +35,6 @@ public class PaytrailPaymentController {
 
     @Autowired
     private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
-
-    @Autowired
-    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Autowired
     private Environment env;
@@ -104,7 +94,7 @@ public class PaytrailPaymentController {
             @RequestParam(value = "checkout-status") String status,
             @RequestParam(value = "checkout-stamp") String paymentId,
             @RequestParam(value = "checkout-settlement-reference", required = false) String settlementReference,
-            @RequestParam Map<String,String> checkoutParams
+            @RequestParam Map<String, String> checkoutParams
     ) {
         try {
             boolean isValid = paytrailPaymentReturnValidator.validateChecksum(checkoutParams, merchantId, signature, paymentId);
@@ -152,40 +142,11 @@ public class PaytrailPaymentController {
             @RequestParam(value = "orderId") String orderId
     ) {
         try {
-            String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID);
-
-            if (paytrailMerchantId == null) {
-                throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-get-paytrail-merchant-id", "failed to get paytrail merchant id, merchantId: " + merchantId + ", namespace: " + namespace)
-                );
-            }
-
-            String secretKey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
-
-            if (secretKey == null) {
-                throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-get-merchant-paytrail-secret-key", "failed to get paytrail secret key, merchantId: " + merchantId)
-                );
-            }
-
-            String redirectSuccessUrl = env.getRequiredProperty("paytrail_card_redirect_success_url");
-            String redirectCancelUrl = env.getRequiredProperty("paytrail_card_redirect_cancel_url");
-            String callbackSuccessUrl = env.getRequiredProperty("paytrail_card_callback_success_url");
-            String callbackCancelUrl = env.getRequiredProperty("paytrail_card_callback_cancel_url");
-
-            TreeMap<String, String> parameters = new TreeMap<>();
-            parameters.put("checkout-account", paytrailMerchantId);
-            parameters.put("checkout-algorithm", CheckoutAlgorithm.SHA256.toString());
-            parameters.put("checkout-method", CheckoutMethod.POST.toString());
-            parameters.put("checkout-nonce", UUIDGenerator.generateType4UUID().toString());
-            parameters.put("checkout-timestamp", Instant.now().toString());
-            parameters.put("checkout-redirect-success-url", redirectSuccessUrl + (redirectSuccessUrl.endsWith("/") ? "" : "/") + orderId);
-            parameters.put("checkout-redirect-cancel-url", redirectCancelUrl + (redirectCancelUrl.endsWith("/") ? "" : "/") + orderId);
-            parameters.put("checkout-callback-success-url", callbackSuccessUrl + (callbackSuccessUrl.endsWith("/") ? "" : "/") + orderId);
-            parameters.put("checkout-callback-cancel-url", callbackCancelUrl + (callbackCancelUrl.endsWith("/") ? "" : "/") + orderId);
-            parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, secretKey));
+            TreeMap<String, String> parameters = paymentPaytrailService.getCardReturnParameters(
+                    merchantId,
+                    namespace,
+                    orderId
+            );
 
             return ResponseEntity.status(HttpStatus.OK).body(parameters);
         } catch (CommonApiException e) {
@@ -193,6 +154,30 @@ public class PaytrailPaymentController {
         } catch (Exception e) {
             log.error("getting card form parameters failed, merchantId: " + merchantId);
             Error error = new Error("failed-to-get-card-form-parameters", "failed to get card form parameters [" + merchantId + ", " + namespace + "]");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+    }
+
+    @GetMapping("/subscription/get/update-card-form-parameters")
+    public ResponseEntity<TreeMap<String, String>> getUpdateCardFormParameters(
+            @RequestParam(value = "merchantId") String merchantId,
+            @RequestParam(value = "namespace") String namespace,
+            @RequestParam(value = "orderId") String orderId
+    ) {
+        try {
+
+            TreeMap<String, String> parameters = paymentPaytrailService.getUpdateCardReturnParameters(
+                    merchantId,
+                    namespace,
+                    orderId
+            );
+
+            return ResponseEntity.status(HttpStatus.OK).body(parameters);
+        } catch (CommonApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("getting update card form parameters failed, merchantId: " + merchantId);
+            Error error = new Error("failed-to-get-update-card-form-parameters", "failed to get update card form parameters [" + merchantId + ", " + namespace + "]");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }

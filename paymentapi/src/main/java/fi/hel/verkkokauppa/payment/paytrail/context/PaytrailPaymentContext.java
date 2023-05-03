@@ -22,4 +22,17 @@ public class PaytrailPaymentContext {
 
     /* Paytrail Shop-in-Shop merchant ID */
     private String shopId;
+
+    private String cardRedirectSuccessUrl;
+    private String cardRedirectCancelUrl;
+    private String cardCallbackSuccessUrl;
+    private String cardCallbackCancelUrl;
+    private String updateCardRedirectSuccessUrl;
+    private String updateCardRedirectCancelUrl;
+    private String updateCardCallbackSuccessUrl;
+    private String updateCardCallbackCancelUrl;
+    private String paymentRedirectSuccessUrl;
+    private String paymentRedirectCancelUrl;
+    private String paymentCallbackSuccessUrl;
+    private String paymentCallbackCancelUrl;
 }
