@@ -70,17 +70,18 @@ public class OrderItemAccountingDto {
         this.operationArea = productAccountingDto.getOperationArea();
     }
 
-    public OrderItemAccountingDto(String mainLedgerAccount, String vatCode, String internalOrder, String profitCenter, String project, String operationArea) {
+    public OrderItemAccountingDto(String mainLedgerAccount, String vatCode, String internalOrder, String profitCenter, String project, String operationArea, String balanceProfitCenter) {
         this.mainLedgerAccount = mainLedgerAccount;
         this.vatCode = vatCode;
         this.internalOrder = internalOrder;
         this.profitCenter = profitCenter;
         this.project = project;
         this.operationArea = operationArea;
+        this.balanceProfitCenter = balanceProfitCenter;
     }
 
     public OrderItemAccountingDto createKey() {
-        return new OrderItemAccountingDto(mainLedgerAccount, vatCode, internalOrder, profitCenter, project, operationArea);
+        return new OrderItemAccountingDto(mainLedgerAccount, vatCode, internalOrder, profitCenter, project, operationArea, balanceProfitCenter);
     }
 
     public String getPriceGross() {

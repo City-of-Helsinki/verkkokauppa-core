@@ -284,6 +284,7 @@ public class TestUtils extends DummyData {
         productAccounting.put("vatCode", "vatCode");
         productAccounting.put("internalOrder", "internalOrder");
         productAccounting.put("profitCenter", "profitCenter");
+        productAccounting.put("balanceProfitCenter", "balanceProfitCenter");
         productAccounting.put("project", "project");
         productAccounting.put("operationArea", "operationArea");
 

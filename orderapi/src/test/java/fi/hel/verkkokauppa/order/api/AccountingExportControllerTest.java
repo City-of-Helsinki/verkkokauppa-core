@@ -98,28 +98,32 @@ public class AccountingExportControllerTest extends DummyData {
         toBeDeletedOrderAccountingById.add(orderAccounting2.getOrderId());
 
         String companyCode1 = "1234";
-        OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "20", "10", "10", companyCode1, "account", "24", "yes",
+        OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "10", "7", "3", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 1", "Area A");
         orderItemAccounting1 = orderItemAccountingRepository.save(orderItemAccounting1);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting1.getOrderItemId());
-        OrderItemAccounting orderItemAccounting2 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+        OrderItemAccounting orderItemAccounting2 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "20", "10", "10", companyCode1, "account", "24", "yes",
+                "profitCenter", "balanceProfitCenter2", "project 2", "Area B");
         orderItemAccounting2 = orderItemAccountingRepository.save(orderItemAccounting2);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting2.getOrderItemId());
-        OrderItemAccounting orderItemAccounting3 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+        OrderItemAccounting orderItemAccounting3 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "30", "20", "10", companyCode1, "account", "24", "yes",
+                "profitCenter", "balanceProfitCenter2", "project 2", "Area B");
         orderItemAccounting3 = orderItemAccountingRepository.save(orderItemAccounting3);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting3.getOrderItemId());
-
-        String companyCode2 = "5678";
-        OrderItemAccounting orderItemAccounting4 = new OrderItemAccounting(UUID.randomUUID().toString(), order2.getOrderId(), "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+        OrderItemAccounting orderItemAccounting4 = new OrderItemAccounting(UUID.randomUUID().toString(), order1.getOrderId(), "50", "35", "15", companyCode1, "account", "24", "yes",
+                "profitCenter", "balanceProfitCenter2", "project 3", "Area A");
         orderItemAccounting4 = orderItemAccountingRepository.save(orderItemAccounting4);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting4.getOrderItemId());
+
+        String companyCode2 = "5678";
         OrderItemAccounting orderItemAccounting5 = new OrderItemAccounting(UUID.randomUUID().toString(), order2.getOrderId(), "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter3", "project 2", "Area B");
         orderItemAccounting5 = orderItemAccountingRepository.save(orderItemAccounting5);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting5.getOrderItemId());
+        OrderItemAccounting orderItemAccounting6 = new OrderItemAccounting(UUID.randomUUID().toString(), order2.getOrderId(), "10", "5", "5", companyCode2, "account", "24", "yes",
+                "profitCenter", "balanceProfitCenter3", "project 2", "Area B");
+        orderItemAccounting6 = orderItemAccountingRepository.save(orderItemAccounting6);
+        toBeDeletedOrderItemAccountingById.add(orderItemAccounting6.getOrderItemId());
 
         ResponseEntity<List<AccountingSlipDto>> response = accountingController.createAccountingData();
         String slipId = response.getBody().get(0).getAccountingSlipId();
@@ -132,6 +136,7 @@ public class AccountingExportControllerTest extends DummyData {
         assertTrue(accountingXml.contains("<ProfitCenter>profitCenter</ProfitCenter>"));
         assertTrue(accountingXml.contains("<ProfitCenter/>"));
         assertTrue(accountingXml.contains("<ProfitCenter>balanceProfitCenter</ProfitCenter>"));
+        assertTrue(accountingXml.contains("<ProfitCenter>balanceProfitCenter2</ProfitCenter>"));
         assertEquals(slipId, accountingExportDataDto.getAccountingSlipId());
 
     }

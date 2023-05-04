@@ -38,11 +38,6 @@ public class AccountingExportDataService {
     private Logger log = LoggerFactory.getLogger(AccountingExportDataService.class);
 
     public AccountingExportDataDto createAccountingExportDataDto(AccountingSlipDto accountingSlip) {
-        List<AccountingSlipRowDto> originalRows = accountingSlip.getRows();
-
-        List<AccountingSlipRowDto> separatedRows = separateVatRows(originalRows);
-        addIncomeEntryRow(originalRows, separatedRows, accountingSlip.getHeaderText());
-        accountingSlip.setRows(separatedRows);
 
         String xml;
         try {
@@ -66,15 +61,13 @@ public class AccountingExportDataService {
         return exportDataDto;
     }
 
-    private List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows) {
+    public List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows) {
         List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
 
         for (AccountingSlipRowDto originalRow : originalRows) {
             String baseAmount = originalRow.getBaseAmount();
 
             AccountingSlipRowDto row = new AccountingSlipRowDto(originalRow);
-            row.setAmountInDocumentCurrency(baseAmount);
-            row.setBaseAmount(null);
 
             AccountingSlipRowDto vatRow = AccountingSlipRowDto.builder()
                     .taxCode(originalRow.getTaxCode())
@@ -90,7 +83,7 @@ public class AccountingExportDataService {
         return separatedRows;
     }
 
-    private void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
+    public void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
         double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
 
         // each row added to sum should have same balance profit center

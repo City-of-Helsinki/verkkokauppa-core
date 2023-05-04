@@ -28,12 +28,7 @@ import org.springframework.stereotype.Service;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -183,7 +178,26 @@ public class AccountingSlipService {
             String headerTextDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(postingDate);
             String headertext = "Verkkokauppa " + headerTextDate;
 
-            List<AccountingSlipRowDto> rows = createAccountingSlipRowDtos(summedItemAccountingsForCompanyCode, accountingSlipId, headertext);
+            // order each list by balanceProfitCenter
+            Map<String, List<OrderItemAccountingDto>> accountingsByBalanceProfitCenter;
+            accountingsByBalanceProfitCenter = groupOrderItemAccountingsByBalanceProfitCenter(summedItemAccountingsForCompanyCode);
+
+            // collect all rows by balance profit center
+            List<AccountingSlipRowDto> rows = new ArrayList<>();
+            int rowCountOffset = 0;
+            for (Map.Entry<String, List<OrderItemAccountingDto>> orderedAccountings : accountingsByBalanceProfitCenter.entrySet()) {
+                List<AccountingSlipRowDto> originalRows = createAccountingSlipRowDtos(
+                        orderedAccountings.getValue(),
+                        accountingSlipId,
+                        headertext,
+                        rowCountOffset
+                );
+                rowCountOffset += originalRows.size();
+
+                List<AccountingSlipRowDto> separatedRows = accountingExportDataService.separateVatRows(originalRows);
+                accountingExportDataService.addIncomeEntryRow(originalRows, separatedRows, headertext);
+                rows.addAll(separatedRows);
+            }
 
             String referenceYear = DateTimeFormatter.ofPattern("yy").format(postingDate);
             String referenceNumberFormatted = String.format("%1$" + REFERENCE_NUMBER_LENGTH + "s", referenceNumber).replace(' ', '0');
@@ -237,9 +251,9 @@ public class AccountingSlipService {
     }
 
     private List<AccountingSlipRowDto> createAccountingSlipRowDtos(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId,
-                                                                   String lineText) {
+                                                                   String lineText, int rowCountOffset) {
         List<AccountingSlipRowDto> rows = new ArrayList<>();
-        int rowNumber = 1;
+        int rowNumber = 1 + rowCountOffset;
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
             String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
@@ -285,11 +299,57 @@ public class AccountingSlipService {
         return groupedAccountings;
     }
 
+    private Map<String, List<OrderItemAccountingDto>> groupOrderItemAccountingsByBalanceProfitCenter(List<OrderItemAccountingDto> accountingItemsForDate) {
+        Map<String, List<OrderItemAccountingDto>> groupedAccountings = new HashMap<>();
+
+        for (OrderItemAccountingDto orderItemAccountingDto : accountingItemsForDate) {
+            String balanceProfitCenter = orderItemAccountingDto.getBalanceProfitCenter();
+            List<OrderItemAccountingDto> accountingList = groupedAccountings.get(balanceProfitCenter);
+
+            if (accountingList == null) {
+                ArrayList<OrderItemAccountingDto> accountings = new ArrayList<>();
+                accountings.add(orderItemAccountingDto);
+                groupedAccountings.put(balanceProfitCenter, accountings);
+            } else {
+                accountingList.add(orderItemAccountingDto);
+            }
+        }
+        return groupedAccountings;
+    }
+
+    public Map<String, List<AccountingSlipRowDto>> groupAccountingSlipRowsByBalanceProfitCenter(List<AccountingSlipRowDto> rows) {
+        Map<String, List<AccountingSlipRowDto>> groupedAccountings = new HashMap<>();
+
+        for (AccountingSlipRowDto row : rows) {
+            String balanceProfitCenter = row.getBalanceProfitCenter();
+            List<AccountingSlipRowDto> accountingList = groupedAccountings.get(balanceProfitCenter);
+
+            if (accountingList == null) {
+                ArrayList<AccountingSlipRowDto> accountings = new ArrayList<>();
+                accountings.add(row);
+                groupedAccountings.put(balanceProfitCenter, accountings);
+            } else {
+                accountingList.add(row);
+            }
+        }
+        return groupedAccountings;
+    }
+
     private AccountingSlip createAccountingAndRows(AccountingSlipDto accountingSlipDto) {
         AccountingSlip accountingSlip = accountingSlipRepository.save(new AccountingSlipTransformer().transformToEntity(accountingSlipDto));
 
         List<AccountingSlipRowDto> rows = accountingSlipDto.getRows();
-        rows.forEach(row -> accountingSlipRowRepository.save(new AccountingSlipRowTransformer().transformToEntity(row)));
+
+        rows.forEach(row -> {
+            // do not save vat or income entry rows
+            if (row.getAccountingSlipRowId() != null) {
+                accountingSlipRowRepository.save(new AccountingSlipRowTransformer().transformToEntity(row));
+                // set amountInDocumentCurrency to base amount for sum rows (for XML)
+                row.setAmountInDocumentCurrency(row.getBaseAmount());
+                // set base amount for sum rows to null (for XML)
+                row.setBaseAmount(null);
+            }
+        });
 
         log.debug("created new accounting slip, accountingId: " + accountingSlip.getAccountingSlipId());
         return accountingSlip;
