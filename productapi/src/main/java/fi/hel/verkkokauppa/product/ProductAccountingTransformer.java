@@ -31,6 +31,7 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         dto.setProject(productAccounting.getProject());
         dto.setInternalOrder(productAccounting.getInternalOrder());
         dto.setProfitCenter(productAccounting.getProfitCenter());
+        dto.setBalanceProfitCenter(productAccounting.getBalanceProfitCenter());
         dto.setOperationArea(productAccounting.getOperationArea());
         return dto;
     }
