@@ -10,11 +10,15 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "refunds")
 @Data
 public class Refund {
+
+  public static final String INDEX_NAME = "refunds";
+
   @Id
   String refundId;
 
@@ -57,6 +61,9 @@ public class Refund {
   @Field(type = FieldType.Text)
   String priceTotal;
 
+  @Field(type = FieldType.Date, format = DateFormat.date)
+  LocalDate accounted;
+
   public Refund() {}
 
   public static Refund fromRefundDto(RefundDto dto) {
@@ -75,6 +82,7 @@ public class Refund {
     refund.setPriceNet(dto.getPriceNet());
     refund.setPriceVat(dto.getPriceVat());
     refund.setPriceTotal(dto.getPriceTotal());
+    refund.setAccounted(dto.getAccounted());
     return refund;
   }
 

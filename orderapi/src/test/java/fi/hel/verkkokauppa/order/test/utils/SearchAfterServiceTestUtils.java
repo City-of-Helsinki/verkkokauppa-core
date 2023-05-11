@@ -1,12 +1,17 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
+import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
-import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
-import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportDataService;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingSearchService;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +51,23 @@ public class SearchAfterServiceTestUtils extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private RefundRepository refundRepository;
+
+    @Autowired
+    private RefundItemRepository refundItemRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private OrderItemMetaRepository orderItemMetaRepository;
+
     private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedOrderItemById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedOrderItemMetaById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedRefundById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedRefundItemById = new ArrayList<>();
     private ArrayList<String> toBeDeletedAccountingById = new ArrayList<>();
 
 
@@ -110,6 +131,12 @@ public class SearchAfterServiceTestUtils extends TestUtils {
             for (long i = 0; i < newRecordCount; i++) {
                 ResponseEntity<OrderAggregateDto> response = createNewOrderToDatabase(1);
                 toBeDeletedOrderById.add(response.getBody().getOrder().getOrderId());
+                for (OrderItemDto item: response.getBody().getItems()) {
+                    toBeDeletedOrderItemById.add(item.getOrderItemId());
+                    for (OrderItemMetaDto meta: item.getMeta()) {
+                        toBeDeletedOrderItemMetaById.add(meta.getOrderItemId());
+                    }
+                }
             }
         }
     }
@@ -120,6 +147,16 @@ public class SearchAfterServiceTestUtils extends TestUtils {
             orderRepository.deleteById(id);
         }
         toBeDeletedOrderById = new ArrayList<>();
+
+        for (String id : toBeDeletedOrderItemById) {
+            orderItemRepository.deleteById(id);
+        }
+        toBeDeletedOrderItemById = new ArrayList<>();
+
+        for (String id : toBeDeletedOrderItemMetaById) {
+            orderItemMetaRepository.deleteById(id);
+        }
+        toBeDeletedOrderItemMetaById = new ArrayList<>();
     }
 
     // returns number of order records that have not been Accounted
@@ -131,6 +168,54 @@ public class SearchAfterServiceTestUtils extends TestUtils {
                 .withPageable(PageRequest.of(0, 10000))
                 .build();
         SearchHits<Order> hits = operations.search(query, Order.class);
+
+        return hits.getTotalHits();
+    }
+
+    // test utility method for creating refunds that have not been accounted
+    // usable for local testing of services
+    public void createRefund(long testRecordsCount) {
+
+        // if there are less than wanted amount of order records then create more
+        long actualDataCount = notAccountedRefundCount();
+        log.info("Number of existing test data rows " + actualDataCount);
+        if (actualDataCount < testRecordsCount) {
+            long newRecordCount = testRecordsCount - actualDataCount;
+            log.info("Creating " + newRecordCount + " more test records for accountingexportdatas");
+
+            for (long i = 0; i < newRecordCount; i++) {
+                ResponseEntity<RefundAggregateDto> response = createNewRefundToDatabase(1, "testOrderId");
+                toBeDeletedRefundById.add(response.getBody().getRefund().getRefundId());
+                for (RefundItemDto item: response.getBody().getItems()) {
+                    toBeDeletedRefundItemById.add(item.getRefundItemId());
+                }
+            }
+        }
+    }
+
+    // deletes all created refund records
+    public void deleteNotAccountedRefunds() {
+        for (String id : toBeDeletedRefundById) {
+            refundRepository.deleteById(id);
+        }
+        toBeDeletedRefundById = new ArrayList<>();
+
+        for (String id : toBeDeletedRefundItemById) {
+            refundItemRepository.deleteById(id);
+        }
+        toBeDeletedRefundItemById = new ArrayList<>();
+    }
+
+
+    // returns number of refund records that have not been Accounted
+    public long notAccountedRefundCount() {
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
+
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb)
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+        SearchHits<Refund> hits = operations.search(query, Refund.class);
 
         return hits.getTotalHits();
     }
