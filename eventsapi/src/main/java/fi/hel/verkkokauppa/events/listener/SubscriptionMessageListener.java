@@ -50,6 +50,9 @@ public class SubscriptionMessageListener {
             } else if (EventType.SUBSCRIPTION_RENEWAL_VALIDATION_FAILED.equals(message.getEventType())) {
                 log.info("event type is SUBSCRIPTION_RENEWAL_VALIDATION_FAILED");
                 subscriptionRenewalValidationFailed(message);
+            } else if (EventType.SUBSCRIPTION_UPDATE_CARD.equals(message.getEventType())) {
+                log.info("event type is SUBSCRIPTION_UPDATE_CARD");
+                subscriptionUpdateCardAction(message);
             }
         } catch (Exception e) {
             log.error("handling listened subscriptions event failed, jsonMessage: " + jsonMessage, e);
@@ -72,6 +75,10 @@ public class SubscriptionMessageListener {
 
     private void subscriptionRenewalValidationFailed(SubscriptionMessage message) {
         callOrderApiWithPath(message, "/subscription-admin/renewal-validation-failed");
+    }
+
+    private void subscriptionUpdateCardAction(SubscriptionMessage message) {
+        callOrderApiWithPath(message,"/subscription/set-card-token-event");
     }
 
     private void callOrderApiWithPath(SubscriptionMessage message, String path) {

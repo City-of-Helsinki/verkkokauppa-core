@@ -268,6 +268,49 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
     @Test
     @RunIfProfile(profile = "local")
+    public void testCheckCardUpdateReturnUrl() throws NoSuchAlgorithmException, InvalidKeyException {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
+        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        dummyOrderItem.setMerchantId(merchantId);
+        orderWrapper.getOrder().setSubscriptionId("subId1234");
+        paymentRequestDataDto.setOrder(orderWrapper);
+        String secretKey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
+        Map<String, String> params = createMockCallbackParams("", "", "");
+        params.put("checkout-tokenization-id", TOKENIZATION_ID);
+        String signature = PaytrailSignatureService.calculateSignature(PaytrailSignatureService.filterCheckoutQueryParametersMap(params), null, secretKey);
+        params.put("signature", signature);
+        ResponseEntity<Void> response = paytrailPaymentController.checkCardUpdateReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        assertEquals(response.getStatusCode(), HttpStatus.OK);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testCheckCardUpdateReturnUrlWithInvalidSignature() {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();
+        OrderWrapper orderWrapper = createDummyOrderWrapper();
+        OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
+        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        dummyOrderItem.setMerchantId(merchantId);
+        orderWrapper.getOrder().setSubscriptionId("subId1234");
+        paymentRequestDataDto.setOrder(orderWrapper);
+
+        Map<String, String> params = createMockCallbackParams("", "", "");
+        params.put("checkout-tokenization-id", TOKENIZATION_ID);
+        String signature = "signature";
+        params.put("signature", signature);
+
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paytrailPaymentController.checkCardUpdateReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.FORBIDDEN, exception.getStatus());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
     public void testCheckCardReturnUrl() throws NoSuchAlgorithmException, InvalidKeyException {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();;
         OrderWrapper orderWrapper = createDummyOrderWrapper();

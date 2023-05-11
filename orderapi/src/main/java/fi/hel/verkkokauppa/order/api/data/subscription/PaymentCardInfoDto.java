@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api.data.subscription;
 
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,15 @@ public class PaymentCardInfoDto {
 				message.getEncryptedCardToken(), // Encrypted in message
 				message.getCardTokenExpYear(),
 				message.getCardTokenExpMonth(),
+				message.getCardLastFourDigits()
+		);
+	}
+
+	public static PaymentCardInfoDto fromSubscriptionMessage(SubscriptionMessage message) {
+		return new PaymentCardInfoDto(
+				message.getEncryptedCardToken(), // Encrypted in message
+				Short.valueOf(message.getCardTokenExpYear()),
+				Byte.valueOf(message.getCardTokenExpMonth()),
 				message.getCardLastFourDigits()
 		);
 	}

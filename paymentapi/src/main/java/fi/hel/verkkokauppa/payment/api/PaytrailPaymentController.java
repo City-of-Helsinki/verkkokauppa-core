@@ -181,4 +181,35 @@ public class PaytrailPaymentController {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
+
+    @PostMapping("/payment/paytrail/check-card-update-return-url")
+    public ResponseEntity<Void> checkCardUpdateReturnUrl(
+            @RequestBody GetPaymentRequestDataDto dto,
+            @RequestParam Map<String, String> params,
+            @RequestParam(value = "signature") String signature,
+            @RequestParam(value = "checkout-tokenization-id") String tokenizationId
+    ) {
+        try {
+            String namespace = dto.getOrder().getOrder().getNamespace();
+            String merchantId = "";
+            if (dto.getOrder().getItems() != null && dto.getOrder().getItems().size() > 0 && dto.getOrder().getItems().get(0).getMerchantId() != null) {
+                merchantId = dto.getOrder().getItems().get(0).getMerchantId();
+            }
+
+            paytrailPaymentReturnValidator.validateSignature(merchantId, params, signature);
+            PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(namespace, merchantId);
+            PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
+
+            paymentPaytrailService.triggerCardUpdateEvent(dto.getOrder().getOrder(), card);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("checking card update return response failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-check-card-update-return-response", "failed to check card update return response")
+            );
+        }
+    }
 }
