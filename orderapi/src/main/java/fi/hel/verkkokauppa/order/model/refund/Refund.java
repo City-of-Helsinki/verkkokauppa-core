@@ -5,8 +5,6 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.domain.Persistable;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -16,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Document(indexName = "refunds")
 @Data
-public class Refund implements Persistable<String> {
+public class Refund {
   @Id
   String refundId;
 
@@ -58,19 +56,6 @@ public class Refund implements Persistable<String> {
 
   @Field(type = FieldType.Text)
   String priceTotal;
-
-  @LastModifiedDate
-  @Field(type = FieldType.Date, format = DateFormat.date_time)
-  LocalDateTime updatedAt;
-
-  public String getId() {
-    return this.refundId;
-  }
-
-  @Override
-  public boolean isNew() {
-    return updatedAt == null;
-  }
 
   public Refund() {}
 
