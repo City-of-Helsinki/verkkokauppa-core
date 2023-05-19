@@ -61,7 +61,7 @@ public class AccountingExportController {
             for (Map.Entry<String, List<AccountingSlipRowDto>> orderedAccountings : accountingsByBalanceProfitCenter.entrySet()) {
                 List<AccountingSlipRowDto> originalRows = orderedAccountings.getValue();
 
-                List<AccountingSlipRowDto> separatedRows = accountingExportDataService.separateVatRows(originalRows);
+                List<AccountingSlipRowDto> separatedRows = accountingExportDataService.separateVatRows(originalRows, new ArrayList<>());
                 // modify sum rows for XML
                 separatedRows.forEach(row -> {
                     if (row.getAccountingSlipRowId() != null) {
@@ -71,7 +71,7 @@ public class AccountingExportController {
                         row.setBaseAmount(null);
                     }
                 });
-                accountingExportDataService.addIncomeEntryRow(originalRows, separatedRows, accountingSlipWithRows.getHeaderText());
+                accountingExportDataService.addOrderIncomeEntryRow(originalRows, separatedRows, accountingSlipWithRows.getHeaderText());
                 newRows.addAll(separatedRows);
             }
             accountingSlipWithRows.setRows(newRows);

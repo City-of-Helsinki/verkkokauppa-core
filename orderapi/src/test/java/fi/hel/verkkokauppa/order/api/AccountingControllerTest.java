@@ -1,39 +1,31 @@
 package fi.hel.verkkokauppa.order.api;
 
-import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
+import fi.hel.verkkokauppa.order.model.accounting.*;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.model.refund.RefundAccountingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // start local sftp server:
 // verkkokauppa-core/docker compose up sftp
@@ -104,13 +96,17 @@ public class AccountingControllerTest extends DummyData {
     public void testAccountingCreate() throws Exception {
         Order order1 = createTestOrder();
         Order order2 = createTestOrder();
+        Order order3 = createTestOrder();
 
         createTestOrderAccounting(order1.getOrderId());
         createTestOrderAccounting(order2.getOrderId());
 
-        Refund refund = createTestRefund(order1.getOrderId());
+        Refund refund1 = createTestRefund(order1.getOrderId());
+        setTestRefundAccountingStatus(refund1.getRefundId(), RefundAccountingStatus.CREATED);
 
-        createTestRefundAccounting(refund.getRefundId(), refund.getOrderId());
+        Refund refund2 = createTestRefund(order2.getOrderId());
+
+        createTestRefundAccounting(refund1.getRefundId(), refund1.getOrderId());
 
         String companyCode1 = "1234";
         createTestOrderItemAccounting(
@@ -163,8 +159,8 @@ public class AccountingControllerTest extends DummyData {
         );
         // add refunds
         createTestRefundItemAccounting(
-                refund.getRefundId(),
-                refund.getOrderId(),
+                refund1.getRefundId(),
+                refund1.getOrderId(),
                 "-10", "-7", "-3",
                 companyCode1,
                 "account",
@@ -176,8 +172,8 @@ public class AccountingControllerTest extends DummyData {
                 "Area A"
         );
         createTestRefundItemAccounting(
-                refund.getRefundId(),
-                refund.getOrderId(),
+                refund1.getRefundId(),
+                refund1.getOrderId(),
                 "-25", "-10", "-5",
                 companyCode1,
                 "account",
@@ -189,8 +185,8 @@ public class AccountingControllerTest extends DummyData {
                 "Area A"
         );
         createTestRefundItemAccounting(
-                refund.getRefundId(),
-                refund.getOrderId(),
+                refund1.getRefundId(),
+                refund1.getOrderId(),
                 "-25", "-15", "-10",
                 companyCode1,
                 "account",
@@ -239,9 +235,63 @@ public class AccountingControllerTest extends DummyData {
             .andReturn();
 
         order1 = orderRepository.findById(order1.getOrderId()).orElseThrow();
-        assertNotNull(order1.getAccounted());
+        assertNotNull(order1.getAccounted(), "Order 1 should be accounted");
         order2 = orderRepository.findById(order2.getOrderId()).orElseThrow();
-        assertNotNull(order2.getAccounted());
+        assertNotNull(order2.getAccounted(), "Order 2 should be accounted");
+        refund1 = refundRepository.findById(refund1.getRefundId()).orElseThrow();
+        assertNotNull(refund1.getAccounted(), "Refund 1 should be accounted");
+        assertEquals(refund1.getAccountingStatus(), RefundAccountingStatus.EXPORTED, "Refund1 accounting status should be exported");
+        refund2 = refundRepository.findById(refund2.getRefundId()).orElseThrow();
+        assertNull(refund2.getAccounted(), "Refund 2 should not be accounted");
+        assertNull(refund2.getAccountingStatus(), "Refund 2 should not have accounting status set");
+        order3 = orderRepository.findById(order3.getOrderId()).orElseThrow();
+        assertNull(order3.getAccounted(), "Order 3 should not be accounted");
+
+        // add another refund accounting, refund created earlier
+        setTestRefundAccountingStatus(refund2.getRefundId(), RefundAccountingStatus.CREATED);
+        createTestRefundAccounting(refund2.getRefundId(), refund2.getOrderId());
+        createTestRefundItemAccounting(
+                refund2.getRefundId(),
+                refund2.getOrderId(),
+                "-10", "-5", "-5",
+                companyCode2,
+                "account",
+                "24",
+                "yes",
+                "profitCenter",
+                "balanceProfitCenter3",
+                "project 2",
+                "Area B"
+        );
+
+        // add another order accounting, order created earlier
+        createTestOrderAccounting(order3.getOrderId());
+        createTestOrderItemAccounting(
+                refund2.getOrderId(),
+                "10", "5", "5",
+                companyCode1,
+                "account",
+                "24",
+                "yes",
+                "profitCenter",
+                "balanceProfitCenter",
+                "project 2",
+                "Area B"
+        );
+
+        this.mockMvc.perform(
+                        get("/accounting/create")
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(status().is(200))
+                .andReturn();
+
+        refund2 = refundRepository.findById(refund2.getRefundId()).orElseThrow();
+        assertNotNull(refund2.getAccounted(), "Refund 2 should be accounted");
+        assertEquals(refund2.getAccountingStatus(), RefundAccountingStatus.EXPORTED, "Refund2 accounting status should be exported");
+        order3 = orderRepository.findById(order3.getOrderId()).orElseThrow();
+        assertNotNull(order3.getAccounted(), "Order 3 should be accounted");
     }
 
 
@@ -293,6 +343,16 @@ public class AccountingControllerTest extends DummyData {
         refund.setRefundId(UUID.randomUUID().toString());
         refund = refundRepository.save(refund);
         toBeDeletedRefundById.add(refund.getRefundId());
+        return refund;
+    }
+
+    private Refund setTestRefundAccountingStatus(String refundId, String accountingStatus){
+        Optional<Refund> returnedRefund = refundRepository.findById(refundId);
+        Refund refund = returnedRefund.get();
+        if( refund != null ) {
+            refund.setAccountingStatus(accountingStatus);
+            refund = refundRepository.save(refund);
+        }
         return refund;
     }
 

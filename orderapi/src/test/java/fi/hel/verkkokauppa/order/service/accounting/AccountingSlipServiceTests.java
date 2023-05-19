@@ -46,7 +46,7 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderAccounting> orderAccountings = generateDummyOrderAccountingList();
 
         when(mockOrderAccountingService.getOrderAccountings(orderIds)).thenReturn(orderAccountings);
-        Map<LocalDate, List<String>> result = accountingSlipService.groupAccountingsByDate(orders);
+        Map<LocalDate, List<String>> result = accountingSlipService.groupOrderAccountingsByDate(orders);
 
         assertFalse(result.isEmpty());
 
@@ -87,7 +87,7 @@ public class AccountingSlipServiceTests extends DummyData {
 
         Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountingsForDate = null;
         for (Map.Entry<LocalDate, List<String>> entry : entries) {
-            summedOrderItemAccountingsForDate = accountingSlipService.getSummedOrderItemAccountingsForDate(entry);
+            summedOrderItemAccountingsForDate = accountingSlipService.getSummedOrderItemAccountingsForDate(entry.getValue());
         }
 
         List<OrderItemAccountingDto> dtosForCompanyCode1 = summedOrderItemAccountingsForDate.get(companyCode1);

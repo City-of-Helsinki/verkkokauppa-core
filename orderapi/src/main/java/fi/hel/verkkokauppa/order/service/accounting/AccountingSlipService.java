@@ -4,21 +4,18 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipRowDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
+import fi.hel.verkkokauppa.order.api.data.accounting.*;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipRowTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemAccountingTransformer;
+import fi.hel.verkkokauppa.order.api.data.transformer.RefundItemAccountingTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
-import fi.hel.verkkokauppa.order.model.accounting.AccountingSlipRow;
-import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
+import fi.hel.verkkokauppa.order.model.accounting.*;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRowRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.refund.RefundService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +40,19 @@ public class AccountingSlipService {
     private OrderService orderService;
 
     @Autowired
+    private RefundService refundService;
+
+    @Autowired
     private OrderAccountingService orderAccountingService;
 
     @Autowired
+    private RefundAccountingService refundAccountingService;
+
+    @Autowired
     private OrderItemAccountingService orderItemAccountingService;
+
+    @Autowired
+    private RefundItemAccountingService refundItemAccountingService;
 
     @Autowired
     private AccountingExportDataService accountingExportDataService;
@@ -65,15 +71,24 @@ public class AccountingSlipService {
 
     public List<AccountingSlipDto> createAccountingData() throws Exception {
         List<Order> ordersToAccount = accountingSearchService.findNotAccountedOrders();
-        Map<LocalDate, List<String>> accountingIdsByDate = groupAccountingsByDate(ordersToAccount);
+        List<Refund> refundsToAccount = accountingSearchService.findNotAccountedRefunds();
+        Map<LocalDate, List<String>> orderAccountingIdsByDate = groupOrderAccountingsByDate(ordersToAccount);
+        Map<LocalDate, List<String>> refundAccountingIdsByDate = groupRefundAccountingsByDate(refundsToAccount);
+
+        Set<LocalDate> slipDates = combineKeySets(
+                orderAccountingIdsByDate.keySet(),
+                refundAccountingIdsByDate.keySet(),
+                LocalDate.class
+        );
 
         // not handling current date
-        if (accountingIdsByDate == null || accountingIdsByDate.isEmpty()) {
-            log.info("no orders to account");
+        if ((orderAccountingIdsByDate == null || orderAccountingIdsByDate.isEmpty())
+                && (refundAccountingIdsByDate == null || refundAccountingIdsByDate.isEmpty())) {
+            log.info("no orders or refunds to account");
             return new ArrayList<>();
         }
 
-        return createAccountingSlips(accountingIdsByDate);
+        return createAccountingSlips(slipDates, orderAccountingIdsByDate, refundAccountingIdsByDate);
     }
 
     public AccountingSlip getAccountingSlip(String accountingSlipId) {
@@ -123,17 +138,21 @@ public class AccountingSlipService {
         return accountingSlipDto;
     }
 
-    public List<AccountingSlipDto> createAccountingSlips(Map<LocalDate, List<String>> accountingIdsByDate) {
+    public List<AccountingSlipDto> createAccountingSlips(
+            Set<LocalDate> slipDates,
+            Map<LocalDate, List<String>> orderAccountingIdsByDate,
+            Map<LocalDate, List<String>> refundAccountingIdsByDate
+    ) {
         List<AccountingSlipDto> accountingSlips = new ArrayList<>();
 
-        for (Map.Entry<LocalDate, List<String>> accountingsForDate : accountingIdsByDate.entrySet()) {
-            List<AccountingSlipDto> accountingSlipDtos = createAccountingSlipForDate(accountingsForDate);
+        for (LocalDate date : slipDates) {
+            List<AccountingSlipDto> accountingSlipDtos = createAccountingSlipForDate(date, orderAccountingIdsByDate.get(date), refundAccountingIdsByDate.get(date));
             accountingSlips.addAll(accountingSlipDtos);
         }
         return accountingSlips;
     }
 
-    public Map<LocalDate, List<String>> groupAccountingsByDate(List<Order> ordersToAccount) {
+    public Map<LocalDate, List<String>> groupOrderAccountingsByDate(List<Order> ordersToAccount) {
         Map<LocalDate, List<String>> map = new HashMap<>();
 
         List<String> orderIds = ordersToAccount.stream()
@@ -161,41 +180,113 @@ public class AccountingSlipService {
         return map;
     }
 
-    private List<AccountingSlipDto> createAccountingSlipForDate(Map.Entry<LocalDate, List<String>> accountingsForDate) {
+    public Map<LocalDate, List<String>> groupRefundAccountingsByDate(List<Refund> refundsToAccount) {
+        Map<LocalDate, List<String>> map = new HashMap<>();
+
+        List<String> refundIds = refundsToAccount.stream()
+                .map(Refund::getRefundId)
+                .collect(Collectors.toList());
+
+        List<RefundAccounting> refundAccountings = refundAccountingService.getRefundAccountings(refundIds);
+
+        for (RefundAccounting refundAccounting : refundAccountings) {
+            LocalDate createdAt = refundAccounting.getCreatedAt().toLocalDate();
+
+            if (createdAt.isBefore(LocalDate.now())) {
+                List<String> accountingsForDate = map.get(createdAt);
+
+                if (accountingsForDate == null) {
+                    ArrayList<String> accountings = new ArrayList<>();
+                    accountings.add(refundAccounting.getRefundId());
+                    map.put(createdAt, accountings);
+                } else {
+                    accountingsForDate.add(refundAccounting.getRefundId());
+                }
+            }
+        }
+
+        return map;
+    }
+
+    private List<AccountingSlipDto> createAccountingSlipForDate(
+            LocalDate postingDate,
+            List<String> orderAccountingsForDate,
+            List<String> refundAccountingsForDate) {
         List<AccountingSlipDto> accountingSlipDtos = new ArrayList<>();
 
-        LocalDate postingDate = accountingsForDate.getKey();
         int referenceNumber = postingDate.getDayOfYear();
 
-        Map<String, List<OrderItemAccountingDto>> summedItemAccountings = getSummedOrderItemAccountingsForDate(accountingsForDate);
+        Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountings = getSummedOrderItemAccountingsForDate(orderAccountingsForDate);
+        Map<String, List<RefundItemAccountingDto>> summedRefundItemAccountings = getSummedRefundItemAccountingsForDate(refundAccountingsForDate);
 
-        for (var accountingListForCompanyCode : summedItemAccountings.entrySet()) {
-            List<OrderItemAccountingDto> summedItemAccountingsForCompanyCode = accountingListForCompanyCode.getValue();
+        Set<String> companyCodes = combineKeySets(
+                summedOrderItemAccountings.keySet(),
+                summedRefundItemAccountings.keySet(),
+                String.class
+        );
 
-            String companyCode = accountingListForCompanyCode.getKey();
+        for (String companyCode : companyCodes) {
+            List<OrderItemAccountingDto> summedOrderItemAccountingsForCompanyCode = summedOrderItemAccountings.get(companyCode);
+            List<RefundItemAccountingDto> summedRefundItemAccountingsForCompanyCode = summedRefundItemAccountings.get(companyCode);
+
             String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDate.toString(), companyCode);
 
             String headerTextDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(postingDate);
             String headertext = "Verkkokauppa " + headerTextDate;
 
             // order each list by balanceProfitCenter
-            Map<String, List<OrderItemAccountingDto>> accountingsByBalanceProfitCenter;
-            accountingsByBalanceProfitCenter = groupOrderItemAccountingsByBalanceProfitCenter(summedItemAccountingsForCompanyCode);
+            Map<String, List<OrderItemAccountingDto>> orderAccountingsByBalanceProfitCenter;
+            orderAccountingsByBalanceProfitCenter = groupOrderItemAccountingsByBalanceProfitCenter(summedOrderItemAccountingsForCompanyCode);
+            Map<String, List<RefundItemAccountingDto>> refundAccountingsByBalanceProfitCenter;
+            refundAccountingsByBalanceProfitCenter = groupRefundItemAccountingsByBalanceProfitCenter(summedRefundItemAccountingsForCompanyCode);
+
+            // build set of all balanceProfitCenters
+            Set<String> balanceProfitCenters = combineKeySets(
+                    orderAccountingsByBalanceProfitCenter.keySet(),
+                    refundAccountingsByBalanceProfitCenter.keySet(),
+                    String.class
+            );
 
             // collect all rows by balance profit center
             List<AccountingSlipRowDto> rows = new ArrayList<>();
+            // rowCountOffset used to generate row id's for accounting slip rows
+            // that get saved to db
             int rowCountOffset = 0;
-            for (Map.Entry<String, List<OrderItemAccountingDto>> orderedAccountings : accountingsByBalanceProfitCenter.entrySet()) {
-                List<AccountingSlipRowDto> originalRows = createAccountingSlipRowDtos(
-                        orderedAccountings.getValue(),
+            for (String balanceProfitCenter : balanceProfitCenters) {
+                List<OrderItemAccountingDto> orderRows = orderAccountingsByBalanceProfitCenter.get(balanceProfitCenter);
+                List<RefundItemAccountingDto> refundRows = refundAccountingsByBalanceProfitCenter.get(balanceProfitCenter);
+
+                List<AccountingSlipRowDto> originalOrderRows = createAccountingSlipRowDtosForOrders(
+                        orderRows,
                         accountingSlipId,
                         headertext,
                         rowCountOffset
                 );
-                rowCountOffset += originalRows.size();
+                rowCountOffset += originalOrderRows.size();
 
-                List<AccountingSlipRowDto> separatedRows = accountingExportDataService.separateVatRows(originalRows);
-                accountingExportDataService.addIncomeEntryRow(originalRows, separatedRows, headertext);
+                List<AccountingSlipRowDto> originalRefundRows = createAccountingSlipRowDtosForRefunds(
+                        refundRows,
+                        accountingSlipId,
+                        headertext,
+                        rowCountOffset
+                );
+                rowCountOffset += originalRefundRows.size();
+
+                List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
+                // separate VAT rows
+                if (orderRows != null) {
+                    separatedRows = accountingExportDataService.separateVatRows(originalOrderRows, separatedRows);
+                }
+                if (refundRows != null) {
+                    separatedRows = accountingExportDataService.separateVatRows(originalRefundRows, separatedRows);
+                }
+                // add Income Entry rows
+                if (orderRows != null) {
+                    accountingExportDataService.addOrderIncomeEntryRow(originalOrderRows, separatedRows, headertext);
+                }
+                if (refundRows != null) {
+                    accountingExportDataService.addRefundIncomeEntryRow(originalRefundRows, separatedRows, headertext);
+                }
                 rows.addAll(separatedRows);
             }
 
@@ -222,20 +313,28 @@ public class AccountingSlipService {
             accountingExportService.exportAccountingData(accountingExportDataDto);
         }
 
-        accountingsForDate.getValue().forEach(orderId -> orderService.markAsAccounted(orderId));
+        if (orderAccountingsForDate != null) {
+            orderAccountingsForDate.forEach(orderId -> orderService.markAsAccounted(orderId));
+        }
+        if (refundAccountingsForDate != null) {
+            refundAccountingsForDate.forEach(refundId -> refundService.markAsAccounted(refundId));
+        }
 
         return accountingSlipDtos;
     }
 
-    public Map<String, List<OrderItemAccountingDto>> getSummedOrderItemAccountingsForDate(Map.Entry<LocalDate, List<String>> accountingsForDate) {
+    public Map<String, List<OrderItemAccountingDto>> getSummedOrderItemAccountingsForDate(List<String> accountingsForDate) {
         List<OrderItemAccountingDto> accountingItemsForDate = new ArrayList<>();
+        if (accountingsForDate == null) {
+            return new HashMap<>();
+        }
 
-        for (String id : accountingsForDate.getValue()) {
+        for (String id : accountingsForDate) {
             List<OrderItemAccounting> list = orderItemAccountingService.getOrderItemAccountings(id);
             list.forEach(itemAccounting -> accountingItemsForDate.add(new OrderItemAccountingTransformer().transformToDto(itemAccounting)));
         }
 
-        Map<String, List<OrderItemAccountingDto>> accountingsForCompanyCode = groupByCompanyCode(accountingItemsForDate);
+        Map<String, List<OrderItemAccountingDto>> accountingsForCompanyCode = groupOrdersByCompanyCode(accountingItemsForDate);
 
         Map<String, List<OrderItemAccountingDto>> summedAccountingsForCompanyCode = new HashMap<>();
         for (Map.Entry<String, List<OrderItemAccountingDto>> entry : accountingsForCompanyCode.entrySet()) {
@@ -250,9 +349,39 @@ public class AccountingSlipService {
         return summedAccountingsForCompanyCode;
     }
 
-    private List<AccountingSlipRowDto> createAccountingSlipRowDtos(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId,
-                                                                   String lineText, int rowCountOffset) {
+    public Map<String, List<RefundItemAccountingDto>> getSummedRefundItemAccountingsForDate(List<String> accountingsForDate) {
+        List<RefundItemAccountingDto> accountingItemsForDate = new ArrayList<>();
+        if (accountingsForDate == null) {
+            return new HashMap<>();
+        }
+
+        for (String id : accountingsForDate) {
+            List<RefundItemAccounting> list = refundItemAccountingService.getRefundItemAccountings(id);
+            list.forEach(itemAccounting -> accountingItemsForDate.add(new RefundItemAccountingTransformer().transformToDto(itemAccounting)));
+        }
+
+        Map<String, List<RefundItemAccountingDto>> accountingsForCompanyCode = groupRefundsByCompanyCode(accountingItemsForDate);
+
+        Map<String, List<RefundItemAccountingDto>> summedAccountingsForCompanyCode = new HashMap<>();
+        for (Map.Entry<String, List<RefundItemAccountingDto>> entry : accountingsForCompanyCode.entrySet()) {
+            // Sum prices per posting (same key info)
+            Collection<RefundItemAccountingDto> values = entry.getValue().stream()
+                    .collect(Collectors.toMap(RefundItemAccountingDto::createKey, Function.identity(), (RefundItemAccountingDto::merge)))
+                    .values();
+
+            summedAccountingsForCompanyCode.put(entry.getKey(), new ArrayList<>(values));
+        }
+
+        return summedAccountingsForCompanyCode;
+    }
+
+    private List<AccountingSlipRowDto> createAccountingSlipRowDtosForOrders(List<OrderItemAccountingDto> summedItemAccountings, String accountingSlipId,
+                                                                            String lineText, int rowCountOffset) {
         List<AccountingSlipRowDto> rows = new ArrayList<>();
+        if (summedItemAccountings == null) {
+            return rows;
+        }
+
         int rowNumber = 1 + rowCountOffset;
 
         for (OrderItemAccountingDto summedItemAccounting : summedItemAccountings) {
@@ -281,7 +410,42 @@ public class AccountingSlipService {
         return rows;
     }
 
-    private Map<String, List<OrderItemAccountingDto>> groupByCompanyCode(List<OrderItemAccountingDto> accountingItemsForDate) {
+    private List<AccountingSlipRowDto> createAccountingSlipRowDtosForRefunds(List<RefundItemAccountingDto> summedItemAccountings, String accountingSlipId,
+                                                                             String lineText, int rowCountOffset) {
+        List<AccountingSlipRowDto> rows = new ArrayList<>();
+        if (summedItemAccountings == null) {
+            return rows;
+        }
+
+        int rowNumber = 1 + rowCountOffset;
+
+        for (RefundItemAccountingDto summedItemAccounting : summedItemAccountings) {
+            String accountingSlipRowId = UUIDGenerator.generateType3UUIDString(accountingSlipId, Integer.toString(rowNumber));
+
+            AccountingSlipRowDto accountingSlipRowDto = AccountingSlipRowDto.builder()
+                    .accountingSlipRowId(accountingSlipRowId)
+                    .accountingSlipId(accountingSlipId)
+                    .taxCode(summedItemAccounting.getVatCode())
+                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount("+" + formatSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount("+" + formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .lineText(lineText)
+                    .glAccount(summedItemAccounting.getMainLedgerAccount())
+                    .profitCenter(summedItemAccounting.getProfitCenter())
+                    .orderItemNumber(summedItemAccounting.getInternalOrder())
+                    .wbsElement(summedItemAccounting.getProject())
+                    .functionalArea(summedItemAccounting.getOperationArea())
+                    .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
+                    .build();
+
+            rows.add(accountingSlipRowDto);
+            rowNumber++;
+        }
+
+        return rows;
+    }
+
+    private Map<String, List<OrderItemAccountingDto>> groupOrdersByCompanyCode(List<OrderItemAccountingDto> accountingItemsForDate) {
         Map<String, List<OrderItemAccountingDto>> groupedAccountings = new HashMap<>();
 
         for (OrderItemAccountingDto orderItemAccountingDto : accountingItemsForDate) {
@@ -299,8 +463,29 @@ public class AccountingSlipService {
         return groupedAccountings;
     }
 
+    private Map<String, List<RefundItemAccountingDto>> groupRefundsByCompanyCode(List<RefundItemAccountingDto> accountingItemsForDate) {
+        Map<String, List<RefundItemAccountingDto>> groupedAccountings = new HashMap<>();
+
+        for (RefundItemAccountingDto refundItemAccountingDto : accountingItemsForDate) {
+            String companyCode = refundItemAccountingDto.getCompanyCode();
+            List<RefundItemAccountingDto> accountingList = groupedAccountings.get(companyCode);
+
+            if (accountingList == null) {
+                ArrayList<RefundItemAccountingDto> accountings = new ArrayList<>();
+                accountings.add(refundItemAccountingDto);
+                groupedAccountings.put(companyCode, accountings);
+            } else {
+                accountingList.add(refundItemAccountingDto);
+            }
+        }
+        return groupedAccountings;
+    }
+
     private Map<String, List<OrderItemAccountingDto>> groupOrderItemAccountingsByBalanceProfitCenter(List<OrderItemAccountingDto> accountingItemsForDate) {
         Map<String, List<OrderItemAccountingDto>> groupedAccountings = new HashMap<>();
+        if (accountingItemsForDate == null) {
+            return groupedAccountings;
+        }
 
         for (OrderItemAccountingDto orderItemAccountingDto : accountingItemsForDate) {
             String balanceProfitCenter = orderItemAccountingDto.getBalanceProfitCenter();
@@ -312,6 +497,27 @@ public class AccountingSlipService {
                 groupedAccountings.put(balanceProfitCenter, accountings);
             } else {
                 accountingList.add(orderItemAccountingDto);
+            }
+        }
+        return groupedAccountings;
+    }
+
+    private Map<String, List<RefundItemAccountingDto>> groupRefundItemAccountingsByBalanceProfitCenter(List<RefundItemAccountingDto> accountingItemsForDate) {
+        Map<String, List<RefundItemAccountingDto>> groupedAccountings = new HashMap<>();
+        if (accountingItemsForDate == null) {
+            return groupedAccountings;
+        }
+
+        for (RefundItemAccountingDto refundItemAccountingDto : accountingItemsForDate) {
+            String balanceProfitCenter = refundItemAccountingDto.getBalanceProfitCenter();
+            List<RefundItemAccountingDto> accountingList = groupedAccountings.get(balanceProfitCenter);
+
+            if (accountingList == null) {
+                ArrayList<RefundItemAccountingDto> accountings = new ArrayList<>();
+                accountings.add(refundItemAccountingDto);
+                groupedAccountings.put(balanceProfitCenter, accountings);
+            } else {
+                accountingList.add(refundItemAccountingDto);
             }
         }
         return groupedAccountings;
@@ -360,6 +566,19 @@ public class AccountingSlipService {
         decimalFormat.setNegativePrefix("-");
 
         return decimalFormat.format(-sum).replace(".", ",");
+    }
+
+    private <T> Set<T> combineKeySets(Set<T> keySet1, Set<T> keySet2, Class<T> objectClass) {
+        Set<T> combinedSet = new HashSet<>();
+
+        if (keySet1 != null && !keySet1.isEmpty()) {
+            combinedSet.addAll(keySet1);
+        }
+        if (keySet2 != null && !keySet2.isEmpty()) {
+            combinedSet.addAll(keySet2);
+        }
+
+        return combinedSet;
     }
 
 }
