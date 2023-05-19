@@ -174,7 +174,7 @@ public class AccountingControllerTest extends DummyData {
         createTestRefundItemAccounting(
                 refund1.getRefundId(),
                 refund1.getOrderId(),
-                "-25", "-10", "-5",
+                "-15", "-10", "-5",
                 companyCode1,
                 "account",
                 "24",
