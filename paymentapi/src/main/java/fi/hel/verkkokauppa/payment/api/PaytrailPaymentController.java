@@ -191,10 +191,7 @@ public class PaytrailPaymentController {
     ) {
         try {
             String namespace = dto.getOrder().getOrder().getNamespace();
-            String merchantId = "";
-            if (dto.getOrder().getItems() != null && dto.getOrder().getItems().size() > 0 && dto.getOrder().getItems().get(0).getMerchantId() != null) {
-                merchantId = dto.getOrder().getItems().get(0).getMerchantId();
-            }
+            String merchantId = PaymentUtil.parseMerchantId(dto.getOrder());
 
             paytrailPaymentReturnValidator.validateSignature(merchantId, params, signature);
             PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(namespace, merchantId);
@@ -205,7 +202,7 @@ public class PaytrailPaymentController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("checking card update return response failed", e);
+            log.error("checking paytrail card update return response failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-check-card-update-return-response", "failed to check card update return response")
