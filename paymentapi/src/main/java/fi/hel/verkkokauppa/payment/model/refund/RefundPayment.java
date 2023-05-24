@@ -3,6 +3,8 @@ package fi.hel.verkkokauppa.payment.model.refund;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.Persistable;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Document(indexName = "refund_payments")
-public class RefundPayment {
+public class RefundPayment implements Persistable<String> {
 
 	// refundId (Refund model id) + timestamp (Like creating paymentId)
 	@Id
@@ -67,9 +69,18 @@ public class RefundPayment {
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
 	private LocalDateTime createdAt;
 
+	@LastModifiedDate
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
 	private LocalDateTime updatedAt;
 
+	public String getId() {
+		return this.refundPaymentId;
+	}
+
+	@Override
+	public boolean isNew() {
+		return updatedAt == null;
+	}
 
 	public RefundPayment() {
 		this.status = RefundPaymentStatus.CREATED;

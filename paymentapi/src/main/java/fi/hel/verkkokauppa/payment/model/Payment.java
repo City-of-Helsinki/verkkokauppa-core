@@ -4,17 +4,22 @@ import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.model.paytrail.payment.PaytrailPaymentProviderModel;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.domain.Persistable;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Document(indexName = "payments")
-public class Payment {
+public class Payment implements Persistable<String> {
 
 	@Id
 	String paymentId;
@@ -77,6 +82,23 @@ public class Payment {
 
 	@Field(type = FieldType.Text)
 	PaymentGatewayEnum paymentGateway;
+
+	@CreatedDate
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	LocalDateTime createdAt;
+
+	@LastModifiedDate
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	LocalDateTime updatedAt;
+
+	public String getId() {
+		return this.paymentId;
+	}
+
+	@Override
+	public boolean isNew() {
+		return createdAt == null;
+	}
 
 	public Payment() {
 		this.status = PaymentStatus.CREATED;
