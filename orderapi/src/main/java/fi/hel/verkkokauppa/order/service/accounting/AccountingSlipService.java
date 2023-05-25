@@ -14,6 +14,7 @@ import fi.hel.verkkokauppa.order.model.accounting.*;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRowRepository;
+import fi.hel.verkkokauppa.order.service.ServiceUtils;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.refund.RefundService;
 import org.slf4j.Logger;
@@ -69,13 +70,16 @@ public class AccountingSlipService {
     @Autowired
     private AccountingSearchService accountingSearchService;
 
+    @Autowired
+    private ServiceUtils serviceUtils;
+
     public List<AccountingSlipDto> createAccountingData() throws Exception {
         List<Order> ordersToAccount = accountingSearchService.findNotAccountedOrders();
         List<Refund> refundsToAccount = accountingSearchService.findNotAccountedRefunds();
         Map<LocalDate, List<String>> orderAccountingIdsByDate = groupOrderAccountingsByDate(ordersToAccount);
         Map<LocalDate, List<String>> refundAccountingIdsByDate = groupRefundAccountingsByDate(refundsToAccount);
 
-        Set<LocalDate> slipDates = combineKeySets(
+        Set<LocalDate> slipDates = serviceUtils.combineKeySets(
                 orderAccountingIdsByDate.keySet(),
                 refundAccountingIdsByDate.keySet(),
                 LocalDate.class
@@ -219,7 +223,7 @@ public class AccountingSlipService {
         Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountings = getSummedOrderItemAccountingsForDate(orderAccountingsForDate);
         Map<String, List<RefundItemAccountingDto>> summedRefundItemAccountings = getSummedRefundItemAccountingsForDate(refundAccountingsForDate);
 
-        Set<String> companyCodes = combineKeySets(
+        Set<String> companyCodes = serviceUtils.combineKeySets(
                 summedOrderItemAccountings.keySet(),
                 summedRefundItemAccountings.keySet(),
                 String.class
@@ -241,7 +245,7 @@ public class AccountingSlipService {
             refundAccountingsByBalanceProfitCenter = groupRefundItemAccountingsByBalanceProfitCenter(summedRefundItemAccountingsForCompanyCode);
 
             // build set of all balanceProfitCenters
-            Set<String> balanceProfitCenters = combineKeySets(
+            Set<String> balanceProfitCenters = serviceUtils.combineKeySets(
                     orderAccountingsByBalanceProfitCenter.keySet(),
                     refundAccountingsByBalanceProfitCenter.keySet(),
                     String.class
@@ -401,6 +405,7 @@ public class AccountingSlipService {
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
                     .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
+                    .rowType("order")
                     .build();
 
             rows.add(accountingSlipRowDto);
@@ -436,6 +441,7 @@ public class AccountingSlipService {
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
                     .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
+                    .rowType("refund")
                     .build();
 
             rows.add(accountingSlipRowDto);
@@ -568,17 +574,5 @@ public class AccountingSlipService {
         return decimalFormat.format(-sum).replace(".", ",");
     }
 
-    private <T> Set<T> combineKeySets(Set<T> keySet1, Set<T> keySet2, Class<T> objectClass) {
-        Set<T> combinedSet = new HashSet<>();
-
-        if (keySet1 != null && !keySet1.isEmpty()) {
-            combinedSet.addAll(keySet1);
-        }
-        if (keySet2 != null && !keySet2.isEmpty()) {
-            combinedSet.addAll(keySet2);
-        }
-
-        return combinedSet;
-    }
 
 }

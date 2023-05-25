@@ -53,4 +53,7 @@ public class AccountingSlipRow {
     @Field(type = FieldType.Text)
     private String functionalArea;
 
+    @Field(type = FieldType.Text)
+    private String rowType;
+
 }

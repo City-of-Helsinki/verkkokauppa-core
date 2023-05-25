@@ -4,7 +4,6 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipRowDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
@@ -27,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class AccountingExportController {
@@ -52,29 +50,7 @@ public class AccountingExportController {
             AccountingSlip accountingSlip = accountingSlipService.getAccountingSlip(accountingSlipId);
             AccountingSlipDto accountingSlipWithRows = accountingSlipService.getAccountingSlipDtoWithRows(accountingSlip);
 
-            // order each list by balanceProfitCenter
-            Map<String, List<AccountingSlipRowDto>> accountingsByBalanceProfitCenter;
-            accountingsByBalanceProfitCenter = accountingSlipService.groupAccountingSlipRowsByBalanceProfitCenter(accountingSlipWithRows.getRows());
-
-            // collect all rows by balance profit center
-            List<AccountingSlipRowDto> newRows = new ArrayList<>();
-            for (Map.Entry<String, List<AccountingSlipRowDto>> orderedAccountings : accountingsByBalanceProfitCenter.entrySet()) {
-                List<AccountingSlipRowDto> originalRows = orderedAccountings.getValue();
-
-                List<AccountingSlipRowDto> separatedRows = accountingExportDataService.separateVatRows(originalRows, new ArrayList<>());
-                // modify sum rows for XML
-                separatedRows.forEach(row -> {
-                    if (row.getAccountingSlipRowId() != null) {
-                        // set amountInDocumentCurrency to base amount for sum rows (for XML)
-                        row.setAmountInDocumentCurrency(row.getBaseAmount());
-                        // set base amount for sum rows to null (for XML)
-                        row.setBaseAmount(null);
-                    }
-                });
-                accountingExportDataService.addOrderIncomeEntryRow(originalRows, separatedRows, accountingSlipWithRows.getHeaderText());
-                newRows.addAll(separatedRows);
-            }
-            accountingSlipWithRows.setRows(newRows);
+            accountingSlipWithRows = accountingExportService.createAccountingData(accountingSlipWithRows);
 
             AccountingExportDataDto exportData = accountingExportDataService.createAccountingExportDataDto(accountingSlipWithRows);
 
