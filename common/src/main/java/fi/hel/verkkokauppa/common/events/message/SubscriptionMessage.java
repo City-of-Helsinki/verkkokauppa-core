@@ -19,6 +19,13 @@ public class SubscriptionMessage implements EventMessage {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String cancellationCause;
 
+    String orderType;
+    String encryptedCardToken;
+    String cardTokenExpYear;
+    String cardTokenExpMonth;
+    String cardLastFourDigits;
+    String user;
+
     public SubscriptionMessage toCustomerWebHook(){
         return SubscriptionMessage.builder()
                 .subscriptionId(this.getSubscriptionId())

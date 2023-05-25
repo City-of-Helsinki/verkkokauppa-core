@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -325,6 +326,27 @@ public class PaymentPaytrailService {
 
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
         log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+    }
+
+    public void triggerCardUpdateEvent(OrderDto order, PaytrailTokenResponse card) {
+        String now = DateTimeUtil.getDateTime();
+        String encryptedToken = EncryptorUtil.encryptValue(card.getToken(), cardTokenEncryptionPassword);
+
+        SubscriptionMessage message = SubscriptionMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_UPDATE_CARD)
+                .timestamp(now)
+                .subscriptionId(order.getSubscriptionId())
+                .orderId(order.getOrderId())
+                .orderType(order.getType())
+                .encryptedCardToken(encryptedToken)
+                .cardTokenExpYear(card.getCard().getExpireYear())
+                .cardTokenExpMonth(card.getCard().getExpireMonth())
+                .cardLastFourDigits(card.getCard().getPartialPan())
+                .user(order.getUser())
+                .build();
+
+        sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
+        log.debug("triggered event SUBSCRIPTION_UPDATE_CARD for subscriptionId: " + order.getSubscriptionId());
     }
 
     public TreeMap<String, String> getCardReturnParameters(

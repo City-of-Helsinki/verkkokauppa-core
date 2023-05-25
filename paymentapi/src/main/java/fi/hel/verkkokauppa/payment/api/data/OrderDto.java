@@ -18,4 +18,5 @@ public class OrderDto {
 	private String priceVat;
 	private String priceTotal;
 
+	private String subscriptionId;
 }

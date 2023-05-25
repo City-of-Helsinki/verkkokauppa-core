@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.util;
 
+import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -25,4 +27,16 @@ public class PaymentUtil {
         return IdGeneratorUtil.generateIdWithTimestamp(orderId);
     }
 
+    public static String parseMerchantId(OrderWrapper order) {
+        if (
+            order != null &&
+            order.getItems() != null &&
+            order.getItems().size() > 0 &&
+            order.getItems().get(0).getMerchantId() != null
+        ) {
+            return order.getItems().get(0).getMerchantId();
+        } else {
+            return null;
+        }
+    }
 }

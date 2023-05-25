@@ -197,6 +197,11 @@ public class SubscriptionController {
 		return subscriptionService.setSubscriptionCardInfoInternal(dto, true);
 	}
 
+	@PostMapping(value = "/subscription/set-card-token-event", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Void> setSubscriptionCardTokenEvent(@RequestBody SubscriptionMessage message) {
+		return subscriptionService.setSubscriptionCardInfoInternal(UpdatePaymentCardInfoRequest.fromSubscriptionMessage(message), false);
+	}
+
 
 	@PostMapping(value = "/subscription/payment-failed-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Boolean> paymentFailedEventCallback(@RequestBody PaymentMessage message) {
