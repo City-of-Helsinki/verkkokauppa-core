@@ -6,15 +6,16 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
+import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipRowDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
+import fi.hel.verkkokauppa.order.service.ServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class AccountingExportService {
@@ -51,6 +55,12 @@ public class AccountingExportService {
 
     @Autowired
     private AccountingSlipService accountingSlipService;
+
+    @Autowired
+    private AccountingExportDataService accountingExportDataService;
+
+    @Autowired
+    private ServiceUtils serviceUtils;
 
 
     public void exportAccountingData(AccountingExportDataDto exportData) {
@@ -155,6 +165,82 @@ public class AccountingExportService {
 
         exportDataRepository.save(new AccountingExportDataTransformer().transformToEntity(exportData));
         log.debug("marked accounting exported, accounting slip id: " + exportData.getAccountingSlipId());
+    }
+
+    public AccountingSlipDto createAccountingData(AccountingSlipDto accountingSlipWithRows) {
+        List<AccountingSlipRowDto> refundRows = new ArrayList<>();
+        List<AccountingSlipRowDto> orderRows = new ArrayList<>();
+
+        splitAccountingSlipRowsToOrdersAndRefunds(
+                accountingSlipWithRows.getRows(),
+                orderRows,
+                refundRows);
+
+        // order each list by balanceProfitCenter
+        Map<String, List<AccountingSlipRowDto>> ordersByBalanceProfitCenter;
+        ordersByBalanceProfitCenter = accountingSlipService.groupAccountingSlipRowsByBalanceProfitCenter(orderRows);
+        Map<String, List<AccountingSlipRowDto>> refundsByBalanceProfitCenter;
+        refundsByBalanceProfitCenter = accountingSlipService.groupAccountingSlipRowsByBalanceProfitCenter(refundRows);
+
+        // build set of all balanceProfitCenters
+        Set<String> balanceProfitCenters = serviceUtils.combineKeySets(
+                ordersByBalanceProfitCenter.keySet(),
+                refundsByBalanceProfitCenter.keySet(),
+                String.class
+        );
+
+        // collect all rows by balance profit center
+        List<AccountingSlipRowDto> newRows = new ArrayList<>();
+//        for (Map.Entry<String, List<AccountingSlipRowDto>> orderedAccountings : ordersByBalanceProfitCenter.entrySet()) {
+        for (String balanceProfitCenter : balanceProfitCenters) {
+            List<AccountingSlipRowDto> originalOrderRows = ordersByBalanceProfitCenter.get(balanceProfitCenter);
+            List<AccountingSlipRowDto> originalRefundRows = refundsByBalanceProfitCenter.get(balanceProfitCenter);
+
+            List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
+            if (originalOrderRows != null && !originalOrderRows.isEmpty()) {
+                separatedRows = accountingExportDataService.separateVatRows(originalOrderRows, separatedRows);
+            }
+            if (originalRefundRows != null && !originalRefundRows.isEmpty()) {
+                separatedRows = accountingExportDataService.separateVatRows(originalRefundRows, separatedRows);
+            }
+
+            // modify sum rows for XML
+            separatedRows.forEach(row -> {
+                if (row.getAccountingSlipRowId() != null) {
+                    // set amountInDocumentCurrency to base amount for sum rows (for XML)
+                    row.setAmountInDocumentCurrency(row.getBaseAmount());
+                    // set base amount for sum rows to null (for XML)
+                    row.setBaseAmount(null);
+                }
+            });
+
+            if (originalOrderRows != null && !originalOrderRows.isEmpty()) {
+                accountingExportDataService.addOrderIncomeEntryRow(originalOrderRows, separatedRows, accountingSlipWithRows.getHeaderText());
+            }
+            if (originalRefundRows != null && !originalRefundRows.isEmpty()) {
+                accountingExportDataService.addRefundIncomeEntryRow(originalRefundRows, separatedRows, accountingSlipWithRows.getHeaderText());
+            }
+
+            newRows.addAll(separatedRows);
+        }
+        accountingSlipWithRows.setRows(newRows);
+
+        return accountingSlipWithRows;
+    }
+
+    private void splitAccountingSlipRowsToOrdersAndRefunds(
+            List<AccountingSlipRowDto> allRows,
+            List<AccountingSlipRowDto> orderRows,
+            List<AccountingSlipRowDto> refundRows) {
+
+        for (AccountingSlipRowDto row : allRows) {
+            if (row.getRowType().contains("refund")) {
+                refundRows.add(row);
+            } else {
+                orderRows.add(row);
+            }
+
+        }
     }
 
 }

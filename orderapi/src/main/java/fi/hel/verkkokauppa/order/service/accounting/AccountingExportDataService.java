@@ -61,9 +61,7 @@ public class AccountingExportDataService {
         return exportDataDto;
     }
 
-    public List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows) {
-        List<AccountingSlipRowDto> separatedRows = new ArrayList<>();
-
+    public List<AccountingSlipRowDto> separateVatRows(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> separatedRows) {
         for (AccountingSlipRowDto originalRow : originalRows) {
             String baseAmount = originalRow.getBaseAmount();
 
@@ -83,14 +81,30 @@ public class AccountingExportDataService {
         return separatedRows;
     }
 
-    public void addIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
+    public void addOrderIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
         double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
 
-        // each row added to sum should have same balance profit center
+        // each row added to this sum has same balance profit center
         String balanceProfitCenter = originalRows.get(0).getBalanceProfitCenter();
 
         AccountingSlipRowDto incomeEntryRow = AccountingSlipRowDto.builder()
-                .amountInDocumentCurrency(formatIncomeEntrySum(sum))
+                .amountInDocumentCurrency(formatOrderIncomeEntrySum(sum))
+                .lineText(lineText)
+                .glAccount(INCOME_ENTRY_GL_ACCOUNT)
+                .profitCenter(balanceProfitCenter)
+                .build();
+
+        rows.add(incomeEntryRow);
+    }
+
+    public void addRefundIncomeEntryRow(List<AccountingSlipRowDto> originalRows, List<AccountingSlipRowDto> rows, String lineText) {
+        double sum = originalRows.stream().mapToDouble(AccountingSlipRowDto::getAmountInDocumentCurrencyAsDouble).sum();
+
+        // each row added to this sum has same balance profit center
+        String balanceProfitCenter = originalRows.get(0).getBalanceProfitCenter();
+
+        AccountingSlipRowDto incomeEntryRow = AccountingSlipRowDto.builder()
+                .amountInDocumentCurrency(formatRefundIncomeEntrySum(sum))
                 .lineText(lineText)
                 .glAccount(INCOME_ENTRY_GL_ACCOUNT)
                 .profitCenter(balanceProfitCenter)
@@ -159,10 +173,16 @@ public class AccountingExportDataService {
                 .collect(Collectors.toList());
     }
 
-    private String formatIncomeEntrySum(Double sum) {
+    private String formatOrderIncomeEntrySum(Double sum) {
         DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
         return "+" + decimalFormat.format(-sum).replace(".", ",");
+    }
+
+    private String formatRefundIncomeEntrySum(Double sum) {
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+
+        return decimalFormat.format(-sum).replace(".", ",");
     }
 
 }

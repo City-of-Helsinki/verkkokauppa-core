@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@JsonPropertyOrder({ "TaxCode", "AmountInDocumentCurrency", "BaseAmount", "LineText", "GLAccount",
-        "ProfitCenter", "OrderItemNumber", "WBS_Element", "FunctionalArea" })
+@JsonPropertyOrder({"TaxCode", "AmountInDocumentCurrency", "BaseAmount", "LineText", "GLAccount",
+        "ProfitCenter", "OrderItemNumber", "WBS_Element", "FunctionalArea"})
 public class AccountingSlipRowDto {
 
     private String accountingSlipRowId;
@@ -51,6 +51,9 @@ public class AccountingSlipRowDto {
     @JacksonXmlProperty(localName = "FunctionalArea")
     private String functionalArea;
 
+    // "refund" or "order"
+    private String rowType;
+
     @JsonIgnore
     public Double getAmountInDocumentCurrencyAsDouble() {
         return Double.parseDouble(amountInDocumentCurrency.replace(",", "."));
@@ -80,5 +83,6 @@ public class AccountingSlipRowDto {
         this.orderItemNumber = other.getOrderItemNumber();
         this.wbsElement = other.getWbsElement();
         this.functionalArea = other.getFunctionalArea();
+        this.rowType = other.getRowType();
     }
 }

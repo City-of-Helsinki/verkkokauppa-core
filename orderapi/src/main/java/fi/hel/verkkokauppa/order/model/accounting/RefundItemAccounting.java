@@ -8,35 +8,41 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Document(indexName = "accountingsliprows")
+@Document(indexName = "refunditemaccountings")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccountingSlipRow {
+public class RefundItemAccounting {
 
     @Id
-    private String accountingSlipRowId;
-
-    @Field(type = FieldType.Keyword)
-    private String accountingSlipId;
+    private String refundItemId;
 
     @Field(type = FieldType.Text)
-    private String taxCode;
+    private String refundId;
 
     @Field(type = FieldType.Text)
-    private String amountInDocumentCurrency;
+    private String orderId;
 
     @Field(type = FieldType.Text)
-    private String baseAmount;
+    private String priceGross;
 
     @Field(type = FieldType.Text)
-    private String vatAmount;
+    private String priceNet;
 
     @Field(type = FieldType.Text)
-    private String lineText;
+    private String priceVat;
 
     @Field(type = FieldType.Text)
-    private String glAccount;
+    private String companyCode;
+
+    @Field(type = FieldType.Text)
+    private String mainLedgerAccount;
+
+    @Field(type = FieldType.Text)
+    private String vatCode;
+
+    @Field(type = FieldType.Text)
+    private String internalOrder;
 
     @Field(type = FieldType.Text)
     private String profitCenter;
@@ -45,15 +51,9 @@ public class AccountingSlipRow {
     private String balanceProfitCenter;
 
     @Field(type = FieldType.Text)
-    private String orderItemNumber;
+    private String project;
 
     @Field(type = FieldType.Text)
-    private String wbsElement;
-
-    @Field(type = FieldType.Text)
-    private String functionalArea;
-
-    @Field(type = FieldType.Text)
-    private String rowType;
+    private String operationArea;
 
 }
