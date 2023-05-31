@@ -25,7 +25,14 @@ public class RefundService {
         refund.setAccounted(LocalDate.now());
         refund.setAccountingStatus(RefundAccountingStatus.EXPORTED);
         refundRepository.save(refund);
-        log.debug("marked refund accounted, refundId: " + refund.getOrderId());
+        log.debug("marked refund accounted, refundId: " + refund.getRefundId());
+    }
+
+    public void accountingCreated(String refundId) {
+        Refund refund = findById(refundId);
+        refund.setAccountingStatus(RefundAccountingStatus.CREATED);
+        refundRepository.save(refund);
+        log.debug("Refund accounting created, refundId: " + refund.getRefundId());
     }
 
     public Refund findById(String refundId) {

@@ -1,17 +1,27 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.order.api.data.accounting.RefundAccountingDto;
+import fi.hel.verkkokauppa.order.api.data.accounting.RefundItemAccountingDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.RefundAccountingTransformer;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundAccountingRepository;
+import fi.hel.verkkokauppa.order.service.refund.RefundService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RefundAccountingService {
+
+    @Autowired
+    RefundService refundService;
 
     private Logger log = LoggerFactory.getLogger(RefundAccountingService.class);
 
@@ -31,6 +41,34 @@ public class RefundAccountingService {
 
         log.debug("refund accountings not found, refundIds: " + refundIds);
         return accountings;
+    }
+
+    public RefundAccounting getRefundAccounting(String refundId) {
+        Optional<RefundAccounting> mapping = refundAccountingRepository.findById(refundId);
+
+        if (mapping.isPresent()) {
+            return mapping.get();
+        }
+
+        log.warn("refund accounting not found, refundId: " + refundId);
+        return null;
+    }
+
+    public RefundAccountingDto createRefundAccounting(String refundId, String orderId, List<RefundItemAccountingDto> refundItemAccountings) {
+        LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
+        RefundAccountingDto refundAccountingDto = new RefundAccountingDto(refundId, orderId, createdAt, refundItemAccountings);
+        createRefundAccounting(refundAccountingDto);
+
+        return refundAccountingDto;
+    }
+
+    public RefundAccounting createRefundAccounting(RefundAccountingDto refundAccountingDto) {
+        RefundAccounting productAccountingEntity = new RefundAccountingTransformer().transformToEntity(refundAccountingDto);
+        this.refundAccountingRepository.save(productAccountingEntity);
+
+        refundService.accountingCreated(refundAccountingDto.getRefundId());
+
+        return productAccountingEntity;
     }
 
 }
