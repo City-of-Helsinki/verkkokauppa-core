@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api.data.accounting;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import fi.hel.verkkokauppa.order.constants.AccountingRowTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,8 +52,7 @@ public class AccountingSlipRowDto {
     @JacksonXmlProperty(localName = "FunctionalArea")
     private String functionalArea;
 
-    // "refund" or "order"
-    private String rowType;
+    private AccountingRowTypeEnum rowType;
 
     @JsonIgnore
     public Double getAmountInDocumentCurrencyAsDouble() {

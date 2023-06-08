@@ -9,9 +9,10 @@ import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipRowDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingExportDataTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
+import fi.hel.verkkokauppa.order.constants.AccountingRowTypeEnum;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingSlip;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingExportDataRepository;
-import fi.hel.verkkokauppa.order.service.ServiceUtils;
+import fi.hel.verkkokauppa.common.util.ServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,10 +59,6 @@ public class AccountingExportService {
 
     @Autowired
     private AccountingExportDataService accountingExportDataService;
-
-    @Autowired
-    private ServiceUtils serviceUtils;
-
 
     public void exportAccountingData(AccountingExportDataDto exportData) {
         String accountingSlipId = exportData.getAccountingSlipId();
@@ -183,7 +180,7 @@ public class AccountingExportService {
         refundsByBalanceProfitCenter = accountingSlipService.groupAccountingSlipRowsByBalanceProfitCenter(refundRows);
 
         // build set of all balanceProfitCenters
-        Set<String> balanceProfitCenters = serviceUtils.combineKeySets(
+        Set<String> balanceProfitCenters = ServiceUtils.combineKeySets(
                 ordersByBalanceProfitCenter.keySet(),
                 refundsByBalanceProfitCenter.keySet(),
                 String.class
@@ -191,7 +188,7 @@ public class AccountingExportService {
 
         // collect all rows by balance profit center
         List<AccountingSlipRowDto> newRows = new ArrayList<>();
-//        for (Map.Entry<String, List<AccountingSlipRowDto>> orderedAccountings : ordersByBalanceProfitCenter.entrySet()) {
+
         for (String balanceProfitCenter : balanceProfitCenters) {
             List<AccountingSlipRowDto> originalOrderRows = ordersByBalanceProfitCenter.get(balanceProfitCenter);
             List<AccountingSlipRowDto> originalRefundRows = refundsByBalanceProfitCenter.get(balanceProfitCenter);
@@ -234,7 +231,7 @@ public class AccountingExportService {
             List<AccountingSlipRowDto> refundRows) {
 
         for (AccountingSlipRowDto row : allRows) {
-            if (row.getRowType().contains("refund")) {
+            if (row.getRowType() != null && row.getRowType().equals(AccountingRowTypeEnum.REFUND)) {
                 refundRows.add(row);
             } else {
                 orderRows.add(row);

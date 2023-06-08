@@ -9,7 +9,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 
-@Document(indexName = "refundaccountings")
+@Document(indexName = "refund_accountings")
 @Data
 public class RefundAccounting {
 

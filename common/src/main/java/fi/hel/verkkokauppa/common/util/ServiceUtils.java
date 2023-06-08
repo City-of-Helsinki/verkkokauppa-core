@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.service;
+package fi.hel.verkkokauppa.common.util;
 
 import org.springframework.stereotype.Service;
 
@@ -9,7 +9,7 @@ import java.util.Set;
 public class ServiceUtils {
 
 
-    public <T> Set<T> combineKeySets(Set<T> keySet1, Set<T> keySet2, Class<T> objectClass) {
+    public static <T> Set<T> combineKeySets(Set<T> keySet1, Set<T> keySet2, Class<T> objectClass) {
         Set<T> combinedSet = new HashSet<>();
 
         if (keySet1 != null && !keySet1.isEmpty()) {

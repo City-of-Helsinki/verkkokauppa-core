@@ -7,8 +7,7 @@ import fi.hel.verkkokauppa.order.api.data.transformer.RefundAccountingTransforme
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundAccountingRepository;
 import fi.hel.verkkokauppa.order.service.refund.RefundService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +17,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class RefundAccountingService {
 
     @Autowired
     RefundService refundService;
-
-    private Logger log = LoggerFactory.getLogger(RefundAccountingService.class);
 
     @Autowired
     private RefundAccountingRepository refundAccountingRepository;

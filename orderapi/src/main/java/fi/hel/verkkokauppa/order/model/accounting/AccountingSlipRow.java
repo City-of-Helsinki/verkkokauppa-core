@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.model.accounting;
 
+import fi.hel.verkkokauppa.order.constants.AccountingRowTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -54,6 +55,6 @@ public class AccountingSlipRow {
     private String functionalArea;
 
     @Field(type = FieldType.Text)
-    private String rowType;
+    private AccountingRowTypeEnum rowType;
 
 }
