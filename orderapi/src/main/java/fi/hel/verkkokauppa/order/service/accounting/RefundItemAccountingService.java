@@ -21,8 +21,9 @@ public class RefundItemAccountingService {
     public List<RefundItemAccounting> getRefundItemAccountings(String refundId) {
         List<RefundItemAccounting> accountings = refundItemAccountingRepository.findByRefundId(refundId);
 
-        if (accountings.size() > 0)
+        if (accountings.size() > 0) {
             return accountings;
+        }
 
         log.debug("refundItems not found, refundId: " + refundId);
         return new ArrayList<RefundItemAccounting>();

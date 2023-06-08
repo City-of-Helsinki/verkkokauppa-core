@@ -9,12 +9,13 @@ import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipRowTransform
 import fi.hel.verkkokauppa.order.api.data.transformer.AccountingSlipTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemAccountingTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.RefundItemAccountingTransformer;
+import fi.hel.verkkokauppa.order.constants.AccountingRowTypeEnum;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.*;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.AccountingSlipRowRepository;
-import fi.hel.verkkokauppa.order.service.ServiceUtils;
+import fi.hel.verkkokauppa.common.util.ServiceUtils;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.refund.RefundService;
 import org.slf4j.Logger;
@@ -70,8 +71,6 @@ public class AccountingSlipService {
     @Autowired
     private AccountingSearchService accountingSearchService;
 
-    @Autowired
-    private ServiceUtils serviceUtils;
 
     public List<AccountingSlipDto> createAccountingData() throws Exception {
         List<Order> ordersToAccount = accountingSearchService.findNotAccountedOrders();
@@ -79,7 +78,7 @@ public class AccountingSlipService {
         Map<LocalDate, List<String>> orderAccountingIdsByDate = groupOrderAccountingsByDate(ordersToAccount);
         Map<LocalDate, List<String>> refundAccountingIdsByDate = groupRefundAccountingsByDate(refundsToAccount);
 
-        Set<LocalDate> slipDates = serviceUtils.combineKeySets(
+        Set<LocalDate> slipDates = ServiceUtils.combineKeySets(
                 orderAccountingIdsByDate.keySet(),
                 refundAccountingIdsByDate.keySet(),
                 LocalDate.class
@@ -223,7 +222,7 @@ public class AccountingSlipService {
         Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountings = getSummedOrderItemAccountingsForDate(orderAccountingsForDate);
         Map<String, List<RefundItemAccountingDto>> summedRefundItemAccountings = getSummedRefundItemAccountingsForDate(refundAccountingsForDate);
 
-        Set<String> companyCodes = serviceUtils.combineKeySets(
+        Set<String> companyCodes = ServiceUtils.combineKeySets(
                 summedOrderItemAccountings.keySet(),
                 summedRefundItemAccountings.keySet(),
                 String.class
@@ -245,7 +244,7 @@ public class AccountingSlipService {
             refundAccountingsByBalanceProfitCenter = groupRefundItemAccountingsByBalanceProfitCenter(summedRefundItemAccountingsForCompanyCode);
 
             // build set of all balanceProfitCenters
-            Set<String> balanceProfitCenters = serviceUtils.combineKeySets(
+            Set<String> balanceProfitCenters = ServiceUtils.combineKeySets(
                     orderAccountingsByBalanceProfitCenter.keySet(),
                     refundAccountingsByBalanceProfitCenter.keySet(),
                     String.class
@@ -405,7 +404,7 @@ public class AccountingSlipService {
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
                     .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
-                    .rowType("order")
+                    .rowType(AccountingRowTypeEnum.ORDER)
                     .build();
 
             rows.add(accountingSlipRowDto);
@@ -441,7 +440,7 @@ public class AccountingSlipService {
                     .wbsElement(summedItemAccounting.getProject())
                     .functionalArea(summedItemAccounting.getOperationArea())
                     .balanceProfitCenter(summedItemAccounting.getBalanceProfitCenter())
-                    .rowType("refund")
+                    .rowType(AccountingRowTypeEnum.REFUND)
                     .build();
 
             rows.add(accountingSlipRowDto);

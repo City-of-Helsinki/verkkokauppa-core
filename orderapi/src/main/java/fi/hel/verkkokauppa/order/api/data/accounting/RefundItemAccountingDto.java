@@ -7,21 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
-/**
- * Yritys
- * <p>
- * Pääkirjatili
- * <p>
- * Alv-koodi
- * <p>
- * Sisäinen tilaus
- * <p>
- * Tulosyksikkö
- * <p>
- * Projekti
- * <p>
- * Toimintoalue
- */
 
 @Data
 @AllArgsConstructor
@@ -40,19 +25,26 @@ public class RefundItemAccountingDto {
 
     private String priceVat;
 
+    // Yritys
     private String companyCode;
 
+    // Pääkirjatili
     private String mainLedgerAccount;
 
+    // Alv-koodi
     private String vatCode;
 
     private String internalOrder;
 
+    // Tulosyksikkö
     private String profitCenter;
 
+    // Tulosyksikkö vastakirjauksille
     private String balanceProfitCenter;
 
+    // Projekti
     private String project;
+
 
     private String operationArea;
 
