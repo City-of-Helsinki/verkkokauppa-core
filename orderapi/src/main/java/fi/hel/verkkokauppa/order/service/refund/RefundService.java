@@ -1,7 +1,7 @@
 package fi.hel.verkkokauppa.order.service.refund;
 
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundAccountingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class RefundService {
     public void markAsAccounted(String refundId) {
         Refund refund = findById(refundId);
         refund.setAccounted(LocalDate.now());
-        refund.setAccountingStatus(RefundAccountingStatus.EXPORTED);
+        refund.setAccountingStatus(RefundAccountingStatusEnum.EXPORTED);
         refundRepository.save(refund);
         log.debug("marked refund accounted, refundId: " + refund.getOrderId());
     }

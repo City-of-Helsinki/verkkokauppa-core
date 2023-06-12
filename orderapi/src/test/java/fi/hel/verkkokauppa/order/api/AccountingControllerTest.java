@@ -2,10 +2,11 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.*;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundAccountingStatus;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -102,7 +103,7 @@ public class AccountingControllerTest extends DummyData {
         createTestOrderAccounting(order2.getOrderId());
 
         Refund refund1 = createTestRefund(order1.getOrderId());
-        setTestRefundAccountingStatus(refund1.getRefundId(), RefundAccountingStatus.CREATED);
+        setTestRefundAccountingStatus(refund1.getRefundId(), RefundAccountingStatusEnum.CREATED);
 
         Refund refund2 = createTestRefund(order2.getOrderId());
 
@@ -240,7 +241,7 @@ public class AccountingControllerTest extends DummyData {
         assertNotNull(order2.getAccounted(), "Order 2 should be accounted");
         refund1 = refundRepository.findById(refund1.getRefundId()).orElseThrow();
         assertNotNull(refund1.getAccounted(), "Refund 1 should be accounted");
-        assertEquals(refund1.getAccountingStatus(), RefundAccountingStatus.EXPORTED, "Refund1 accounting status should be exported");
+        assertEquals(refund1.getAccountingStatus(), RefundAccountingStatusEnum.EXPORTED, "Refund1 accounting status should be exported");
         refund2 = refundRepository.findById(refund2.getRefundId()).orElseThrow();
         assertNull(refund2.getAccounted(), "Refund 2 should not be accounted");
         assertNull(refund2.getAccountingStatus(), "Refund 2 should not have accounting status set");
@@ -248,7 +249,7 @@ public class AccountingControllerTest extends DummyData {
         assertNull(order3.getAccounted(), "Order 3 should not be accounted");
 
         // add another refund accounting, refund created earlier
-        setTestRefundAccountingStatus(refund2.getRefundId(), RefundAccountingStatus.CREATED);
+        setTestRefundAccountingStatus(refund2.getRefundId(), RefundAccountingStatusEnum.CREATED);
         createTestRefundAccounting(refund2.getRefundId(), refund2.getOrderId());
         createTestRefundItemAccounting(
                 refund2.getRefundId(),
@@ -289,7 +290,7 @@ public class AccountingControllerTest extends DummyData {
 
         refund2 = refundRepository.findById(refund2.getRefundId()).orElseThrow();
         assertNotNull(refund2.getAccounted(), "Refund 2 should be accounted");
-        assertEquals(refund2.getAccountingStatus(), RefundAccountingStatus.EXPORTED, "Refund2 accounting status should be exported");
+        assertEquals(refund2.getAccountingStatus(), RefundAccountingStatusEnum.EXPORTED, "Refund2 accounting status should be exported");
         order3 = orderRepository.findById(order3.getOrderId()).orElseThrow();
         assertNotNull(order3.getAccounted(), "Order 3 should be accounted");
     }
@@ -346,7 +347,7 @@ public class AccountingControllerTest extends DummyData {
         return refund;
     }
 
-    private Refund setTestRefundAccountingStatus(String refundId, String accountingStatus){
+    private Refund setTestRefundAccountingStatus(String refundId, RefundAccountingStatusEnum accountingStatus){
         Optional<Refund> returnedRefund = refundRepository.findById(refundId);
         Refund refund = returnedRefund.get();
         if( refund != null ) {

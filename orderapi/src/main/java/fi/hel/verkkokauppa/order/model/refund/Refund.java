@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.model.refund;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
@@ -65,7 +66,7 @@ public class Refund {
     LocalDate accounted;
 
     @Field(type = FieldType.Text)
-    String accountingStatus;
+    RefundAccountingStatusEnum accountingStatus;
 
     public Refund() {
     }
