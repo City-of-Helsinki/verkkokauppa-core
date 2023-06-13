@@ -1,21 +1,13 @@
 package fi.hel.verkkokauppa.order.api;
 
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundAccountingStatus;
-import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.test.utils.AccountingTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,7 +46,7 @@ public class AccountingExportControllerTest extends AccountingTestUtils {
         createTestOrderAccounting(order2.getOrderId());
 
         Refund refund1 = createTestRefund(order1.getOrderId());
-        setTestRefundAccountingStatus(refund1.getRefundId(), RefundAccountingStatus.CREATED);
+        setTestRefundAccountingStatus(refund1.getRefundId(), RefundAccountingStatusEnum.CREATED);
 
         Refund refund2 = createTestRefund(order2.getOrderId());
 
@@ -198,7 +187,7 @@ public class AccountingExportControllerTest extends AccountingTestUtils {
         assertEquals(slipId, accountingExportDataDto.getAccountingSlipId());
 
         // add another refund accounting, refund created earlier
-        setTestRefundAccountingStatus(refund2.getRefundId(), RefundAccountingStatus.CREATED);
+        setTestRefundAccountingStatus(refund2.getRefundId(), RefundAccountingStatusEnum.CREATED);
         createTestRefundAccounting(refund2.getRefundId(), refund2.getOrderId());
         createTestRefundItemAccounting(
                 refund2.getRefundId(),

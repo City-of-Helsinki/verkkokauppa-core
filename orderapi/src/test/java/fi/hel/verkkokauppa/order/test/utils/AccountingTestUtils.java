@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateRefundAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
@@ -192,7 +193,7 @@ public class AccountingTestUtils extends DummyData {
         return requestDto;
     }
 
-    public Refund setTestRefundAccountingStatus(String refundId, String accountingStatus) {
+    public Refund setTestRefundAccountingStatus(String refundId, RefundAccountingStatusEnum accountingStatus) {
         Optional<Refund> returnedRefund = refundRepository.findById(refundId);
         Refund refund = returnedRefund.get();
         if (refund != null) {

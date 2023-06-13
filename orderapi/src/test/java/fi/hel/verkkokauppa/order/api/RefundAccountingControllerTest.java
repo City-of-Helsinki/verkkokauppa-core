@@ -6,7 +6,7 @@ import fi.hel.verkkokauppa.order.api.data.accounting.RefundAccountingDto;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundAccountingStatus;
+import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundAccountingRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.RefundItemAccountingRepository;
@@ -54,7 +54,7 @@ public class RefundAccountingControllerTest extends AccountingTestUtils {
         refundAccountingController.createRefundAccounting(request);
 
         refund1 = refundRepository.findById(refund1.getRefundId()).orElseThrow();
-        assertEquals(RefundAccountingStatus.CREATED, refund1.getAccountingStatus(), "Refund1 accounting status should be created");
+        assertEquals(RefundAccountingStatusEnum.CREATED, refund1.getAccountingStatus(), "Refund1 accounting status should be created");
 
         RefundAccounting refundAccounting = refundAccountingRepository.findByRefundId(refund1.getRefundId());
         assertNotNull(refundAccounting);
@@ -77,7 +77,7 @@ public class RefundAccountingControllerTest extends AccountingTestUtils {
         refundAccountingController.createRefundAccounting(request);
 
         refund1 = refundRepository.findById(refund1.getRefundId()).orElseThrow();
-        assertEquals(RefundAccountingStatus.CREATED, refund1.getAccountingStatus(), "Refund1 accounting status should be created");
+        assertEquals(RefundAccountingStatusEnum.CREATED, refund1.getAccountingStatus(), "Refund1 accounting status should be created");
 
         RefundAccounting refundAccounting = refundAccountingRepository.findByRefundId(refund1.getRefundId());
         assertNotNull(refundAccounting);
