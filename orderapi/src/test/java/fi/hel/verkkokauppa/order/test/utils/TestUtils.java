@@ -6,17 +6,22 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.OrderController;
+import fi.hel.verkkokauppa.order.api.RefundController;
 import fi.hel.verkkokauppa.order.api.SubscriptionController;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
+import fi.hel.verkkokauppa.order.api.data.transformer.RefundTransformer;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
@@ -47,7 +52,13 @@ public class TestUtils extends DummyData {
     private OrderTransformerUtils orderTransformerUtils;
 
     @Autowired
+    private RefundTransformer refundTransformer;
+
+    @Autowired
     private OrderController orderController;
+
+    @Autowired
+    private RefundController refundController;
 
     @Autowired
     private SubscriptionController subscriptionController;
@@ -153,6 +164,20 @@ public class TestUtils extends DummyData {
                 .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
 
         return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<RefundAggregateDto> createNewRefundToDatabase(int itemCount, String orderId) {
+        Refund refund = generateDummyRefund(orderId);
+
+        refund.setNamespace("venepaikat");
+        refund.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        List<RefundItem> refundItems = generateDummyRefundItemList(refund, orderId, itemCount);
+        refundItems.forEach(refundItem -> refundItem.setPriceGross("124"));
+        refundItems.forEach(refundItem -> refundItem.setMerchantId("124"));
+
+        RefundAggregateDto refundAggregateDto = refundTransformer.transformToDto(refund, refundItems);
+
+        return refundController.createRefund(refundAggregateDto);
     }
 
     public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId) {

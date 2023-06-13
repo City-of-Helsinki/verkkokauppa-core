@@ -1,11 +1,15 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
+import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -141,4 +145,85 @@ public abstract class DummyData {
 
         return orderAccountings;
     }
+
+    public Refund generateDummyRefund(String orderId) {
+        Refund refund = new Refund();
+        refund.setRefundId("1");
+        refund.setOrderId(orderId);
+        refund.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        refund.setUser("dummy_user");
+        refund.setNamespace("dummy_namespace");
+        refund.setStatus("dummy_status");
+        refund.setCustomerFirstName("dummy_firstname");
+        refund.setCustomerLastName("dummy_lastname");
+        refund.setCustomerEmail("dummy@dummymail.com");
+        refund.setRefundReason("dummy_reason");
+
+        return refund;
+    }
+
+    public RefundItemDto generateDummyRefundItemDto(Refund refund) {
+        String refundItemId = UUIDGenerator.generateType4UUID().toString();
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+
+        return new RefundItemDto(
+                refundItemId,
+                refund.getRefundId(),
+                orderItemId,
+                refund.getOrderId(),
+                "9876",
+                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
+                "productName",
+                "productLabel",
+                "productDescription",
+                "unit",
+                1,
+                "70",
+                "30",
+                "100",
+                "30",
+                refund.getPriceNet(),
+                refund.getPriceVat(),
+                "100",
+                refund.getPriceNet(),
+                refund.getPriceVat(),
+                "100"
+        );
+    }
+
+    public RefundItem generateDummyRefundItem(Refund refund) {
+
+        return new RefundItem(
+                refund.getRefundId(),
+                generateDummyRefundItemDto(refund)
+        );
+    }
+
+    public List<RefundItem> generateDummyRefundItemList(Refund refund, String orderId, int itemCount) {
+        List<RefundItem> refundItems = new ArrayList<>();
+
+        for (int i = 0; i < itemCount; i++) {
+            refundItems.add(generateDummyRefundItem(refund));
+        }
+
+        return refundItems;
+    }
+
+    public RefundDto generateDummyRefundDto() {
+        RefundDto dto = RefundDto.builder()
+                .orderId("1")
+                .createdAt(DateTimeUtil.getFormattedDateTime().toString())
+                .customerEmail("dummy_email@example.com")
+                .customerFirstName("dummy_firstname")
+                .customerLastName("dummy_lastname")
+                .namespace("dummy_namespace")
+                .status("dummy_status")
+                .refundReason("dummy_reason")
+                .user("dummy_user")
+                .build();
+
+        return dto;
+    }
+
+
 }

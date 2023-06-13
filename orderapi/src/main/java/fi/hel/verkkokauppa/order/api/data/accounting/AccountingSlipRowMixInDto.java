@@ -16,4 +16,7 @@ public interface AccountingSlipRowMixInDto {
     @JsonIgnore
     String getBalanceProfitCenter();
 
+    @JsonIgnore
+    String getRowType();
+
 }

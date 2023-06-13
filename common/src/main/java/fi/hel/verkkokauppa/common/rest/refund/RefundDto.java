@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -28,4 +30,5 @@ public class RefundDto {
     private String priceNet;
     private String priceVat;
     private String priceTotal;
+    private LocalDate accounted;
 }
