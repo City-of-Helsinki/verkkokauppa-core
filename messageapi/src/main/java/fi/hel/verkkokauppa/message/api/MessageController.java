@@ -2,7 +2,9 @@ package fi.hel.verkkokauppa.message.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.message.constants.ApiUrls;
+import fi.hel.verkkokauppa.message.dto.ErrorNotificationDto;
 import fi.hel.verkkokauppa.message.dto.MessageDto;
 import fi.hel.verkkokauppa.message.enums.MessageTypes;
 import org.slf4j.Logger;
@@ -31,6 +33,9 @@ public class MessageController {
     @Autowired
     private MessageService service;
 
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/email", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Message> sendMessage(@RequestBody @Valid MessageDto messageDto
     ) {
@@ -43,6 +48,20 @@ public class MessageController {
         } catch (Exception e) {
             log.error("Sending message failed, id: " + messageDto.getId(), e);
             Error error = new Error("failed-to-send-message", "failed to send message with id [" + messageDto.getId() + "]");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+    }
+
+    @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/errorNotification", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> sendErrorNotification(@RequestBody ErrorNotificationDto dto) {
+        try {
+            sendNotificationService.sendErrorNotification(dto.getMessage(), dto.getCause());
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("Sending error notification failed {}", dto);
+            Error error = new Error("failed-to-send-error-notification", "failed to send error notification");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
