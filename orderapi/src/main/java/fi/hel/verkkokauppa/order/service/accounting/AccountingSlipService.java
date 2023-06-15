@@ -358,8 +358,8 @@ public class AccountingSlipService {
             return new HashMap<>();
         }
 
-        for (String id : accountingsForDate) {
-            List<RefundItemAccounting> list = refundItemAccountingService.getRefundItemAccountings(id);
+        for (String refundAccountingId : accountingsForDate) {
+            List<RefundItemAccounting> list = refundItemAccountingService.getRefundItemAccountings(refundAccountingId);
             list.forEach(itemAccounting -> accountingItemsForDate.add(new RefundItemAccountingTransformer().transformToDto(itemAccounting)));
         }
 

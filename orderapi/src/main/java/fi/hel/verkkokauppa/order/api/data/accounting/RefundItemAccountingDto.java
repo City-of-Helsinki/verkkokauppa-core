@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api.data.accounting;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -55,6 +56,23 @@ public class RefundItemAccountingDto {
         this.priceGross = priceGross;
         this.priceNet = priceNet;
         this.priceVat = priceVat;
+        this.companyCode = productAccountingDto.getCompanyCode();
+        this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
+        this.vatCode = productAccountingDto.getVatCode();
+        this.internalOrder = productAccountingDto.getInternalOrder();
+        this.profitCenter = productAccountingDto.getProfitCenter();
+        this.balanceProfitCenter = productAccountingDto.getBalanceProfitCenter();
+        this.project = productAccountingDto.getProject();
+        this.operationArea = productAccountingDto.getOperationArea();
+    }
+
+    public RefundItemAccountingDto(RefundItem refundItem, ProductAccountingDto productAccountingDto) {
+        this.refundItemId = refundItem.getRefundItemId();
+        this.refundId = refundItem.getRefundId();
+        this.orderId = refundItem.getOrderId();
+        this.priceGross = refundItem.getPriceGross();
+        this.priceNet = refundItem.getPriceNet();
+        this.priceVat = refundItem.getPriceVat();
         this.companyCode = productAccountingDto.getCompanyCode();
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();
@@ -149,7 +167,13 @@ public class RefundItemAccountingDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RefundItemAccountingDto that = (RefundItemAccountingDto) o;
-        return Objects.equals(mainLedgerAccount, that.mainLedgerAccount) && Objects.equals(vatCode, that.vatCode) && Objects.equals(internalOrder, that.internalOrder) && Objects.equals(profitCenter, that.profitCenter) && Objects.equals(project, that.project) && Objects.equals(operationArea, that.operationArea);
+        return Objects.equals(mainLedgerAccount, that.mainLedgerAccount)
+                && Objects.equals(vatCode, that.vatCode)
+                && Objects.equals(internalOrder, that.internalOrder)
+                && Objects.equals(profitCenter, that.profitCenter)
+                && Objects.equals(project, that.project)
+                && Objects.equals(operationArea, that.operationArea)
+                && Objects.equals(balanceProfitCenter, that.balanceProfitCenter);
     }
 
     @Override

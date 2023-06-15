@@ -58,13 +58,7 @@ public class RefundItemAccountingService {
                 String productId = productAccountingDto.getProductId();
 
                 if (productId.equalsIgnoreCase(refundItemProductId)) {
-                    String orderId = refundItem.getOrderId();
-                    String refundItemId = refundItem.getRefundItemId();
-                    String priceGross = refundItem.getPriceGross();
-                    String priceNet = refundItem.getPriceNet();
-                    String priceVat = refundItem.getPriceVat();
-                    RefundItemAccountingDto refundItemAccountingDto = new RefundItemAccountingDto(refundItemId, refundId, orderId, priceGross,
-                            priceNet, priceVat, productAccountingDto);
+                    RefundItemAccountingDto refundItemAccountingDto = new RefundItemAccountingDto(refundItem, productAccountingDto);
 
                     createRefundItemAccounting(refundItemAccountingDto);
                     refundItemAccountings.add(refundItemAccountingDto);
