@@ -209,9 +209,9 @@ public abstract class DummyData {
         return refundItems;
     }
 
-    public RefundDto generateDummyRefundDto() {
+    public RefundDto generateDummyRefundDto(String orderId) {
         RefundDto dto = RefundDto.builder()
-                .orderId("1")
+                .orderId(orderId)
                 .createdAt(DateTimeUtil.getFormattedDateTime().toString())
                 .customerEmail("dummy_email@example.com")
                 .customerFirstName("dummy_firstname")

@@ -1,20 +1,13 @@
 package fi.hel.verkkokauppa.order.api;
 
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
-import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
-import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
-import fi.hel.verkkokauppa.order.repository.jpa.*;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.test.utils.AccountingTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,10 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,64 +27,13 @@ import static org.junit.jupiter.api.Assertions.*;
         webEnvironment = SpringBootTest.WebEnvironment.MOCK
 )
 @Slf4j
-public class AccountingExportControllerTest extends DummyData {
+public class AccountingExportControllerTest extends AccountingTestUtils {
 
     @Autowired
     private AccountingController accountingController;
 
     @Autowired
     private AccountingExportController accountingExportController;
-
-    @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private RefundRepository refundRepository;
-
-    @Autowired
-    private OrderAccountingRepository orderAccountingRepository;
-
-    @Autowired
-    private RefundAccountingRepository refundAccountingRepository;
-
-    @Autowired
-    private OrderItemAccountingRepository orderItemAccountingRepository;
-
-    @Autowired
-    private RefundItemAccountingRepository refundItemAccountingRepository;
-
-    private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedOrderAccountingById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedOrderItemAccountingById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedRefundById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedRefundAccountingById = new ArrayList<>();
-    private ArrayList<String> toBeDeletedRefundItemAccountingById = new ArrayList<>();
-
-    @After
-    public void tearDown() {
-        try {
-            toBeDeletedOrderById.forEach(orderId -> orderRepository.deleteById(orderId));
-            toBeDeletedRefundById.forEach(refundId -> refundRepository.deleteById(refundId));
-            toBeDeletedOrderAccountingById.forEach(id -> orderAccountingRepository.deleteById(id));
-            toBeDeletedRefundAccountingById.forEach(id -> refundAccountingRepository.deleteById(id));
-            toBeDeletedOrderItemAccountingById.forEach(id -> orderItemAccountingRepository.deleteById(id));
-            toBeDeletedRefundItemAccountingById.forEach(id -> refundItemAccountingRepository.deleteById(id));
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedOrderAccountingById = new ArrayList<>();
-            toBeDeletedOrderItemAccountingById = new ArrayList<>();
-            toBeDeletedRefundById = new ArrayList<>();
-            toBeDeletedRefundAccountingById = new ArrayList<>();
-            toBeDeletedRefundItemAccountingById = new ArrayList<>();
-        } catch (Exception e) {
-            log.info("delete error {}", e.toString());
-            toBeDeletedOrderById = new ArrayList<>();
-            toBeDeletedOrderAccountingById = new ArrayList<>();
-            toBeDeletedOrderItemAccountingById = new ArrayList<>();
-            toBeDeletedRefundById = new ArrayList<>();
-            toBeDeletedRefundAccountingById = new ArrayList<>();
-            toBeDeletedRefundItemAccountingById = new ArrayList<>();
-        }
-    }
 
     @Test
     @RunIfProfile(profile = "local")
@@ -293,103 +232,5 @@ public class AccountingExportControllerTest extends DummyData {
         assertTrue(accountingXml2.contains("<ProfitCenter>refundBalanceProfitCenter3</ProfitCenter>"));
         assertEquals(slipId2, accountingExportDataDto2.getAccountingSlipId());
 
-    }
-
-    private Order createTestOrder() {
-        Order order = generateDummyOrder();
-        order.setOrderId(UUID.randomUUID().toString());
-        order = orderRepository.save(order);
-        toBeDeletedOrderById.add(order.getOrderId());
-        return order;
-    }
-
-    private OrderAccounting createTestOrderAccounting(String orderId) {
-        OrderAccounting orderAccounting = new OrderAccounting();
-        orderAccounting.setOrderId(orderId);
-        orderAccounting.setCreatedAt(DateTimeUtil.getFormattedDateTime().minusDays(1));
-        orderAccounting = orderAccountingRepository.save(orderAccounting);
-        toBeDeletedOrderAccountingById.add(orderAccounting.getOrderId());
-
-        return orderAccounting;
-    }
-
-    private OrderItemAccounting createTestOrderItemAccounting(String orderId, String priceGross, String priceNet, String priceVat,
-                                                              String companyCode, String mainLedgerAccount, String vatCode,
-                                                              String internalOrder, String profitCenter, String balanceProfitCenter,
-                                                              String project, String operationArea) {
-        OrderItemAccounting orderItemAccounting = new OrderItemAccounting(
-                UUID.randomUUID().toString(),
-                orderId,
-                priceGross,
-                priceNet,
-                priceVat,
-                companyCode,
-                mainLedgerAccount,
-                vatCode,
-                internalOrder,
-                profitCenter,
-                balanceProfitCenter,
-                project,
-                operationArea);
-
-        orderItemAccounting = orderItemAccountingRepository.save(orderItemAccounting);
-        toBeDeletedOrderItemAccountingById.add(orderItemAccounting.getOrderItemId());
-
-        return orderItemAccounting;
-    }
-
-    private Refund createTestRefund(String orderId) {
-        Refund refund = generateDummyRefund(orderId);
-        refund.setRefundId(UUID.randomUUID().toString());
-        refund = refundRepository.save(refund);
-        toBeDeletedRefundById.add(refund.getRefundId());
-        return refund;
-    }
-
-    private Refund setTestRefundAccountingStatus(String refundId, RefundAccountingStatusEnum accountingStatus) {
-        Optional<Refund> returnedRefund = refundRepository.findById(refundId);
-        Refund refund = returnedRefund.get();
-        if (refund != null) {
-            refund.setAccountingStatus(accountingStatus);
-            refund = refundRepository.save(refund);
-        }
-        return refund;
-    }
-
-    private RefundAccounting createTestRefundAccounting(String refundId, String orderId) {
-        RefundAccounting refundAccounting = new RefundAccounting();
-        refundAccounting.setRefundId(refundId);
-        refundAccounting.setOrderId(orderId);
-        refundAccounting.setCreatedAt(DateTimeUtil.getFormattedDateTime().minusDays(1));
-        refundAccounting = refundAccountingRepository.save(refundAccounting);
-        toBeDeletedRefundAccountingById.add(refundAccounting.getRefundId());
-
-        return refundAccounting;
-    }
-
-    private RefundItemAccounting createTestRefundItemAccounting(String refundId, String orderId, String priceGross, String priceNet, String priceVat,
-                                                                String companyCode, String mainLedgerAccount, String vatCode,
-                                                                String internalOrder, String profitCenter, String balanceProfitCenter,
-                                                                String project, String operationArea) {
-        RefundItemAccounting refundItemAccounting = new RefundItemAccounting(
-                UUID.randomUUID().toString(),
-                refundId,
-                orderId,
-                priceGross,
-                priceNet,
-                priceVat,
-                companyCode,
-                mainLedgerAccount,
-                vatCode,
-                internalOrder,
-                profitCenter,
-                balanceProfitCenter,
-                project,
-                operationArea);
-
-        refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
-        toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());
-
-        return refundItemAccounting;
     }
 }

@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
-import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.*;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
