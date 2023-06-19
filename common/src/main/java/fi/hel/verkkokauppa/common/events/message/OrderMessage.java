@@ -53,6 +53,7 @@ public class OrderMessage implements EventMessage {
                 .orderId(this.orderId)
                 .timestamp(this.timestamp)
                 .eventType(this.eventType)
+                .subscriptionId(this.subscriptionId)
                 .build();
     }
 

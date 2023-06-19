@@ -1,10 +1,12 @@
 package fi.hel.verkkokauppa.events.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ public class OrderMessageListener {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RestWebHookService restWebHookService;
 
     @Value("${payment.service.url}")
     private String paymentServiceUrl;
@@ -63,6 +68,7 @@ public class OrderMessageListener {
                     paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
                     paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
             callApi(message, url);
+            restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
         } catch (Exception e) {
             log.error("failed action after receiving event, eventType: " + message.getEventType(), e);
         }
