@@ -28,11 +28,6 @@ public class RefundItemAccountingDtoTests extends DummyData {
     @Autowired
     private CommonBeanValidationService commonBeanValidationService;
 
-    @Before
-    public void setUp() {
-
-    }
-
     @Test
     public void identicalRefundItemDtos() {
         Refund refund = generateDummyRefund("1");

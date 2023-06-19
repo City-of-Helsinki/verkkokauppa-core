@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// AccountingSlipRowMixInDto contains JsonIgnore's for fields that are not exported
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
