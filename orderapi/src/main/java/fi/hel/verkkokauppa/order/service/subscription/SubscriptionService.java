@@ -156,6 +156,8 @@ public class SubscriptionService {
                 .eventType(EventType.SUBSCRIPTION_CREATED)
                 .namespace(subscription.getNamespace())
                 .subscriptionId(subscription.getId())
+                .orderId(subscription.getOrderId())
+                .orderItemId(subscription.getOrderItemId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
