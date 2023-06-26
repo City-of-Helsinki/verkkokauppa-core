@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
+import fi.hel.verkkokauppa.configuration.api.merchant.dto.PaytrailMerchantMappingDto;
 import fi.hel.verkkokauppa.configuration.service.DecryptService;
 import fi.hel.verkkokauppa.configuration.service.EncryptService;
 import fi.hel.verkkokauppa.configuration.service.MerchantService;
@@ -47,20 +48,24 @@ public class MerchantController {
     @PostMapping(value = "/merchant/upsert", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MerchantDto> upsertMerchant(@RequestBody @Valid MerchantDto merchantDto) {
         try {
+            MerchantDto returnDto;
 
             // Checking if the merchant already exists. If it does, it will update the merchant.
             if (merchantDto.getMerchantId() != null) {
-                // Returning a response with a status code of 201 (CREATED) and the body of the response is the
-                // merchantDto.
-                return ResponseEntity.status(HttpStatus.CREATED).body(
-                        merchantService.update(merchantDto)
-                );
+                returnDto = merchantService.update(merchantDto);
+            } else {
+                returnDto = merchantService.save(merchantDto);
             }
 
-            // Returning a response with a status code of 201 (CREATED) and the body of the response is the merchantDto.
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    merchantService.save(merchantDto)
-            );
+            String merchantPaytrailMerchantId = returnDto.getMerchantPaytrailMerchantId();
+            if (merchantPaytrailMerchantId != null) {
+                PaytrailMerchantMappingDto paytrailMerchantMappingDto = merchantService.getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(merchantPaytrailMerchantId, returnDto.getNamespace());
+                addPaytrailSecret(returnDto.getMerchantId(), paytrailMerchantMappingDto.getMerchantPaytrailSecret());
+            }
+
+            // Returning a response with a status code of 201 (CREATED) and the body of the response is the
+            // merchantDto.
+            return ResponseEntity.status(HttpStatus.CREATED).body(returnDto);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -141,5 +146,22 @@ public class MerchantController {
         String paytrailSecret = decryptService.decryptSecret(salt, encryptedPaytrailSecret);
 
         return ResponseEntity.ok(paytrailSecret);
+    }
+
+    @PostMapping("/merchant/paytrail-merchant-mapping/add")
+    public ResponseEntity<PaytrailMerchantMappingDto> addPaytrailMerchantMapping(@RequestBody PaytrailMerchantMappingDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                merchantService.save(dto)
+        );
+    }
+
+    @GetMapping("/merchant/paytrail-merchant-mapping/get")
+    public ResponseEntity<PaytrailMerchantMappingDto> getPaytrailMerchantMapping(
+            @RequestParam(value = "merchantPaytrailMerchantId") String merchantPaytrailMerchantId,
+            @RequestParam(value = "namespace") String namespace
+    ) {
+        return ResponseEntity.ok(
+                merchantService.getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(merchantPaytrailMerchantId, namespace)
+        );
     }
 }

@@ -27,5 +27,8 @@ public class MerchantModel {
 
     @Field(type = FieldType.Auto)
     ArrayList<ConfigurationModel> configurations;
+
+    @Field(type = FieldType.Text)
+    String merchantPaytrailMerchantId;
 }
 

@@ -8,12 +8,16 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
+import fi.hel.verkkokauppa.configuration.api.merchant.dto.PaytrailMerchantMappingDto;
 import fi.hel.verkkokauppa.configuration.mapper.ConfigurationMapper;
 import fi.hel.verkkokauppa.configuration.mapper.MerchantMapper;
+import fi.hel.verkkokauppa.configuration.mapper.PaytrailMerchantMappingMapper;
 import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
 import fi.hel.verkkokauppa.configuration.model.LocaleModel;
 import fi.hel.verkkokauppa.configuration.model.merchant.MerchantModel;
+import fi.hel.verkkokauppa.configuration.model.merchant.PaytrailMerchantMapping;
 import fi.hel.verkkokauppa.configuration.repository.MerchantRepository;
+import fi.hel.verkkokauppa.configuration.repository.PaytrailMerchantMappingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -35,13 +39,25 @@ public class MerchantService {
     private MerchantMapper merchantMapper;
 
     @Autowired
+    private PaytrailMerchantMappingMapper paytrailMerchantMappingMapper;
+
+    @Autowired
     private ConfigurationMapper configurationMapper;
 
     @Autowired
     private MerchantRepository merchantRepository;
 
     @Autowired
+    private PaytrailMerchantMappingRepository paytrailMerchantMappingRepository;
+
+    @Autowired
     private Environment env;
+
+    @Autowired
+    private EncryptService encryptService;
+
+    @Autowired
+    private DecryptService decryptService;
 
     /**
      * Save the merchant and return the saved merchant as a DTO.
@@ -55,6 +71,46 @@ public class MerchantService {
         entity.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         MerchantModel saved = merchantRepository.save(entity);
         return merchantMapper.toDto(saved);
+    }
+
+    public String encryptSecret(String secret) {
+        String salt = env.getRequiredProperty("merchant.secret.encryption.salt");
+        return encryptService.encryptSecret(secret, salt);
+    }
+
+    public String decryptSecret(String secret) {
+        String salt = env.getRequiredProperty("merchant.secret.encryption.salt");
+        return decryptService.decryptSecret(salt, secret);
+    }
+
+    public PaytrailMerchantMappingDto save(PaytrailMerchantMappingDto dto) {
+        PaytrailMerchantMapping entity = paytrailMerchantMappingMapper.fromDto(dto);
+        entity.setMerchantPaytrailSecret(encryptSecret(entity.getMerchantPaytrailSecret()));
+        entity.setId(UUIDGenerator.generateType3UUIDString(entity.getNamespace(), entity.getMerchantPaytrailMerchantId()));
+        entity = paytrailMerchantMappingRepository.save(entity);
+        entity.setMerchantPaytrailSecret(decryptSecret(entity.getMerchantPaytrailSecret()));
+        return paytrailMerchantMappingMapper.toDto(entity);
+    }
+
+    public PaytrailMerchantMappingDto getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(
+        String merchantPaytrailMerchantId,
+        String namespace
+    ) {
+        String id = UUIDGenerator.generateType3UUIDString(namespace, merchantPaytrailMerchantId);
+        if (id == null) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-paytrail-merchant-mapping", "failed to generate id for mapping with namespace, merchantPaytrailMerchantId: [" + namespace + ", " + merchantPaytrailMerchantId + "]")
+            );
+        }
+        PaytrailMerchantMapping mapping = paytrailMerchantMappingRepository
+                .findById(id)
+                .orElseThrow(() -> new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("paytrail-merchant-mapping-not-found", "paytrail merchant mapping with namespace, merchantPaytrailMerchantId: [" + namespace + ", " + merchantPaytrailMerchantId + "] not found")
+                ));
+        mapping.setMerchantPaytrailSecret(decryptSecret(mapping.getMerchantPaytrailSecret()));
+        return paytrailMerchantMappingMapper.toDto(mapping);
     }
 
 

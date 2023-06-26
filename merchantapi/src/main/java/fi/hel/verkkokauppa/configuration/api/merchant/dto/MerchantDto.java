@@ -18,5 +18,6 @@ public class MerchantDto {
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     ArrayList<ConfigurationModel> configurations;
+    String merchantPaytrailMerchantId;
 }
 
