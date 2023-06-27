@@ -78,17 +78,25 @@ public class MerchantService {
         return encryptService.encryptSecret(secret, salt);
     }
 
+    public void encryptSecret(PaytrailMerchantMapping mapping) {
+        mapping.setMerchantPaytrailSecret(encryptSecret(mapping.getMerchantPaytrailSecret()));
+    }
+
     public String decryptSecret(String secret) {
         String salt = env.getRequiredProperty("merchant.secret.encryption.salt");
         return decryptService.decryptSecret(salt, secret);
     }
 
+    public void decryptSecret(PaytrailMerchantMapping mapping) {
+        mapping.setMerchantPaytrailSecret(decryptSecret(mapping.getMerchantPaytrailSecret()));
+    }
+
     public PaytrailMerchantMappingDto save(PaytrailMerchantMappingDto dto) {
         PaytrailMerchantMapping entity = paytrailMerchantMappingMapper.fromDto(dto);
-        entity.setMerchantPaytrailSecret(encryptSecret(entity.getMerchantPaytrailSecret()));
+        encryptSecret(entity);
         entity.setId(UUIDGenerator.generateType3UUIDString(entity.getNamespace(), entity.getMerchantPaytrailMerchantId()));
         entity = paytrailMerchantMappingRepository.save(entity);
-        entity.setMerchantPaytrailSecret(decryptSecret(entity.getMerchantPaytrailSecret()));
+        decryptSecret(entity);
         return paytrailMerchantMappingMapper.toDto(entity);
     }
 
@@ -109,7 +117,7 @@ public class MerchantService {
                         HttpStatus.NOT_FOUND,
                         new Error("paytrail-merchant-mapping-not-found", "paytrail merchant mapping with namespace, merchantPaytrailMerchantId: [" + namespace + ", " + merchantPaytrailMerchantId + "] not found")
                 ));
-        mapping.setMerchantPaytrailSecret(decryptSecret(mapping.getMerchantPaytrailSecret()));
+        decryptSecret(mapping);
         return paytrailMerchantMappingMapper.toDto(mapping);
     }
 
