@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.payment.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.api.PaytrailPaymentController;
@@ -97,6 +98,9 @@ public class PaytrailPaymentServiceUnitTests {
 
     @MockBean
     private PaytrailPaymentClient paytrailPaymentClient;
+
+    @MockBean
+    private SendNotificationService sendNotificationService;
 
     @BeforeEach
     public void setup() {
