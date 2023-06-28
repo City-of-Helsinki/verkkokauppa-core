@@ -48,6 +48,12 @@ public class RestServiceClient {
         return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
+    public JSONObject makeDeleteCall(String url) {
+        WebClient client = getClient();
+        JSONObject response = deleteJsonService(client, url);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
+    }
+
     public JSONObject makePostCall(String url, String body) {
         WebClient client = getClient();
         JSONObject response = postQueryJsonService(client, url, body);
@@ -112,6 +118,21 @@ public class RestServiceClient {
 
     public JSONObject queryJsonService(WebClient client, String url) {
         String jsonResponse = client.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
+
+    }
+
+    public JSONObject deleteJsonService(WebClient client, String url) {
+        String jsonResponse = client.delete()
                 .uri(url)
                 .retrieve()
                 .bodyToMono(String.class)
