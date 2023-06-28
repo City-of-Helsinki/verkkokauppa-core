@@ -113,10 +113,10 @@ public class MerchantService {
         }
         PaytrailMerchantMapping mapping = paytrailMerchantMappingRepository
                 .findById(id)
-                .orElseThrow(() -> new CommonApiException(
-                        HttpStatus.NOT_FOUND,
-                        new Error("paytrail-merchant-mapping-not-found", "paytrail merchant mapping with namespace, merchantPaytrailMerchantId: [" + namespace + ", " + merchantPaytrailMerchantId + "] not found")
-                ));
+                .orElse(null);
+        if (mapping == null) {
+            return null;
+        }
         decryptSecret(mapping);
         return paytrailMerchantMappingMapper.toDto(mapping);
     }

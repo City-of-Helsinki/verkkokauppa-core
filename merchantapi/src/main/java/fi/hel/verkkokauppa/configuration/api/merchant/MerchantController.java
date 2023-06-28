@@ -60,7 +60,17 @@ public class MerchantController {
             String merchantPaytrailMerchantId = returnDto.getMerchantPaytrailMerchantId();
             if (merchantPaytrailMerchantId != null) {
                 PaytrailMerchantMappingDto paytrailMerchantMappingDto = merchantService.getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(merchantPaytrailMerchantId, returnDto.getNamespace());
-                addPaytrailSecret(returnDto.getMerchantId(), paytrailMerchantMappingDto.getMerchantPaytrailSecret());
+                if (paytrailMerchantMappingDto != null) {
+                    addPaytrailSecret(returnDto.getMerchantId(), paytrailMerchantMappingDto.getMerchantPaytrailSecret());
+                } else {
+                    String paytrailSecret = getPaytrailSecret(returnDto.getMerchantId()).getBody();
+                    if (paytrailSecret == null || paytrailSecret.equals("")) {
+                        throw new CommonApiException(
+                                HttpStatus.NOT_FOUND,
+                                new Error("paytrail-merchant-mapping-not-found", "paytrail merchant mapping with namespace, merchantPaytrailMerchantId: [" + merchantDto.getNamespace() + ", " + merchantPaytrailMerchantId + "] not found")
+                        );
+                    }
+                }
             }
 
             // Returning a response with a status code of 201 (CREATED) and the body of the response is the
