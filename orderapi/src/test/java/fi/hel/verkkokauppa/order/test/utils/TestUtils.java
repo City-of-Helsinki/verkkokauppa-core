@@ -140,7 +140,7 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setPriceGross("100");
         orderItems.get(0).setPriceNet("100");
         orderItems.get(0).setPriceVat("0");
-        orderItems.get(0).setProductId("productId");
+        orderItems.get(0).setProductId("b86337e8-68a0-3599-a18b-754ffae53f5a"); // use id created by initializeTestData
         orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
