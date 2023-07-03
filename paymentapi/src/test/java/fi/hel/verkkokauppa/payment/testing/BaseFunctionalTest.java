@@ -70,4 +70,43 @@ public abstract class BaseFunctionalTest {
         order.setItems(items);
         return order;
     }
+
+    protected OrderWrapper createDummyOrderWrapperForSubscription() {
+        OrderDto orderDto = new OrderDto();
+        String orderId = UUID.randomUUID().toString();
+        orderDto.setOrderId(orderId);
+        orderDto.setNamespace("venepaikat");
+        orderDto.setUser("dummy_user");
+        orderDto.setCreatedAt("");
+        orderDto.setStatus("confirmed");
+        orderDto.setType("subscription");
+        orderDto.setCustomerFirstName("Martin");
+        orderDto.setCustomerLastName("Leh");
+        orderDto.setCustomerEmail("testi@ambientia.fi");
+        orderDto.setPriceNet("1234");
+        orderDto.setPriceVat("0");
+        // Sets total price to be 1 eur
+        orderDto.setPriceTotal("1234");
+
+        OrderWrapper order = new OrderWrapper();
+        order.setOrder(orderDto);
+
+        List<OrderItemDto> items = new ArrayList<>();
+
+        OrderItemDto orderItem = new OrderItemDto();
+
+        String orderItemId = UUID.randomUUID().toString();
+        orderItem.setOrderItemId(orderItemId);
+        orderItem.setPriceGross(BigDecimal.valueOf(1234));
+        orderItem.setQuantity(1);
+        orderItem.setVatPercentage("24");
+        orderItem.setProductId("test-product-id");
+        orderItem.setProductName("productNäme");
+        orderItem.setOrderId(orderId);
+
+        items.add(orderItem);
+
+        order.setItems(items);
+        return order;
+    }
 }

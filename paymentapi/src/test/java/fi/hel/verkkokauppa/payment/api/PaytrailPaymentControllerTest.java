@@ -358,6 +358,54 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
 
     @Test
     @RunIfProfile(profile = "local")
+    public void testCheckCardReturnUrlWithSubscription() throws NoSuchAlgorithmException, InvalidKeyException {
+        GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();;
+        OrderWrapper orderWrapper = createDummyOrderWrapperForSubscription();
+
+        OrderItemDto dummyOrderItem = orderWrapper.getItems().get(0);
+        paymentRequestDataDto.setOrder(orderWrapper);
+        String merchantId = getFirstMerchantIdFromNamespace(orderWrapper.getOrder().getNamespace());
+        paymentRequestDataDto.setMerchantId(merchantId);
+        String secretKey = commonServiceConfigurationClient.getMerchantPaytrailSecretKey(merchantId);
+
+        Map<String, String> params = createMockCallbackParams("", "", "");
+        params.put("checkout-tokenization-id", TOKENIZATION_ID);
+        String signature = PaytrailSignatureService.calculateSignature(PaytrailSignatureService.filterCheckoutQueryParametersMap(params), null, secretKey);
+        params.put("signature", signature);
+
+        ResponseEntity<Payment> response = paytrailPaymentController.checkCardReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        Payment payment = response.getBody();
+
+        assertNotNull(payment);
+        assertNotNull(payment.getPaymentId());
+
+        /* Check payment */
+        assertEquals(orderWrapper.getOrder().getOrderId(), payment.getOrderId());
+        assertNotNull(payment.getPaytrailTransactionId());
+
+        /* Check payment items */
+        String paymentId = payment.getPaymentId();
+        List<PaymentItem> paymentItems = paymentItemRepository.findByPaymentId(payment.getPaymentId());
+        assertEquals(1, paymentItems.size());
+
+        PaymentItem paymentItem = paymentItems.get(0);
+        assertEquals(orderWrapper.getOrder().getOrderId(), paymentItem.getOrderId());
+        assertEquals(dummyOrderItem.getProductId(), paymentItem.getProductId());
+
+        /* Check payer */
+        List<Payer> payers = payerRepository.findByPaymentId(payment.getPaymentId());
+        assertEquals(1, payers.size());
+
+        Payer payer = payers.get(0);
+        assertEquals(orderWrapper.getOrder().getCustomerFirstName(), payer.getFirstName());
+        assertEquals(orderWrapper.getOrder().getCustomerLastName(), payer.getLastName());
+        assertEquals(orderWrapper.getOrder().getCustomerEmail(), payer.getEmail());
+
+        toBeDeletedPaymentId.add(paymentId);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
     public void testCheckCardReturnUrlWithInvalidSignature() {
         GetPaymentRequestDataDto paymentRequestDataDto = new GetPaymentRequestDataDto();;
         OrderWrapper orderWrapper = createDummyOrderWrapper();
