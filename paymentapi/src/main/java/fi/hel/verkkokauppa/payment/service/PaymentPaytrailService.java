@@ -328,16 +328,8 @@ public class PaymentPaytrailService {
                 .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
                 .build();
 
-
-        // Send PAYMENT_PAID webhook event
         orderPaidWebHookAction(paymentMessage);
         log.debug("PAYMENT_PAID notification sent for paymentId: " + payment.getPaymentId());
-
-        // use Kafka event to call subscription created actions if orderType is subscription
-        if(OrderType.SUBSCRIPTION.equals(paymentMessage.orderType)) {
-            sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-            log.debug("Kafka PAYMENT_PAID event for paymentId: " + payment.getPaymentId());
-        }
     }
 
     protected void orderPaidWebHookAction(PaymentMessage message) {
