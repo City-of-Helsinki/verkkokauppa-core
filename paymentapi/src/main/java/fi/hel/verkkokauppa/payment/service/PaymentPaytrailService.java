@@ -332,12 +332,10 @@ public class PaymentPaytrailService {
         orderPaidWebHookAction(paymentMessage);
         log.debug("PAYMENT_PAID notification sent for paymentId: " + payment.getPaymentId());
 
-        // if orderType equals subscription then this subscription has just been created
-        if(OrderType.SUBSCRIPTION.equals(paymentMessage.getOrderType())){
-            // send SUBSCRIPTION_CREATED webhook event
-            sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, paymentMessage);
-            log.debug("triggered event SUBSCRIPTION_CREATED for paymentId: " + payment.getPaymentId());
-        }
+        // subscription created and subscription renewal actions
+        sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, paymentMessage);
+        log.debug("PAYMENT_PAID event for paymentId: " + payment.getPaymentId());
+
 
     }
 
