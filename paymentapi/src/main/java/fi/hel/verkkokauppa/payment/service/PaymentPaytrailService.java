@@ -328,8 +328,15 @@ public class PaymentPaytrailService {
                 .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
                 .build();
 
+        // send PAYMENT_PAID webhook event
         orderPaidWebHookAction(paymentMessage);
         log.debug("PAYMENT_PAID notification sent for paymentId: " + payment.getPaymentId());
+
+        // subscription created and subscription renewal actions
+        sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, paymentMessage);
+        log.debug("PAYMENT_PAID event for paymentId: " + payment.getPaymentId());
+
+
     }
 
     protected void orderPaidWebHookAction(PaymentMessage message) {
