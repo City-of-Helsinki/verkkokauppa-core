@@ -129,6 +129,8 @@ public class TestUtils extends DummyData {
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
         Order order = generateDummyOrder();
 
+        order.setEndDate(LocalDateTime.now().plusMonths(1));
+
         order.setNamespace("venepaikat");
         order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
