@@ -333,10 +333,8 @@ public class PaymentPaytrailService {
         log.debug("PAYMENT_PAID notification sent for paymentId: " + payment.getPaymentId());
 
         // subscription created and subscription renewal actions
-        sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, paymentMessage);
+        sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
         log.debug("PAYMENT_PAID event for paymentId: " + payment.getPaymentId());
-
-
     }
 
     protected void orderPaidWebHookAction(PaymentMessage message) {
