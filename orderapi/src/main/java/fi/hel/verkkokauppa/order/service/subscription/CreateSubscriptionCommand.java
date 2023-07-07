@@ -81,6 +81,7 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 		SubscriptionMessage message = SubscriptionMessage.builder()
 				.subscriptionId(entity.getSubscriptionId())
 				.orderId(entity.getOrderId())
+				.orderItemId(entity.getOrderItemId())
 				.namespace(entity.getNamespace())
 				.eventType(EventType.SUBSCRIPTION_CREATED)
 				.timestamp(entity.getCreatedAt().toString())

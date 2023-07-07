@@ -15,6 +15,7 @@ public class SubscriptionMessage implements EventMessage {
 
     String subscriptionId;
     String orderId;
+    String orderItemId;
     String timestamp;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String cancellationCause;
@@ -29,6 +30,8 @@ public class SubscriptionMessage implements EventMessage {
     public SubscriptionMessage toCustomerWebHook(){
         return SubscriptionMessage.builder()
                 .subscriptionId(this.getSubscriptionId())
+                .orderId(this.getOrderId())
+                .orderItemId(this.getOrderItemId())
                 .namespace(this.getNamespace())
                 .eventType(this.getEventType())
                 .cancellationCause(this.getCancellationCause())
