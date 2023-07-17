@@ -52,7 +52,7 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         log.info("running testGetNotExportedAccountingExportData");
         createAccountingExportData(10);
         List<AccountingExportData> resultList;
-        long expectedTotalHits = accountingExportDataCount();
+        long expectedTotalHits = notExportedAccountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         resultList = searchServiceToTest.getNotExportedAccountingExportData();

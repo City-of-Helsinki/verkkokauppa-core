@@ -173,6 +173,9 @@ class SubscriptionAdminControllerTest extends TestUtils {
         JSONObject email = items.getJSONObject(0);
         JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
 
+        // remove the test email
+        restServiceClient.makeDeleteCall(mailHogUrl + "/api/v1/messages/" + email.getString("ID"));
+
         assertEquals("Email Subject does not match.",
                 EventType.ERROR_EMAIL_NOTIFICATION,
                 headers.getJSONArray("Subject").getString(0));
@@ -212,6 +215,9 @@ class SubscriptionAdminControllerTest extends TestUtils {
         // latest email is in index 0
         JSONObject email = items.getJSONObject(0);
         JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
+
+        // remove the test email
+        restServiceClient.makeDeleteCall(mailHogUrl + "/api/v1/messages/" + email.getString("ID"));
 
         assertEquals("Email Subject does not match.",
                 EventType.ERROR_EMAIL_NOTIFICATION,

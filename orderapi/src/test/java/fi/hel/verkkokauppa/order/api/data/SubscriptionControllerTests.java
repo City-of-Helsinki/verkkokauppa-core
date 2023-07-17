@@ -117,7 +117,7 @@ public class SubscriptionControllerTests extends DummyData {
         Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
         Assertions.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
 
-        Assertions.assertEquals("36a5ec5a-cd89-3912-ba03-83e8504e7b20", subscriptions.get(0).getProductId());
+        Assertions.assertEquals(orderItems.get(0).getProductId(), subscriptions.get(0).getProductId());
         Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
         Assertions.assertEquals("productLabel", subscriptions.get(0).getProductLabel());
         Assertions.assertEquals("productDescription", subscriptions.get(0).getProductDescription());
@@ -180,7 +180,7 @@ public class SubscriptionControllerTests extends DummyData {
         Assertions.assertEquals(1L, (long) subscriptions.get(0).getPeriodFrequency());
         Assertions.assertEquals(2, (int) subscriptions.get(0).getPeriodCount());
 
-        Assertions.assertEquals("36a5ec5a-cd89-3912-ba03-83e8504e7b20", subscriptions.get(0).getProductId());
+        Assertions.assertEquals(orderItems.get(0).getProductId(), subscriptions.get(0).getProductId());
         Assertions.assertEquals("productName", subscriptions.get(0).getProductName());
         Assertions.assertEquals("productLabel", subscriptions.get(0).getProductLabel());
         Assertions.assertEquals("productDescription", subscriptions.get(0).getProductDescription());

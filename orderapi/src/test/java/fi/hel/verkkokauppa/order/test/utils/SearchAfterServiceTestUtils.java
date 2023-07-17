@@ -106,6 +106,16 @@ public class SearchAfterServiceTestUtils extends TestUtils {
 
     // returns number of AccountingExportData records in Elasticsearch
     public long accountingExportDataCount() {
+
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+
+        SearchHits<AccountingExportData> hits = operations.search(query, AccountingExportData.class);
+        return hits.getTotalHits();
+    }
+    // returns the count of accountingExportDatas that have not been exported
+    public long notExportedAccountingExportDataCount() {
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
@@ -165,6 +175,16 @@ public class SearchAfterServiceTestUtils extends TestUtils {
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
                 .withQuery(qb)
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+        SearchHits<Order> hits = operations.search(query, Order.class);
+
+        return hits.getTotalHits();
+    }
+
+    // returns number of order records
+    public long orderCount() {
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
                 .withPageable(PageRequest.of(0, 10000))
                 .build();
         SearchHits<Order> hits = operations.search(query, Order.class);
