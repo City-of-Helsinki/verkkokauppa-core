@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.test.utils.SearchAfterServiceTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     public void tearDown() {
         try {
             deleteNotAccountedOrders();
+            deleteNotAccountedRefunds();
             clearAccountingExportData();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
@@ -50,7 +52,7 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
         log.info("running testGetNotExportedAccountingExportData");
         createAccountingExportData(10);
         List<AccountingExportData> resultList;
-        long expectedTotalHits = accountingExportDataCount();
+        long expectedTotalHits = notExportedAccountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         resultList = searchServiceToTest.getNotExportedAccountingExportData();
@@ -62,14 +64,30 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     }
 
     @Test
-    public void testFindNotAccounted() throws Exception {
-        log.info("running testFindNotAccounted");
+    public void testFindNotAccountedOrders() throws Exception {
+        log.info("running testFindNotAccountedOrders");
         createOrder(10);
         List<Order> resultList;
         long expectedTotalHits = notAccountedOrderCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
-        resultList = searchServiceToTest.findNotAccounted();
+        resultList = searchServiceToTest.findNotAccountedOrders();
+        log.info("Result list size: " + resultList.size());
+
+        assertFalse("Result list should not be empty", resultList.isEmpty());
+
+        assertEquals("Number of results is not the same as number of accountingExportData in ElasticSearch", expectedTotalHits, resultList.size());
+    }
+
+    @Test
+    public void testFindNotAccountedRefunds() throws Exception {
+        log.info("running testFindNotAccountedRefunds");
+        createRefund(10);
+        List<Refund> resultList;
+        long expectedTotalHits = notAccountedRefundCount();
+
+        log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
+        resultList = searchServiceToTest.findNotAccountedRefunds();
         log.info("Result list size: " + resultList.size());
 
         assertFalse("Result list should not be empty", resultList.isEmpty());

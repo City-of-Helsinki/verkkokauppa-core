@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -74,6 +75,9 @@ public class PaymentPaytrailService {
 
     @Autowired
     private CommonServiceConfigurationClient commonServiceConfigurationClient;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     @Autowired
     PaymentPaytrailService(
@@ -324,8 +328,21 @@ public class PaymentPaytrailService {
                 .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
                 .build();
 
+        // send PAYMENT_PAID webhook event
+        orderPaidWebHookAction(paymentMessage);
+        log.debug("PAYMENT_PAID notification sent for paymentId: " + payment.getPaymentId());
+
+        // subscription created and subscription renewal actions
         sendEventService.sendEventMessage(TopicName.PAYMENTS, paymentMessage);
-        log.debug("triggered event PAYMENT_PAID for paymentId: " + payment.getPaymentId());
+        log.debug("PAYMENT_PAID event for paymentId: " + payment.getPaymentId());
+    }
+
+    protected void orderPaidWebHookAction(PaymentMessage message) {
+        try {
+            sendNotificationService.sendPaymentMessageNotification(message);
+        } catch (Exception e) {
+            log.error("webhookAction: failed action after receiving event, eventType: " + message.getEventType(), e);
+        }
     }
 
     public void triggerCardUpdateEvent(OrderDto order, PaytrailTokenResponse card) {

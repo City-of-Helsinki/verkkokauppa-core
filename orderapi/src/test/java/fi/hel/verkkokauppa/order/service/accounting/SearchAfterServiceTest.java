@@ -26,12 +26,9 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -78,7 +75,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
                 .withQuery(qb).build();
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
-                query,
+                null,
                 null,
                 AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
@@ -98,7 +95,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Test
     public void testSearchWithSort() throws Exception {
         log.info("running testSearchWithSort");
-        long expectedTotalHits = accountingExportDataCount();
+        long expectedTotalHits = notExportedAccountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
@@ -181,7 +178,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Test
     public void testSearchWithSortAndMultipleIndices() throws Exception {
         log.info("running testSearchWithSortAndMultipleIndices");
-        long expectedTotalHits = accountingExportDataCount() + notAccountedOrderCount();
+        long expectedTotalHits = notExportedAccountingExportDataCount() + orderCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
@@ -266,7 +263,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
     @Test
     public void testBuildListFromHits() throws Exception {
         log.info("running testBuildListFromHits");
-        long expectedTotalHits = notAccountedOrderCount();
+        long expectedTotalHits = notExportedAccountingExportDataCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("exported"));
@@ -277,7 +274,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 new SortBuilder[]{new FieldSortBuilder("_id").order(SortOrder.DESC)},
-                Order.INDEX_NAME);
+                AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
         SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
         log.info("Result list size: " + hits.length);

@@ -3,17 +3,19 @@ package fi.hel.verkkokauppa.order.api.data.accounting;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import fi.hel.verkkokauppa.order.constants.AccountingRowTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// AccountingSlipRowMixInDto contains JsonIgnore's for fields that are not exported
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@JsonPropertyOrder({ "TaxCode", "AmountInDocumentCurrency", "BaseAmount", "LineText", "GLAccount",
-        "ProfitCenter", "OrderItemNumber", "WBS_Element", "FunctionalArea" })
+@JsonPropertyOrder({"TaxCode", "AmountInDocumentCurrency", "BaseAmount", "LineText", "GLAccount",
+        "ProfitCenter", "OrderItemNumber", "WBS_Element", "FunctionalArea"})
 public class AccountingSlipRowDto {
 
     private String accountingSlipRowId;
@@ -51,6 +53,8 @@ public class AccountingSlipRowDto {
     @JacksonXmlProperty(localName = "FunctionalArea")
     private String functionalArea;
 
+    private AccountingRowTypeEnum rowType;
+
     @JsonIgnore
     public Double getAmountInDocumentCurrencyAsDouble() {
         return Double.parseDouble(amountInDocumentCurrency.replace(",", "."));
@@ -80,5 +84,6 @@ public class AccountingSlipRowDto {
         this.orderItemNumber = other.getOrderItemNumber();
         this.wbsElement = other.getWbsElement();
         this.functionalArea = other.getFunctionalArea();
+        this.rowType = other.getRowType();
     }
 }
