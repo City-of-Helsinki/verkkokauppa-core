@@ -29,7 +29,11 @@ public class PaytrailRefundPaymentAdminController {
         try {
             RefundPayment refundPaymentForOrder = refundPaymentService.getRefundPaymentForOrder(orderId);
             if (refundPaymentForOrder == null) {
-                throw new Exception("No refund payments found with given orderId. refundPaymentForOrder == null");
+                log.error("No refund payments found with given orderId. orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-refund-payment", "failed to get refund payment with order id [" + orderId + "]")
+                );
             }
             return ResponseEntity.status(HttpStatus.OK).body(refundPaymentForOrder);
         } catch (CommonApiException cae) {
