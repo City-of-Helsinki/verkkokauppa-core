@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-@RunIfProfile(profile = "local")
-@RunWith(SpringRunner.class)
-@SpringBootTest
+//@RunIfProfile(profile = "local")
+//@RunWith(SpringRunner.class)
+//@SpringBootTest
 public abstract class BaseFunctionalTest {
 
     @Autowired

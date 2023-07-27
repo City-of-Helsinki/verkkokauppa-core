@@ -66,7 +66,11 @@ public class PaymentAdminController {
         try {
             Payment payment = onlinePaymentService.getPaymentForOrder(orderId);
             if (payment == null) {
-                throw new Exception("No payments found with given orderId. payment == null");
+                log.error("No payments found with given orderId. orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
+                );
             }
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {
