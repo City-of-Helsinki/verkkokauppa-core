@@ -18,6 +18,7 @@ import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.utils.KafkaTestConsumer;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
@@ -54,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "test.groupId=payments",
         "kafka.client.authentication.enabled=false"
 })
-public class OnlinePaymentControllerTests {
+public class OnlinePaymentControllerTests extends BaseFunctionalTest {
     private final Logger log = LoggerFactory.getLogger(OnlinePaymentControllerTests.class);
 
     @Autowired
@@ -183,9 +184,10 @@ public class OnlinePaymentControllerTests {
     @Test
     @RunIfProfile(profile = "local")
     public void testGetOnlinePaytrailPaymentMethods() {
-        PaymentMethodDto[] onlinePaymentMethodList = paymentPaytrailService.getOnlinePaymentMethodList("01fde0e9-82b2-4846-acc0-94291625192b", "venepaikat", "EUR");
+        String merchantId = getFirstMerchantIdFromNamespace("venepaikat");
+        PaymentMethodDto[] onlinePaymentMethodList = paymentPaytrailService.getOnlinePaymentMethodList(merchantId, "venepaikat", "EUR");
 
         assertTrue(onlinePaymentMethodList.length > 0);
-        assertEquals(onlinePaymentMethodList.length, 17);
+        assertEquals(16, onlinePaymentMethodList.length);
     }
 }

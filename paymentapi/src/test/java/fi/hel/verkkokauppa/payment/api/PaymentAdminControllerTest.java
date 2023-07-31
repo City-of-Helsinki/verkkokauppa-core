@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -14,14 +16,9 @@ import fi.hel.verkkokauppa.payment.model.PaymentFilter;
 import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentFilterRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -118,7 +115,7 @@ public class PaymentAdminControllerTest extends BaseFunctionalTest {
         request.add(merchantPaymentFilterForOp);
 
         ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilters(request);
-        log.info("response : {}",mapper.writeValueAsString(response.getBody()));
+        log.info("response : {}", mapper.writeValueAsString(response.getBody()));
         Assertions.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
         PaymentFilterDto firstExpectedFilterDto = Objects.requireNonNull(response.getBody())
                 .stream()
@@ -391,36 +388,51 @@ public class PaymentAdminControllerTest extends BaseFunctionalTest {
     @RunIfProfile(profile = "local")
     public void testPaytrailSubscriptionRenewalOrderCreatedEvent() {
         paymentAdminController.orderCreatedEventCallbackPaytrail(
-            OrderMessage
-                .builder()
-                    .eventType(EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED)
-                    .namespace("venepaikat")
-                    .orderId(UUIDGenerator.generateType4UUID().toString())
-                    .timestamp(DateTimeUtil.getDateTime())
-                    .orderType(OrderType.SUBSCRIPTION)
-                    .priceTotal("100")
-                    .priceNet("100")
-                    .priceVat("0")
-                    .cardToken(EncryptorUtil.encryptValue("2f4de4b9-94ec-4bd5-ab39-45f1f164bda0", cardTokenEncryptionPassword))
-                    .cardExpYear("2023")
-                    .cardExpMonth("11")
-                    .cardLastFourDigits("0354")
-                    .orderItemId(UUIDGenerator.generateType4UUID().toString())
-                    .vatPercentage("0")
-                    .productName("productName")
-                    .productQuantity("1")
-                    .isSubscriptionRenewalOrder(true)
-                    .subscriptionId(UUIDGenerator.generateType4UUID().toString())
-                    .userId("user")
-                    .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
-                    .merchantId(getFirstMerchantIdFromNamespace("venepaikat"))
-                    .productId("489834c0-255e-3ee2-a66b-99d092bf81f4")
-                    .priceGross("100")
-                    .customerEmail(UUID.randomUUID().toString() + "@ambientia.fi")
-                    .customerFirstName("dummy_firstname")
-                    .customerLastName("dummy_lastname")
-                .build()
+                OrderMessage
+                        .builder()
+                        .eventType(EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED)
+                        .namespace("venepaikat")
+                        .orderId(UUIDGenerator.generateType4UUID().toString())
+                        .timestamp(DateTimeUtil.getDateTime())
+                        .orderType(OrderType.SUBSCRIPTION)
+                        .priceTotal("100")
+                        .priceNet("100")
+                        .priceVat("0")
+                        .cardToken(EncryptorUtil.encryptValue("2f4de4b9-94ec-4bd5-ab39-45f1f164bda0", cardTokenEncryptionPassword))
+                        .cardExpYear("2023")
+                        .cardExpMonth("11")
+                        .cardLastFourDigits("0354")
+                        .orderItemId(UUIDGenerator.generateType4UUID().toString())
+                        .vatPercentage("0")
+                        .productName("productName")
+                        .productQuantity("1")
+                        .isSubscriptionRenewalOrder(true)
+                        .subscriptionId(UUIDGenerator.generateType4UUID().toString())
+                        .userId("user")
+                        .paymentGateway(fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum.PAYTRAIL)
+                        .merchantId(getFirstMerchantIdFromNamespace("venepaikat"))
+                        .productId("489834c0-255e-3ee2-a66b-99d092bf81f4")
+                        .priceGross("100")
+                        .customerEmail(UUID.randomUUID().toString() + "@ambientia.fi")
+                        .customerFirstName("dummy_firstname")
+                        .customerLastName("dummy_lastname")
+                        .build()
         );
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testPaymentNotFound() {
+
+        String code = "test-payment-code";
+        CommonApiException exception = assertThrows(CommonApiException.class, () -> {
+            paymentAdminController.getPayment(code);
+        });
+
+        assertEquals(CommonApiException.class, exception.getClass());
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("failed-to-get-payment", exception.getErrors().getErrors().get(0).getCode());
+        assertEquals("failed to get payment with order id [test-payment-code]", exception.getErrors().getErrors().get(0).getMessage());
     }
 
     private PaymentMethodDto createTestPaymentMethodDto(PaymentGatewayEnum gateway) {
@@ -462,7 +474,7 @@ public class PaymentAdminControllerTest extends BaseFunctionalTest {
         request.add(orderPaymentFilterForNordeaDuplicate);
 
         ResponseEntity<List<PaymentFilterDto>> response = paymentAdminController.savePaymentFilters(request);
-        log.info("response : {}",mapper.writeValueAsString(response.getBody()));
+        log.info("response : {}", mapper.writeValueAsString(response.getBody()));
         Assertions.assertEquals(response.getStatusCode(), HttpStatus.CREATED);
         Assertions.assertEquals(1, Objects.requireNonNull(response.getBody()).size());
 
@@ -480,7 +492,7 @@ public class PaymentAdminControllerTest extends BaseFunctionalTest {
         Assertions.assertEquals(orderPaymentFilterForNordea.getNamespace(), paymentFilter.getNamespace());
     }
 
-    public String getActualFilterId(PaymentFilterDto filterDto){
+    public String getActualFilterId(PaymentFilterDto filterDto) {
         String valueReferenceIdUUID3 = UUIDGenerator.generateType3UUIDString(filterDto.getNamespace(), filterDto.getReferenceId());
         String valueReferenceIdValueUUID3 = UUIDGenerator.generateType3UUIDString(valueReferenceIdUUID3, filterDto.getValue());
         String valueReferenceIdValueReferenceType = UUIDGenerator.generateType3UUIDString(valueReferenceIdValueUUID3, filterDto.getReferenceType());
