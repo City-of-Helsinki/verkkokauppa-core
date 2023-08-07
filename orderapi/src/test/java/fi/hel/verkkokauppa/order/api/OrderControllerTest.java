@@ -1,12 +1,19 @@
 package fi.hel.verkkokauppa.order.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
+import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderPaymentMethodRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -21,6 +28,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,22 +59,35 @@ public class OrderControllerTest extends DummyData {
     private OrderRepository orderRepository;
 
     @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
     private OrderPaymentMethodRepository orderPaymentMethodRepository;
 
+    @Autowired
+    private OrderItemTransformer orderItemTransformer;
+    @Autowired
+    private OrderTransformer orderTransformer;
+
     private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
+    private ArrayList<String> toBeDeletedOrderItemById = new ArrayList<>();
     private ArrayList<String> toBeDeletedPaymentMethodByOrderId = new ArrayList<>();
 
     @After
     public void tearDown() {
         try {
             toBeDeletedOrderById.forEach(orderId -> orderRepository.deleteById(orderId));
+            toBeDeletedOrderItemById.forEach(id -> orderItemRepository.deleteById(id));
             toBeDeletedPaymentMethodByOrderId.forEach(paymentMethodId -> orderPaymentMethodRepository.deleteByOrderId(paymentMethodId));
+
             // Clear list because all deleted
             toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedOrderItemById = new ArrayList<>();
             toBeDeletedPaymentMethodByOrderId = new ArrayList<>();
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
             toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedOrderItemById = new ArrayList<>();
             toBeDeletedPaymentMethodByOrderId = new ArrayList<>();
         }
     }
@@ -157,6 +179,73 @@ public class OrderControllerTest extends DummyData {
 
         toBeDeletedOrderById.add(testOrderId);
         toBeDeletedPaymentMethodByOrderId.add(testOrderId);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void setItemsWithInvoicingDateThenReturnStatus200() throws Exception {
+        Order order = generateDummyOrder();
+        order.setStatus("draft");
+        order = orderRepository.save(order);
+        OrderItem orderItem = generateDummyOrderItem(order);
+        LocalDate now = LocalDate.now();
+        orderItem.setInvoicingDate(now);
+        OrderAggregateDto orderAggregateDto = new OrderAggregateDto();
+        List<OrderItemDto> items = new ArrayList<>();
+        items.add(orderItemTransformer.transformToDto(orderItem));
+        orderAggregateDto.setItems(items);
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/setItems")
+                                .param("orderId", order.getOrderId())
+                                .param("userId", order.getUser())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(orderAggregateDto))
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+        orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        assertNotNull(orderAggregateDto.getItems());
+        assertNotNull(orderAggregateDto.getItems().get(0));
+        assertEquals(orderAggregateDto.getItems().get(0).getInvoicingDate(), now);
+        toBeDeletedOrderById.add(order.getOrderId());
+        toBeDeletedOrderItemById.add(orderItem.getOrderItemId());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderWithItemsWithInvoicingDateThenReturnStatus200() throws Exception {
+        Order order = generateDummyOrder();
+        order.setStatus("draft");
+        order.setOrderId(null);
+        OrderItem orderItem = generateDummyOrderItem(order);
+        orderItem.setOrderItemId(null);
+        LocalDate now = LocalDate.now();
+        orderItem.setInvoicingDate(now);
+        OrderAggregateDto orderAggregateDto = new OrderAggregateDto();
+        orderAggregateDto.setOrder(orderTransformer.transformToDto(order));
+        List<OrderItemDto> items = new ArrayList<>();
+        items.add(orderItemTransformer.transformToDto(orderItem));
+        orderAggregateDto.setItems(items);
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/createWithItems")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(orderAggregateDto))
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+        orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        assertNotNull(orderAggregateDto.getOrder());
+        assertNotNull(orderAggregateDto.getOrder().getOrderId());
+        assertNotNull(orderAggregateDto.getItems());
+        assertNotNull(orderAggregateDto.getItems().get(0));
+        assertEquals(orderAggregateDto.getItems().get(0).getInvoicingDate(), now);
+        assertNotNull(orderAggregateDto.getItems().get(0).getOrderItemId());
+        toBeDeletedOrderById.add(orderAggregateDto.getOrder().getOrderId());
+        toBeDeletedOrderItemById.add(orderAggregateDto.getItems().get(0).getOrderItemId());
     }
 
     @Test

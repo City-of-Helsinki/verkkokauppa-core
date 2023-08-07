@@ -329,7 +329,8 @@ public class OrderController {
                         item.getPeriodFrequency(),
                         item.getPeriodCount(),
                         item.getBillingStartDate(),
-                        item.getStartDate()
+                        item.getStartDate(),
+                        item.getInvoicingDate()
                 );
 
                 if (item.getMeta() != null) {
