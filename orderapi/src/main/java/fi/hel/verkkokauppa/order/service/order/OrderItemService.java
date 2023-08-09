@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 
 @Component
 public class OrderItemService {
-        
+
     private Logger log = LoggerFactory.getLogger(OrderItemService.class);
 
     @Autowired
@@ -25,7 +26,7 @@ public class OrderItemService {
 
     public String addItem(String orderId, String merchantId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
                           String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
-                          String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate) {
+                          String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate, LocalDate invoicingDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         OrderItem orderItem = new OrderItem(
                 orderItemId,
@@ -51,7 +52,8 @@ public class OrderItemService {
                 periodFrequency,
                 periodCount,
                 billingStartDate,
-                startDate
+                startDate,
+                invoicingDate
         );
         orderItemRepository.save(orderItem);
 
@@ -61,7 +63,7 @@ public class OrderItemService {
 
     public OrderItem findById(String orderItemId) {
         Optional<OrderItem> mapping = orderItemRepository.findById(orderItemId);
-        
+
         if (mapping.isPresent())
             return mapping.get();
 

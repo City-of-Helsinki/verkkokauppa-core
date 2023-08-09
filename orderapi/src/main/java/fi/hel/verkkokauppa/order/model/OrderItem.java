@@ -11,6 +11,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "orderitems")
@@ -76,6 +77,9 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Long)
     private Integer periodCount;
 
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    LocalDate invoicingDate;
+
     public OrderItem() {}
 
     public OrderItem(
@@ -102,7 +106,8 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
             Long periodFrequency,
             Integer periodCount,
             LocalDateTime billingStartDate,
-            LocalDateTime startDate
+            LocalDateTime startDate,
+            LocalDate invoicingDate
     ) {
         this.orderItemId = orderItemId;
         this.orderId = orderId;
@@ -130,6 +135,7 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
         this.billingStartDate = billingStartDate;
         this.startDate = startDate;
         this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.SINGLE;
+        this.invoicingDate = invoicingDate;
     }
 
 }

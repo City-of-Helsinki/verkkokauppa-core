@@ -60,6 +60,7 @@ class OrderItemServiceUnitTest {
                 0L,
                 0,
                 null,
+                null,
                 null
         );
         String orderItem2 = orderItemService.addItem(
@@ -84,6 +85,7 @@ class OrderItemServiceUnitTest {
                 "",
                 0L,
                 0,
+                null,
                 null,
                 null
         );

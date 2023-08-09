@@ -184,7 +184,8 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.getPeriodFrequency(),
             subscriptionDto.getPeriodCount(),
             subscriptionDto.getBillingStartDate(),
-            subscriptionDto.getStartDate()
+            subscriptionDto.getStartDate(),
+            null
         ));
         List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
         List<OrderItemMetaDto> meta = new ArrayList<>();
@@ -315,7 +316,8 @@ public class CreateOrderFromSubscriptionCommand {
                 null,
                 null,
                 subscriptionDto.getBillingStartDate(),
-                subscriptionDto.getEndDate()
+                subscriptionDto.getEndDate(),
+                null
         );
 
     }

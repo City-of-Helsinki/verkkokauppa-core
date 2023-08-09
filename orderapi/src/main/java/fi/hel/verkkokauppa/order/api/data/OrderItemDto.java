@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api.data;
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,8 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
     private Integer periodCount;
     private LocalDateTime startDate;
     private LocalDateTime billingStartDate;
+
+    private LocalDate invoicingDate;
 
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 
