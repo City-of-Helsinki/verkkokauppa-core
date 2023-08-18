@@ -42,6 +42,8 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
 
     private LocalDate invoicingDate;
 
+    private String invoicingStatus;
+
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 
 }

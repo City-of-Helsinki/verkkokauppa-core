@@ -80,6 +80,9 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Date, format = DateFormat.date)
     LocalDate invoicingDate;
 
+    @Field(type = FieldType.Text)
+    String invoicingStatus;
+
     public OrderItem() {}
 
     public OrderItem(
