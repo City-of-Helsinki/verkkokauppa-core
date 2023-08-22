@@ -1,16 +1,25 @@
 package fi.hel.verkkokauppa.payment.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
+import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundReturnDto;
+import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
+import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
+import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.utils.PaytrailPaymentCreator;
@@ -18,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,17 +35,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
  * Before running tests - ensure that following endpoints have been called
- *   so data needed for tests has been initialized:
+ * so data needed for tests has been initialized:
  * - .../namespace/init/merchant/initialize-test-data
  * - .../merchant/paytrail-secret/add"
- * */
+ */
 @SpringBootTest
 @Slf4j
 class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
@@ -48,6 +61,16 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     private PaytrailRefundPaymentController paytrailRefundPaymentController;
     @Autowired
     private RefundPaymentRepository refundPaymentRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
+    @Autowired
+    private ObjectMapper mapper;
+    @Autowired
+    private ServiceUrls serviceUrls;
+    @Autowired
+    private RestServiceClient restServiceClient;
+    @Autowired
+    private PaytrailPaymentContextBuilder paymentContextBuilder;
 
     private ArrayList<String> toBeDeletedRefundPaymentIds = new ArrayList<>();
 
@@ -68,23 +91,26 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
     @Test
     @RunIfProfile(profile = "local")
-    void testCheckRefundReturnUrl() throws ExecutionException, InterruptedException {
+    void testCheckRefundReturnUrl() throws Exception {
         /* Create a refund payment from mock refund to make the whole return url check process possible*/
-        PaytrailClient client = new PaytrailClient(merchantId, secretKey);
-        String orderId = "dummy-order-id";
+        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
-        String paymentId = orderId + "_at_" + UUID.randomUUID();
+        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+
+        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
+        Payment payment = createTestPayment(testOrder);
+
         PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
                 client,
-                10,
-                paymentId
+                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
+                payment.getPaymentId()
         );
         // Manual step for testing -> go to href and then use nordea to approve payment
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
-        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -99,7 +125,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String signature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
+            String signature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
             mockCallbackCheckoutParams.put("signature", signature);
 
             ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, signature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
@@ -231,7 +257,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     }
 
     private RefundRequestDataDto createRefundRequestDto(String transactionId, String merchantId) {
-        RefundRequestDataDto refundRequestDataDto= new RefundRequestDataDto();
+        RefundRequestDataDto refundRequestDataDto = new RefundRequestDataDto();
 
         OrderWrapper orderWrapper = new OrderWrapper();
         OrderDto order = new OrderDto();
@@ -271,4 +297,102 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         return refundRequestDataDto;
     }
 
+    String createTestOrder() throws Exception {
+        // create dummy order
+        String orderApiUrl = serviceUrls.getOrderServiceUrl() + "/order/create";
+        JSONObject orderResponse = restServiceClient.makeGetCall(orderApiUrl + "?namespace=" + NAMESPACE + "&user=dummyUser");
+
+        String orderDtoJsonString = orderResponse.getJSONObject("order").toString();
+        String orderId = orderResponse.getJSONObject("order").getString("orderId");
+//        OrderAggregateDto orderDto = mapper.readValue(orderResponse.getJSONObject("order").toString(), OrderAggregateDto.class);
+        return orderId;
+    }
+
+    OrderAggregateDto createTestOrderWithItems(String merchantId) throws Exception {
+        // create dummy order
+        String orderApiUrl = serviceUrls.getOrderServiceUrl() + "/order/createWithItems";
+
+        List<fi.hel.verkkokauppa.order.api.data.OrderItemDto> items = new ArrayList<>();
+
+        fi.hel.verkkokauppa.order.api.data.OrderItemDto itemDto = new fi.hel.verkkokauppa.order.api.data.OrderItemDto();
+//        itemDto.setOrderId(orderId);
+        itemDto.setOrderItemId(UUID.randomUUID().toString());
+        itemDto.setProductId("30a245ed-5fca-4fcf-8b2a-cdf1ce6fca0d");
+        itemDto.setMerchantId(merchantId);
+        itemDto.setUnit("pcs");
+        itemDto.setPriceGross("10");
+        itemDto.setRowPriceTotal("10");
+        itemDto.setPriceNet("9");
+        itemDto.setRowPriceNet("9");
+        itemDto.setPriceVat("1");
+        itemDto.setRowPriceVat("1");
+        itemDto.setProductName("Product Name");
+        itemDto.setProductLabel("Product Label");
+        itemDto.setProductDescription("Product Description");
+
+
+        items.add(itemDto);
+
+        OrderAggregateDto requestOrderDto = new OrderAggregateDto(
+                new fi.hel.verkkokauppa.order.api.data.OrderDto(
+                        null,
+                        null,
+                        NAMESPACE,
+                        "dummyUser",
+                        null,
+                        null,
+                        null,
+                        "9",
+                        "1",
+                        "10",
+                        null,
+                        "firstName",
+                        "lastNAme",
+                        "test@ambientia.fi",
+                        null,
+                        null,
+                        null,
+                        null),
+                items,
+                null,
+                null);
+
+        String body = mapper.writeValueAsString(requestOrderDto);
+        JSONObject orderResponse = restServiceClient.makePostCall(orderApiUrl, body);
+
+        String newOrderId = orderResponse.getJSONObject("order").getString("orderId");
+        requestOrderDto.getOrder().setOrderId(newOrderId);
+        log.info("Created order id: " + newOrderId);
+        return requestOrderDto;
+    }
+
+    Payment createTestPayment(OrderAggregateDto orderAggregate) {
+
+        fi.hel.verkkokauppa.order.api.data.OrderDto order = orderAggregate.getOrder();
+        String paymentId = order.getOrderId() + "_at_" + UUID.randomUUID();
+
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+
+        Payment payment = new Payment();
+        payment.setPaymentId(paymentId);
+        payment.setNamespace(order.getNamespace());
+        payment.setOrderId(order.getOrderId());
+        payment.setUserId(order.getUser());
+//        payment.setPaymentMethod(dto.getPaymentMethod());
+//        payment.setPaymentMethodLabel(dto.getPaymentMethodLabel());
+        payment.setTimestamp(sdf.format(timestamp));
+//        payment.setAdditionalInfo("{\"payment_method\": " + dto.getPaymentMethod() + "}");
+        payment.setPaymentType("order");
+        payment.setStatus(PaymentStatus.CREATED);
+        payment.setTotalExclTax(new BigDecimal(order.getPriceNet()));
+        payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
+        payment.setTotal(new BigDecimal(order.getPriceTotal()));
+//        payment.setPaytrailTransactionId("2e60d1e0-0f5a-4f1b-ad95-d9b0fc00202a");
+        payment.setShopInShopPayment(false);
+
+        paymentRepository.save(payment);
+
+        return payment;
+    }
 }
