@@ -118,7 +118,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
         /* Create callback and check url */
         String mockStatus = "ok";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundId(), refundPayment.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
 
         String mockSettlementReference = "8739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("checkout-settlement-reference", mockSettlementReference);
@@ -128,7 +128,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
             String signature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
             mockCallbackCheckoutParams.put("signature", signature);
 
-            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, signature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, signature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
             RefundReturnDto refundReturnDto = response.getBody();
 
             Assertions.assertTrue(refundReturnDto.isValid());
@@ -145,23 +145,28 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testCheckRefundReturnUrlWithInvalidSignature() throws ExecutionException, InterruptedException {
+    public void testCheckRefundReturnUrlWithInvalidSignature() throws Exception {
         /* Create a refund payment from mock refund to make the whole return url check process possible*/
-        PaytrailClient client = new PaytrailClient(merchantId, secretKey);
-        String orderId = "dummy-order-id";
+        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
-        String paymentId = orderId + "_at_" + UUID.randomUUID();
+        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+
+        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
+        Payment payment = createTestPayment(testOrder);
+
         PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
                 client,
-                10,
-                paymentId
+                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
+                payment.getPaymentId()
         );
+
         // Manual step for testing -> go to href and then use nordea to approve payment
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
-        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
+
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -169,7 +174,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
         /* Create callback and check url */
         String mockStatus = "ok";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
 
         String mockSettlementReference = "8739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("checkout-settlement-reference", mockSettlementReference);
@@ -177,7 +182,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         String mockSignature = "invalid-739a8a8-1ce0-4729-89ce-40065fd424a2";
         mockCallbackCheckoutParams.put("signature", mockSignature);
 
-        ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
+        ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
         RefundReturnDto refundReturnDto = response.getBody();
 
         /* Verify correct refund return dto - should be invalid, because signature mismatches */
@@ -194,23 +199,26 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testCheckRefundReturnUrlWithFailStatus() throws ExecutionException, InterruptedException {
+    public void testCheckRefundReturnUrlWithFailStatus() throws Exception {
         /* Create a refund payment from mock refund to make the whole return url check process possible*/
-        PaytrailClient client = new PaytrailClient(merchantId, secretKey);
-        String orderId = "dummy-order-id";
+        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
-        String paymentId = orderId + "_at_" + UUID.randomUUID();
+        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+
+        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
+        Payment payment = createTestPayment(testOrder);
+
         PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
                 client,
-                10,
-                paymentId
+                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
+                payment.getPaymentId()
         );
         // Manual step for testing -> go to href and then use nordea to approve payment
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-        String merchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
-        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), merchantId);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
         RefundPayment refundPayment = refundPaymentResponse.getBody();
@@ -218,14 +226,14 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
         /* Create callback and check url */
         String mockStatus = "fail";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus);
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
 
         TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
         try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, TEST_PAYTRAIL_SECRET_KEY);
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
             mockCallbackCheckoutParams.put("signature", mockSignature);
 
-            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(merchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
             RefundReturnDto refundReturnDto = response.getBody();
 
             /* Verify correct refund return dto - should be only valid and retryable */
@@ -242,9 +250,9 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         toBeDeletedRefundPaymentIds.add(refundPayment.getRefundPaymentId());
     }
 
-    private Map<String, String> createMockCallbackParams(String refundId, String transactionId, String status) {
+    private Map<String, String> createMockCallbackParams(String refundId, String transactionId, String status, String testMerchantId) {
         Map<String, String> mockCallbackCheckoutParams = new HashMap<>();
-        mockCallbackCheckoutParams.put("checkout-account", TEST_PAYTRAIL_MERCHANT_ID);
+        mockCallbackCheckoutParams.put("checkout-account", testMerchantId);
         mockCallbackCheckoutParams.put("checkout-algorithm", "sha256");
         mockCallbackCheckoutParams.put("checkout-amount", "2964");
         mockCallbackCheckoutParams.put("checkout-stamp", refundId);
