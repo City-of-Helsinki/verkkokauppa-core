@@ -53,6 +53,7 @@ public class RefundAdminController {
                 .refundId(refund.getRefundId())
                 .orderId(refund.getOrderId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(refund.getCreatedAt()))
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
     }
 

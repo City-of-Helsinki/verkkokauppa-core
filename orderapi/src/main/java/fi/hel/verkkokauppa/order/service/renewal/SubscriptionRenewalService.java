@@ -139,6 +139,7 @@ public class SubscriptionRenewalService {
                 .timestamp(DateTimeUtil.getDateTime())
                 .subscriptionId(subscriptionId)
                 .namespace(subscription.getNamespace())
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
         log.debug("triggered event SUBSCRIPTION_RENEWAL_REQUESTED for subscriptionId: " + subscriptionId);

@@ -67,6 +67,7 @@ public class CancelSubscriptionCommand extends BaseServiceOperation {
 				.subscriptionId(subscription.getId())
 				.timestamp(DateTimeUtil.getFormattedDateTime(cancelledAt))
 				.cancellationCause(cause)
+				.eventTimestamp(DateTimeUtil.getDateTime())
 				.build();
 		sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
 		log.debug("triggered event SUBSCRIPTION_CANCELLED for subscriptionId: " + subscription.getId());

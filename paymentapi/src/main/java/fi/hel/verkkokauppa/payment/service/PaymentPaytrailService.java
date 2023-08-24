@@ -360,6 +360,7 @@ public class PaymentPaytrailService {
                 .cardTokenExpMonth(card.getCard().getExpireMonth())
                 .cardLastFourDigits(card.getCard().getPartialPan())
                 .user(order.getUser())
+                .eventTimestamp(now)
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);

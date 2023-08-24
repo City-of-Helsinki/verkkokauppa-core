@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionMappingLogic;
 import fi.hel.verkkokauppa.order.logic.subscription.SubscriptionValidationLogic;
@@ -85,6 +86,7 @@ public class CreateSubscriptionCommand extends DefaultCreateEntityCommand<Subscr
 				.namespace(entity.getNamespace())
 				.eventType(EventType.SUBSCRIPTION_CREATED)
 				.timestamp(entity.getCreatedAt().toString())
+				.eventTimestamp(DateTimeUtil.getDateTime())
 				.build();
 		sendNotificationService.sendSubscriptionMessageNotification(message);
 	}

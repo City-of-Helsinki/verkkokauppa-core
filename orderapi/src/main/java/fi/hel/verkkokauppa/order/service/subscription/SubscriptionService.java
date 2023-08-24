@@ -159,6 +159,7 @@ public class SubscriptionService {
                 .orderId(subscription.getOrderId())
                 .orderItemId(subscription.getOrderItemId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
         saveHistoryService.saveSubscriptionMessageHistory(subscriptionMessage);
@@ -172,6 +173,7 @@ public class SubscriptionService {
                 .subscriptionId(subscription.getId())
                 .cancellationCause(SubscriptionCancellationCause.EXPIRED)
                 .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, subscriptionMessage);
         log.debug("triggered event SUBSCRIPTION_CREATED for subscriptionId: " + subscription.getId());
@@ -190,6 +192,7 @@ public class SubscriptionService {
                 .subscriptionId(subscription.getId())
                 .cancellationCause(SubscriptionCancellationCause.EXPIRED)
                 .timestamp(DateTimeUtil.getFormattedDateTime(subscription.getCreatedAt()))
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
 
         sendNotificationService.sendSubscriptionMessageNotification(subscriptionMessage);

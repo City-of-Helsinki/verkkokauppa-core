@@ -227,6 +227,7 @@ public class OrderService {
                 .orderId(order.getOrderId())
                 .userId(order.getUser())
                 .timestamp(DateTimeUtil.getDateTime())
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .build();
 
         sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
@@ -321,6 +322,7 @@ public class OrderService {
     public void triggerOrderCreatedEvent(Order order, String eventType) {
         OrderMessage.OrderMessageBuilder orderMessageBuilder = OrderMessage.builder()
                 .eventType(eventType)
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .namespace(order.getNamespace())
                 .orderId(order.getOrderId())
                 .timestamp(DateTimeUtil.getFormattedDateTime(order.getCreatedAt()))

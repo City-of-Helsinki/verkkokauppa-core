@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OrderMessage implements EventMessage {
     public String eventType;
+    public String eventTimestamp;
     public String namespace;
 
     public String orderId;
@@ -54,6 +55,7 @@ public class OrderMessage implements EventMessage {
                 .timestamp(this.timestamp)
                 .eventType(this.eventType)
                 .subscriptionId(this.subscriptionId)
+                .eventTimestamp(this.eventTimestamp)
                 .build();
     }
 
