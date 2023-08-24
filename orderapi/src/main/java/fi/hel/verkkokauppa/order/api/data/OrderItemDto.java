@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api.data;
 
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -42,7 +43,7 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
 
     private LocalDate invoicingDate;
 
-    private String invoicingStatus;
+    private OrderItemInvoicingStatus invoicingStatus;
 
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 

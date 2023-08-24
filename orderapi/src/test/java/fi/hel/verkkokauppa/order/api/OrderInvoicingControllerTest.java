@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemInvoicingRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
@@ -100,12 +101,12 @@ public class OrderInvoicingControllerTest extends DummyData {
         assertEquals(dto.getOrderItemId(), dto1.getOrderItemId());
         assertNotNull(dto.getCreatedAt());
         assertNotNull(dto.getUpdatedAt());
-        assertEquals(dto.getStatus(), "created");
+        assertEquals(dto.getStatus(), OrderItemInvoicingStatus.CREATED);
 
         OrderItemInvoicing orderItemInvoicing = orderItemInvoicingRepository.findById(dto.getOrderItemId()).orElseThrow();
         assertNotNull(orderItemInvoicing);
 
         i1 = orderItemRepository.findById(i1.getOrderItemId()).orElseThrow();
-        assertEquals(i1.getInvoicingStatus(), "created");
+        assertEquals(i1.getInvoicingStatus(), OrderItemInvoicingStatus.CREATED);
     }
 }

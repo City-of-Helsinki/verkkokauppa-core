@@ -24,7 +24,7 @@ public class OrderItemInvoicing {
     LocalDateTime updatedAt;
 
     @Field(type = FieldType.Text)
-    String status;
+    OrderItemInvoicingStatus status;
 
     @Id
     String orderItemId;

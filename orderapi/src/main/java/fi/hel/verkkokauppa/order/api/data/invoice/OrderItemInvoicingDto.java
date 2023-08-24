@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.invoice;
 
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
 public class OrderItemInvoicingDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private String status;
+    private OrderItemInvoicingStatus status;
     private String orderItemId;
     private String orderId;
     private String orderIncrementId;
