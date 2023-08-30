@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
@@ -92,7 +94,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     @Test
     @RunIfProfile(profile = "local")
     void testCheckRefundReturnUrl() throws Exception {
-        /* Create a refund payment from mock refund to make the whole return url check process possible*/
+        /* Create a refund payment from order to make the whole return url check process possible*/
         String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
         PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
@@ -110,6 +112,9 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
+        //
+        // Breakpoint here!!!
+        //
         RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
@@ -146,7 +151,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     @Test
     @RunIfProfile(profile = "local")
     public void testCheckRefundReturnUrlWithInvalidSignature() throws Exception {
-        /* Create a refund payment from mock refund to make the whole return url check process possible*/
+        /* Create a refund payment from order to make the whole return url check process possible*/
         String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
         PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
@@ -165,7 +170,9 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
-
+        //
+        // Breakpoint here!!!
+        //
         RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
@@ -200,7 +207,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
     @Test
     @RunIfProfile(profile = "local")
     public void testCheckRefundReturnUrlWithFailStatus() throws Exception {
-        /* Create a refund payment from mock refund to make the whole return url check process possible*/
+        /* Create a refund payment from order to make the whole return url check process possible*/
         String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
         PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
 
@@ -218,6 +225,9 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         log.info(paymentResponse.getHref());
         log.info(paymentResponse.getTransactionId());
 
+        //
+        // Breakpoint here!!!
+        //
         RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), firstMerchantId);
 
         ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
@@ -248,6 +258,156 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
             e.printStackTrace();
         }
         toBeDeletedRefundPaymentIds.add(refundPayment.getRefundPaymentId());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testRefundWithProperRefund() throws Exception {
+        /* Create a refund payment from order to make the whole return url check process possible*/
+        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
+
+        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+
+        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
+        Payment payment = createTestPayment(testOrder);
+
+        PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
+                client,
+                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
+                payment.getPaymentId()
+        );
+        // Manual step for testing -> go to href and then use nordea to approve payment
+        log.info(paymentResponse.getHref());
+        log.info(paymentResponse.getTransactionId());
+
+        //
+        // Breakpoint here!!!
+        //
+        RefundAggregateDto refundAggregateDto = createPartialRefund(firstMerchantId, testOrder.getOrder().getOrderId());
+
+        //
+        RefundDto renfundDto = confirmRefund(refundAggregateDto.getRefund().getRefundId());
+        refundAggregateDto.setRefund(renfundDto);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), testOrder, refundAggregateDto);
+        ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
+        RefundPayment refundPayment = refundPaymentResponse.getBody();
+
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
+
+        /* Create callback and check url */
+        String mockStatus = "fail";
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
+
+        TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
+        try {
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
+            mockCallbackCheckoutParams.put("signature", mockSignature);
+
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
+            RefundReturnDto refundReturnDto = response.getBody();
+
+            /* Verify correct refund return dto - should be only valid and retryable */
+            Assertions.assertTrue(refundReturnDto.isValid());
+            Assertions.assertFalse(refundReturnDto.isRefundPaid());
+            Assertions.assertTrue(refundReturnDto.isCanRetry());
+
+            /* Verify that refund status is still CREATED */
+            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
+            Assertions.assertEquals(RefundPaymentStatus.CREATED, updatedRefundPayment.getStatus());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void testMultipleRefundsWithOneOrder() throws Exception {
+        /* Create a refund payment from order to make the whole return url check process possible*/
+        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
+        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
+
+        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
+
+        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
+        Payment payment = createTestPayment(testOrder);
+
+        PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
+                client,
+                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
+                payment.getPaymentId()
+        );
+        // Manual step for testing -> go to href and then use nordea to approve payment
+        log.info(paymentResponse.getHref());
+        log.info(paymentResponse.getTransactionId());
+
+        //
+        // Breakpoint here!!!
+        //
+        RefundAggregateDto refundAggregateDto = createPartialRefund(firstMerchantId, testOrder.getOrder().getOrderId());
+
+        RefundDto renfundDto = confirmRefund(refundAggregateDto.getRefund().getRefundId());
+        refundAggregateDto.setRefund(renfundDto);
+        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), testOrder, refundAggregateDto);
+        ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
+        RefundPayment refundPayment = refundPaymentResponse.getBody();
+
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
+
+        /* Create callback and check url */
+        String mockStatus = "fail";
+        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
+
+        TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
+        try {
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
+            mockCallbackCheckoutParams.put("signature", mockSignature);
+
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
+            RefundReturnDto refundReturnDto = response.getBody();
+
+            /* Verify correct refund return dto - should be only valid and retryable */
+            Assertions.assertTrue(refundReturnDto.isValid());
+            Assertions.assertFalse(refundReturnDto.isRefundPaid());
+            Assertions.assertTrue(refundReturnDto.isCanRetry());
+
+            /* Verify that refund status is still CREATED */
+            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
+            Assertions.assertEquals(RefundPaymentStatus.CREATED, updatedRefundPayment.getStatus());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
+
+        // 2nd refund
+        RefundAggregateDto refund2AggregateDto = createPartialRefund(firstMerchantId, testOrder.getOrder().getOrderId());
+
+        RefundDto renfund2Dto = confirmRefund(refund2AggregateDto.getRefund().getRefundId());
+        refundAggregateDto.setRefund(renfund2Dto);
+        RefundRequestDataDto refund2RequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), testOrder, refundAggregateDto);
+        ResponseEntity<RefundPayment> refund2PaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refund2RequestDataDto);
+        RefundPayment refund2Payment = refund2PaymentResponse.getBody();
+
+        Assertions.assertEquals(RefundPaymentStatus.CREATED, refund2Payment.getStatus());
+
+        filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
+        try {
+            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
+            mockCallbackCheckoutParams.put("signature", mockSignature);
+
+            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refund2Payment.getRefundPaymentId(), mockCallbackCheckoutParams);
+            RefundReturnDto refund2ReturnDto = response.getBody();
+
+            /* Verify correct refund return dto - should be only valid and retryable */
+            Assertions.assertTrue(refund2ReturnDto.isValid());
+            Assertions.assertFalse(refund2ReturnDto.isRefundPaid());
+            Assertions.assertTrue(refund2ReturnDto.isCanRetry());
+
+            /* Verify that refund status is still CREATED */
+            RefundPayment updatedRefund2Payment = refundPaymentRepository.findById(refund2Payment.getRefundPaymentId()).get();
+            Assertions.assertEquals(RefundPaymentStatus.CREATED, updatedRefund2Payment.getStatus());
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
     }
 
     private Map<String, String> createMockCallbackParams(String refundId, String transactionId, String status, String testMerchantId) {
@@ -305,14 +465,48 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         return refundRequestDataDto;
     }
 
+    private RefundRequestDataDto createRefundRequestDto(String transactionId, OrderAggregateDto order, RefundAggregateDto refundAggregateDto) {
+        RefundRequestDataDto refundRequestDataDto = new RefundRequestDataDto();
+
+        OrderDto orderDto = new OrderDto();
+        orderDto.setOrderId(order.getOrder().getOrderId());
+        orderDto.setType(order.getOrder().getType());
+
+        OrderWrapper orderWrapper = new OrderWrapper();
+        orderWrapper.setOrder(orderDto);
+        refundRequestDataDto.setOrder(orderWrapper);
+
+        refundRequestDataDto.setRefund(refundAggregateDto);
+
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setShopInShopPayment(false);
+        paymentDto.setPaytrailTransactionId(transactionId);
+        String paymentMethod = "payment-method";
+        paymentDto.setPaymentMethod(paymentMethod);
+        refundRequestDataDto.setPayment(paymentDto);
+
+        // "/refund/paytrail/createFromRefund"
+
+        return refundRequestDataDto;
+    }
+
+    RefundDto confirmRefund(String refundId) throws Exception {
+    // create dummy order
+    String refundApiUrl = serviceUrls.getOrderServiceUrl() + "/refund-admin/confirm";
+
+    JSONObject refundConfirmResponse = restServiceClient.makePostCall(refundApiUrl+"?refundId=" + refundId, "refundId="+refundId);
+
+    RefundDto refundDto = mapper.readValue(refundConfirmResponse.toString(), RefundDto.class);
+
+    return refundDto;
+}
+
     String createTestOrder() throws Exception {
         // create dummy order
         String orderApiUrl = serviceUrls.getOrderServiceUrl() + "/order/create";
         JSONObject orderResponse = restServiceClient.makeGetCall(orderApiUrl + "?namespace=" + NAMESPACE + "&user=dummyUser");
 
-        String orderDtoJsonString = orderResponse.getJSONObject("order").toString();
         String orderId = orderResponse.getJSONObject("order").getString("orderId");
-//        OrderAggregateDto orderDto = mapper.readValue(orderResponse.getJSONObject("order").toString(), OrderAggregateDto.class);
         return orderId;
     }
 
@@ -329,11 +523,12 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         itemDto.setMerchantId(merchantId);
         itemDto.setUnit("pcs");
         itemDto.setPriceGross("10");
-        itemDto.setRowPriceTotal("10");
+        itemDto.setRowPriceTotal("20");
         itemDto.setPriceNet("9");
-        itemDto.setRowPriceNet("9");
+        itemDto.setRowPriceNet("18");
         itemDto.setPriceVat("1");
-        itemDto.setRowPriceVat("1");
+        itemDto.setRowPriceVat("2");
+        itemDto.setQuantity(2);
         itemDto.setProductName("Product Name");
         itemDto.setProductLabel("Product Label");
         itemDto.setProductDescription("Product Description");
@@ -349,10 +544,10 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
                         "dummyUser",
                         null,
                         null,
-                        null,
-                        "9",
-                        "1",
-                        "10",
+                        "order",
+                        "18",
+                        "2",
+                        "20",
                         null,
                         "firstName",
                         "lastNAme",
@@ -372,6 +567,60 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         requestOrderDto.getOrder().setOrderId(newOrderId);
         log.info("Created order id: " + newOrderId);
         return requestOrderDto;
+    }
+
+    RefundAggregateDto createPartialRefund(String merchantId, String orderId) throws Exception {
+        // create dummy order
+        String refundApiUrl = serviceUrls.getOrderServiceUrl() + "/refund/create";
+
+        List<RefundItemDto> items = new ArrayList<>();
+
+        RefundItemDto itemDto = new RefundItemDto();
+//        itemDto.setOrderId(orderId);
+        itemDto.setOrderItemId(UUID.randomUUID().toString());
+        itemDto.setProductId("30a245ed-5fca-4fcf-8b2a-cdf1ce6fca0d");
+        itemDto.setMerchantId(merchantId);
+        itemDto.setUnit("pcs");
+        itemDto.setPriceGross("10");
+        itemDto.setRowPriceTotal("10");
+        itemDto.setPriceNet("9");
+        itemDto.setRowPriceNet("9");
+        itemDto.setPriceVat("1");
+        itemDto.setRowPriceVat("1");
+        itemDto.setQuantity(1);
+        itemDto.setProductName("Product Name");
+        itemDto.setProductLabel("Product Label");
+        itemDto.setProductDescription("Product Description");
+
+
+        items.add(itemDto);
+
+        RefundAggregateDto requestRefundDto = new RefundAggregateDto(
+                new RefundDto(
+                        null,
+                        orderId,
+                        NAMESPACE,
+                        "dummyUser",
+                        null,
+                        null,
+                        "firstName",
+                        "lastNAme",
+                        "test@ambientia.fi",
+                        null,
+                        "refund reason",
+                        "9",
+                        "1",
+                        "10",
+                        null),
+                items);
+
+        String body = mapper.writeValueAsString(requestRefundDto);
+        JSONObject refundResponse = restServiceClient.makePostCall(refundApiUrl, body);
+
+        String newRefundId = refundResponse.getJSONObject("refund").getString("refundId");
+        requestRefundDto.getRefund().setRefundId(newRefundId);
+        log.info("Created refund id: " + newRefundId);
+        return requestRefundDto;
     }
 
     Payment createTestPayment(OrderAggregateDto orderAggregate) {

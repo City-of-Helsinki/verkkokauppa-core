@@ -62,12 +62,6 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
 
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
 
-//        String ngrokUrl = "https://9118-2001-14ba-9cc1-c100-ccaa-c3cd-a99c-ca9d.eu.ngrok.io";
-//        callbackUrls.setSuccess(ngrokUrl + "/v1/payment/paytrailOnlinePayment/paytrail/success");
-//        callbackUrls.setCancel(ngrokUrl + "/v1/payment/paytrailOnlinePayment/paytrail/cancel");
-//        String testUrl = "https://example.test:8285";
-//        callbackUrls.setSuccess(testUrl + "/v1/payment/paytrailOnlinePayment/paytrail/success");
-//        callbackUrls.setCancel(testUrl + "/v1/payment/paytrailOnlinePayment/paytrail/cancel");
         callbackUrls.setSuccess(env.getRequiredProperty("paytrail_payment_return_success_url"));
         callbackUrls.setCancel(env.getRequiredProperty("paytrail_payment_return_cancel_url"));
 
