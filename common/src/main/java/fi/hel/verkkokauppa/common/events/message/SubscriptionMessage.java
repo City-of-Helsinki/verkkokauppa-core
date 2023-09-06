@@ -11,6 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 public class SubscriptionMessage implements EventMessage {
     String eventType;
+    String eventTimestamp;
     String namespace;
 
     String subscriptionId;
@@ -36,6 +37,7 @@ public class SubscriptionMessage implements EventMessage {
                 .eventType(this.getEventType())
                 .cancellationCause(this.getCancellationCause())
                 .timestamp(this.getTimestamp())
+                .eventTimestamp(this.getEventTimestamp())
                 .build();
     }
 }

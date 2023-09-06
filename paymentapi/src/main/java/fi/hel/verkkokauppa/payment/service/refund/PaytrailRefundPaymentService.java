@@ -251,6 +251,7 @@ public class PaytrailRefundPaymentService {
                 .refundId((refundPayment.getRefundId()))
                 .refundPaymentId(refundPayment.getRefundPaymentId())
                 .orderId(refundPayment.getOrderId())
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .userId(refundPayment.getUserId());
 
         RefundMessage refundMessage = refundMessageBuilder.build();
@@ -277,6 +278,7 @@ public class PaytrailRefundPaymentService {
                 .refundPaymentId(refundPayment.getRefundPaymentId())
                 .refundId(refundPayment.getRefundId())
                 .orderId(refundPayment.getOrderId())
+                .eventTimestamp(DateTimeUtil.getDateTime())
                 .userId(refundPayment.getUserId());
 
         RefundMessage refundMessage = refundMessageBuilder.build();

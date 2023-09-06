@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(value = JsonInclude.Include.NON_EMPTY, content = JsonInclude.Include.NON_NULL)
 public class RefundMessage implements EventMessage {
     private String eventType;
+    private String eventTimestamp;
     private String namespace;
     private String userId;
     private String refundId;
@@ -29,6 +30,7 @@ public class RefundMessage implements EventMessage {
                 .orderId(this.orderId)
                 .refundId(this.refundId)
                 .namespace(this.namespace)
+                .eventTimestamp(this.eventTimestamp)
                 .build();
     }
 }
