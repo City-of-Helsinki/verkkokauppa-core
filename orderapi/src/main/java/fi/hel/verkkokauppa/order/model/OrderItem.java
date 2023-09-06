@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.model;
 import fi.hel.verkkokauppa.common.contracts.OrderItemSubscriptionFields;
 import fi.hel.verkkokauppa.order.interfaces.Product;
 import fi.hel.verkkokauppa.order.logic.OrderTypeLogic;
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -79,6 +80,9 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
 
     @Field(type = FieldType.Date, format = DateFormat.date)
     LocalDate invoicingDate;
+
+    @Field(type = FieldType.Text)
+    OrderItemInvoicingStatus invoicingStatus;
 
     public OrderItem() {}
 

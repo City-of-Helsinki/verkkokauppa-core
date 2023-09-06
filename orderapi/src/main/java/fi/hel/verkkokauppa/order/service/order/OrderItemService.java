@@ -7,10 +7,14 @@ import java.util.List;
 import java.util.Optional;
 
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -81,4 +85,12 @@ public class OrderItemService {
         return new ArrayList<OrderItem>();
     }
 
+    public OrderItem setInvoicingStatus(String orderItemId, OrderItemInvoicingStatus status) {
+        OrderItem item = orderItemRepository.findById(orderItemId).orElseThrow(() -> new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("order-item-not-found", "order item with value: [" + orderItemId + "] not found")
+        ));;
+        item.setInvoicingStatus(status);
+        return orderItemRepository.save(item);
+    }
 }
