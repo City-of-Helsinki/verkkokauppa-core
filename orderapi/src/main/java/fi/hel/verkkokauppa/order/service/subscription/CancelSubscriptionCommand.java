@@ -65,6 +65,8 @@ public class CancelSubscriptionCommand extends BaseServiceOperation {
 				.eventType(EventType.SUBSCRIPTION_CANCELLED)
 				.namespace(subscription.getNamespace())
 				.subscriptionId(subscription.getId())
+				.orderId(subscription.getOrderId())
+				.orderItemId(subscription.getOrderItemId())
 				.timestamp(DateTimeUtil.getFormattedDateTime(cancelledAt))
 				.cancellationCause(cause)
 				.eventTimestamp(DateTimeUtil.getDateTime())
