@@ -467,7 +467,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
             Assertions.assertTrue(refundReturnDto.isRefundPaid());
             Assertions.assertFalse(refundReturnDto.isCanRetry());
 
-            /* Verify that refund status is still CREATED */
+            /* Verify that refund status is Paid */
             RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
             Assertions.assertEquals(RefundPaymentStatus.PAID_ONLINE, updatedRefundPayment.getStatus());
 

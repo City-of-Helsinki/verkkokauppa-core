@@ -394,9 +394,9 @@ public class AccountingSlipService {
                     .accountingSlipRowId(accountingSlipRowId)
                     .accountingSlipId(accountingSlipId)
                     .taxCode(summedItemAccounting.getVatCode())
-                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
-                    .baseAmount(formatSum(summedItemAccounting.getPriceNetAsDouble()))
-                    .vatAmount(formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .amountInDocumentCurrency(formatOrderSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatOrderSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatOrderSum(summedItemAccounting.getPriceVatAsDouble()))
                     .lineText(lineText)
                     .glAccount(summedItemAccounting.getMainLedgerAccount())
                     .profitCenter(summedItemAccounting.getProfitCenter())
@@ -430,9 +430,9 @@ public class AccountingSlipService {
                     .accountingSlipRowId(accountingSlipRowId)
                     .accountingSlipId(accountingSlipId)
                     .taxCode(summedItemAccounting.getVatCode())
-                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
-                    .baseAmount("+" + formatSum(summedItemAccounting.getPriceNetAsDouble()))
-                    .vatAmount("+" + formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .amountInDocumentCurrency(formatRefundSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatRefundSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatRefundSum(summedItemAccounting.getPriceVatAsDouble()))
                     .lineText(lineText)
                     .glAccount(summedItemAccounting.getMainLedgerAccount())
                     .profitCenter(summedItemAccounting.getProfitCenter())
@@ -566,11 +566,18 @@ public class AccountingSlipService {
         return accountingSlip;
     }
 
-    private String formatSum(Double sum) {
+    private String formatOrderSum(Double sum) {
         DecimalFormat decimalFormat = new DecimalFormat("0.00");
         decimalFormat.setNegativePrefix("-");
 
         return decimalFormat.format(-sum).replace(".", ",");
+    }
+
+    private String formatRefundSum(Double sum) {
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+        decimalFormat.setPositivePrefix("+");
+
+        return decimalFormat.format(sum).replace(".", ",");
     }
 
 
