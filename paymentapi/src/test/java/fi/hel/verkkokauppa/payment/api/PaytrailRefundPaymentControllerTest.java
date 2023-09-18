@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.*;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -416,77 +417,6 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         }
     }
 
-    @Test
-    @RunIfProfile(profile = "local")
-    public void testRefundAccounting() throws Exception {
-        /* Create a refund payment from order to make the whole return url check process possible*/
-        String firstMerchantId = getFirstMerchantIdFromNamespace(NAMESPACE);
-        PaytrailPaymentContext context = paymentContextBuilder.buildFor(NAMESPACE, firstMerchantId, false);
-
-        PaytrailClient client = new PaytrailClient(context.getPaytrailMerchantId(), context.getPaytrailSecretKey());
-
-        OrderAggregateDto testOrder = createTestOrderWithItems(firstMerchantId);
-        Payment payment = createTestPayment(testOrder);
-
-        PaytrailPaymentResponse paymentResponse = createTestNormalMerchantPayment(
-                client,
-                Integer.parseInt(testOrder.getOrder().getPriceTotal()),
-                payment.getPaymentId()
-        );
-        // Manual step for testing -> go to href and then use nordea to approve payment
-        log.info(paymentResponse.getHref());
-        log.info(paymentResponse.getTransactionId());
-
-        //
-        // Breakpoint here!!!
-        //
-        RefundAggregateDto refundAggregateDto = createPartialRefund(firstMerchantId, testOrder.getOrder().getOrderId());
-
-        RefundDto refundDto = confirmRefund(refundAggregateDto.getRefund().getRefundId());
-        refundAggregateDto.setRefund(refundDto);
-        RefundRequestDataDto refundRequestDataDto = createRefundRequestDto(paymentResponse.getTransactionId(), testOrder, refundAggregateDto);
-        ResponseEntity<RefundPayment> refundPaymentResponse = paytrailRefundPaymentController.createRefundPaymentFromRefund(refundRequestDataDto);
-        RefundPayment refundPayment = refundPaymentResponse.getBody();
-
-        Assertions.assertEquals(RefundPaymentStatus.CREATED, refundPayment.getStatus());
-
-        /* Create callback and check url */
-        String mockStatus = "ok";
-        Map<String, String> mockCallbackCheckoutParams = createMockCallbackParams(refundPayment.getRefundPaymentId(), refundPayment.getRefundTransactionId(), mockStatus, context.getPaytrailMerchantId());
-
-        TreeMap<String, String> filteredParams = PaytrailSignatureService.filterCheckoutQueryParametersMap(mockCallbackCheckoutParams);
-        try {
-            String mockSignature = PaytrailSignatureService.calculateSignature(filteredParams, null, context.getPaytrailSecretKey());
-            mockCallbackCheckoutParams.put("signature", mockSignature);
-
-            ResponseEntity<RefundReturnDto> response = paytrailRefundPaymentController.checkRefundReturnUrl(firstMerchantId, mockSignature, mockStatus, refundPayment.getRefundPaymentId(), mockCallbackCheckoutParams);
-            RefundReturnDto refundReturnDto = response.getBody();
-
-            /* Verify correct refund return dto - should be only valid and retryable */
-            Assertions.assertTrue(refundReturnDto.isValid());
-            Assertions.assertTrue(refundReturnDto.isRefundPaid());
-            Assertions.assertFalse(refundReturnDto.isCanRetry());
-
-            /* Verify that refund status is Paid */
-            RefundPayment updatedRefundPayment = refundPaymentRepository.findById(refundPayment.getRefundPaymentId()).get();
-            Assertions.assertEquals(RefundPaymentStatus.PAID_ONLINE, updatedRefundPayment.getStatus());
-
-            /* create refund accounting */
-            createRefundAccounting(refundDto, refundAggregateDto.getItems().get(0));
-
-            //
-            // change refund_accounting created date to yesterday
-            //
-            createAccountingExportData();
-
-
-
-
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            e.printStackTrace();
-        }
-    }
-
     private Map<String, String> createMockCallbackParams(String refundId, String transactionId, String status, String testMerchantId) {
         Map<String, String> mockCallbackCheckoutParams = new HashMap<>();
         mockCallbackCheckoutParams.put("checkout-account", testMerchantId);
@@ -587,38 +517,6 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         return orderId;
     }
 
-    void createRefundAccounting(RefundDto refundDto, RefundItemDto refundItemDto) throws JsonProcessingException {
-        CreateRefundAccountingRequestDto request = createRefundAccountingRequest(Refund.fromRefundDto(refundDto), new RefundItem(
-                refundDto.getRefundId(),
-                refundItemDto
-        ));
-        request.setRefundId(refundDto.getRefundId());
-
-        String refundApiUrl = serviceUrls.getOrderServiceUrl() + "/refund/accounting/create";
-        String body = mapper.writeValueAsString(request);
-
-        JSONObject refundAccountingResponse = restServiceClient.makePostCall(refundApiUrl, body);
-        log.info(refundAccountingResponse.toString());
-
-    }
-
-    void createAccountingExportData(){
-
-        String accountingApiUrl = serviceUrls.getOrderServiceUrl() + "/accounting/create";
-        JSONObject accountingResponse = restServiceClient.makeGetCall(accountingApiUrl);
-//        ResponseEntity<List<AccountingSlipDto>> response = mapper.readValue(refundConfirmResponse.toString(), RefundDto.class);
-
-        String accountingApiUrl2 = serviceUrls.getOrderServiceUrl() + "/accounting/export/generate";
-
-        JSONObject accountingExportResponse = restServiceClient.makePostCall(accountingApiUrl2, "accountingSlipId=" + "sd");
-//        ResponseEntity<List<AccountingSlipDto>> response = accountingController.createAccountingData();
-//        String slipId = response.getBody().get(0).getAccountingSlipId();
-//        ResponseEntity<AccountingExportDataDto> response2 = accountingExportController.generateAccountingExportData(slipId);
-//
-//        AccountingExportDataDto accountingExportDataDto = response2.getBody();
-//        String accountingXml = accountingExportDataDto.getXml();
-    }
-
     OrderAggregateDto createTestOrderWithItems(String merchantId) throws Exception {
         // create dummy order
         String orderApiUrl = serviceUrls.getOrderServiceUrl() + "/order/createWithItems";
@@ -651,7 +549,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
                         null,
                         NAMESPACE,
                         "dummyUser",
-                        null,
+                        DateTimeUtil.getFormattedDateTime().minusDays(1),
                         null,
                         "order",
                         "18",
@@ -710,7 +608,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
                         orderId,
                         NAMESPACE,
                         "dummyUser",
-                        null,
+                        DateTimeUtil.getFormattedDateTime().minusDays(1).toString(),
                         null,
                         "firstName",
                         "lastNAme",
