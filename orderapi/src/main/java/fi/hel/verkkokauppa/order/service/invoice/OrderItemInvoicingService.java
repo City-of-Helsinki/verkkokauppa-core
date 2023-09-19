@@ -1,15 +1,25 @@
 package fi.hel.verkkokauppa.order.service.invoice;
 
+import fi.hel.verkkokauppa.common.error.CommonApiException;
+import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
 import fi.hel.verkkokauppa.order.mapper.OrderItemInvoicingMapper;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemInvoicingRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -18,13 +28,13 @@ public class OrderItemInvoicingService {
 
     final OrderItemInvoicingMapper orderItemInvoicingMapper;
 
-    final OrderItemRepository orderItemRepository;
+    final OrderService orderService;
 
     @Autowired
-    public OrderItemInvoicingService(OrderItemInvoicingRepository orderItemInvoicingRepository, OrderItemInvoicingMapper orderItemInvoicingMapper, OrderItemRepository orderItemRepository) {
+    public OrderItemInvoicingService(OrderItemInvoicingRepository orderItemInvoicingRepository, OrderItemInvoicingMapper orderItemInvoicingMapper, OrderService orderService) {
         this.orderItemInvoicingRepository = orderItemInvoicingRepository;
         this.orderItemInvoicingMapper = orderItemInvoicingMapper;
-        this.orderItemRepository = orderItemRepository;
+        this.orderService = orderService;
     }
 
     public OrderItemInvoicing save(OrderItemInvoicing orderItemInvoicing) {
@@ -40,5 +50,36 @@ public class OrderItemInvoicingService {
 
     public OrderItemInvoicingDto create(OrderItemInvoicingDto dto) {
         return this.orderItemInvoicingMapper.toDto(this.create(this.orderItemInvoicingMapper.fromDto(dto)));
+    }
+
+    public List<OrderItemInvoicing> findInvoicingsToExport() {
+        return orderItemInvoicingRepository.findAllByInvoicingDateLessThanEqualAndStatus(LocalDate.now(), OrderItemInvoicingStatus.CREATED);
+    }
+
+    public void markInvoicingsInvoiced(List<OrderItemInvoicing> orderItemInvoicings) {
+        for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
+            orderItemInvoicing.setStatus(OrderItemInvoicingStatus.INVOICED);
+            save(orderItemInvoicing);
+        }
+    }
+
+    public List<OrderItemInvoicing> filterAndUpdateCancelledOrders(List<OrderItemInvoicing> orderItemInvoicings) {
+        List<OrderItemInvoicing> filteredInvoicings = new ArrayList<>();
+        for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
+            Order order = orderService.findById(orderItemInvoicing.getOrderId());
+            if (order == null) {
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-order", "failed to get order with id [" + orderItemInvoicing.getOrderId() + "]")
+                );
+            }
+            if (order.getStatus().equals(OrderStatus.CANCELLED)) {
+                orderItemInvoicing.setStatus(OrderItemInvoicingStatus.CANCELLED);
+                save(orderItemInvoicing);
+            } else {
+                filteredInvoicings.add(orderItemInvoicing);
+            }
+        }
+        return filteredInvoicings;
     }
 }

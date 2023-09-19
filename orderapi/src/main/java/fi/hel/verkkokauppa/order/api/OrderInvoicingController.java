@@ -1,7 +1,13 @@
 package fi.hel.verkkokauppa.order.api;
 
+import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
+import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
+import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
+import fi.hel.verkkokauppa.order.service.accounting.AccountingExportService;
+import fi.hel.verkkokauppa.order.service.invoice.InvoicingExportService;
 import fi.hel.verkkokauppa.order.service.invoice.OrderItemInvoicingService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import org.slf4j.Logger;
@@ -9,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +33,18 @@ public class OrderInvoicingController {
     @Autowired
     private OrderItemService orderItemService;
 
+    @Autowired
+    private InvoicingExportService invoicingExportService;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
+    @Autowired
+    private QueueConfigurations queueConfigurations;
+
+    @Autowired
+    private AccountingExportService accountingExportService;
+
     @PostMapping(value = "/order/invoicing/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemInvoicingDto>> createOrderInvoicing(@RequestBody List<OrderItemInvoicingDto> dtos) {
         List<OrderItemInvoicingDto> res = new ArrayList<>();
@@ -34,5 +53,30 @@ public class OrderInvoicingController {
             orderItemService.setInvoicingStatus(dto.getOrderItemId(), OrderItemInvoicingStatus.CREATED);
         }
         return ResponseEntity.ok().body(res);
+    }
+
+    @PostMapping(value = "/invoicing/export")
+    public ResponseEntity<Void> exportInvoicings() {
+        try {
+            List<OrderItemInvoicing> orderItemInvoicings = orderItemInvoicingService.findInvoicingsToExport();
+            orderItemInvoicings = orderItemInvoicingService.filterAndUpdateCancelledOrders(orderItemInvoicings);
+            if (orderItemInvoicings.isEmpty()) {
+                return ResponseEntity.ok().build();
+            }
+            SalesOrderContainer salesOrderContainer = invoicingExportService.generateSalesOrderContainer(orderItemInvoicings);
+            String xml = invoicingExportService.salesOrderContainerToXml(salesOrderContainer);
+            log.info(xml);
+            accountingExportService.export(xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
+            invoicingExportService.copyExportedDataToOrderItems(salesOrderContainer);
+            orderItemInvoicingService.markInvoicingsInvoiced(orderItemInvoicings);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("failed to export invoicings", e);
+            sendNotificationService.sendErrorNotification(
+                    "Endpoint: /invoicing/export. Failed to export invoicings to SAP",
+                    e
+            );
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
