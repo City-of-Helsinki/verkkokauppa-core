@@ -8,10 +8,7 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.id.IncrementId;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.ListUtil;
-import fi.hel.verkkokauppa.common.util.StringUtils;
-import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -32,6 +29,7 @@ import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -90,6 +88,9 @@ public class OrderService {
 
     @Autowired
     private IncrementId incrementId;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -339,7 +340,7 @@ public class OrderService {
             OrderItem orderItem = orderitems.get(0); // orders created from subscription have only one item
 
             orderMessageBuilder
-                    .cardToken(paymentMethodToken)
+                    .cardToken(EncryptorUtil.encryptValue(paymentMethodToken, cardTokenEncryptionPassword))
                     .cardExpYear(String.valueOf(subscription.getPaymentMethodExpirationYear()))
                     .cardExpMonth(String.valueOf(subscription.getPaymentMethodExpirationMonth()))
                     .cardLastFourDigits(subscription.getPaymentMethodCardLastFourDigits())
