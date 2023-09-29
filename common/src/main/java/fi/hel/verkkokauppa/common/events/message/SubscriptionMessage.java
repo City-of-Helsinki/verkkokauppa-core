@@ -9,6 +9,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(value = JsonInclude.Include.NON_EMPTY, content = JsonInclude.Include.NON_NULL)
 public class SubscriptionMessage implements EventMessage {
     String eventType;
     String eventTimestamp;

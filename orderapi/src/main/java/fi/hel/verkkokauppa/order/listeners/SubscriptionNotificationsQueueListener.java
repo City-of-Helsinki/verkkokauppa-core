@@ -77,7 +77,7 @@ public class SubscriptionNotificationsQueueListener {
         if (EventType.SUBSCRIPTION_CREATED.equals(message.getEventType())) {
             log.info("event type is SUBSCRIPTION_CREATED");
             ResponseEntity<Void> response = restWebHookService.postCallWebHook(
-                    message,
+                    message.toCustomerWebHook(),
                     ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL,
                     message.getNamespace()
             );
