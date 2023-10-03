@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.payment.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.mapper.PaytrailPaymentCreateResponseMapper;
@@ -12,6 +13,8 @@ import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest;
 import org.helsinki.paytrail.response.payments.PaytrailPaymentCreateResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,6 +30,9 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
     protected final PaytrailPaymentCreateResponseMapper paymentMapper;
 
     @Autowired
+    private Environment env;
+
+    @Autowired
     public PaytrailPaymentCreator() {
         this.refundMapper = new PaytrailRefundCreateResponseMapper(new ObjectMapper());
         this.paymentMapper = new PaytrailPaymentCreateResponseMapper(new ObjectMapper());
@@ -36,7 +42,7 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
         PaytrailPaymentCreateRequest.CreatePaymentPayload payload = new PaytrailPaymentCreateRequest.CreatePaymentPayload();
 
         payload.setStamp(stamp);
-        payload.setReference("3759170");
+        payload.setReference(client.getInternalMerchantId());
         payload.setAmount(PaymentUtil.eurosToBigInteger(amount).intValue());
         payload.setCurrency("EUR");
         payload.setLanguage("FI");
@@ -56,9 +62,8 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
 
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
 
-        String ngrokUrl = "https://9118-2001-14ba-9cc1-c100-ccaa-c3cd-a99c-ca9d.eu.ngrok.io";
-        callbackUrls.setSuccess(ngrokUrl + "/v1/payment/paytrailOnlinePayment/paytrail/success");
-        callbackUrls.setCancel(ngrokUrl + "/v1/payment/paytrailOnlinePayment/paytrail/cancel");
+        callbackUrls.setSuccess(env.getRequiredProperty("paytrail_payment_return_success_url"));
+        callbackUrls.setCancel(env.getRequiredProperty("paytrail_payment_return_cancel_url"));
 
         payload.setCallbackUrls(callbackUrls);
         payload.setRedirectUrls(callbackUrls);
@@ -70,6 +75,5 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
 
         return paymentCreateResponse.getPaymentResponse();
     }
-
 
 }

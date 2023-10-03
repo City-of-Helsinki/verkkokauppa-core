@@ -161,7 +161,7 @@ public class AccountingControllerTest extends DummyData {
         createTestRefundItemAccounting(
                 refund1.getRefundId(),
                 refund1.getOrderId(),
-                "-10", "-7", "-3",
+                "10", "7", "3",
                 companyCode1,
                 "account",
                 "24",
@@ -174,7 +174,7 @@ public class AccountingControllerTest extends DummyData {
         createTestRefundItemAccounting(
                 refund1.getRefundId(),
                 refund1.getOrderId(),
-                "-15", "-10", "-5",
+                "15", "10", "5",
                 companyCode1,
                 "account",
                 "24",
@@ -187,7 +187,7 @@ public class AccountingControllerTest extends DummyData {
         createTestRefundItemAccounting(
                 refund1.getRefundId(),
                 refund1.getOrderId(),
-                "-25", "-15", "-10",
+                "25", "15", "10",
                 companyCode1,
                 "account",
                 "24",
@@ -253,7 +253,7 @@ public class AccountingControllerTest extends DummyData {
         createTestRefundItemAccounting(
                 refund2.getRefundId(),
                 refund2.getOrderId(),
-                "-10", "-5", "-5",
+                "10", "5", "5",
                 companyCode2,
                 "account",
                 "24",
