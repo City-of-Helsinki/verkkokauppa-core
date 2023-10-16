@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.id.IncrementId;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -91,6 +92,9 @@ public class OrderService {
 
     @Value("${payment.card_token.encryption.password}")
     private String cardTokenEncryptionPassword;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -361,8 +365,8 @@ public class OrderService {
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();
-        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
-        log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
+        sendNotificationService.sendOrderMessageNotification(orderMessage);
+        log.debug("triggered notification " + eventType + " for orderId: " + order.getOrderId());
     }
 
     public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
