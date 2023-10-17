@@ -1,21 +1,15 @@
 package fi.hel.verkkokauppa.payment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.accounting.*;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
+import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
@@ -29,6 +23,11 @@ import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilde
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
+import fi.hel.verkkokauppa.payment.testing.data.CreateRefundAccountingRequestDto;
+import fi.hel.verkkokauppa.payment.testing.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.payment.testing.data.ProductAccountingDto;
+import fi.hel.verkkokauppa.payment.testing.model.Refund;
+import fi.hel.verkkokauppa.payment.testing.model.RefundItem;
 import fi.hel.verkkokauppa.payment.utils.PaytrailPaymentCreator;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.PaytrailClient;
@@ -521,20 +520,20 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         // create dummy order
         String orderApiUrl = serviceUrls.getOrderServiceUrl() + "/order/createWithItems";
 
-        List<fi.hel.verkkokauppa.order.api.data.OrderItemDto> items = new ArrayList<>();
+        List<OrderItemDto> items = new ArrayList<>();
 
-        fi.hel.verkkokauppa.order.api.data.OrderItemDto itemDto = new fi.hel.verkkokauppa.order.api.data.OrderItemDto();
+        OrderItemDto itemDto = new OrderItemDto();
 //        itemDto.setOrderId(orderId);
         itemDto.setOrderItemId(UUID.randomUUID().toString());
         itemDto.setProductId("b86337e8-68a0-3599-a18b-754ffae53f5a");
         itemDto.setMerchantId(merchantId);
         itemDto.setUnit("pcs");
-        itemDto.setPriceGross("10");
-        itemDto.setRowPriceTotal("20");
-        itemDto.setPriceNet("9");
-        itemDto.setRowPriceNet("18");
-        itemDto.setPriceVat("1");
-        itemDto.setRowPriceVat("2");
+        itemDto.setPriceGross(BigDecimal.valueOf(10));
+        itemDto.setRowPriceTotal(BigDecimal.valueOf(20));
+        itemDto.setPriceNet(BigDecimal.valueOf(9));
+        itemDto.setRowPriceNet(BigDecimal.valueOf(18));
+        itemDto.setPriceVat(BigDecimal.valueOf(1));
+        itemDto.setRowPriceVat(BigDecimal.valueOf(2));
         itemDto.setQuantity(2);
         itemDto.setProductName("Product Name");
         itemDto.setProductLabel("Product Label");
@@ -544,25 +543,23 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
         items.add(itemDto);
 
         OrderAggregateDto requestOrderDto = new OrderAggregateDto(
-                new fi.hel.verkkokauppa.order.api.data.OrderDto(
-                        null,
+                new OrderDto(
                         null,
                         NAMESPACE,
                         "dummyUser",
-                        DateTimeUtil.getFormattedDateTime().minusDays(1),
+                        DateTimeUtil.getFormattedDateTime().minusDays(1).toString(),
                         null,
                         "order",
+                        "firstName",
+                        "lastNAme",
+                        "test@ambientia.fi",
                         "18",
                         "2",
                         "20",
                         null,
-                        "firstName",
-                        "lastNAme",
-                        "test@ambientia.fi",
-                        null,
-                        null,
-                        null,
-                        null),
+
+                        null
+                     ),
                 items,
                 null,
                 null);
@@ -632,7 +629,7 @@ class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
     Payment createTestPayment(OrderAggregateDto orderAggregate) {
 
-        fi.hel.verkkokauppa.order.api.data.OrderDto order = orderAggregate.getOrder();
+        OrderDto order = orderAggregate.getOrder();
         String paymentId = order.getOrderId() + "_at_" + UUID.randomUUID();
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
