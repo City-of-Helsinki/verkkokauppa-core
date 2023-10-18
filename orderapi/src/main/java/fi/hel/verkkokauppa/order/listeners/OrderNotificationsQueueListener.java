@@ -2,11 +2,17 @@ package fi.hel.verkkokauppa.order.listeners;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
@@ -24,12 +30,24 @@ public class OrderNotificationsQueueListener {
     @Autowired
     private SaveHistoryService saveHistoryService;
 
+    @Value("${payment.service.url}")
+    private String paymentServiceUrl;
+
+    @Autowired
+    private RestWebHookService restWebHookService;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
         OrderMessage message = getOrderMessageFromTextMessage(textMessage);
 
         logMessageData((ActiveMQTextMessage) textMessage, message);
-        // TODO actions
+
+        if (message.getEventType().equals(EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED)) {
+            subscriptionRenewalOrderCreatedAction(message);
+        }
 
         // Save history
         saveHistoryService.saveOrderMessageHistory(message);
@@ -48,5 +66,20 @@ public class OrderNotificationsQueueListener {
     private void logMessageData(ActiveMQTextMessage textMessage, OrderMessage message) throws JsonProcessingException {
         log.info(mapper.writeValueAsString(message));
         log.info("Message orderId: {} subscriptionId: {} redeliveryCounter: {}", message.getOrderId(), message.getSubscriptionId(), textMessage.getRedeliveryCounter());
+    }
+
+    private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
+        String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
+                paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
+                paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
+        callApi(message, url);
+        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+    }
+
+    private void callApi(OrderMessage message, String url) throws Exception {
+        //format payload, message to json string conversion
+        String body = mapper.writeValueAsString(message);
+        //send to target url
+        restServiceClient.makeVoidPostCall(url, body);
     }
 }

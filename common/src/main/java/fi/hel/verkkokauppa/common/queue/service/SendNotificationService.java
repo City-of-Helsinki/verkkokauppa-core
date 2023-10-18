@@ -58,6 +58,18 @@ public class SendNotificationService {
 
     }
 
+    public void sendOrderMessageNotification(OrderMessage message) {
+        String toQueue = queueConfigurations.getOrderNotificationsQueue();
+        try {
+            ActiveMQQueue queue = new ActiveMQQueue(toQueue);
+            String messageAsJsonString = mapper.writeValueAsString(message);
+            log.info("Sending notification to queue {} message {}", toQueue, messageAsJsonString);
+            jmsTemplate.convertAndSend(queue, messageAsJsonString);
+        } catch (Exception e) {
+            log.error("Error sending to queue: {} error message: {}", toQueue, e.getMessage());
+        }
+    }
+
     public void sendPaymentMessageNotification(
             PaymentMessage message
     ) {
