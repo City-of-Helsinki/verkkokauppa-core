@@ -43,9 +43,23 @@ public class OrderItemInvoicing {
 
     @Field(type = FieldType.Text)
     String customerOvt;
+    @Field(type = FieldType.Text)
+    String customerName;
+    @Field(type = FieldType.Text)
+    String customerAddress;
+    @Field(type = FieldType.Text)
+    String customerPostcode;
+    @Field(type = FieldType.Text)
+    String customerCity;
 
     @Field(type = FieldType.Text)
     String material;
+    @Field(type = FieldType.Text)
+    String orderType;
+    @Field(type = FieldType.Text)
+    String salesOrg;
+    @Field(type = FieldType.Text)
+    String salesOffice;
 
     @Field(type = FieldType.Text)
     String materialDescription;

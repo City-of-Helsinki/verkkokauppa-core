@@ -17,7 +17,14 @@ public class OrderItemInvoicingDto {
     private LocalDate invoicingDate;
     private String customerYid;
     private String customerOvt;
+    private String customerName;
+    private String customerAddress;
+    private String customerPostcode;
+    private String customerCity;
     private String material;
+    private String orderType;
+    private String salesOrg;
+    private String salesOffice;
     private String materialDescription;
     private Integer quantity;
     private String unit;

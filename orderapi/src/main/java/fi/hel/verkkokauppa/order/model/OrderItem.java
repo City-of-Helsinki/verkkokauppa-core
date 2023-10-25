@@ -84,6 +84,9 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     OrderItemInvoicingStatus invoicingStatus;
 
+    @Field(type = FieldType.Text)
+    String invoicingIncrementId;
+
     public OrderItem() {}
 
     public OrderItem(
