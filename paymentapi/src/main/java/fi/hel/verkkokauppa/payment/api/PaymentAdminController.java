@@ -336,4 +336,28 @@ public class PaymentAdminController {
             );
         }
     }
+
+    @PutMapping(value = "/payment-admin/payment-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> setPaymentStatus(@RequestParam(value = "orderId") String orderId, @RequestParam(value = "status") String status) {
+        try {
+            Payment payment = onlinePaymentService.getPaymentForOrder(orderId);
+            if (payment == null) {
+                log.error("No payments found with given orderId. orderId: " + orderId);
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-payment", "failed to get payment with order id [" + orderId + "]")
+                );
+            }
+            onlinePaymentService.setPaymentStatus(payment.getPaymentId(), status);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("setting payment status failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-payment-status", "failed to set payment status with order id [" + orderId + "]")
+            );
+        }
+    }
 }
