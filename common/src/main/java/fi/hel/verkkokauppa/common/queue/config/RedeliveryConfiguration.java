@@ -15,6 +15,9 @@ public class RedeliveryConfiguration {
     @Value("${activemq.redelivery-delay:#{300000}}")
     private Long redeliveryDelay;
 
+    @Value("${activemq.initial-redelivery-delay:#{60000}}")
+    private Long initialRedeliveryDelay;
+
     @Value("${activemq.back-off-multiplier:#{5}}")
     private Long backOffMultiplier;
 
@@ -28,6 +31,7 @@ public class RedeliveryConfiguration {
             RedeliveryPolicy redeliveryPolicy = new RedeliveryPolicy();
             redeliveryPolicy.setUseExponentialBackOff(useExponentialBackoff);
             redeliveryPolicy.setRedeliveryDelay(redeliveryDelay);
+            redeliveryPolicy.setInitialRedeliveryDelay(initialRedeliveryDelay);
             // Works as redeliveryDelayMultiplier
             redeliveryPolicy.setBackOffMultiplier(backOffMultiplier);
             redeliveryPolicy.setMaximumRedeliveries(maximumRedeliveries);
