@@ -124,22 +124,26 @@ public class PaymentAdminController {
                     PaymentCardInfoDto card = new PaymentCardInfoDto(message.getCardToken(), message.getCardExpYear(), message.getCardExpMonth(), message.getCardLastFourDigits());
                     try {
                         PaytrailPaymentContext context = paymentPaytrailService.buildPaytrailContext(message.getNamespace(), message.getMerchantId());
+                        PaymentReturnDto paymentReturnDto = new PaymentReturnDto(true, false, false, false);
+                        String transactionId = null;
                         try {
-
                             PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, payment.getPaymentId(), message);
-                            onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), mitCharge.getTransactionId());
-                            onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, true, false, false), card);
+                            paymentReturnDto = new PaymentReturnDto(true, true, false, false);
+                            transactionId = mitCharge.getTransactionId();
                         } catch (Exception e) {
                             log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                            onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false), card);
+                        }
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto, card);
+                        if (transactionId != null) {
+                            onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), transactionId);
+                            paymentPaytrailService.sendMitChargeNotify(payment.getOrderId());
                         }
                     } catch (Exception e) {
+                        log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
                         sendNotificationService.sendErrorNotification(
                                 "Endpoint: /payment-admin/paytrail/subscription-renewal-order-created-event. Subscription renewal handling failed with exception for order: " + payment.getOrderId(),
                                 e
                         );
-                        log.debug("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), new PaymentReturnDto(true, false, false, false), card);
                     }
                 } else {
                     log.warn("not a subscription renewal order, not creating new payment for orderId: " + message.getOrderId());
