@@ -12,6 +12,11 @@ trigger:
       - master
       - development
 
+parameters:
+- name: drtestDeployment
+  displayName: 'Deploy to drtest environment'
+  type: boolean
+  default: false
 
 # By default, use self-hosted agents
 pool: Default
