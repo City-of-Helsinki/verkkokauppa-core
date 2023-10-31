@@ -35,8 +35,10 @@ public class RedeliveryConfiguration {
             // Works as redeliveryDelayMultiplier
             redeliveryPolicy.setBackOffMultiplier(backOffMultiplier);
             redeliveryPolicy.setMaximumRedeliveries(maximumRedeliveries);
+
             // configure redelivery policy
             connectionFactory.setRedeliveryPolicy(redeliveryPolicy);
+            connectionFactory.setNonBlockingRedelivery(true);
         };
     }
 }
