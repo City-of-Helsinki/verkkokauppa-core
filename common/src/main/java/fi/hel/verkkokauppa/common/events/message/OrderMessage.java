@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.common.events.message;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(value = JsonInclude.Include.NON_EMPTY, content = JsonInclude.Include.NON_NULL)
 public class OrderMessage implements EventMessage {
     public String eventType;
     public String eventTimestamp;
