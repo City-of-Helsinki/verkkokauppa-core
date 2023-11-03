@@ -103,7 +103,7 @@ public class SubscriptionNotificationsTest extends DummyData {
         order.setNamespace("venepaikat");
         order = orderRepository.save(order);
 
-        toBeDeletedOrderById.add(order.getOrderId());
+        //toBeDeletedOrderById.add(order.getOrderId());
         log.info("Order id: " +order.getOrderId());
 
         Subscription subscription = generateDummySubscription(order);
