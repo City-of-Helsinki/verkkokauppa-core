@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.api.PaytrailPaymentController;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailCreatePaymentPayloadMapper;
@@ -101,6 +102,9 @@ public class PaytrailPaymentServiceUnitTests {
 
     @MockBean
     private SendNotificationService sendNotificationService;
+
+    @MockBean
+    private RestServiceClient restServiceClient;
 
     @BeforeEach
     public void setup() {
