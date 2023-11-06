@@ -430,6 +430,7 @@ public class PaymentPaytrailService {
     }
 
     public JSONObject sendMitChargeNotify(String orderId) {
+        log.info("sendMitChargeNotify called with orderId: {}", orderId);
         return restServiceClient.makeAdminGetCall(paymentExperienceUrl + "paytrailOnlinePayment/mitCharge/notify" + "?orderId=" + orderId);
     }
 }
