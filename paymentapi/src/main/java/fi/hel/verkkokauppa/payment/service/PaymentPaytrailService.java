@@ -11,6 +11,7 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
@@ -39,6 +40,7 @@ import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessRespo
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -69,6 +71,12 @@ public class PaymentPaytrailService {
 
     @Value("${payment.card_token.encryption.password}")
     private String cardTokenEncryptionPassword;
+
+    @Value("${payment.experience.url}")
+    private String paymentExperienceUrl;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
 
     @Autowired
     private SendEventService sendEventService;
@@ -419,5 +427,10 @@ public class PaymentPaytrailService {
         parameters.put("signature", PaytrailSignatureService.calculateSignature(parameters, null, context.getPaytrailSecretKey()));
 
         return parameters;
+    }
+
+    public JSONObject sendMitChargeNotify(String orderId) {
+        log.info("sendMitChargeNotify called with orderId: {}", orderId);
+        return restServiceClient.makeAdminGetCall(paymentExperienceUrl + "paytrailOnlinePayment/mitCharge/notify" + "?orderId=" + orderId);
     }
 }
