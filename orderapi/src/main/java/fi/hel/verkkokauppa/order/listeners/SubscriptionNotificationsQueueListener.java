@@ -100,10 +100,12 @@ public class SubscriptionNotificationsQueueListener {
         if (EventType.SUBSCRIPTION_CARD_EXPIRED.equals(message.getEventType())) {
             log.info("event type is {}", message.getEventType());
 
-            restServiceClient.makeAdminGetCall(
+            restServiceClient.makeAdminPostCall(
                     experienceUrls.getOrderExperienceUrl()
+                    + "/subscription/"
                     + message.getSubscriptionId()
-                    + "/emailSubscriptionCardExpired"
+                    + "/emailSubscriptionCardExpired",
+                    "{}"
             );
 
         }
