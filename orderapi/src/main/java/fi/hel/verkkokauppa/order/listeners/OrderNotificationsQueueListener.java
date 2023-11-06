@@ -41,6 +41,7 @@ public class OrderNotificationsQueueListener {
 
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
+        log.info("Consuming order-notifications message");
         OrderMessage message = getOrderMessageFromTextMessage(textMessage);
 
         logMessageData((ActiveMQTextMessage) textMessage, message);
@@ -64,7 +65,8 @@ public class OrderNotificationsQueueListener {
      * Logs redelivery count and orderId and subscriptionId from OrderMessage
      */
     private void logMessageData(ActiveMQTextMessage textMessage, OrderMessage message) throws JsonProcessingException {
-        log.info(mapper.writeValueAsString(message));
+        log.info("ActiveMQ text message: {}", textMessage != null ? textMessage.toString() : null);
+        log.info("SubscriptionOrder message: {}", mapper.writeValueAsString(message));
         log.info("Message orderId: {} subscriptionId: {} redeliveryCounter: {}", message.getOrderId(), message.getSubscriptionId(), textMessage.getRedeliveryCounter());
     }
 

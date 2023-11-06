@@ -45,6 +45,8 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
 
     private OrderItemInvoicingStatus invoicingStatus;
 
+    private String invoicingIncrementId;
+
     private List<OrderItemMetaDto> meta = new ArrayList<>();
 
 }

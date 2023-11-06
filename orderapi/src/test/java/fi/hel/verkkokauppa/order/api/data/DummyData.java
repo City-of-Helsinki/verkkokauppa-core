@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,22 @@ public abstract class DummyData {
         order.setType("dummy_type");
 
         return order;
+    }
+
+    public Subscription generateDummySubscription(Order order) {
+        Subscription subscription = new Subscription();
+        subscription.setSubscriptionId("1");
+        subscription.setOrderId(order.getOrderId());
+        subscription.setOrderItemId("1");
+        subscription.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        subscription.setUser("dummy_user");
+        subscription.setNamespace("dummy_namespace");
+        subscription.setStatus("dummy_status");
+        subscription.setCustomerFirstName("dummy_firstname");
+        subscription.setCustomerLastName("dummy_lastname");
+        subscription.setCustomerEmail("dummy@dummymail.com");
+
+        return subscription;
     }
 
     public OrderDto generateDummyOrderDto() {

@@ -318,6 +318,7 @@ public class AccountingSlipService {
 
         if (orderAccountingsForDate != null) {
             orderAccountingsForDate.forEach(orderId -> orderService.markAsAccounted(orderId));
+            orderAccountingsForDate.forEach(orderId -> orderAccountingService.markAsAccounted(orderId));
         }
         if (refundAccountingsForDate != null) {
             refundAccountingsForDate.forEach(refundId -> refundService.markAsAccounted(refundId));

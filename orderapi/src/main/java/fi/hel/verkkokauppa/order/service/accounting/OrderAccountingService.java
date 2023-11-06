@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,4 +65,12 @@ public class OrderAccountingService {
         return accountings;
     }
 
+    public void markAsAccounted(String orderId) {
+        OrderAccounting orderAccounting = orderAccountingRepository.findByOrderId(orderId);
+        if (orderAccounting != null) {
+            orderAccounting.setAccounted(LocalDate.now());
+            orderAccountingRepository.save(orderAccounting);
+            log.debug("marked order accounting accounted, orderId: " + orderId);
+        }
+    }
 }

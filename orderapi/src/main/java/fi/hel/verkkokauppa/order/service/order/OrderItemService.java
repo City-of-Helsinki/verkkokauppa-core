@@ -89,7 +89,7 @@ public class OrderItemService {
         OrderItem item = orderItemRepository.findById(orderItemId).orElseThrow(() -> new CommonApiException(
                 HttpStatus.NOT_FOUND,
                 new Error("order-item-not-found", "order item with value: [" + orderItemId + "] not found")
-        ));;
+        ));
         item.setInvoicingStatus(status);
         return orderItemRepository.save(item);
     }
