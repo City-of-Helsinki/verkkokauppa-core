@@ -33,6 +33,7 @@ public class ServiceConfigurationKeysTest {
                 "subscriptionPriceUrl",
                 "orderCancelRedirectUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "merchantOrderWebhookUrl",
                 "merchantPaymentWebhookUrl",
                 "merchantSubscriptionWebhookUrl",
@@ -74,6 +75,7 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "refundSuccessRedirectUrl",
                 "payment_api_key",
                 "payment_api_version",
@@ -148,6 +150,7 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "subscriptionPriceUrl",
                 "refundSuccessRedirectUrl"
         );
