@@ -116,22 +116,28 @@ public class CreateOrderFromSubscriptionCommand {
             return null;
         }
 
-        // Resolve product
-        subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+        try {
+            // Resolve product
+            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
-        boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
-        // Returns null orderId if subscription right of purchase is false.
-        if (!hasRightToPurchase) {
-            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
-            cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
+            boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+            // Returns null orderId if subscription right of purchase is false.
+            if (!hasRightToPurchase) {
+                log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+                cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
+                return null;
+            }
+
+            // resolve price and update prices
+            subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+        } catch (Exception e){
+            log.error("Subscription renewal failed while updating subscription information.",e);
+            // if resolve product/price fails then do not complete the subscription renewal
             return null;
         }
 
         Order order = orderService.createByParams(namespace, user);
         order.setType(OrderType.ORDER);
-
-        // resolve price and update prices
-        subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
         orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());
         copyCustomerInfoFromSubscription(subscriptionDto, order);
@@ -149,7 +155,7 @@ public class CreateOrderFromSubscriptionCommand {
         return orderId;
     }
 
-    private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
+    private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) throws Exception {
 
         String merchantId;
         try {
@@ -215,11 +221,12 @@ public class CreateOrderFromSubscriptionCommand {
 
         } catch (Exception e) {
             log.error("Error/new price not found when requesting new price to subscription request:{}", request, e);
+            throw e;
         }
         return subscription;
     }
 
-    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
+    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) throws Exception {
 
         String merchantId;
         try {
@@ -281,6 +288,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         } catch (Exception e) {
             log.error("Error/Resolve product failed with subscription request:{}", request, e);
+            throw e;
         }
         return subscription;
     }
