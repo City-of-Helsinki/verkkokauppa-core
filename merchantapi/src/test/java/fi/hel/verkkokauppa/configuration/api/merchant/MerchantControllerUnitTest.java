@@ -380,6 +380,7 @@ public class MerchantControllerUnitTest {
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
             add("subscriptionPriceUrl");
+            add("subscriptionResolveProductUrl");
         }});
 
         MvcResult response = this.mockMvc.perform(
