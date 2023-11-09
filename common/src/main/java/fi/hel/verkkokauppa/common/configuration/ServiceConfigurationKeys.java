@@ -156,7 +156,8 @@ public class ServiceConfigurationKeys {
                 MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
-                SUBSCRIPTION_PRICE_URL            // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
+                SUBSCRIPTION_RESOLVE_PRODUCT_URL   // can be overwritten by (merchant)
         ).sorted().collect(Collectors.toList());
     }
 
