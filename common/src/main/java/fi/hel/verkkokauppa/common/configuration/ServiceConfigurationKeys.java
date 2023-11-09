@@ -48,6 +48,7 @@ public class ServiceConfigurationKeys {
     // NamespaceModel keys START [KYV-605] (values can be fetched from serviceconfiguration,namespace model)
     // Subscription price end point KYV-462
     public static String SUBSCRIPTION_PRICE_URL = "subscriptionPriceUrl";
+    public static String SUBSCRIPTION_RESOLVE_PRODUCT_URL = "subscriptionResolveProductUrl";
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
     public static String ORDER_CANCEL_REDIRECT_URL = "orderCancelRedirectUrl";
     public static String ORDER_SUCCESS_REDIRECT_URL = "orderSuccessRedirectUrl";
@@ -157,7 +158,8 @@ public class ServiceConfigurationKeys {
                 MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
-                SUBSCRIPTION_PRICE_URL            // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
+                SUBSCRIPTION_RESOLVE_PRODUCT_URL   // can be overwritten by (merchant)
         ).sorted().collect(Collectors.toList());
     }
 

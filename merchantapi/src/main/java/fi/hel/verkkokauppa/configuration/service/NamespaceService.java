@@ -207,6 +207,7 @@ public class NamespaceService {
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/price", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/product", false),
             // Webhooks
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_order_webhook", false),
