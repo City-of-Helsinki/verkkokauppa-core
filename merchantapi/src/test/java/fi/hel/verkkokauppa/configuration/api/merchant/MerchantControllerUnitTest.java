@@ -379,7 +379,6 @@ public class MerchantControllerUnitTest {
             add("merchantZip");
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
-            add("orderPaymentFailedRedirectUrl");
             add("subscriptionPriceUrl");
             add("subscriptionResolveProductUrl");
         }});
