@@ -101,6 +101,7 @@ public class NamespaceControllerUnitTest {
             add("orderSuccessRedirectUrl");
             add("refundSuccessRedirectUrl");    
             add("subscriptionPriceUrl");
+            add("subscriptionResolveProductUrl");
         }});
 
 
