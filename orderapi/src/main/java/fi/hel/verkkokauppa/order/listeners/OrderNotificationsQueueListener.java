@@ -71,11 +71,11 @@ public class OrderNotificationsQueueListener {
     }
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
+        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
         String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
                 paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
                 paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
         callApi(message, url);
-        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
     }
 
     private void callApi(OrderMessage message, String url) throws Exception {
