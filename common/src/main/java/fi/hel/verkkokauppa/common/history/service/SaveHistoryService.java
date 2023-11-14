@@ -79,4 +79,14 @@ public class SaveHistoryService {
         }
         return null;
     }
+
+    public JSONObject saveInvoicedEmailHistory(JSONObject email) {
+        try {
+            String request = historyUtil.toString(historyFactory.fromInvoicedEmail(email));
+            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.info("saveInvoicedEmailHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
 }

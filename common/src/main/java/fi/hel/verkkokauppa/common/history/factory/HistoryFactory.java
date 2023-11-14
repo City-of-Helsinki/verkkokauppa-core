@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.common.history.factory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.ErrorMessage;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
@@ -9,6 +10,7 @@ import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
 import fi.hel.verkkokauppa.common.history.util.EntityTypeUtil;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -127,5 +129,15 @@ public class HistoryFactory {
                     .payload(e.getMessage())
                     .build();
         }
+    }
+
+    public HistoryDto fromInvoicedEmail(JSONObject email) {
+        return HistoryDto.builder()
+                .entityId("-")
+                .namespace("-")
+                .entityType(EntityTypeUtil.EVENT)
+                .eventType(EventType.INVOICED_EMAIL_SENT)
+                .payload(email.toString())
+                .build();
     }
 }
