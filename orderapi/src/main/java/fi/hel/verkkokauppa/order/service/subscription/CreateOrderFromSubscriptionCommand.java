@@ -8,6 +8,7 @@ import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
@@ -94,6 +95,9 @@ public class CreateOrderFromSubscriptionCommand {
     @Autowired
     private ServiceUrls serviceUrls;
 
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
@@ -131,7 +135,11 @@ public class CreateOrderFromSubscriptionCommand {
             // resolve price and update prices
             subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
         } catch (Exception e){
-            log.error("Subscription renewal failed while updating subscription information.",e);
+            log.error("Subscription renewal failed while updating subscription information. Subscription ID: " + subscriptionId,e);
+            sendNotificationService.sendErrorNotification(
+                    "Method: createFromSubscription. Subscription renewal failed while updating subscription information for subscription: " + subscriptionId,
+                    e
+            );
             // if resolve product/price fails then do not complete the subscription renewal
             return null;
         }
