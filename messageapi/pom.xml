@@ -8,13 +8,13 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
-                <version>2.4.4</version>
+                <version>3.0.0</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-                <version>2.4.4</version>
+                <version>2.7.6</version>
                 <scope>compile</scope>
             </dependency>
             <dependency>
@@ -113,7 +113,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
-            <version>2.5.4</version>
+            <version>3.0.0</version>
         </dependency>
         <!-- send email -->
         <dependency>
@@ -137,7 +137,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.6.9</version>
+            <version>1.6.12</version>
         </dependency>
         <!--Swagger-->
 
