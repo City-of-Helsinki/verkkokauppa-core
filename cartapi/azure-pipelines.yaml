@@ -12,14 +12,17 @@ trigger:
       - master
       - development
 
-variables: 
-  deployToDrtest: False
-
 # By default, use self-hosted agents
 pool: Default
 
 # Opting out of pull request validation
 pr: none
+
+parameters:
+- name: drtestDeployment
+  displayName: 'Deploy to drtest environment'
+  type: boolean
+  default: False
 
 resources:
   repositories:
@@ -31,3 +34,5 @@ resources:
 
 extends:
   template: azure-pipelines-talpa-verkkokauppa-cart-api.yml@talpa-verkkokauppa-pipelines
+  parameters: 
+    drtestDeployment: ${{ parameters.drtestDeployment }}
