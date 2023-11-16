@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
+import fi.hel.verkkokauppa.common.configuration.SAP;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
@@ -66,7 +67,7 @@ public class OrderInvoicingController {
             SalesOrderContainer salesOrderContainer = invoicingExportService.generateSalesOrderContainer(orderItemInvoicings);
             String xml = invoicingExportService.salesOrderContainerToXml(salesOrderContainer);
             log.info(xml);
-            accountingExportService.export(xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
+            accountingExportService.export(SAP.Interface.INVOICING, xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
             invoicingExportService.copyExportedDataToOrderItems(salesOrderContainer);
             orderItemInvoicingService.markInvoicingsInvoiced(orderItemInvoicings);
             return ResponseEntity.ok().build();

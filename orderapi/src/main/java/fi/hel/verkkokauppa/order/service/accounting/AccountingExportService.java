@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import com.jcraft.jsch.*;
+import fi.hel.verkkokauppa.common.configuration.SAP;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -39,15 +40,6 @@ public class AccountingExportService {
     @Value("${spring.profiles.active:}")
     private String activeProfile;
 
-    @Value("${sap.sftp.server.url}")
-    private String sftpServerUrl;
-
-    @Value("${sap.sftp.server.username}")
-    private String sftpServerUsername;
-
-    @Value("${sap.sftp.server.password}")
-    private String sftpServerPassword;
-
     @Value("${ssh.knowhosts.path}")
     private String sshKnownHostsPath;
 
@@ -60,6 +52,9 @@ public class AccountingExportService {
     @Autowired
     private AccountingExportDataService accountingExportDataService;
 
+    @Autowired
+    private SAP sap;
+
     public void exportAccountingData(AccountingExportDataDto exportData) {
         String accountingSlipId = exportData.getAccountingSlipId();
         AccountingSlip accountingSlip = accountingSlipService.getAccountingSlip(accountingSlipId);
@@ -68,7 +63,7 @@ public class AccountingExportService {
         String senderId = accountingSlipDto.getSenderId();
         String filename = constructAccountingExportFileName(senderId, exportData.getTimestamp());
 
-        export(exportData.getXml(), filename);
+        export(SAP.Interface.ACCOUNTING, exportData.getXml(), filename);
 
         markAsExported(exportData);
     }
@@ -84,13 +79,13 @@ public class AccountingExportService {
         return "KP_IN_" + senderId + "_" + runningNumberFormatted + ".xml";
     }
 
-    public void export(String fileContent, String filename) {
-        if (sftpServerUrl == null || sftpServerUrl.isEmpty()) {
+    public void export(SAP.Interface i, String fileContent, String filename) {
+        if (sap.getUrl(i) == null || sap.getUrl(i).isEmpty()) {
             log.debug("Not exporting file, server url not set");
             return;
         }
 
-        ChannelSftp channelSftp = ConnectToChannelSftp();
+        ChannelSftp channelSftp = ConnectToChannelSftp(i);
 
         byte[] strToBytes = fileContent.getBytes();
 
@@ -114,9 +109,9 @@ public class AccountingExportService {
 
     }
 
-    private ChannelSftp ConnectToChannelSftp() {
+    private ChannelSftp ConnectToChannelSftp(SAP.Interface i) {
         try {
-            ChannelSftp channelSftp = setupJsch();
+            ChannelSftp channelSftp = setupJsch(i);
             channelSftp.connect();
             log.info("Connected to the sftp channel succesfully");
 
@@ -131,12 +126,12 @@ public class AccountingExportService {
         }
     }
 
-    private ChannelSftp setupJsch() throws JSchException {
+    private ChannelSftp setupJsch(SAP.Interface i) throws JSchException {
         JSch jsch = new JSch();
 
-        log.debug("Connecting to server with username [{}]", sftpServerUsername);
-        Session jschSession = jsch.getSession(sftpServerUsername, sftpServerUrl);
-        jschSession.setPassword(sftpServerPassword);
+        log.debug("Connecting to server with username [{}]", sap.getUsername(i));
+        Session jschSession = jsch.getSession(sap.getUsername(i), sap.getUrl(i));
+        jschSession.setPassword(sap.getPassword(i));
 
         jsch.setKnownHosts(sshKnownHostsPath);
 
