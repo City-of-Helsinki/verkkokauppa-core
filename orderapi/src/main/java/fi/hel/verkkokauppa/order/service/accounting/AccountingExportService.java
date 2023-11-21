@@ -1,9 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
-import com.jcraft.jsch.*;
 import fi.hel.verkkokauppa.common.configuration.SAP;
-import fi.hel.verkkokauppa.common.error.CommonApiException;
-import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingSlipDto;
@@ -17,13 +14,8 @@ import fi.hel.verkkokauppa.common.util.ServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +29,6 @@ public class AccountingExportService {
 
     private Logger log = LoggerFactory.getLogger(AccountingExportService.class);
 
-    @Value("${spring.profiles.active:}")
-    private String activeProfile;
-
-    @Value("${ssh.knowhosts.path}")
-    private String sshKnownHostsPath;
-
     @Autowired
     private AccountingExportDataRepository exportDataRepository;
 
@@ -53,7 +39,7 @@ public class AccountingExportService {
     private AccountingExportDataService accountingExportDataService;
 
     @Autowired
-    private SAP sap;
+    private FileExportService fileExportService;
 
     public void exportAccountingData(AccountingExportDataDto exportData) {
         String accountingSlipId = exportData.getAccountingSlipId();
@@ -63,7 +49,7 @@ public class AccountingExportService {
         String senderId = accountingSlipDto.getSenderId();
         String filename = constructAccountingExportFileName(senderId, exportData.getTimestamp());
 
-        export(SAP.Interface.ACCOUNTING, exportData.getXml(), filename);
+        fileExportService.export(SAP.Interface.ACCOUNTING, exportData.getXml(), filename);
 
         markAsExported(exportData);
     }
@@ -77,79 +63,6 @@ public class AccountingExportService {
         String runningNumberFormatted = String.format("%1$" + RUNNING_NUMBER_LENGTH + "s", runningNumber).replace(' ', '0');
 
         return "KP_IN_" + senderId + "_" + runningNumberFormatted + ".xml";
-    }
-
-    public void export(SAP.Interface i, String fileContent, String filename) {
-        if (sap.getUrl(i) == null || sap.getUrl(i).isEmpty()) {
-            log.debug("Not exporting file, server url not set");
-            return;
-        }
-
-        ChannelSftp channelSftp = ConnectToChannelSftp(i);
-
-        byte[] strToBytes = fileContent.getBytes();
-
-        try (InputStream stream = new ByteArrayInputStream(strToBytes)) {
-            if (isLocal()) {
-                // Local development moves files under share folder, normally it moves to home dir.
-                filename = "share/" + filename;
-            }
-            channelSftp.put(stream, filename);
-            channelSftp.disconnect();
-
-            log.info("Exported file [" + filename + "] succesfully");
-        } catch (SftpException | IOException e) {
-            log.debug(e.getLocalizedMessage());
-            log.debug("Failed to export accounting data");
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("export-accounting-data-failed", "Failed to export accounting data. Transfer failed")
-            );
-        }
-
-    }
-
-    private ChannelSftp ConnectToChannelSftp(SAP.Interface i) {
-        try {
-            ChannelSftp channelSftp = setupJsch(i);
-            channelSftp.connect();
-            log.info("Connected to the sftp channel succesfully");
-
-            return channelSftp;
-        } catch (JSchException e) {
-            log.debug("Failed to export accounting data. Connection to server failed", e);
-            throw new CommonApiException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("export-accounting-data-server-connection-failed",
-                            "Failed to export accounting data. Connection to server failed")
-            );
-        }
-    }
-
-    private ChannelSftp setupJsch(SAP.Interface i) throws JSchException {
-        JSch jsch = new JSch();
-
-        log.debug("Connecting to server with username [{}]", sap.getUsername(i));
-        Session jschSession = jsch.getSession(sap.getUsername(i), sap.getUrl(i));
-        jschSession.setPassword(sap.getPassword(i));
-
-        jsch.setKnownHosts(sshKnownHostsPath);
-
-        if (isLocal()) {
-            java.util.Properties config = new java.util.Properties();
-            config.put("StrictHostKeyChecking", "no");
-            jschSession.setConfig(config);
-            jschSession.setPort(2222);
-        }
-
-        jschSession.connect();
-        log.info("Connected to the server succesfully");
-
-        return (ChannelSftp) jschSession.openChannel("sftp");
-    }
-
-    public boolean isLocal() {
-        return activeProfile != null && activeProfile.equals("local");
     }
 
     private void markAsExported(AccountingExportDataDto exportData) {

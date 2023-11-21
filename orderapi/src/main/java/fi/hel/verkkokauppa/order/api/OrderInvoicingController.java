@@ -7,7 +7,7 @@ import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
-import fi.hel.verkkokauppa.order.service.accounting.AccountingExportService;
+import fi.hel.verkkokauppa.order.service.accounting.FileExportService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoicingExportService;
 import fi.hel.verkkokauppa.order.service.invoice.OrderItemInvoicingService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
@@ -44,7 +44,7 @@ public class OrderInvoicingController {
     private QueueConfigurations queueConfigurations;
 
     @Autowired
-    private AccountingExportService accountingExportService;
+    private FileExportService fileExportService;
 
     @PostMapping(value = "/order/invoicing/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemInvoicingDto>> createOrderInvoicing(@RequestBody List<OrderItemInvoicingDto> dtos) {
@@ -67,7 +67,7 @@ public class OrderInvoicingController {
             SalesOrderContainer salesOrderContainer = invoicingExportService.generateSalesOrderContainer(orderItemInvoicings);
             String xml = invoicingExportService.salesOrderContainerToXml(salesOrderContainer);
             log.info(xml);
-            accountingExportService.export(SAP.Interface.INVOICING, xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
+            fileExportService.export(SAP.Interface.INVOICING, xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
             invoicingExportService.copyExportedDataToOrderItems(salesOrderContainer);
             orderItemInvoicingService.markInvoicingsInvoiced(orderItemInvoicings);
             return ResponseEntity.ok().build();
