@@ -34,4 +34,12 @@ public class MockProductController {
         return mockProductsTV.get(productId);
     }
 
+    @GetMapping("/mockproductmanagement/linkedRegistration/get")
+    public MockProduct getMockProductLR(@RequestParam(value = "productId") String productId) {
+        if (productId.equals("1234")) {
+            return new MockProduct("1234", "linked registration tuote 1", "kuvaus", "linked_registration");
+        }
+        return null;
+    }
+
 }
