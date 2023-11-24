@@ -71,11 +71,24 @@ public class OrderNotificationsQueueListener {
     }
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
-        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+        Exception orderWebhookException = null;
+        try {
+            restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+        } catch (Exception e)
+        {
+            // catch exception and try to renew order even if subscription order created webhook call fails
+            orderWebhookException = e;
+        }
         String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
                 paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
                 paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
         callApi(message, url);
+
+        if ( orderWebhookException != null ){
+            log.info("Rethrowing subscription renewal order created webhook call exception");
+            throw orderWebhookException;
+        }
+
     }
 
     private void callApi(OrderMessage message, String url) throws Exception {
