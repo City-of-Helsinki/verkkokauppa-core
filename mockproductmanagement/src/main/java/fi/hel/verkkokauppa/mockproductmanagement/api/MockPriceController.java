@@ -34,6 +34,14 @@ public class MockPriceController {
         return mockPricesTV.get(productId);
     }
 
+    @GetMapping("/mockprice/linkedRegistration/get")
+    public MockPrice getMockPriceLR(@RequestParam(value = "productId") String productId) {
+        if (productId.equals("1234")) {
+            return new MockPrice("111", "linked_registration", "1234", "100", "24", "24", "124");
+        }
+        return null;
+    }
+
     @PostMapping("/mockprice/**/subscription/post")
     public MockSubscriptionPriceResponse getMockPriceSubscription(@RequestBody MockSubscriptionPriceRequest request) {
         MockSubscriptionPriceResponse response = new MockSubscriptionPriceResponse();
