@@ -11,7 +11,11 @@ import org.springframework.context.annotation.ComponentScan;
 		JmsAutoConfiguration.class,
 		ActiveMQAutoConfiguration.class,
 })
-@ComponentScan({"fi.hel.verkkokauppa.mockproductmanagement", "fi.hel.verkkokauppa.backend"})
+@ComponentScan({
+		"fi.hel.verkkokauppa.mockproductmanagement",
+		"fi.hel.verkkokauppa.backend",
+		"fi.hel.verkkokauppa.common.sentry"
+})
 public class MockproductmanagementApplication {
 
 	public static void main(String[] args) {
