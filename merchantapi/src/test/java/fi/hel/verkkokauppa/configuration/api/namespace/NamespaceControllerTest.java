@@ -135,14 +135,20 @@ public class NamespaceControllerTest {
     public void namespaceGetKeys() {
         ResponseEntity<List<String>> responseNamespaceKeys = namespaceController.getKeys();
         List<String> allKeys = new ArrayList<>(new ArrayList<>() {{
+            add("merchantOrderWebhookUrl");
+            add("merchantPaymentWebhookUrl");
+            add("merchantRefundWebhookUrl");
+            add("merchantSubscriptionWebhookUrl");
             add("merchantTermsOfServiceUrl");
+            add("orderCancelRedirectUrl");
+            add("orderPaymentFailedRedirectUrl");
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
+            add("orderSuccessRedirectUrl");
+            add("refundSuccessRedirectUrl");
+            add("sendMerchantTermsOfService");
             add("subscriptionPriceUrl");
-            add("merchantPaymentWebhookUrl");
-            add("merchantOrderWebhookUrl");
-            add("merchantSubscriptionWebhookUrl");
-            add("namespaceApiAccessToken");
+            add("subscriptionResolveProductUrl");
         }});
         Assertions.assertEquals(allKeys, responseNamespaceKeys.getBody());
     }

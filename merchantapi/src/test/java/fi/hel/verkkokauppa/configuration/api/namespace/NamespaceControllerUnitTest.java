@@ -100,7 +100,8 @@ public class NamespaceControllerUnitTest {
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
             add("orderSuccessRedirectUrl");
-            add("refundSuccessRedirectUrl");    
+            add("refundSuccessRedirectUrl");
+            add("sendMerchantTermsOfService");
             add("subscriptionPriceUrl");
             add("subscriptionResolveProductUrl");
         }});
