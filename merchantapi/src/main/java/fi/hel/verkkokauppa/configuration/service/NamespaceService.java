@@ -204,6 +204,7 @@ public class NamespaceService {
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/terms_of_use", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/price", false),
@@ -222,6 +223,7 @@ public class NamespaceService {
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/terms_of_use", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
             // Webhooks
