@@ -5,7 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan({"fi.hel.verkkokauppa.price", "fi.hel.verkkokauppa.common"})
+@ComponentScan({
+		"fi.hel.verkkokauppa.price",
+		"fi.hel.verkkokauppa.common",
+		"fi.hel.verkkokauppa.common.sentry"
+})
 public class PriceApplication {
 
 	public static void main(String[] args) {

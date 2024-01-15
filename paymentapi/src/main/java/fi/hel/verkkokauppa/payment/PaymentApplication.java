@@ -18,6 +18,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 		"fi.hel.verkkokauppa.common.rest",
 		"fi.hel.verkkokauppa.common.configuration",
 		"fi.hel.verkkokauppa.common.queue",
+		"fi.hel.verkkokauppa.common.sentry"
 })
 public class PaymentApplication {
 
