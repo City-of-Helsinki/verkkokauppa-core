@@ -237,13 +237,14 @@ public class OnlinePaymentService {
         return payablePayment;
     }
 
-    private Payment selectPaidPayment(List<Payment> payments) {
-        if (payments != null)
+    public Payment selectPaidPayment(List<Payment> payments) {
+        if (payments != null){
             for (Payment payment : payments) {
-                if (payment.getStatus() == PaymentStatus.PAID_ONLINE || payment.getStatus().equals(PaymentStatus.INVOICE))
+                if (Objects.equals(payment.getStatus(), PaymentStatus.PAID_ONLINE) || payment.getStatus().equals(PaymentStatus.INVOICE)){
                     return payment;
+                }
             }
-
+        }
         return null;
     }
 
