@@ -650,8 +650,6 @@ class OrderServiceTest extends TestUtils {
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
 
-        order.setLastValidPurchaseDateTime(LocalDateTime.now().plusMinutes(60));
-
         orderRepository.save(order);
     }
 

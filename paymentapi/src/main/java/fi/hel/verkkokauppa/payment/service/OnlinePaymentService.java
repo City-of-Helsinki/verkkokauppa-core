@@ -224,7 +224,7 @@ public class OnlinePaymentService {
         if (payments != null)
             for (Payment payment : payments) {
                 // in an unpayable state
-                if (payment.getStatus() == PaymentStatus.PAID_ONLINE || payment.getStatus() == PaymentStatus.CANCELLED || payment.getStatus().equals(PaymentStatus.INVOICE))
+                if (Objects.equals(payment.getStatus(), PaymentStatus.PAID_ONLINE) || Objects.equals(payment.getStatus(), PaymentStatus.CANCELLED) || payment.getStatus().equals(PaymentStatus.INVOICE))
                     continue;
 
                 // an earlier selected payment is newer
