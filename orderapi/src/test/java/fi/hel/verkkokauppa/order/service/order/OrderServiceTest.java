@@ -649,6 +649,7 @@ class OrderServiceTest extends TestUtils {
         order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
         orderRepository.save(order);
     }
 
