@@ -51,8 +51,7 @@ public class AccountingSlipServiceTests extends DummyData {
 
         List<OrderAccounting> orderAccountings = generateDummyOrderAccountingList();
 
-        when(mockOrderAccountingService.getOrderAccountings(orderIds)).thenReturn(orderAccountings);
-        Map<LocalDate, List<String>> result = accountingSlipService.groupOrderAccountingsByDate(orders);
+        Map<LocalDate, List<String>> result = accountingSlipService.groupOrderAccountingsByDate(orderAccountings);
 
         assertFalse(result.isEmpty());
 
