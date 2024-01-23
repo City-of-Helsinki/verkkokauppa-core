@@ -70,9 +70,9 @@ public class RefundItemAccountingDto {
         this.refundItemId = refundItem.getRefundItemId();
         this.refundId = refundItem.getRefundId();
         this.orderId = refundItem.getOrderId();
-        this.priceGross = refundItem.getPriceGross();
-        this.priceNet = refundItem.getPriceNet();
-        this.priceVat = refundItem.getPriceVat();
+        this.priceGross = refundItem.getRowPriceTotal();
+        this.priceNet = refundItem.getRowPriceNet();
+        this.priceVat = refundItem.getRowPriceVat();
         this.companyCode = productAccountingDto.getCompanyCode();
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();
