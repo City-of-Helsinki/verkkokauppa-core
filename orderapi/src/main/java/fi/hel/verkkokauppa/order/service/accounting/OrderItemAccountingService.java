@@ -50,9 +50,9 @@ public class OrderItemAccountingService {
 
                 if (productId.equalsIgnoreCase(orderItemProductId)) {
                     String orderItemId = orderItem.getOrderItemId();
-                    String priceGross = orderItem.getPriceGross();
-                    String priceNet = orderItem.getPriceNet();
-                    String priceVat = orderItem.getPriceVat();
+                    String priceGross = orderItem.getRowPriceTotal();
+                    String priceNet = orderItem.getRowPriceNet();
+                    String priceVat = orderItem.getRowPriceVat();
                     OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
                             priceNet, priceVat, productAccountingDto);
 
