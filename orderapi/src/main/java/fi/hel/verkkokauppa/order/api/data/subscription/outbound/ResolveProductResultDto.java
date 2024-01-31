@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.subscription.outbound;
 
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import lombok.Data;
 
 @Data
@@ -10,4 +11,6 @@ public class ResolveProductResultDto {
     private String productName;
     private String productLabel;
     private String productDescription;
+    private OrderItemMetaDto[] orderItemMetas;
+
 }

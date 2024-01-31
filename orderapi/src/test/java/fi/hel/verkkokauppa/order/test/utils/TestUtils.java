@@ -34,6 +34,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -41,6 +42,8 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -321,5 +324,45 @@ public class TestUtils extends DummyData {
         );
         log.info(jsonResponse.toString());
         return jsonResponse;
+    }
+
+    protected ResponseEntity<JSONObject> createResolveProductResponse ()
+    {
+        JSONObject ResolveProductMetaDto1 = new JSONObject();
+        ResolveProductMetaDto1.put("key", "key1");
+        ResolveProductMetaDto1.put("value", "value1");
+        ResolveProductMetaDto1.put("label", "label1");
+        ResolveProductMetaDto1.put("visibleInCheckout", "true");
+        ResolveProductMetaDto1.put("ordinal", "2");
+        JSONObject ResolveProductMetaDto2 = new JSONObject();
+        ResolveProductMetaDto2.put("key", "key2");
+        ResolveProductMetaDto2.put("value", "value2");
+        ResolveProductMetaDto2.put("label", "label2");
+        ResolveProductMetaDto2.put("visibleInCheckout", "true");
+        ResolveProductMetaDto2.put("ordinal", "1");
+        Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
+        orderItemMetas.add(ResolveProductMetaDto1);
+        orderItemMetas.add(ResolveProductMetaDto2);
+        JSONObject ResolveProductResultDto = new JSONObject();
+        ResolveProductResultDto.put("subscriptionId","dummyProductId");
+        ResolveProductResultDto.put("userId","userId");
+        ResolveProductResultDto.put("productId","newProductId");
+        ResolveProductResultDto.put("productName","newProductName");
+        ResolveProductResultDto.put("productLabel","newProductLabel");
+        ResolveProductResultDto.put("productDescription","newProductDescription");
+        ResolveProductResultDto.put("orderItemMetas",orderItemMetas);
+
+        return new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
+    }
+
+    protected ResponseEntity<JSONObject> createResolvePriceResponse()
+    {
+        JSONObject ResolvePriceResultDto = new JSONObject();
+        ResolvePriceResultDto.put("subscriptionId","dummyProductId");
+        ResolvePriceResultDto.put("userId","userId");
+        ResolvePriceResultDto.put("priceNet","8");
+        ResolvePriceResultDto.put("priceVat","2");
+        ResolvePriceResultDto.put("priceGross","10");
+        return new ResponseEntity<>( ResolvePriceResultDto, HttpStatus.OK);
     }
 }

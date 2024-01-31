@@ -10,8 +10,12 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -59,6 +63,11 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private OrderItemMetaRepository orderItemMetaRepository;
     @Autowired
     private SubscriptionService subscriptionService;
 
@@ -159,22 +168,9 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
         productMapping.put("merchantId","merchantId");
         when(restServiceClientMock.makeGetCall(any())).thenReturn(productMapping);
 
-        JSONObject ResolveProductResultDto = new JSONObject();
-        ResolveProductResultDto.put("subscriptionId","dummyProductId");
-        ResolveProductResultDto.put("userId","userId");
-        ResolveProductResultDto.put("productId","newProductId");
-        ResolveProductResultDto.put("productName","newProductName");
-        ResolveProductResultDto.put("productLabel","newProductLabel");
-        ResolveProductResultDto.put("productDescription","newProductDescription");
-        ResponseEntity<JSONObject> resolveProductResponse = new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
+        ResponseEntity<JSONObject> resolveProductResponse = createResolveProductResponse();
 
-        JSONObject ResolvePriceResultDto = new JSONObject();
-        ResolvePriceResultDto.put("subscriptionId","dummyProductId");
-        ResolvePriceResultDto.put("userId","userId");
-        ResolvePriceResultDto.put("priceNet","8");
-        ResolvePriceResultDto.put("priceVat","2");
-        ResolvePriceResultDto.put("priceGross","10");
-        ResponseEntity<JSONObject> resolvePriceResponse = new ResponseEntity<>( ResolvePriceResultDto, HttpStatus.OK);
+        ResponseEntity<JSONObject> resolvePriceResponse = createResolvePriceResponse();
 
         when(restServiceClientMock.postCall(any(), any(), any())).thenReturn(resolveProductResponse).thenReturn(resolvePriceResponse);
 
@@ -199,5 +195,28 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
         Assert.assertNotEquals(subscription.getPriceNet(), updatedSubscription.getPriceNet());
         Assert.assertNotEquals(subscription.getPriceGross(), updatedSubscription.getPriceGross());
 
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        Assert.assertNotNull(orderItems);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
+
+        for(int i=0; i < orderItemMetas.size(); i++)
+        {
+            OrderItemMeta itemMeta = orderItemMetas.get(i);
+            if( itemMeta.getLabel().equals("label1") ){
+                Assert.assertEquals(itemMeta.getKey(), "key1");
+                Assert.assertEquals(itemMeta.getLabel(), "label1");
+                Assert.assertEquals(itemMeta.getOrdinal(), "2");
+                Assert.assertEquals(itemMeta.getValue(), "value1");
+                Assert.assertEquals(itemMeta.getVisibleInCheckout(), "true");
+            }
+            else {
+                Assert.assertEquals(itemMeta.getKey(), "key2");
+                Assert.assertEquals(itemMeta.getLabel(), "label2");
+                Assert.assertEquals(itemMeta.getOrdinal(), "1");
+                Assert.assertEquals(itemMeta.getValue(), "value2");
+                Assert.assertEquals(itemMeta.getVisibleInCheckout(), "true");
+            }
+
+        }
     }
 }

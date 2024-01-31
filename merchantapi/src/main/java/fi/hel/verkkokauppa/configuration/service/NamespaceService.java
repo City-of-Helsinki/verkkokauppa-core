@@ -226,6 +226,8 @@ public class NamespaceService {
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/venepaikat/subscription/price", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, mockbackendurl+"/mock/venepaikat/subscription/product", false),
             // Webhooks
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false),
