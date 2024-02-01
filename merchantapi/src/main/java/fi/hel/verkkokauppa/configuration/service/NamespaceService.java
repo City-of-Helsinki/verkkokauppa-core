@@ -207,7 +207,7 @@ public class NamespaceService {
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/asukaspysakointi/order/right-of-purchase", false),
-            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/price", false),
+            constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mockprice/asukaspysakointi/subscription/post", false),
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, mockbackendurl+"/mock/asukaspysakointi/subscription/product", false),
             // Webhooks
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook", false),
@@ -226,7 +226,7 @@ public class NamespaceService {
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/venepaikat/order/right-of-purchase", false),
-            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mock/venepaikat/subscription/price", false),
+            constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl+"/mockprice/venepaikat/subscription/post", false),
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, mockbackendurl+"/mock/venepaikat/subscription/product", false),
             // Webhooks
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),

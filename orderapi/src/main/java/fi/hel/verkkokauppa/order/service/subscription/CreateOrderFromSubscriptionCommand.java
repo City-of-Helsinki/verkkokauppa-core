@@ -166,7 +166,7 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-product", "failed to update subscription product information from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-price", "failed to update subscription price from merchant"));
         }
 
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
