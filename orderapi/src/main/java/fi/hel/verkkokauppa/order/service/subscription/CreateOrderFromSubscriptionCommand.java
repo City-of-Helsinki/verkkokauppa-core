@@ -95,6 +95,7 @@ public class CreateOrderFromSubscriptionCommand {
     private ServiceUrls serviceUrls;
 
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
+        List<OrderItemMetaDto> orderItemMetas = new ArrayList<>();
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
 
@@ -118,7 +119,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         try {
             // Resolve product
-            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription, orderItemMetas);
 
             boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
             // Returns null orderId if subscription right of purchase is false.
@@ -145,7 +146,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         String orderId = order.getOrderId();
         String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
-        copyOrderItemMetaFieldsFromSubscription(subscriptionDto, orderId, orderItemId);
+        copyOrderItemMetaFieldsForSubscriptionOrderItem(orderId, orderItemId, orderItemMetas);
 
         orderService.confirm(order);
         orderRepository.save(order);
@@ -165,7 +166,7 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-product", "failed to update subscription product information from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-price", "failed to update subscription price from merchant"));
         }
 
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
@@ -226,9 +227,15 @@ public class CreateOrderFromSubscriptionCommand {
         return subscription;
     }
 
-    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) throws Exception {
+    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription, List<OrderItemMetaDto> returnOrderItemMetas) throws Exception {
 
         String merchantId;
+
+        if (returnOrderItemMetas == null){
+            log.error("Output parameter returnOrderItemMetas was uninitialized");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("output-parameter-uninitialized", "Output parameter returnOrderItemMetas was uninitialized"));
+        }
+
         try {
             log.info("Fetching product-mapping for subscriptionId:" + subscriptionId + " and productId: " + subscriptionDto.getProductId());
             JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + subscriptionDto.getProductId());
@@ -236,7 +243,7 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-prices", "failed to update subscription prices from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-product-information", "failed to update product information from merchant"));
         }
 
         ResolveProductRequest request = new ResolveProductRequest();
@@ -285,6 +292,12 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.setProductName(subscription.getProductName());
             subscriptionDto.setProductLabel(subscription.getProductLabel());
             subscriptionDto.setProductDescription(subscription.getProductDescription());
+
+            // return new orderItemMetas
+            OrderItemMetaDto[] metaArray = resultDto.getOrderItemMetas();
+            for( int i = 0; i< metaArray.length; i++ ){
+                returnOrderItemMetas.add(metaArray[i]);
+            }
 
         } catch (Exception e) {
             log.error("Error/Resolve product failed with subscription request:{}", request, e);
@@ -411,10 +424,9 @@ public class CreateOrderFromSubscriptionCommand {
 
     }
 
-    private void copyOrderItemMetaFieldsFromSubscription(SubscriptionDto subscriptionDto, String orderId, String orderItemId) {
-        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
-        if (!subscriptionMeta.isEmpty()) {
-            subscriptionMeta.forEach(meta -> {
+    private void copyOrderItemMetaFieldsForSubscriptionOrderItem(String orderId, String orderItemId, List<OrderItemMetaDto> orderItemMetas) {
+        if (!orderItemMetas.isEmpty()) {
+            orderItemMetas.forEach(meta -> {
                 OrderItemMetaDto orderItemMeta = new OrderItemMetaDto(
                         null,
                         orderItemId,
