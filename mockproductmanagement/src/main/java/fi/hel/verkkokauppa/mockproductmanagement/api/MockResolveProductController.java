@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.mockproductmanagement.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.response.OrderRightOfPurchaseResponse;
+import fi.hel.verkkokauppa.mockproductmanagement.api.subscription.request.MockResolveProductRequest;
 import fi.hel.verkkokauppa.mockproductmanagement.api.subscription.response.MockResolveProductResultDto;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -24,23 +25,9 @@ public class MockResolveProductController {
     @Autowired
     private ObjectMapper objectMapper;
     @PostMapping("mock/*/subscription/product")
-    public ResponseEntity<MockResolveProductResultDto> getOrderRightOfPurchase(@RequestBody String data) {
+    public ResponseEntity<MockResolveProductResultDto> getMockedResolveProduct(@RequestBody MockResolveProductRequest data) {
+        log.info("getMockedResolveProduct received request: " + data.toString());
         try {
-            JSONObject ResolveProductMetaDto1 = new JSONObject();
-            ResolveProductMetaDto1.put("key", "key1");
-            ResolveProductMetaDto1.put("value", "Value1");
-            ResolveProductMetaDto1.put("label", "label1");
-            ResolveProductMetaDto1.put("visibleInCheckout", "true");
-            ResolveProductMetaDto1.put("ordinal", "2");
-            JSONObject ResolveProductMetaDto2 = new JSONObject();
-            ResolveProductMetaDto2.put("key", "key2");
-            ResolveProductMetaDto2.put("value", "Value2");
-            ResolveProductMetaDto2.put("label", "label2");
-            ResolveProductMetaDto2.put("visibleInCheckout", "true");
-            ResolveProductMetaDto2.put("ordinal", "1");
-            Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
-            orderItemMetas.add(ResolveProductMetaDto1);
-            orderItemMetas.add(ResolveProductMetaDto2);
             JSONObject resolveProductResultDto = new JSONObject();
             resolveProductResultDto.put("subscriptionId","dummyProductId");
             resolveProductResultDto.put("userId","userId");
@@ -48,7 +35,26 @@ public class MockResolveProductController {
             resolveProductResultDto.put("productName","newProductName");
             resolveProductResultDto.put("productLabel","newProductLabel");
             resolveProductResultDto.put("productDescription","newProductDescription");
-            resolveProductResultDto.put("orderItemMetas",orderItemMetas);
+
+            if( !data.getOrderItem().getMeta().isEmpty() )
+            {
+                JSONObject ResolveProductMetaDto1 = new JSONObject();
+                ResolveProductMetaDto1.put("key", "key1");
+                ResolveProductMetaDto1.put("value", "Value1");
+                ResolveProductMetaDto1.put("label", "label1");
+                ResolveProductMetaDto1.put("visibleInCheckout", "true");
+                ResolveProductMetaDto1.put("ordinal", "2");
+                JSONObject ResolveProductMetaDto2 = new JSONObject();
+                ResolveProductMetaDto2.put("key", "key2");
+                ResolveProductMetaDto2.put("value", "Value2");
+                ResolveProductMetaDto2.put("label", "label2");
+                ResolveProductMetaDto2.put("visibleInCheckout", "true");
+                ResolveProductMetaDto2.put("ordinal", "1");
+                Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
+                orderItemMetas.add(ResolveProductMetaDto1);
+                orderItemMetas.add(ResolveProductMetaDto2);
+                resolveProductResultDto.put("orderItemMetas",orderItemMetas);
+            }
 
             return ResponseEntity.ok().body(objectMapper.readValue(Objects.requireNonNull(resolveProductResultDto.toString()), MockResolveProductResultDto.class));
         } catch (Exception e) {

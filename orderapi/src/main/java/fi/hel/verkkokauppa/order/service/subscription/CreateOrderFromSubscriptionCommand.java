@@ -295,8 +295,10 @@ public class CreateOrderFromSubscriptionCommand {
 
             // return new orderItemMetas
             OrderItemMetaDto[] metaArray = resultDto.getOrderItemMetas();
-            for( int i = 0; i< metaArray.length; i++ ){
-                returnOrderItemMetas.add(metaArray[i]);
+            if( metaArray != null ) {
+                for (OrderItemMetaDto orderItemMeta : metaArray) {
+                    returnOrderItemMetas.add(orderItemMeta);
+                }
             }
 
         } catch (Exception e) {
