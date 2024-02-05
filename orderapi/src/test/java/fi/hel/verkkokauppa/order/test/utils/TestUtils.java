@@ -130,6 +130,9 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true);
+    }
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas) {
         Order order = generateDummyOrder();
 
         order.setEndDate(LocalDateTime.now().plusMonths(1));
@@ -147,7 +150,14 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setPriceVat("0");
         orderItems.get(0).setProductId("b86337e8-68a0-3599-a18b-754ffae53f5a"); // use id created by initializeTestData
         orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
-        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+        List<OrderItemMeta> orderItemMetas;
+        if( includeMetas == true ) {
+            orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+        }
+        else
+        {
+            orderItemMetas = new ArrayList<>();
+        }
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
                 .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
@@ -326,23 +336,11 @@ public class TestUtils extends DummyData {
         return jsonResponse;
     }
 
-    protected ResponseEntity<JSONObject> createResolveProductResponse ()
+    protected ResponseEntity<JSONObject> createResolveProductResponse (){
+        return createResolveProductResponse(true);
+    }
+    protected ResponseEntity<JSONObject> createResolveProductResponse (boolean includeMeta)
     {
-        JSONObject ResolveProductMetaDto1 = new JSONObject();
-        ResolveProductMetaDto1.put("key", "key1");
-        ResolveProductMetaDto1.put("value", "value1");
-        ResolveProductMetaDto1.put("label", "label1");
-        ResolveProductMetaDto1.put("visibleInCheckout", "true");
-        ResolveProductMetaDto1.put("ordinal", "2");
-        JSONObject ResolveProductMetaDto2 = new JSONObject();
-        ResolveProductMetaDto2.put("key", "key2");
-        ResolveProductMetaDto2.put("value", "value2");
-        ResolveProductMetaDto2.put("label", "label2");
-        ResolveProductMetaDto2.put("visibleInCheckout", "true");
-        ResolveProductMetaDto2.put("ordinal", "1");
-        Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
-        orderItemMetas.add(ResolveProductMetaDto1);
-        orderItemMetas.add(ResolveProductMetaDto2);
         JSONObject ResolveProductResultDto = new JSONObject();
         ResolveProductResultDto.put("subscriptionId","dummyProductId");
         ResolveProductResultDto.put("userId","userId");
@@ -350,7 +348,25 @@ public class TestUtils extends DummyData {
         ResolveProductResultDto.put("productName","newProductName");
         ResolveProductResultDto.put("productLabel","newProductLabel");
         ResolveProductResultDto.put("productDescription","newProductDescription");
-        ResolveProductResultDto.put("orderItemMetas",orderItemMetas);
+
+        if( includeMeta ) {
+            JSONObject ResolveProductMetaDto1 = new JSONObject();
+            ResolveProductMetaDto1.put("key", "key1");
+            ResolveProductMetaDto1.put("value", "value1");
+            ResolveProductMetaDto1.put("label", "label1");
+            ResolveProductMetaDto1.put("visibleInCheckout", "true");
+            ResolveProductMetaDto1.put("ordinal", "2");
+            JSONObject ResolveProductMetaDto2 = new JSONObject();
+            ResolveProductMetaDto2.put("key", "key2");
+            ResolveProductMetaDto2.put("value", "value2");
+            ResolveProductMetaDto2.put("label", "label2");
+            ResolveProductMetaDto2.put("visibleInCheckout", "true");
+            ResolveProductMetaDto2.put("ordinal", "1");
+            Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
+            orderItemMetas.add(ResolveProductMetaDto1);
+            orderItemMetas.add(ResolveProductMetaDto2);
+            ResolveProductResultDto.put("orderItemMetas", orderItemMetas);
+        }
 
         return new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
     }

@@ -143,4 +143,48 @@ class SubscriptionServiceTest extends TestUtils {
 
     }
 
+    @Test
+    @RunIfProfile(profile = "local")
+    void createFromSubscriptionWithoutOrderItemMetas() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2, false);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
+
+        if (order.isPresent() && subscription.isPresent()) {
+            foundOrder = order.get();
+            foundSubscription = subscription.get();
+            PaymentMessage paymentMessage = new PaymentMessage();
+            paymentMessage.setPaymentPaidTimestamp(DateTimeUtil.getDateTime());
+
+            orderService.setOrderStartAndEndDate(foundOrder, foundSubscription, paymentMessage);
+            // set subscription end date into past
+            foundSubscription.setEndDate(LocalDateTime.now().minusDays(10));
+            subscriptionRepository.save(foundSubscription);
+
+            SubscriptionDto subscriptionDto = getSubscriptionQuery.mapToDto(foundSubscription);
+            String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            Assertions.assertEquals(foundOrder.getOrderId(), orderId);
+
+            subscriptionService.setSubscriptionEndDateFromOrder(foundOrder, foundSubscription);
+            Assertions.assertEquals(foundSubscription.getEndDate(), foundOrder.getEndDate());
+
+            // creates new order because existing order has same end date as subscription
+            String orderId2 = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+
+            Optional<Order> order2 = orderRepository.findById(Objects.requireNonNull(orderId2));
+            Assertions.assertTrue(order2.isPresent());
+            Assertions.assertNotEquals(orderId, orderId2);
+            foundOrder = order2.get();
+            LocalDateTime datetime = foundSubscription.getEndDate();
+            datetime = datetime.plus(1, ChronoUnit.DAYS);
+            datetime = datetime.with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
+            Assertions.assertEquals(datetime, foundOrder.getStartDate());
+            datetime = datetime.plus(1, ChronoUnit.DAYS);
+            Assertions.assertEquals(datetime, foundOrder.getEndDate());
+
+        }
+
+    }
+
 }
