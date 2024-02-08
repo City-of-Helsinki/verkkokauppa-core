@@ -30,6 +30,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderPaymentMethodService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -416,7 +417,11 @@ public class OrderController {
             // a single order which has subscription id means subscription renewal
             if (order != null && StringUtils.isNotEmpty(order.getSubscriptionId())) {
                 log.debug("payment-failed-event callback, subscription renewal payment has failed, subscriptionId: " + order.getSubscriptionId());
-                // TODO subscription renewal order payment failed callback action
+                try {
+                    JSONObject result = subscriptionService.sendSubscriptionPaymentFailedEmail(order.getSubscriptionId());
+                } catch (Exception e) {
+                    log.error("Error sending paymentFailedEmail for subscription {}", order.getSubscriptionId(), e);
+                }
             } else {
                 log.debug("payment-failed-event callback, order payment has failed, orderId: " + order.getOrderId());
                 // TODO single order payment failed callback action
