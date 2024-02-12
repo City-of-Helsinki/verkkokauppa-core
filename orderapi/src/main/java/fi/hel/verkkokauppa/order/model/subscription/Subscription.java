@@ -130,8 +130,8 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	private Integer validationFailedEmailSentCount;
 
 	// date when validationFailedEmail was last sent
-	@Field(type = FieldType.Text)
-	private String validationEmailSentDate;
+	@Field(type = FieldType.Date, format = DateFormat.date)
+	private LocalDate validationEmailSentDate;
 
 	@Field(type = FieldType.Text)
 	String unit;

@@ -316,7 +316,7 @@ public class SubscriptionService {
     public JSONObject sendSubscriptionPaymentFailedEmail(String subscriptionId) {
         // send email if it has not been sent Today already
         Subscription subscription = findById(subscriptionId);
-        if(subscription.getValidationEmailSentDate() == null || !subscription.getValidationEmailSentDate().equals(DateTimeUtil.getDate().toString())) {
+        if(subscription.getValidationEmailSentDate() == null || !subscription.getValidationEmailSentDate().equals(DateTimeUtil.getFormattedDateTime().toLocalDate())) {
             log.info("Send new validation failed email for subscription: " + subscriptionId);
             return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscriptionId + "/emailSubscriptionPaymentFailed", "");
         }
@@ -330,7 +330,7 @@ public class SubscriptionService {
         Subscription subscription = subscriptionRepository.findSubscriptionBySubscriptionId(subscriptionId);
         Integer oldSentCount = Optional.ofNullable(subscription.getValidationFailedEmailSentCount()).orElse(0);
         subscription.setValidationFailedEmailSentCount(oldSentCount + 1);
-        subscription.setValidationEmailSentDate(DateTimeUtil.getDate().toString());
+        subscription.setValidationEmailSentDate(DateTimeUtil.getFormattedDateTime().toLocalDate());
         return subscriptionRepository.save(subscription);
     }
 
