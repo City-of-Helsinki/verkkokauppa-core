@@ -100,13 +100,6 @@ public class CreateOrderFromSubscriptionCommand {
 
         String subscriptionId = subscriptionDto.getSubscriptionId();
 
-        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
-
-        if (activeOrderFromSubscription != null) {
-            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
-            return activeOrderFromSubscription;
-        }
-
         Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
 
         // Returns null orderId if subscription card is expired
@@ -130,13 +123,29 @@ public class CreateOrderFromSubscriptionCommand {
 
             // resolve price and update prices
             subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
-        } catch (Exception e){
-            log.error("Subscription renewal failed while updating subscription information.",e);
+        } catch (Exception e) {
+            log.error("Subscription renewal failed while updating subscription information.", e);
             // if resolve product/price fails then do not complete the subscription renewal
             return null;
         }
 
-        Order order = orderService.createByParams(namespace, user);
+        Order order;
+
+        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
+        if (activeOrderFromSubscription != null) {
+            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
+            order = orderService.findById(activeOrderFromSubscription);
+//            return activeOrderFromSubscription;
+        } else {
+            log.info("Creating new order from subscription with subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            order = orderService.createByParams(namespace, user);
+        }
+
+        if (order == null) {
+            log.error("Failed to create order for subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            return null;
+        }
+
         order.setType(OrderType.ORDER);
 
         orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());

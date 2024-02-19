@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.util.ListUtil;
 import fi.hel.verkkokauppa.payment.api.data.*;
 import fi.hel.verkkokauppa.payment.logic.validation.PaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.model.Payment;
@@ -15,11 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class OnlinePaymentController {
@@ -81,10 +76,8 @@ public class OnlinePaymentController {
 		try {
 			String namespace = request.getNamespace();
 
-			PaymentMethodDto[] vismaMethods = paymentMethodService.getOnlinePaymentMethodList(request.getCurrency());
-			PaymentMethodDto[] paytrailMethods = paymentPaytrailService.getOnlinePaymentMethodList(request.getMerchantId(),
-					request.getNamespace(), request.getCurrency());
-			PaymentMethodDto[] allMethods = ListUtil.mergeArrays(PaymentMethodDto.class, vismaMethods, paytrailMethods);
+//			PaymentMethodDto[] vismaMethods = paymentMethodService.getOnlinePaymentMethodList(request.getCurrency());
+			PaymentMethodDto[] allMethods = paymentPaytrailService.getOnlinePaymentMethodList(request.getMerchantId(), request.getNamespace(), request.getCurrency());
 
 			// TODO: check methods are active?
 			// TODO: check if is available and can be used for this request dto.
