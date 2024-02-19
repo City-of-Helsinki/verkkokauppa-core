@@ -183,6 +183,9 @@ class SubscriptionServiceTest extends TestUtils {
             datetime = datetime.plus(1, ChronoUnit.DAYS);
             Assertions.assertEquals(datetime, foundOrder.getEndDate());
 
+            String orderId3 = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            Assertions.assertEquals(orderId2, orderId3);
+
         }
 
     }
