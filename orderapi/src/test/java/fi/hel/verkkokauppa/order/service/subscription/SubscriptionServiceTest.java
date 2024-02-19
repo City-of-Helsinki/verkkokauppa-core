@@ -138,7 +138,6 @@ class SubscriptionServiceTest extends TestUtils {
             Assertions.assertEquals(datetime, foundOrder.getStartDate());
             datetime = datetime.plus(1, ChronoUnit.DAYS);
             Assertions.assertEquals(datetime, foundOrder.getEndDate());
-
         }
 
     }
@@ -182,6 +181,10 @@ class SubscriptionServiceTest extends TestUtils {
             Assertions.assertEquals(datetime, foundOrder.getStartDate());
             datetime = datetime.plus(1, ChronoUnit.DAYS);
             Assertions.assertEquals(datetime, foundOrder.getEndDate());
+
+            // should try to renew same order
+            String orderId3 = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            Assertions.assertEquals(orderId2, orderId3, "Should try to renew same order since process has not run through");
 
         }
 
