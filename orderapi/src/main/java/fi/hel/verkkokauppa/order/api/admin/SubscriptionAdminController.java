@@ -268,6 +268,7 @@ public class SubscriptionAdminController {
                 if (endDate.isBefore(now) && !DateTimeUtil.isSameDay(endDate, now)) {
                     String subscriptionId = subscription.getSubscriptionId();
                     log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
+                    subscription.setStatus(SubscriptionStatus.CANCELLED);
                     cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
                 }
             }
