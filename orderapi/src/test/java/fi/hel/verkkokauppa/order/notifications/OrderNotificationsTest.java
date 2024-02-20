@@ -79,11 +79,11 @@ public class OrderNotificationsTest extends DummyData {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testSendOrderMessageNotificationWithCancelledSubscription() throws Exception {
+    public void testSendOrderMessageNotificationWithSubscriptionStatus() throws Exception {
         Order order = generateDummyOrder();
         Subscription subscription = generateDummySubscription(order);
-//        subscription.setStatus(SubscriptionStatus.CANCELLED);
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        subscription.setStatus(SubscriptionStatus.CANCELLED);
+//        subscription.setStatus(SubscriptionStatus.ACTIVE);
         subscriptionRepository.save(subscription);
 
         OrderMessage.OrderMessageBuilder orderMessageBuilder = OrderMessage.builder()

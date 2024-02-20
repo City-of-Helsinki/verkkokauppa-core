@@ -92,6 +92,9 @@ public class OrderNotificationsQueueListener {
                     paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
             callApi(message, url);
         }
+        else {
+            log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+        }
     }
 
     private void callApi(OrderMessage message, String url) throws Exception {
