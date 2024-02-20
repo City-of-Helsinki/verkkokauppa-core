@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionIdsDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -186,6 +187,33 @@ class SubscriptionServiceTest extends TestUtils {
             String orderId3 = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
             Assertions.assertEquals(orderId2, orderId3, "Should try to renew same order since process has not run through");
 
+        }
+
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createFromCancelledSubscription() {
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2, false);
+        ResponseEntity<SubscriptionIdsDto> subscriptionIds = createSubscriptions(orderResponse);
+        Optional<Order> order = orderRepository.findById(Objects.requireNonNull(orderResponse.getBody()).getOrder().getOrderId());
+        Optional<Subscription> subscription = subscriptionRepository.findById(Objects.requireNonNull(subscriptionIds.getBody().getSubscriptionIds()).iterator().next());
+
+        if (order.isPresent() && subscription.isPresent()) {
+            foundOrder = order.get();
+            foundSubscription = subscription.get();
+            PaymentMessage paymentMessage = new PaymentMessage();
+            paymentMessage.setPaymentPaidTimestamp(DateTimeUtil.getDateTime());
+
+            orderService.setOrderStartAndEndDate(foundOrder, foundSubscription, paymentMessage);
+            // set subscription end date into past
+            foundSubscription.setEndDate(LocalDateTime.now().minusDays(10));
+            foundSubscription.setStatus(SubscriptionStatus.CANCELLED);
+            subscriptionRepository.save(foundSubscription);
+
+            SubscriptionDto subscriptionDto = getSubscriptionQuery.mapToDto(foundSubscription);
+            String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            Assertions.assertNull(orderId, "Should not renew cancelled subscription");
         }
 
     }
