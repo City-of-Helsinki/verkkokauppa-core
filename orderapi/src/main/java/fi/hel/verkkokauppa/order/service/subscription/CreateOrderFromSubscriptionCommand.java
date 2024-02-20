@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
@@ -102,6 +103,12 @@ public class CreateOrderFromSubscriptionCommand {
         String subscriptionId = subscriptionDto.getSubscriptionId();
 
         Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+        // check if subscription is cancelled
+        if(subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED)){
+            log.info("Subscription has been cancelled, not renewing it. SubscriptionId: {}", subscription.getSubscriptionId());
+            return null;
+        }
 
         // Returns null orderId if subscription card is expired
         if (subscriptionService.isCardExpired(subscription)) {
