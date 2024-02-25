@@ -1,16 +1,15 @@
-package fi.hel.verkkokauppa.order.api.data.subscription.outbound;
+package fi.hel.verkkokauppa.mockproductmanagement.api.subscription.response;
 
-import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import lombok.Data;
 
 @Data
-public class ResolveProductResultDto {
+public class MockResolveProductResultDto {
     private String subscriptionId;
     private String userId;
     private String productId;
     private String productName;
     private String productLabel;
     private String productDescription;
-    private OrderItemMetaDto[] orderItemMetas;
+    private MockOrderItemMetaDto[] orderItemMetas;
 
 }

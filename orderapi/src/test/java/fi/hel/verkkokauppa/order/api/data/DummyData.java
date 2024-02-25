@@ -4,6 +4,7 @@ import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
@@ -108,6 +109,21 @@ public abstract class DummyData {
                 null,
                 null
         );
+    }
+
+    public ProductAccountingDto createDummyProductAccountingDto(String productId, String prefix){
+        ProductAccountingDto dto = new ProductAccountingDto();
+        dto.setInternalOrder(prefix + "internalOrder");
+        dto.setMainLedgerAccount(prefix + "mainLedgerAccount");
+        dto.setProject(prefix + "project");
+        dto.setOperationArea(prefix + "operationArea");
+        dto.setVatCode(prefix + "vatCode");
+        dto.setProfitCenter(prefix + "profitCenter");
+        dto.setCompanyCode(prefix + "companyCode");
+        dto.setProductId(productId);
+        dto.setBalanceProfitCenter(prefix + "balanceProfitCenter");
+
+        return dto;
     }
 
     public OrderItemMeta generateDummyOrderItemMeta(OrderItem orderItem,String ordinal) {

@@ -17,7 +17,8 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
         "fi.hel.verkkokauppa.order",
         "fi.hel.verkkokauppa.common.history",
         "fi.hel.verkkokauppa.common.queue",
-        "fi.hel.verkkokauppa.common.id"
+        "fi.hel.verkkokauppa.common.id",
+        "fi.hel.verkkokauppa.common.sentry"
 })
 public class OrderapiApplication {
 

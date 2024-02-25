@@ -314,19 +314,30 @@ public class SubscriptionService {
     }
 
     public JSONObject sendSubscriptionPaymentFailedEmail(String subscriptionId) {
-        return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscriptionId + "/emailSubscriptionPaymentFailed","");
+        // send email if it has not been sent Today already
+        Subscription subscription = findById(subscriptionId);
+        if(subscription.getValidationEmailSentDate() == null || !subscription.getValidationEmailSentDate().equals(DateTimeUtil.getFormattedDateTime().toLocalDate())) {
+            log.info("Send new validation failed email for subscription: " + subscriptionId);
+            return restServiceClient.makeAdminPostCall(orderExperienceUrl + "subscription/" + subscriptionId + "/emailSubscriptionPaymentFailed", "");
+        }
+        else {
+            log.info("Validation failed email has already been sent Today for subscription: " + subscriptionId);
+            return new JSONObject();
+        }
     }
 
     public Subscription incrementValidationFailedEmailSentCount(String subscriptionId) {
         Subscription subscription = subscriptionRepository.findSubscriptionBySubscriptionId(subscriptionId);
         Integer oldSentCount = Optional.ofNullable(subscription.getValidationFailedEmailSentCount()).orElse(0);
         subscription.setValidationFailedEmailSentCount(oldSentCount + 1);
+        subscription.setValidationEmailSentDate(DateTimeUtil.getFormattedDateTime().toLocalDate());
         return subscriptionRepository.save(subscription);
     }
 
     public List<Subscription> findAllByOrderIdAndUser(String orderId, String user){
         return subscriptionRepository.findAllByOrderIdAndUser(orderId, user);
     }
+
 
     public boolean isExpiringCard(LocalDate currentDate, SubscriptionDto subscriptionDto) {
         Short expirationYear = subscriptionDto.getPaymentMethodExpirationYear();

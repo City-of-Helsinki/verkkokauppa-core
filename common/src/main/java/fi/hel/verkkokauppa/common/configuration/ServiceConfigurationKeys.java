@@ -50,6 +50,7 @@ public class ServiceConfigurationKeys {
     public static String SUBSCRIPTION_PRICE_URL = "subscriptionPriceUrl";
     public static String SUBSCRIPTION_RESOLVE_PRODUCT_URL = "subscriptionResolveProductUrl";
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
+    public static String SEND_MERCHANT_TERMS_OF_SERVICE = "sendMerchantTermsOfService";
     public static String ORDER_CANCEL_REDIRECT_URL = "orderCancelRedirectUrl";
     public static String ORDER_SUCCESS_REDIRECT_URL = "orderSuccessRedirectUrl";
     public static String ORDER_PAYMENT_FAILED_REDIRECT_URL = "orderPaymentFailedRedirectUrl";
@@ -156,6 +157,7 @@ public class ServiceConfigurationKeys {
     public static List<String> getOverridableMerchantKeys() {
         return Stream.of(
                 MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
+                SEND_MERCHANT_TERMS_OF_SERVICE,    // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
                 SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
