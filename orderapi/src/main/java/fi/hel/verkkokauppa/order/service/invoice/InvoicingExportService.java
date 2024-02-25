@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.id.IncrementId;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.LineItem;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.Party;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrder;
@@ -15,15 +17,19 @@ import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -34,10 +40,18 @@ public class InvoicingExportService {
 
     final OrderItemRepository orderItemRepository;
 
+    final RestServiceClient restServiceClient;
+    final ServiceUrls serviceUrls;
+
+    @Value("${invoice.notification.email}")
+    String invoicedEmailRecipients;
+
     @Autowired
-    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository) {
+    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository, RestServiceClient restServiceClient, ServiceUrls serviceUrls) {
         this.incrementId = incrementId;
         this.orderItemRepository = orderItemRepository;
+        this.restServiceClient = restServiceClient;
+        this.serviceUrls = serviceUrls;
     }
 
     private Party orderItemInvoicingToParty(OrderItemInvoicing item, boolean isOrderParty) {
@@ -145,5 +159,19 @@ public class InvoicingExportService {
         mapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
         mapper.registerModule(new JavaTimeModule());
         return mapper.writeValueAsString(container);
+    }
+
+    public JSONObject generateInvoicedEmail(SalesOrderContainer salesOrderContainer) {
+        JSONObject json = new JSONObject();
+        json.put("id", UUID.randomUUID().toString());
+        json.put("receiver", invoicedEmailRecipients);
+        json.put("header", "Invoicing xml sent to SAP");
+        String body = String.format("<!DOCTYPE html><html><body><p>Sent invoicing xml to SAP on %s with %d invoicings</p></body></html>", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")), salesOrderContainer.getSalesOrders().size());
+        json.put("body", body);
+        return json;
+    }
+
+    public void sendInvoicedEmail(JSONObject json) {
+        restServiceClient.makePostCall(serviceUrls.getMessageServiceUrl() + "/message/send/email", json.toString());
     }
 }
