@@ -281,7 +281,9 @@ public class MerchantControllerTest {
             add("merchantZip");
             add("orderRightOfPurchaseIsActive");
             add("orderRightOfPurchaseUrl");
+            add("sendMerchantTermsOfService");
             add("subscriptionPriceUrl");
+            add("subscriptionResolveProductUrl");
         }});
         Assertions.assertEquals(allKeys, responseMerchantKeys.getBody());
     }

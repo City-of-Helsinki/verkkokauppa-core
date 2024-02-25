@@ -9,6 +9,10 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.StringUtils;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
+import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQTextMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +42,9 @@ public class OrderNotificationsQueueListener {
 
     @Autowired
     private RestServiceClient restServiceClient;
+
+    @Autowired
+    private GetSubscriptionQuery getSubscriptionQuery;
 
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
@@ -71,11 +78,23 @@ public class OrderNotificationsQueueListener {
     }
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
-        String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
-                paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
-                paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
-        callApi(message, url);
         restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+        Subscription subscription = null;
+
+        if( StringUtils.isNotEmpty(message.subscriptionId) && StringUtils.isNotEmpty(message.userId) ) {
+            subscription = getSubscriptionQuery.findByIdValidateByUser(message.subscriptionId, message.userId);
+        }
+
+        if(subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
+            log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
+            String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
+                    paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
+                    paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
+            callApi(message, url);
+        }
+        else {
+            log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+        }
     }
 
     private void callApi(OrderMessage message, String url) throws Exception {

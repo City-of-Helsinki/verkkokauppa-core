@@ -39,6 +39,7 @@ public class ServiceConfigurationKeysTest {
                 "merchantSubscriptionWebhookUrl",
                 "merchantRefundWebhookUrl",
                 "refundSuccessRedirectUrl",
+                "sendMerchantTermsOfService",
                 "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
@@ -90,6 +91,7 @@ public class ServiceConfigurationKeysTest {
                 "payment_submerchant_id",
                 "payment_type",
                 "subscriptionPriceUrl",
+                "sendMerchantTermsOfService",
                 "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
@@ -112,6 +114,7 @@ public class ServiceConfigurationKeysTest {
 
         List<String> knownKeys = Arrays.asList(
                 "merchantTermsOfServiceUrl",
+                "sendMerchantTermsOfService",
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "subscriptionPriceUrl",
@@ -156,6 +159,7 @@ public class ServiceConfigurationKeysTest {
                 "orderPaymentFailedRedirectUrl",
                 "subscriptionPriceUrl",
                 "refundSuccessRedirectUrl",
+                "sendMerchantTermsOfService",
                 "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
@@ -187,6 +191,7 @@ public class ServiceConfigurationKeysTest {
                 "merchantZip",
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
+                "sendMerchantTermsOfService",
                 "subscriptionPriceUrl",
                 "subscriptionResolveProductUrl"
         );

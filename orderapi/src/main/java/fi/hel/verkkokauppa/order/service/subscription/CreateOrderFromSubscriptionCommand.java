@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
@@ -95,19 +96,19 @@ public class CreateOrderFromSubscriptionCommand {
     private ServiceUrls serviceUrls;
 
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
+        List<OrderItemMetaDto> orderItemMetas = new ArrayList<>();
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
 
         String subscriptionId = subscriptionDto.getSubscriptionId();
 
-        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
-
-        if (activeOrderFromSubscription != null) {
-            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
-            return activeOrderFromSubscription;
-        }
-
         Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+        // check if subscription is cancelled
+        if(subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED)){
+            log.info("Subscription has been cancelled, not renewing it. SubscriptionId: {}", subscription.getSubscriptionId());
+            return null;
+        }
 
         // Returns null orderId if subscription card is expired
         if (subscriptionService.isCardExpired(subscription)) {
@@ -118,7 +119,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         try {
             // Resolve product
-            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription, orderItemMetas);
 
             boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
             // Returns null orderId if subscription right of purchase is false.
@@ -136,7 +137,23 @@ public class CreateOrderFromSubscriptionCommand {
             return null;
         }
 
-        Order order = orderService.createByParams(namespace, user);
+        Order order;
+
+        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
+        if (activeOrderFromSubscription != null) {
+            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
+            order = orderService.findById(activeOrderFromSubscription);
+//            return activeOrderFromSubscription;
+        } else {
+            log.info("Creating new order from subscription with subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            order = orderService.createByParams(namespace, user);
+        }
+
+        if (order == null) {
+            log.error("Failed to create order for subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            return null;
+        }
+
         order.setType(OrderType.ORDER);
 
         orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());
@@ -145,7 +162,7 @@ public class CreateOrderFromSubscriptionCommand {
 
         String orderId = order.getOrderId();
         String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
-        copyOrderItemMetaFieldsFromSubscription(subscriptionDto, orderId, orderItemId);
+        copyOrderItemMetaFieldsForSubscriptionOrderItem(orderId, orderItemId, orderItemMetas);
 
         orderService.confirm(order);
         orderRepository.save(order);
@@ -165,7 +182,7 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-product", "failed to update subscription product information from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-price", "failed to update subscription price from merchant"));
         }
 
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
@@ -226,9 +243,15 @@ public class CreateOrderFromSubscriptionCommand {
         return subscription;
     }
 
-    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) throws Exception {
+    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription, List<OrderItemMetaDto> returnOrderItemMetas) throws Exception {
 
         String merchantId;
+
+        if (returnOrderItemMetas == null){
+            log.error("Output parameter returnOrderItemMetas was uninitialized");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("output-parameter-uninitialized", "Output parameter returnOrderItemMetas was uninitialized"));
+        }
+
         try {
             log.info("Fetching product-mapping for subscriptionId:" + subscriptionId + " and productId: " + subscriptionDto.getProductId());
             JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + subscriptionDto.getProductId());
@@ -236,7 +259,7 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-prices", "failed to update subscription prices from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-product-information", "failed to update product information from merchant"));
         }
 
         ResolveProductRequest request = new ResolveProductRequest();
@@ -285,6 +308,14 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.setProductName(subscription.getProductName());
             subscriptionDto.setProductLabel(subscription.getProductLabel());
             subscriptionDto.setProductDescription(subscription.getProductDescription());
+
+            // return new orderItemMetas
+            OrderItemMetaDto[] metaArray = resultDto.getOrderItemMetas();
+            if( metaArray != null ) {
+                for (OrderItemMetaDto orderItemMeta : metaArray) {
+                    returnOrderItemMetas.add(orderItemMeta);
+                }
+            }
 
         } catch (Exception e) {
             log.error("Error/Resolve product failed with subscription request:{}", request, e);
@@ -411,10 +442,9 @@ public class CreateOrderFromSubscriptionCommand {
 
     }
 
-    private void copyOrderItemMetaFieldsFromSubscription(SubscriptionDto subscriptionDto, String orderId, String orderItemId) {
-        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
-        if (!subscriptionMeta.isEmpty()) {
-            subscriptionMeta.forEach(meta -> {
+    private void copyOrderItemMetaFieldsForSubscriptionOrderItem(String orderId, String orderItemId, List<OrderItemMetaDto> orderItemMetas) {
+        if (!orderItemMetas.isEmpty()) {
+            orderItemMetas.forEach(meta -> {
                 OrderItemMetaDto orderItemMeta = new OrderItemMetaDto(
                         null,
                         orderItemId,
