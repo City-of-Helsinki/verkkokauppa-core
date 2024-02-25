@@ -72,4 +72,16 @@ public class OrderItemInvoicing {
 
     @Field(type = FieldType.Text)
     String priceNet;
+
+    @Field(type = FieldType.Text)
+    String internalOrder;
+
+    @Field(type = FieldType.Text)
+    String profitCenter;
+
+    @Field(type = FieldType.Text)
+    String project;
+
+    @Field(type = FieldType.Text)
+    String operationArea;
 }

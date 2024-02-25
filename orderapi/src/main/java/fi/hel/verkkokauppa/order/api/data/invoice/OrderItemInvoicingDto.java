@@ -29,4 +29,12 @@ public class OrderItemInvoicingDto {
     private Integer quantity;
     private String unit;
     private String priceNet;
+
+    private String internalOrder;
+
+    private String profitCenter;
+
+    private String project;
+
+    private String operationArea;
 }

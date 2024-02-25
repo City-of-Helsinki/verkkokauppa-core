@@ -19,7 +19,7 @@ public class LineItem {
     @JacksonXmlProperty(localName = "Quantity")
     private String quantity;
     @JacksonXmlProperty(localName = "Unit")
-    private String unit;
+    private final String unit = "kpl";
     @JacksonXmlProperty(localName = "NetPrice")
     private String netPrice;
     @JacksonXmlProperty(localName = "TaxCode")
@@ -34,4 +34,6 @@ public class LineItem {
     private String orderItemNumber;
     @JacksonXmlProperty(localName = "WBS_Element")
     private String wbsElement;
+    @JacksonXmlProperty(localName = "FunctionalArea")
+    private String functionalArea;
 }
