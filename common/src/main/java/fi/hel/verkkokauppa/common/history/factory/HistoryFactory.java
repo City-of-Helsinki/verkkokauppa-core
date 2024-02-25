@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
 import fi.hel.verkkokauppa.common.history.util.EntityTypeUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -133,8 +134,8 @@ public class HistoryFactory {
 
     public HistoryDto fromInvoicedEmail(JSONObject email) {
         return HistoryDto.builder()
-                .entityId("-")
-                .namespace("-")
+                .entityId(UUIDGenerator.generateType4UUID().toString())
+                .namespace("admin")
                 .entityType(EntityTypeUtil.EVENT)
                 .eventType(EventType.INVOICED_EMAIL_SENT)
                 .payload(email.toString())
