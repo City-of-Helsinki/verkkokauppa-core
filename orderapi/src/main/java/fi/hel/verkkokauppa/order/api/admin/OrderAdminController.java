@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +58,27 @@ public class OrderAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-orders", "failed to get order for user id [" + userId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order-admin/get-active", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<OrderAggregateDto> getOrders(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "endDate") String endDate) {
+        try {
+
+            Order order = orderService.getCurrentPeriodOrderWithSubscriptionId(subscriptionId, DateTimeUtil.fromFormattedDateTimeString(endDate));
+
+            if( order == null )
+            {
+                throw new Exception("Failed to get order with subscription id [" + subscriptionId + "] and endDate [" + endDate + "]" );
+            }
+            return orderService.orderAggregateDto(order.getOrderId());
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-order", "failed to get order with subscription id [" + subscriptionId + "] and endDate [" + endDate + "]" )
             );
         }
     }

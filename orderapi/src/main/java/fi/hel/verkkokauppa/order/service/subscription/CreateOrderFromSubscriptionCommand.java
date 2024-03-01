@@ -139,11 +139,10 @@ public class CreateOrderFromSubscriptionCommand {
 
         Order order;
 
-        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
+        String activeOrderFromSubscription = hasOrderForNextPeriod(subscription);
         if (activeOrderFromSubscription != null) {
             log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
             order = orderService.findById(activeOrderFromSubscription);
-//            return activeOrderFromSubscription;
         } else {
             log.info("Creating new order from subscription with subscriptionId: {}", subscriptionDto.getSubscriptionId());
             order = orderService.createByParams(namespace, user);
@@ -372,27 +371,24 @@ public class CreateOrderFromSubscriptionCommand {
         ));
     }
 
-    public String hasDuplicateOrder(String subscriptionId, String user) {
+    public String hasOrderForNextPeriod(Subscription subscription) {
+        Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscription.getSubscriptionId());
         try {
-
-            Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
-            Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionId);
             if (lastOrder != null) {
                 // order endDate greater than current subscription endDate
-                if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+                if (hasNextSubscriptionOrder(subscription, lastOrder)) {
                     log.info("End date is greater than current subscription endDate for orderId: {}", lastOrder.getOrderId());
                     return lastOrder.getOrderId();
                 }
             }
             return null;
         } catch (Exception e) {
-            //
             log.info(String.valueOf(e));
             return null;
         }
     }
 
-    public boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
+    public boolean hasNextSubscriptionOrder(Subscription subscription, Order lastOrder) {
         LocalDateTime subscriptionEndDate = subscription.getEndDate();
         LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
         // Prevents NPO
