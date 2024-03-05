@@ -47,6 +47,7 @@ public class OrderAdminController {
     @PostMapping(value = "/order-admin/lock", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Boolean> lockOrder(@RequestParam(value = "orderId") String orderId) {
         try {
+            log.info("obtaining lock for orderId: {}", orderId);
             boolean res = resourceLock.obtain(orderId);
             return ResponseEntity.ok().body(res);
         } catch (Exception e) {
@@ -61,6 +62,7 @@ public class OrderAdminController {
     @PostMapping(value = "/order-admin/unlock", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> unlockOrder(@RequestParam(value = "orderId") String orderId) {
         try {
+            log.info("releasing lock for orderId: {}", orderId);
             resourceLock.release(orderId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
