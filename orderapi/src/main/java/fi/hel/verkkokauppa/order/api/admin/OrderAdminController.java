@@ -62,7 +62,7 @@ public class OrderAdminController {
         }
     }
 
-    @GetMapping(value = "/order-admin/get-active", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/order-admin/get-active-by-subscription-id", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<OrderAggregateDto> getOrders(@RequestParam(value = "subscriptionId") String subscriptionId, @RequestParam(value = "endDate") String endDate) {
         try {
 

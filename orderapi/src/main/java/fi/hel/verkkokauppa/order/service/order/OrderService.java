@@ -398,17 +398,20 @@ public class OrderService {
 
     // get order for currently active subscription period
     public Order getCurrentPeriodOrderWithSubscriptionId(String subscriptionId, LocalDateTime subscriptionEndDate ) {
-        List<Order> orders = orderRepository.findOrdersBySubscriptionId(subscriptionId);
+        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDate(subscriptionId, subscriptionEndDate);
+        Order activeOrder = null;
 
-        Order activeOrder = orders.stream()
-                .filter( order -> order.getEndDate().equals(subscriptionEndDate) )
-                .findAny()
-                .orElse(null);
-        if (activeOrder != null) {
+        if (orders.size() == 1) {
+            activeOrder = orders.get(0);
             log.debug("Currently active order for subscription with subscriptionId {} is orderId {}", subscriptionId, activeOrder.getOrderId());
         }
         else {
-            log.debug("Could not find active order for subscription {}", subscriptionId);
+            if( orders.size() > 1 )
+            {
+                log.error("Found more than one active order for subscription {}", subscriptionId);
+            }else {
+                log.debug("Could not find active order for subscription {}", subscriptionId);
+            }
         }
         return activeOrder;
     }
