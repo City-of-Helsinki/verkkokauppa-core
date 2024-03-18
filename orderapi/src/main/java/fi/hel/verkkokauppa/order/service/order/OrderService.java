@@ -395,4 +395,24 @@ public class OrderService {
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
     }
+
+    // get order for currently active subscription period
+    public Order getCurrentPeriodOrderWithSubscriptionId(String subscriptionId, LocalDateTime subscriptionEndDate ) {
+        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDate(subscriptionId, subscriptionEndDate);
+        Order activeOrder = null;
+
+        if (orders.size() == 1) {
+            activeOrder = orders.get(0);
+            log.debug("Currently active order for subscription with subscriptionId {} is orderId {}", subscriptionId, activeOrder.getOrderId());
+        }
+        else {
+            if( orders.size() > 1 )
+            {
+                log.error("Found more than one active order for subscription {}", subscriptionId);
+            }else {
+                log.debug("Could not find active order for subscription {}", subscriptionId);
+            }
+        }
+        return activeOrder;
+    }
 }
