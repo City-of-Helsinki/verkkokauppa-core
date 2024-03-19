@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -165,9 +166,10 @@ public class AccountingSlipService {
         List<OrderAccounting> orderAccountings = orderAccountingService.getOrderAccountings(orderIds);
 
         for (OrderAccounting orderAccounting : orderAccountings) {
-            LocalDate createdAt = orderAccounting.getCreatedAt().toLocalDate();
+            LocalDate createdAt = DateTimeUtil.toFinnishDate(orderAccounting.getCreatedAt());
+            LocalDate now = DateTimeUtil.toFinnishDate(LocalDateTime.now());
 
-            if (createdAt.isBefore(LocalDate.now())) {
+            if (createdAt.isBefore(now)) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -193,9 +195,10 @@ public class AccountingSlipService {
         List<RefundAccounting> refundAccountings = refundAccountingService.getRefundAccountings(refundIds);
 
         for (RefundAccounting refundAccounting : refundAccountings) {
-            LocalDate createdAt = refundAccounting.getCreatedAt().toLocalDate();
+            LocalDate createdAt = DateTimeUtil.toFinnishDate(refundAccounting.getCreatedAt());
+            LocalDate now = DateTimeUtil.toFinnishDate(LocalDateTime.now());
 
-            if (createdAt.isBefore(LocalDate.now())) {
+            if (createdAt.isBefore(now)) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
