@@ -160,9 +160,14 @@ public class CreateOrderFromSubscriptionCommand {
         orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());
 
         String orderId = order.getOrderId();
-        String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
-        copyOrderItemMetaFieldsForSubscriptionOrderItem(orderId, orderItemId, orderItemMetas);
-
+        try {
+            String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
+            copyOrderItemMetaFieldsForSubscriptionOrderItem(orderId, orderItemId, orderItemMetas);
+        } catch (Exception e){
+            log.error("Subscription renewal failed while updating orderItem.",e);
+            // if resolve product/price fails then do not complete the subscription renewal
+            return null;
+        }
         orderService.confirm(order);
         orderRepository.save(order);
 
@@ -408,8 +413,8 @@ public class CreateOrderFromSubscriptionCommand {
         orderService.setCustomer(order, customerFirstName, customerLastName, customerEmail, customerPhone);
     }
 
-    private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) {
-        return orderItemService.addItem(
+    private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) throws Exception {
+        return orderItemService.addOrUpdateItem(
                 orderId,
                 subscriptionDto.getMerchantId(),
                 subscriptionDto.getProductId(),
@@ -452,7 +457,7 @@ public class CreateOrderFromSubscriptionCommand {
                         meta.getOrdinal()
                 );
 
-                String createdOrderItemMetaId = orderItemMetaService.addItemMeta(orderItemMeta);
+                String createdOrderItemMetaId = orderItemMetaService.addOrUpdateItemMeta(orderItemMeta);
 
                 log.debug("created new orderItemMeta " + createdOrderItemMetaId + " from subscriptionItemMeta: " + meta.getOrderItemMetaId());
             });
