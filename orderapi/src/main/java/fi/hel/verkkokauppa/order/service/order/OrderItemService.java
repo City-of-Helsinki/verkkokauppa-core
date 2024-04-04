@@ -37,15 +37,8 @@ public class OrderItemService {
         String orderItemId = null;
         List<OrderItem> orderItems = findByOrderId(orderId);
         log.debug("Updating or creating orderItem. " + orderItems.size() + " orderItems found for order : " + orderId);
-        if( orderItems.size() == 0 )
-        {
-            // orderitem did not exist so create one
-            orderItemId = addItem(orderId, merchantId, productId, productName, productLabel, productDescription,
-                    quantity, unit, rowPriceNet, rowPriceVat, rowPriceTotal, vatPercentage, priceNet, priceVat,
-                    priceGross, originalPriceNet, originalPriceVat, originalPriceGross, periodUnit, periodFrequency,
-                    periodCount, billingStartDate, startDate, invoicingDate);
-        }
-        else //if( orderItems.size() == 1 )
+
+        if( orderItems.size() == 1 )
         {
             // update the first one
             OrderItem orderItem = orderItems.get(0);
@@ -76,6 +69,14 @@ public class OrderItemService {
             orderItemRepository.save(orderItem);
             orderItemId = orderItem.getOrderItemId();
             log.debug("orderItem updated, orderItemId: " + orderItemId);
+        }
+        else //if( orderItems.size() == 0 )
+        {
+            // orderitem did not exist so create one
+            orderItemId = addItem(orderId, merchantId, productId, productName, productLabel, productDescription,
+                    quantity, unit, rowPriceNet, rowPriceVat, rowPriceTotal, vatPercentage, priceNet, priceVat,
+                    priceGross, originalPriceNet, originalPriceVat, originalPriceGross, periodUnit, periodFrequency,
+                    periodCount, billingStartDate, startDate, invoicingDate);
         }
 //        else
 //        {
