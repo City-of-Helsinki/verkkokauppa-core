@@ -665,18 +665,22 @@ class OrderServiceTest extends TestUtils {
         OrderItem orderItemModel = orderItemService.findByOrderId(order.getOrderId()).get(0);
         OrderItemDto orderItem = createOrderResponse.getItems().get(0);
 
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+//        order.setIncrementId(1L);
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+        orderRepository.save(order);
+
+        // Create invoicing accountings
+        createMockInvoiceAccountingForProductId(orderItem.getProductId());
+
+        orderItemModel.setInvoicingDate(LocalDate.now());
+        orderItemRepository.save(orderItemModel);
         log.info("Created order with orderId: {}", order.getOrderId());
         log.info("Created order with userId: {}", order.getUser());
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
         log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
-        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
-        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
-        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
-
-        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
-        orderRepository.save(order);
-        orderItemModel.setInvoicingDate(LocalDate.now());
-        orderItemRepository.save(orderItemModel);
     }
 
     @Test

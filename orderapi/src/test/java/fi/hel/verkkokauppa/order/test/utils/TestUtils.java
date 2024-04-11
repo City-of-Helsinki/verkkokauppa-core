@@ -322,4 +322,22 @@ public class TestUtils extends DummyData {
         log.info(jsonResponse.toString());
         return jsonResponse;
     }
+
+    public JSONObject createMockInvoiceAccountingForProductId(String productId) throws JsonProcessingException {
+
+        JSONObject productAccounting = new JSONObject();
+
+        productAccounting.put("productId", productId);
+        productAccounting.put("salesOrg", "salesOrg");
+        productAccounting.put("salesOffice", "salesOffice");
+        productAccounting.put("material", "material");
+        productAccounting.put("orderType", "orderType");
+
+        JSONObject jsonResponse = restServiceClient.makePostCall(
+                serviceUrls.getProductServiceUrl() + "/product/invoicing",
+                productAccounting.toString()
+        );
+        log.info(jsonResponse.toString());
+        return jsonResponse;
+    }
 }
