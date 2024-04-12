@@ -34,6 +34,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -41,6 +42,8 @@ import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -127,6 +130,9 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true);
+    }
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas) {
         Order order = generateDummyOrder();
 
         order.setEndDate(LocalDateTime.now().plusMonths(1));
@@ -144,7 +150,14 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setPriceVat("0");
         orderItems.get(0).setProductId("b86337e8-68a0-3599-a18b-754ffae53f5a"); // use id created by initializeTestData
         orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
-        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+        List<OrderItemMeta> orderItemMetas;
+        if( includeMetas == true ) {
+            orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+        }
+        else
+        {
+            orderItemMetas = new ArrayList<>();
+        }
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
                 .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
@@ -321,6 +334,52 @@ public class TestUtils extends DummyData {
         );
         log.info(jsonResponse.toString());
         return jsonResponse;
+    }
+
+    protected ResponseEntity<JSONObject> createResolveProductResponse (){
+        return createResolveProductResponse(true);
+    }
+    protected ResponseEntity<JSONObject> createResolveProductResponse (boolean includeMeta)
+    {
+        JSONObject ResolveProductResultDto = new JSONObject();
+        ResolveProductResultDto.put("subscriptionId","dummyProductId");
+        ResolveProductResultDto.put("userId","userId");
+        ResolveProductResultDto.put("productId","newProductId");
+        ResolveProductResultDto.put("productName","newProductName");
+        ResolveProductResultDto.put("productLabel","newProductLabel");
+        ResolveProductResultDto.put("productDescription","newProductDescription");
+
+        if( includeMeta ) {
+            JSONObject ResolveProductMetaDto1 = new JSONObject();
+            ResolveProductMetaDto1.put("key", "key1");
+            ResolveProductMetaDto1.put("value", "value1");
+            ResolveProductMetaDto1.put("label", "label1");
+            ResolveProductMetaDto1.put("visibleInCheckout", "true");
+            ResolveProductMetaDto1.put("ordinal", "2");
+            JSONObject ResolveProductMetaDto2 = new JSONObject();
+            ResolveProductMetaDto2.put("key", "key2");
+            ResolveProductMetaDto2.put("value", "value2");
+            ResolveProductMetaDto2.put("label", "label2");
+            ResolveProductMetaDto2.put("visibleInCheckout", "true");
+            ResolveProductMetaDto2.put("ordinal", "1");
+            Collection<JSONObject> orderItemMetas = new ArrayList<JSONObject>();
+            orderItemMetas.add(ResolveProductMetaDto1);
+            orderItemMetas.add(ResolveProductMetaDto2);
+            ResolveProductResultDto.put("orderItemMetas", orderItemMetas);
+        }
+
+        return new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
+    }
+
+    protected ResponseEntity<JSONObject> createResolvePriceResponse()
+    {
+        JSONObject ResolvePriceResultDto = new JSONObject();
+        ResolvePriceResultDto.put("subscriptionId","dummyProductId");
+        ResolvePriceResultDto.put("userId","userId");
+        ResolvePriceResultDto.put("priceNet","8");
+        ResolvePriceResultDto.put("priceVat","2");
+        ResolvePriceResultDto.put("priceGross","10");
+        return new ResponseEntity<>( ResolvePriceResultDto, HttpStatus.OK);
     }
 
     public JSONObject createMockInvoiceAccountingForProductId(String productId) throws JsonProcessingException {

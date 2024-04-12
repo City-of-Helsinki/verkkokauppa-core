@@ -164,13 +164,13 @@ public abstract class DummyData {
     public List<OrderAccounting> generateDummyOrderAccountingList() {
         OrderAccounting orderAccounting1 = new OrderAccounting();
         orderAccounting1.setOrderId("1");
-        orderAccounting1.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
+        orderAccounting1.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01 20:30:00"));
         OrderAccounting orderAccounting2 = new OrderAccounting();
         orderAccounting2.setOrderId("2");
-        orderAccounting2.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
+        orderAccounting2.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01 23:00:00"));
         OrderAccounting orderAccounting3 = new OrderAccounting();
         orderAccounting3.setOrderId("3");
-        orderAccounting3.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-02"));
+        orderAccounting3.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-02 16:00:00"));
 
         List<OrderAccounting> orderAccountings = new ArrayList<>();
         orderAccountings.add(orderAccounting1);

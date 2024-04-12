@@ -49,6 +49,8 @@ public class AccountingSlipServiceTests extends DummyData {
                 .map(Order::getOrderId)
                 .collect(Collectors.toList());
 
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
         List<OrderAccounting> orderAccountings = generateDummyOrderAccountingList();
 
         when(mockOrderAccountingService.getOrderAccountings(orderIds)).thenReturn(orderAccountings);
@@ -57,8 +59,8 @@ public class AccountingSlipServiceTests extends DummyData {
         assertFalse(result.isEmpty());
 
         Map<LocalDate, List<String>> expectedResult = new HashMap<>();
-        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-01").toLocalDate(), List.of("1", "2"));
-        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-02").toLocalDate(), Collections.singletonList("3"));
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-01").toLocalDate(), Collections.singletonList("1"));
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-02").toLocalDate(), List.of("2", "3"));
         assertEquals(expectedResult, result);
     }
 

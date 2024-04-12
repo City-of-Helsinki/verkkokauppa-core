@@ -1,15 +1,18 @@
 package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.configuration.QueueConfigurations;
+import fi.hel.verkkokauppa.common.configuration.SAP;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.order.api.data.invoice.OrderItemInvoicingDto;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
-import fi.hel.verkkokauppa.order.service.accounting.AccountingExportService;
+import fi.hel.verkkokauppa.order.service.accounting.FileExportService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoicingExportService;
 import fi.hel.verkkokauppa.order.service.invoice.OrderItemInvoicingService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +46,10 @@ public class OrderInvoicingController {
     private QueueConfigurations queueConfigurations;
 
     @Autowired
-    private AccountingExportService accountingExportService;
+    private FileExportService fileExportService;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
     @PostMapping(value = "/order/invoicing/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemInvoicingDto>> createOrderInvoicing(@RequestBody List<OrderItemInvoicingDto> dtos) {
@@ -66,9 +72,12 @@ public class OrderInvoicingController {
             SalesOrderContainer salesOrderContainer = invoicingExportService.generateSalesOrderContainer(orderItemInvoicings);
             String xml = invoicingExportService.salesOrderContainerToXml(salesOrderContainer);
             log.info(xml);
-            accountingExportService.export(xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
+            fileExportService.export(SAP.Interface.INVOICING, xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
             invoicingExportService.copyExportedDataToOrderItems(salesOrderContainer);
             orderItemInvoicingService.markInvoicingsInvoiced(orderItemInvoicings);
+            JSONObject invoicedEmail = invoicingExportService.generateInvoicedEmail(salesOrderContainer);
+            invoicingExportService.sendInvoicedEmail(invoicedEmail);
+            saveHistoryService.saveInvoicedEmailHistory(invoicedEmail);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("failed to export invoicings", e);

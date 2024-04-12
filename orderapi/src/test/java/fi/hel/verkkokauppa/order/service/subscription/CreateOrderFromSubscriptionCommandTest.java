@@ -10,8 +10,12 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.admin.SubscriptionAdminController;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -59,6 +63,11 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
     @Autowired
     private OrderRepository orderRepository;
 
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private OrderItemMetaRepository orderItemMetaRepository;
     @Autowired
     private SubscriptionService subscriptionService;
 
@@ -159,22 +168,9 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
         productMapping.put("merchantId","merchantId");
         when(restServiceClientMock.makeGetCall(any())).thenReturn(productMapping);
 
-        JSONObject ResolveProductResultDto = new JSONObject();
-        ResolveProductResultDto.put("subscriptionId","dummyProductId");
-        ResolveProductResultDto.put("userId","userId");
-        ResolveProductResultDto.put("productId","newProductId");
-        ResolveProductResultDto.put("productName","newProductName");
-        ResolveProductResultDto.put("productLabel","newProductLabel");
-        ResolveProductResultDto.put("productDescription","newProductDescription");
-        ResponseEntity<JSONObject> resolveProductResponse = new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
+        ResponseEntity<JSONObject> resolveProductResponse = createResolveProductResponse();
 
-        JSONObject ResolvePriceResultDto = new JSONObject();
-        ResolvePriceResultDto.put("subscriptionId","dummyProductId");
-        ResolvePriceResultDto.put("userId","userId");
-        ResolvePriceResultDto.put("priceNet","8");
-        ResolvePriceResultDto.put("priceVat","2");
-        ResolvePriceResultDto.put("priceGross","10");
-        ResponseEntity<JSONObject> resolvePriceResponse = new ResponseEntity<>( ResolvePriceResultDto, HttpStatus.OK);
+        ResponseEntity<JSONObject> resolvePriceResponse = createResolvePriceResponse();
 
         when(restServiceClientMock.postCall(any(), any(), any())).thenReturn(resolveProductResponse).thenReturn(resolvePriceResponse);
 
@@ -199,5 +195,189 @@ class CreateOrderFromSubscriptionCommandTest extends TestUtils {
         Assert.assertNotEquals(subscription.getPriceNet(), updatedSubscription.getPriceNet());
         Assert.assertNotEquals(subscription.getPriceGross(), updatedSubscription.getPriceGross());
 
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        Assert.assertNotNull(orderItems);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
+
+        orderItemMetas.forEach(itemMeta ->
+            {
+                if( itemMeta.getLabel().equals("label1") ){
+                    Assert.assertEquals(itemMeta.getKey(), "key1");
+                    Assert.assertEquals(itemMeta.getLabel(), "label1");
+                    Assert.assertEquals(itemMeta.getOrdinal(), "2");
+                    Assert.assertEquals(itemMeta.getValue(), "value1");
+                    Assert.assertEquals(itemMeta.getVisibleInCheckout(), "true");
+                }
+                else {
+                    Assert.assertEquals(itemMeta.getKey(), "key2");
+                    Assert.assertEquals(itemMeta.getLabel(), "label2");
+                    Assert.assertEquals(itemMeta.getOrdinal(), "1");
+                    Assert.assertEquals(itemMeta.getValue(), "value2");
+                    Assert.assertEquals(itemMeta.getVisibleInCheckout(), "true");
+                }
+
+            });
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void testResolveProductWithNullMeta() throws InterruptedException, JsonProcessingException {
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "restServiceClient", restServiceClientMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "customerApiCallService", restServiceClientMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "getSubscriptionQuery", getSubscriptionQuery);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "subscriptionRepository", subscriptionRepository);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "orderService", orderServiceMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "orderRepository", orderRepository);
+        ReflectionTestUtils.setField(orderServiceMock, "orderRepository", orderRepository);
+        ReflectionTestUtils.setField(orderServiceMock, "incrementId", incrementId);
+        ReflectionTestUtils.setField(orderServiceMock, "log", log);
+
+        when(orderServiceMock.validateRightOfPurchase(any(), any(), any())).thenReturn(true);
+        when(orderServiceMock.createByParams(any(), any())).thenCallRealMethod();
+
+        // create order and subscription for test
+        Order order = generateDummyOrder();
+        order.setOrderId(UUID.randomUUID().toString());
+//        order.setEndDate("");
+        order.setNamespace("venepaikat");
+        order = orderRepository.save(order);
+
+        toBeDeletedOrderById.add(order.getOrderId());
+        log.info("Order id: " +order.getOrderId());
+
+        Subscription subscription = generateDummySubscription(order);
+        subscription.setSubscriptionId(UUID.randomUUID().toString());
+        subscription.setNamespace("venepaikat");
+        subscription.setProductId("dummyProductId");
+        subscription.setProductName("productName");
+        subscription.setProductDescription("productDescription");
+        subscription.setProductLabel("productLabel");
+        subscriptionRepository.save(subscription);
+        toBeDeletedSubscriptionById.add(subscription.getSubscriptionId());
+
+        JSONObject productMapping = new JSONObject();
+        productMapping.put("productId","dummyProductId");
+        productMapping.put("namespace","venepaikat");
+        productMapping.put("namespaceEntityId","namespaceEntityId");
+        productMapping.put("merchantId","merchantId");
+        when(restServiceClientMock.makeGetCall(any())).thenReturn(productMapping);
+
+        ResponseEntity<JSONObject> resolveProductResponse = createResolveProductResponse(false);
+
+        ResponseEntity<JSONObject> resolvePriceResponse = createResolvePriceResponse();
+
+        when(restServiceClientMock.postCall(any(), any(), any())).thenReturn(resolveProductResponse).thenReturn(resolvePriceResponse);
+
+        SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_RENEWAL_REQUESTED)
+                .timestamp(DateTimeUtil.getDateTime())
+                .subscriptionId(subscription.getSubscriptionId())
+                .namespace(subscription.getNamespace())
+                .eventTimestamp(DateTimeUtil.getDateTime())
+                .build();
+
+        SubscriptionDto subscriptionDto = getSubscriptionQuery.mapToDto(subscription);
+        String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+
+        Optional<Subscription> returnedOptional = subscriptionRepository.findById(subscription.getSubscriptionId());
+        Subscription updatedSubscription = returnedOptional.get();
+        Assert.assertNotEquals(subscription.getProductId(), updatedSubscription.getProductId());
+        Assert.assertNotEquals(subscription.getProductLabel(), updatedSubscription.getProductLabel());
+        Assert.assertNotEquals(subscription.getProductName(), updatedSubscription.getProductName());
+        Assert.assertNotEquals(subscription.getProductDescription(), updatedSubscription.getProductDescription());
+        Assert.assertNotEquals(subscription.getPriceVat(), updatedSubscription.getPriceVat());
+        Assert.assertNotEquals(subscription.getPriceNet(), updatedSubscription.getPriceNet());
+        Assert.assertNotEquals(subscription.getPriceGross(), updatedSubscription.getPriceGross());
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        Assert.assertNotNull(orderItems);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
+
+        Assert.assertTrue( orderItemMetas.isEmpty() );
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void testResolveProductWithEmptyMeta() throws InterruptedException, JsonProcessingException {
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "restServiceClient", restServiceClientMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "customerApiCallService", restServiceClientMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "getSubscriptionQuery", getSubscriptionQuery);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "subscriptionRepository", subscriptionRepository);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "orderService", orderServiceMock);
+        ReflectionTestUtils.setField(createOrderFromSubscriptionCommand, "orderRepository", orderRepository);
+        ReflectionTestUtils.setField(orderServiceMock, "orderRepository", orderRepository);
+        ReflectionTestUtils.setField(orderServiceMock, "incrementId", incrementId);
+        ReflectionTestUtils.setField(orderServiceMock, "log", log);
+
+        when(orderServiceMock.validateRightOfPurchase(any(), any(), any())).thenReturn(true);
+        when(orderServiceMock.createByParams(any(), any())).thenCallRealMethod();
+
+        // create order and subscription for test
+        Order order = generateDummyOrder();
+        order.setOrderId(UUID.randomUUID().toString());
+//        order.setEndDate("");
+        order.setNamespace("venepaikat");
+        order = orderRepository.save(order);
+
+        toBeDeletedOrderById.add(order.getOrderId());
+        log.info("Order id: " +order.getOrderId());
+
+        Subscription subscription = generateDummySubscription(order);
+        subscription.setSubscriptionId(UUID.randomUUID().toString());
+        subscription.setNamespace("venepaikat");
+        subscription.setProductId("dummyProductId");
+        subscription.setProductName("productName");
+        subscription.setProductDescription("productDescription");
+        subscription.setProductLabel("productLabel");
+        subscriptionRepository.save(subscription);
+        toBeDeletedSubscriptionById.add(subscription.getSubscriptionId());
+
+        JSONObject productMapping = new JSONObject();
+        productMapping.put("productId","dummyProductId");
+        productMapping.put("namespace","venepaikat");
+        productMapping.put("namespaceEntityId","namespaceEntityId");
+        productMapping.put("merchantId","merchantId");
+        when(restServiceClientMock.makeGetCall(any())).thenReturn(productMapping);
+
+        JSONObject ResolveProductResultDto = new JSONObject();
+        ResolveProductResultDto.put("subscriptionId","dummyProductId");
+        ResolveProductResultDto.put("userId","userId");
+        ResolveProductResultDto.put("productId","newProductId");
+        ResolveProductResultDto.put("productName","newProductName");
+        ResolveProductResultDto.put("productLabel","newProductLabel");
+        ResolveProductResultDto.put("productDescription","newProductDescription");
+        ResolveProductResultDto.put("orderItemMetas", new ArrayList<JSONObject>());
+        ResponseEntity<JSONObject> resolveProductResponse = new ResponseEntity<>( ResolveProductResultDto, HttpStatus.OK);
+
+        ResponseEntity<JSONObject> resolvePriceResponse = createResolvePriceResponse();
+
+        when(restServiceClientMock.postCall(any(), any(), any())).thenReturn(resolveProductResponse).thenReturn(resolvePriceResponse);
+
+        SubscriptionMessage subscriptionMessage = SubscriptionMessage.builder()
+                .eventType(EventType.SUBSCRIPTION_RENEWAL_REQUESTED)
+                .timestamp(DateTimeUtil.getDateTime())
+                .subscriptionId(subscription.getSubscriptionId())
+                .namespace(subscription.getNamespace())
+                .eventTimestamp(DateTimeUtil.getDateTime())
+                .build();
+
+        SubscriptionDto subscriptionDto = getSubscriptionQuery.mapToDto(subscription);
+        String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+
+        Optional<Subscription> returnedOptional = subscriptionRepository.findById(subscription.getSubscriptionId());
+        Subscription updatedSubscription = returnedOptional.get();
+        Assert.assertNotEquals(subscription.getProductId(), updatedSubscription.getProductId());
+        Assert.assertNotEquals(subscription.getProductLabel(), updatedSubscription.getProductLabel());
+        Assert.assertNotEquals(subscription.getProductName(), updatedSubscription.getProductName());
+        Assert.assertNotEquals(subscription.getProductDescription(), updatedSubscription.getProductDescription());
+        Assert.assertNotEquals(subscription.getPriceVat(), updatedSubscription.getPriceVat());
+        Assert.assertNotEquals(subscription.getPriceNet(), updatedSubscription.getPriceNet());
+        Assert.assertNotEquals(subscription.getPriceGross(), updatedSubscription.getPriceGross());
+
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+        Assert.assertNotNull(orderItems);
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
+
+        Assert.assertTrue( orderItemMetas.isEmpty() );
     }
 }

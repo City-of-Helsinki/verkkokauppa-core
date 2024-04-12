@@ -168,6 +168,13 @@ public class PaytrailRefundPaymentService {
         String paymentTransactionId = paymentDto.getPaytrailTransactionId();
         String refundPaymentId = RefundUtil.generateRefundPaymentId(refundId);
 
+        RefundPayment refundPayment = createRefundPayment(
+                dto,
+                paymentDto,
+                orderType,
+                refundPaymentId
+        );
+
         PaytrailRefundResponse refundResponse = paytrailRefundClient.createRefund(
                 context,
                 refundPaymentId,
@@ -175,17 +182,12 @@ public class PaytrailRefundPaymentService {
                 refundDto
         );
 
-        RefundPayment refundPayment = createRefundPayment(
-                dto,
-                paymentDto,
-                orderType,
-                refundResponse,
-                refundPaymentId
-        );
-
-        if (refundPayment.getRefundPaymentId() == null || refundPayment.getRefundTransactionId() == null) {
+        if (refundPayment.getRefundPaymentId() == null || refundResponse.getTransactionId() == null) {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
+
+        refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
+        refundPayment = refundPaymentRepository.save(refundPayment);
 
         return refundPayment;
     }
@@ -208,7 +210,6 @@ public class PaytrailRefundPaymentService {
             RefundRequestDataDto dto,
             PaymentDto paymentDto,
             String orderType,
-            PaytrailRefundResponse refundResponse,
             String refundId
     ) {
         RefundDto refundDto = dto.getRefund().getRefund();
@@ -232,8 +233,6 @@ public class PaytrailRefundPaymentService {
         refundPayment.setTaxAmount(new BigDecimal(refundDto.getPriceVat()));
         refundPayment.setTotal(new BigDecimal(refundDto.getPriceTotal()));
         refundPayment.setRefundId(refundDto.getRefundId());
-
-        refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
 
         refundPaymentRepository.save(refundPayment);
         log.debug("created refundPayment for namespace: " + namespace + " with refundId: " + refundId);

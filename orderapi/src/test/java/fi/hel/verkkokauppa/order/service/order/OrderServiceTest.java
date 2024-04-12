@@ -18,12 +18,14 @@ import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.FlowStep;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalRequest;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalRequestRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
@@ -95,6 +97,9 @@ class OrderServiceTest extends TestUtils {
 
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
+
+    @Autowired
+    private SubscriptionRenewalRequestRepository requestRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -309,6 +314,10 @@ class OrderServiceTest extends TestUtils {
         if (refetchFirstSubscription.isPresent()) {
             firstSubscription = refetchFirstSubscription.get();
             Assertions.assertEquals(SubscriptionStatus.CANCELLED, firstSubscription.getStatus());
+
+            // Cancelled subscription should not be renewed
+            Optional<SubscriptionRenewalRequest> getRenewalRequest = requestRepository.findById(firstSubscription.getSubscriptionId());
+            Assertions.assertFalse(getRenewalRequest.isPresent());
         }
         // RENEWAL PROCESS END 3
     }
