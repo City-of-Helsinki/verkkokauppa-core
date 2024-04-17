@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalRequestRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
@@ -44,20 +45,16 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -81,6 +78,8 @@ class OrderServiceTest extends TestUtils {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private FlowStepRepository flowStepRepository;
@@ -660,6 +659,37 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
 
         orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createInvoiceTypeOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        log.info("Creating invoice type order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItem orderItemModel = orderItemService.findByOrderId(order.getOrderId()).get(0);
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+        orderRepository.save(order);
+
+        // Create invoicing accountings
+        createMockInvoiceAccountingForProductId(orderItem.getProductId());
+
+        orderItemModel.setInvoicingDate(LocalDate.now());
+        orderItemRepository.save(orderItemModel);
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
     }
 
     @Test

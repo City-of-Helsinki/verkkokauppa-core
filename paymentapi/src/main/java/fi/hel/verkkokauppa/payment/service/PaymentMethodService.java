@@ -10,11 +10,11 @@ import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentMethodFilter;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentMethodListFetcher;
 import fi.hel.verkkokauppa.payment.mapper.PaymentMethodMapper;
 import fi.hel.verkkokauppa.payment.model.PaymentMethodModel;
 import fi.hel.verkkokauppa.payment.repository.PaymentMethodRepository;
 import fi.hel.verkkokauppa.payment.util.CurrencyUtil;
-import fi.hel.verkkokauppa.payment.logic.fetcher.PaymentMethodListFetcher;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.vismapay.model.paymentmethods.PaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -74,8 +75,12 @@ public class PaymentMethodService {
                 return new PaymentMethodDto[]{};
             }
 
-            List<PaymentMethodModel> paymentMethodModels = paymentMethodRepository.findByGateway(PaymentGatewayEnum.INVOICE);
-            return paymentMethodModels.stream()
+            Iterable<PaymentMethodModel> paymentMethodModels = paymentMethodRepository.findAll();
+            // Convert Iterable to Stream
+            Stream<PaymentMethodModel> stream = StreamSupport.stream(paymentMethodModels.spliterator(), false);
+
+            return stream
+                    .filter(paymentMethodModel -> paymentMethodModel.getGateway().equals(PaymentGatewayEnum.INVOICE))
                     .map(paymentMethodMapper::toDto)
                     .toArray(PaymentMethodDto[]::new);
 
