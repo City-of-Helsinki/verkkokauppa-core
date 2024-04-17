@@ -116,8 +116,11 @@ public class InvoicingExportService {
                 lineItem.setMaterial(item.getMaterial());
                 lineItem.setMaterialDescription(item.getMaterialDescription());
                 lineItem.setQuantity(Integer.toString(item.getQuantity()));
-                lineItem.setUnit(item.getUnit());
                 lineItem.setNetPrice(item.getPriceNet());
+                lineItem.setOrderItemNumber(item.getInternalOrder());
+                lineItem.setProfitCenter(item.getProfitCenter());
+                lineItem.setWbsElement(item.getProject());
+                lineItem.setFunctionalArea(item.getOperationArea());
                 lineItems.add(lineItem);
 
                 if (!productInvoicingAreEqual(salesOrder, item) || !partyAreEqual(customer, orderItemInvoicingToParty(item, false))) {
