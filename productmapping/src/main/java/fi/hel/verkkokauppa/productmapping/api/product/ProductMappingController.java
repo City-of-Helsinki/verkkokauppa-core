@@ -60,13 +60,13 @@ public class ProductMappingController {
 		try {
 			productMapping = service.findByNamespaceEntityId(namespaceEntityId);
 		} catch (Exception e) {
-			log.error("getting product mapping failed, namespaceEntityId: " + namespaceEntityId, e);
-			Error error = new Error("failed-to-get-product-mapping-by-namespace-entity-id", "failed to get mapping for namespaceEntityId [" + namespaceEntityId + "]");
+			log.error("getting internal product mapping failed, namespaceEntityId: " + namespaceEntityId, e);
+			Error error = new Error("failed-to-get-product-mapping-by-namespace-entity-id-internal", "failed to get internaö mapping for namespaceEntityId [" + namespaceEntityId + "]");
 			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
 		}
 
 		if (productMapping == null) {
-			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found-by-namespace-entity-id", "Mapping for namespaceEntityId [" + namespaceEntityId + "] not found"));
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found-by-namespace-entity-id-internal", "Mapping for internal namespaceEntityId [" + namespaceEntityId + "] not found"));
 		}
 
 		return ResponseEntity.ok().body(productMapping);
