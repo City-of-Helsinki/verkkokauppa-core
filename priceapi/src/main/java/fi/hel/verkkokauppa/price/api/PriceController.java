@@ -52,7 +52,7 @@ public class PriceController {
             PriceModel price = service.resolvePriceByNamespaceEntityId(namespaceEntityId);
 
             if (price == null) {
-                Error error = new Error("price-not-found-from-backend", "price with product id [" + namespaceEntityId + "] not found from backend");
+                Error error = new Error("internal-price-not-found-from-backend", "internal price with product id [" + namespaceEntityId + "] not found from backend");
                 throw new CommonApiException(HttpStatus.NOT_FOUND, error);
             }
 
@@ -61,7 +61,7 @@ public class PriceController {
             throw cae;
         } catch (Exception e) {
             log.error("getting price failed, namespaceEntityId: " + namespaceEntityId, e);
-            Error error = new Error("failed-to-get-price", "failed to get price for product [" + namespaceEntityId + "]");
+            Error error = new Error("failed-to-get-price-internal", "failed to get internal price for product [" + namespaceEntityId + "]");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
@@ -76,7 +76,7 @@ public class PriceController {
             PriceModel price = service.findByCommonProductIdAndCreateInternalProduct(productId, productPrice, productVatPercentage);
 
             if (price == null) {
-                Error error = new Error("price-not-found-from-backend", "price with product id [" + productId + "] not found from backend");
+                Error error = new Error("internal-price-not-found-from-backend", "internal price with product id [" + productId + "] not found from backend");
                 throw new CommonApiException(HttpStatus.NOT_FOUND, error);
             }
 
@@ -84,8 +84,8 @@ public class PriceController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("getting price failed, productId: " + productId, e);
-            Error error = new Error("failed-to-create-internal-price", "failed to createInternalPrice price for product [" + productId + "]");
+            log.error("getting internal price failed, productId: " + productId, e);
+            Error error = new Error("internal-failed-to-create-internal-price", "failed to createInternalPrice price for product [" + productId + "]");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }

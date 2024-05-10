@@ -58,8 +58,8 @@ public class ProductController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("getting product failed, productId: " + namespaceEntityId, e);
-            Error error = new Error("failed-to-get-product", "failed to get product with id [" + namespaceEntityId + "]");
+            log.error("getting internal product failed, productId: " + namespaceEntityId, e);
+            Error error = new Error("failed-to-get-product-internal", "failed to get internal product with id [" + namespaceEntityId + "]");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
     }
