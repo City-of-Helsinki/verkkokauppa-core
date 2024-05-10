@@ -22,7 +22,7 @@
       <env name="server.port" value="8187" />
       <env name="MOCKBACKEND_URL" value="http://host.docker.internal:8182" />
       <env name="WEBHOOK_URL" value="https://webhook.site/ad043067-8989-4287-b9dd-59aa560a1384" />
-      <env name="api.access.encryption.salt" value="salt" />
+      <env name="api.access.encryption.salt" value="test-salt" />
     </envs>
     <method v="2">
       <option name="Make" enabled="true" />

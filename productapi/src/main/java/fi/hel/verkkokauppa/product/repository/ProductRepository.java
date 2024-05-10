@@ -7,4 +7,5 @@ import fi.hel.verkkokauppa.product.model.Product;
 
 @Repository
 public interface ProductRepository extends ElasticsearchRepository<Product, String> {
+//    Product findBy
 }
