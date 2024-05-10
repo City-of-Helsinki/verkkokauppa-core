@@ -1,17 +1,16 @@
 package fi.hel.verkkokauppa.productmapping.service.product;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.productmapping.model.product.ProductMapping;
 import fi.hel.verkkokauppa.productmapping.repository.product.ProductMappingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import fi.hel.verkkokauppa.productmapping.model.product.ProductMapping;
-import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class ProductMappingService {
@@ -73,4 +72,7 @@ public class ProductMappingService {
         return entities;
     }
 
+    public ProductMapping findByNamespaceEntityId(String namespaceEntityId) {
+        return this.productMappingRepository.findByNamespaceEntityId(namespaceEntityId);
+    }
 }

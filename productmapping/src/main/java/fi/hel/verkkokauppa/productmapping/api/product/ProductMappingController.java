@@ -1,9 +1,9 @@
 package fi.hel.verkkokauppa.productmapping.api.product;
 
-import java.util.List;
-
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.productmapping.model.product.ProductMapping;
+import fi.hel.verkkokauppa.productmapping.service.product.ProductMappingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import fi.hel.verkkokauppa.productmapping.model.product.ProductMapping;
-import fi.hel.verkkokauppa.productmapping.service.product.ProductMappingService;
+import java.util.List;
 
 @RestController
 public class ProductMappingController {
@@ -43,6 +42,31 @@ public class ProductMappingController {
 
 		if (productMapping == null) {
 			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found", "Mapping for product [" + productId + "] not found"));
+		}
+
+		return ResponseEntity.ok().body(productMapping);
+	}
+
+	/**
+	 * Find the namespace and namespace specific product id via the common product id.
+	 *
+	 * @param namespaceEntityId
+	 * @return ProductMapping with common namespaceEntityId as a UUID string and original backend identifiers
+	 */
+	@GetMapping("/productmapping/internal/get")
+	public ResponseEntity<ProductMapping> getProductMappingByNamespaceEntityId(@RequestParam(value = "namespaceEntityId") String namespaceEntityId) {
+		ProductMapping productMapping = null;
+
+		try {
+			productMapping = service.findByNamespaceEntityId(namespaceEntityId);
+		} catch (Exception e) {
+			log.error("getting product mapping failed, namespaceEntityId: " + namespaceEntityId, e);
+			Error error = new Error("failed-to-get-product-mapping-by-namespace-entity-id", "failed to get mapping for namespaceEntityId [" + namespaceEntityId + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+		}
+
+		if (productMapping == null) {
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found-by-namespace-entity-id", "Mapping for namespaceEntityId [" + namespaceEntityId + "] not found"));
 		}
 
 		return ResponseEntity.ok().body(productMapping);
