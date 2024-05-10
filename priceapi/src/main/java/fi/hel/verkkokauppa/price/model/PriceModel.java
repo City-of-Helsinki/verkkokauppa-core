@@ -39,18 +39,19 @@ public class PriceModel {
     JSONObject original;
 
     @Field(type = FieldType.Text)
-    String vatPercentage = "24.0";
+    String vatPercentage = "0";
 
     public PriceModel() {}
 
-    public PriceModel(String productId, String price, JSONObject original) {
+    public PriceModel(String productId, String price, JSONObject original,String productVatPercentage) {
         this.id = UUIDGenerator.generateType4UUID().toString();
         this.productId = productId;
         this.price = price.replace(",", ".");
         this.grossValue = price.replace(",", ".");
         this.original = original;
+        this.vatPercentage = productVatPercentage;
         double grossValue = Double.parseDouble(this.grossValue);
-        double[] result = PriceService.calculateNetAndVat(grossValue, Double.parseDouble(vatPercentage));
+        double[] result = PriceService.calculateNetAndVat(grossValue, Double.parseDouble(this.vatPercentage));
 
         double netValue = result[0];
         double vatValue = result[1];

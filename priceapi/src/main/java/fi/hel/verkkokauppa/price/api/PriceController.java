@@ -69,10 +69,11 @@ public class PriceController {
     @GetMapping("/price/createInternalPrice")
     public ResponseEntity<PriceModel> createInternalPrice(
             @RequestParam(value = "productId") String productId,
-            @RequestParam(value = "productPrice") String productPrice
+            @RequestParam(value = "productPrice") String productPrice,
+            @RequestParam(value = "productVatPercentage") String productVatPercentage
     ) {
         try {
-            PriceModel price = service.findByCommonProductIdAndCreateInternalProduct(productId, productPrice);
+            PriceModel price = service.findByCommonProductIdAndCreateInternalProduct(productId, productPrice, productVatPercentage);
 
             if (price == null) {
                 Error error = new Error("price-not-found-from-backend", "price with product id [" + productId + "] not found from backend");

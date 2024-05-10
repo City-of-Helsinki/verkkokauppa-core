@@ -84,7 +84,7 @@ public class PriceService {
         return bd.doubleValue();
     }
 
-    public PriceModel findByCommonProductIdAndCreateInternalProduct(String productId, String internalPrice) {
+    public PriceModel findByCommonProductIdAndCreateInternalProduct(String productId, String internalPrice, String productVatPercentage) {
         try {
             // initialize http client
             WebClient client = getClient();
@@ -96,8 +96,8 @@ public class PriceService {
             log.debug("namespace: " + namespace + " namespaceEntityId: " + namespaceEntityId);
 
             JSONObject priceDetails = new JSONObject();
-            double grossValue = Double.parseDouble(internalPrice); // Example grossValue
-            double vatPercentage = 24.0; // Example VAT percentage
+            double grossValue = Double.parseDouble(internalPrice);
+            double vatPercentage = Double.parseDouble(productVatPercentage);
 
             double[] result = calculateNetAndVat(grossValue, vatPercentage);
 
@@ -111,7 +111,7 @@ public class PriceService {
             String productPrice = (String) priceDetails.get("grossValue");
 
             log.debug("price: " + productPrice);
-            PriceModel priceModel = new PriceModel(productId, productPrice, priceDetails);
+            PriceModel priceModel = new PriceModel(productId, productPrice, priceDetails, productVatPercentage);
             return priceRepository.save(priceModel);
         } catch (Exception e) {
             log.error("creating internal price failed, productId: " + productId, e);
