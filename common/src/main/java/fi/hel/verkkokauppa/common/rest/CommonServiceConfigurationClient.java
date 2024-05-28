@@ -2,18 +2,15 @@ package fi.hel.verkkokauppa.common.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
-import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
 import lombok.Getter;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
@@ -165,6 +162,12 @@ public class CommonServiceConfigurationClient {
 
     public String getAuthKey(String namespace) {
         String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "api-access/get?namespace=" + namespace;
+
+        return restServiceClient.queryStringService(serviceMappingUrl);
+    }
+
+    public String getWebhookAuthKey(String namespace) {
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "webhook-api-access/get?namespace=" + namespace;
 
         return restServiceClient.queryStringService(serviceMappingUrl);
     }

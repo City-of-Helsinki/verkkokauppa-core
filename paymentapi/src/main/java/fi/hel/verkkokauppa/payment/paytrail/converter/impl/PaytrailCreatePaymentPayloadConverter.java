@@ -14,6 +14,7 @@ import org.helsinki.paytrail.model.payments.PaymentCustomer;
 import org.helsinki.paytrail.model.payments.PaymentItem;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,10 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
 
     @Autowired
     private ObjectMapper mapper;
+
+    // if not set defaults to false
+    @Value("${elasticsearch.service.local.environment:#{false}}")
+    private Boolean isLocalEnvironment;
 
     @Override
     public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper, String stamp) {
@@ -61,6 +66,12 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
         callbackUrls.setSuccess(env.getRequiredProperty("paytrail_payment_notify_success_url"));
         callbackUrls.setCancel(env.getRequiredProperty("paytrail_payment_notify_cancel_url"));
+
+        // Get from context if local environment
+        if (this.isLocalEnvironment && !context.getNotifyUrl().isEmpty() && context.getNotifyUrl().contains("ngrok")) {
+            callbackUrls.setSuccess(context.getNotifyUrl() + "/success");
+            callbackUrls.setCancel(context.getNotifyUrl() + "/cancel");
+        }
 
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);

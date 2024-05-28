@@ -142,7 +142,7 @@ public class PaymentAdminController {
                         }
                     } catch (Exception e) {
                         log.info("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
-                        sendNotificationService.sendErrorNotification(
+                        log.error(
                                 "Endpoint: /payment-admin/paytrail/subscription-renewal-order-created-event. Subscription renewal handling failed with exception for order: " + payment.getOrderId(),
                                 e
                         );
