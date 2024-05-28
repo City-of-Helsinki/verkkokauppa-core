@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.renewal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
@@ -10,7 +11,6 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalProcess;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalRequest;
-import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalProcessRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalRequestRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,6 +55,9 @@ public class SubscriptionRenewalService {
 
     @Autowired
     private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public String renewSubscription(String subscriptionId) {
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
@@ -128,6 +132,32 @@ public class SubscriptionRenewalService {
             requests.getContent().forEach(request -> {
                 triggerSubscriptionRenewalEvent(request.getId());
             });
+        }
+    }
+
+    public ArrayList<SubscriptionRenewalRequest> getAllRequests() {
+        ArrayList<SubscriptionRenewalRequest> requests = new ArrayList<>();
+        requestRepository.findAll().forEach(requests::add);
+        return requests;
+    }
+
+    public ArrayList<SubscriptionRenewalProcess> getAllProcesses() {
+        ArrayList<SubscriptionRenewalProcess> processes = new ArrayList<>();
+        processRepository.findAll().forEach(processes::add);
+        return processes;
+    }
+
+    public void logAll() {
+        try {
+            log.error(objectMapper.writeValueAsString(this.getAllProcesses()));
+        } catch (JsonProcessingException e) {
+            log.error("Could not serialize getAllProcesses");
+        }
+
+        try {
+            log.error(objectMapper.writeValueAsString(this.getAllRequests()));
+        } catch (JsonProcessingException e) {
+            log.error("Could not serialize getAllRequests");
         }
     }
 

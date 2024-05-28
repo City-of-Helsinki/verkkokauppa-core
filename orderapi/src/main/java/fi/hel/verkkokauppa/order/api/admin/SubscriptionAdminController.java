@@ -124,10 +124,20 @@ public class SubscriptionAdminController {
             renewalService.createRenewalRequests(renewableSubscriptions);
             return ResponseEntity.ok().build();
         } else {
+            // PUBSUPPORT-129
             sendNotificationService.sendErrorNotification(
                     "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
                     "checkRenevals (subscription) called before previous reneval requests were handled."
             );
+
+            renewalService.logAll();
+            renewalService.clearAll();
+            if (!renewalService.renewalRequestsExist()) {
+                log.debug("Cleared all: creating new subscription renewal requests");
+                renewalService.createRenewalRequests(renewableSubscriptions);
+                return ResponseEntity.ok().build();
+            }
+            log.error("Should not happen in here -> renewals could not be emptied");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
