@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @RestController
@@ -143,12 +144,22 @@ public class SubscriptionAdminController {
     }
 
     @GetMapping(value = "/subscription-admin/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> startProcessingRenewals() {
+    public ResponseEntity<Long> startProcessingRenewals() {
+        long size = 0;
+        try {
+            size = renewalService.renewalProcessCount();
+            log.debug("Started processing subscription renewals count {}", size);
+        } catch (Exception e) {
+            log.debug("Failed to get size of requests");
+        }
+
         while (renewalService.renewalRequestsExist()) {
             try {
-                renewalService.batchProcessNextRenewalRequests();
+                AtomicLong count = renewalService.batchProcessNextRenewalRequests();
+                size -= count.get();
+                log.debug("Subscription size {}", size);
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 sendNotificationService.sendErrorNotification(
                         "Endpoint: /subscription-admin/start-processing-renewals. Processing subscription renewals interrupted.",
                         e
@@ -156,7 +167,7 @@ public class SubscriptionAdminController {
             }
         }
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(size);
     }
 
     @GetMapping(value = "/subscription-admin/clear-renewal-requests", produces = MediaType.APPLICATION_JSON_VALUE)
