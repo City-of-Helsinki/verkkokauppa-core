@@ -1,18 +1,15 @@
 package fi.hel.verkkokauppa.productmapping.api.serviceConfiguration;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfiguration;
 import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfigurationBatchDto;
 import fi.hel.verkkokauppa.productmapping.response.namespace.ConfigurationModel;
-import fi.hel.verkkokauppa.productmapping.response.namespace.dto.NamespaceConfigurationDto;
+import fi.hel.verkkokauppa.productmapping.service.serviceConfiguration.ServiceConfigurationService;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.json.JSONObject;
@@ -22,9 +19,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import fi.hel.verkkokauppa.productmapping.model.serviceConfiguration.ServiceConfiguration;
-
-import fi.hel.verkkokauppa.productmapping.service.serviceConfiguration.ServiceConfigurationService;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -241,6 +240,50 @@ public class ServiceConfigurationController {
     public ResponseEntity<Boolean> validateNamespaceAccessToken(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "token") String token) {
         String salt = env.getRequiredProperty("api.access.encryption.salt");
         // TODO fail if empty salt
+
+        String whatTheTokenShouldBe = UUIDGenerator.generateType3UUIDString(namespace, salt);
+
+        if (token.equals(whatTheTokenShouldBe)) {
+            return ResponseEntity.ok(Boolean.TRUE);
+        } else {
+            return ResponseEntity.ok(Boolean.FALSE);
+        }
+    }
+
+    @GetMapping("/serviceconfiguration/webhook-api-access/create")
+    public ResponseEntity<String> createNamespaceWebhookAccessToken(@RequestParam(value = "namespace") String namespace) {
+        String salt = env.getRequiredProperty("webhook.access.encryption.salt");
+        // TODO fail if empty salt
+
+        String namespaceAccessToken = UUIDGenerator.generateType3UUIDString(namespace, salt);
+
+        StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+        encryptor.setPassword(salt);
+        String encryptedNamespaceWebhookAccessToken = encryptor.encrypt(namespaceAccessToken);
+
+        service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN, encryptedNamespaceWebhookAccessToken, true);
+
+        return ResponseEntity.ok(namespaceAccessToken);
+    }
+
+    @GetMapping("/serviceconfiguration/webhook-api-access/get")
+    public ResponseEntity<String> getNamespaceWebhookAccessToken(@RequestParam(value = "namespace") String namespace) {
+        String salt = env.getRequiredProperty("webhook.access.encryption.salt");
+        // TODO fail if empty salt
+
+        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN);
+        String encryptedNamespaceWebhookAccessToken = sc.getConfigurationValue();
+
+        StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+        encryptor.setPassword(salt);
+        String namespaceAccessToken = encryptor.decrypt(encryptedNamespaceWebhookAccessToken);
+
+        return ResponseEntity.ok(namespaceAccessToken);
+    }
+
+    @GetMapping("/serviceconfiguration/webhook-api-access/validate")
+    public ResponseEntity<Boolean> validateNamespaceWebhookAccessToken(@RequestParam(value = "namespace") String namespace, @RequestParam(value = "token") String token) {
+        String salt = env.getRequiredProperty("webhook.access.encryption.salt");
 
         String whatTheTokenShouldBe = UUIDGenerator.generateType3UUIDString(namespace, salt);
 

@@ -101,6 +101,6 @@ public class OrderNotificationsQueueListener {
         //format payload, message to json string conversion
         String body = mapper.writeValueAsString(message);
         //send to target url
-        restServiceClient.makeVoidPostCall(url, body);
+        restServiceClient.makeVoidPostCall(url, body, message.getNamespace());
     }
 }

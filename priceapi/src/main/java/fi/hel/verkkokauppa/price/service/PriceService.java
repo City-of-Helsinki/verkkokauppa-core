@@ -65,10 +65,10 @@ public class PriceService {
 
     // Function to calculate net value and VAT value
     public static double[] calculateNetAndVat(double grossValue, double vatPercentage) {
-        // Calculate VAT value
-        double vatValue = grossValue * (vatPercentage / 100);
         // Calculate net value
-        double netValue = grossValue - vatValue;
+        double netValue = grossValue / (1 + (vatPercentage / 100));
+        // Calculate VAT value
+        double vatValue = grossValue - netValue;
 
         // Rounding to two decimal places
         netValue = roundToTwoDecimals(netValue);

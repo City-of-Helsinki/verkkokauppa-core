@@ -10,7 +10,7 @@ class PriceServiceTest {
     public void testCalculateNetAndVat() {
         double grossValue = 100.0;
         double vatPercentage = 24.0;
-        double[] expected = {76.0, 24.0}; // Expected net value and VAT value
+        double[] expected = {80.65, 19.35}; // Expected net value and VAT value
 
         double[] result = PriceService.calculateNetAndVat(grossValue, vatPercentage);
 
@@ -25,7 +25,7 @@ class PriceServiceTest {
     public void testCalculateNetAndVatNewVat() {
         double grossValue = 100.0;
         double vatPercentage = 25.5;
-        double[] expected = {74.5, 25.5}; // Expected net value and VAT value
+        double[] expected = {79.68, 20.32}; // Expected net value and VAT value
 
         double[] result = PriceService.calculateNetAndVat(grossValue, vatPercentage);
 
