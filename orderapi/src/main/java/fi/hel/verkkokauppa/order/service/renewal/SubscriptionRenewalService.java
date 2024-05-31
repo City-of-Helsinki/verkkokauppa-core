@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class SubscriptionRenewalService {
@@ -98,16 +99,19 @@ public class SubscriptionRenewalService {
     }
 
     public boolean startRenewingSubscription(String subscriptionId) {
-        Optional<SubscriptionRenewalRequest> existingRequest = requestRepository.findById(subscriptionId);
         Optional<SubscriptionRenewalProcess> existingProcess = processRepository.findById(subscriptionId);
-        if (existingProcess.isPresent() || existingRequest.isEmpty()) {
+        if (existingProcess.isPresent()) {
             log.info("There is existing process renewing subscription with subscriptionId: {}", subscriptionId);
             // stop, this subscription is already being renewed by another instance of this service
             return false;
         } else {
             SubscriptionRenewalProcess process = SubscriptionRenewalProcess.builder().id(subscriptionId).processingStarted(LocalDateTime.now()).build();
             processRepository.save(process);
-            requestRepository.deleteById(subscriptionId);
+            try {
+                requestRepository.deleteById(subscriptionId);
+            } catch (Exception e) {
+                log.debug("Request deleting failed for {}", subscriptionId);
+            }
             return true;
         }
     }
@@ -124,15 +128,19 @@ public class SubscriptionRenewalService {
         processRepository.deleteAll();
     }
 
-    public void batchProcessNextRenewalRequests() {
+    public AtomicLong batchProcessNextRenewalRequests() {
         log.debug("processing next renewal requests");
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(0, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         log.debug("renewal requests {}", requests);
+        AtomicLong count = new AtomicLong();
         if (requests != null) {
             requests.getContent().forEach(request -> {
                 triggerSubscriptionRenewalEvent(request.getId());
+                requestRepository.deleteById(request.getId());
+                count.getAndDecrement();
             });
         }
+        return count;
     }
 
     public ArrayList<SubscriptionRenewalRequest> getAllRequests() {
