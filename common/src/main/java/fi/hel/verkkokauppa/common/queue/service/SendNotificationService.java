@@ -8,7 +8,6 @@ import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Component;
 
@@ -28,17 +27,6 @@ public class SendNotificationService {
 
     @Autowired
     private QueueConfigurations queueConfigurations;
-
-    @Value("${activemq.time-to-live-hours:#{22}}")
-    private Integer timeToLiveHours;
-
-    public SendNotificationService() {
-        this.jmsTemplate.setTimeToLive(hoursToSeconds(timeToLiveHours));
-    }
-
-    public static long hoursToSeconds(int hours) {
-        return hours * 3600L;
-    }
 
     public void sendToQueue(
             EventMessage message,
