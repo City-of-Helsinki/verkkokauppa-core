@@ -107,7 +107,7 @@ public class RestServiceClient {
         try {
             apiKey = configurationClient.getWebhookAuthKey(namespace);
         } catch (Exception e) {
-            log.info("Cant fetch webhook api key for namespace" + namespace);
+            log.info("Cant fetch webhook api key for namespace " + namespace);
         }
 
         WebClient client = WebClient.builder()
