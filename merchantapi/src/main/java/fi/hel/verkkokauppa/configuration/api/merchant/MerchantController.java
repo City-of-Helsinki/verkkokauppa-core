@@ -62,10 +62,12 @@ public class MerchantController {
 
             // search configurations for paytrail merchant id
             String merchantPaytrailMerchantId = null;
-            for(ConfigurationModel merchantConfiguration : returnDto.getConfigurations()){
-                if(merchantConfiguration.getKey().equals(MERCHANT_PAYTRAIL_MERCHANT_ID)){
-                    merchantPaytrailMerchantId = merchantConfiguration.getValue();
-                    break;
+            if(returnDto.getConfigurations().size()>0){
+                for(ConfigurationModel merchantConfiguration : returnDto.getConfigurations()){
+                    if(merchantConfiguration.getKey() != null && merchantConfiguration.getKey().equals(MERCHANT_PAYTRAIL_MERCHANT_ID)){
+                        merchantPaytrailMerchantId = merchantConfiguration.getValue();
+                        break;
+                    }
                 }
             }
 
