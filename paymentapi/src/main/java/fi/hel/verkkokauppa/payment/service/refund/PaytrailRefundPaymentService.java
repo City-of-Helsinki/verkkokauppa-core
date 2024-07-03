@@ -188,9 +188,9 @@ public class PaytrailRefundPaymentService {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
 
-        try {
-            sleep(10000);
-        }catch (Exception e){}
+//        try {
+//            sleep(10000);
+//        }catch (Exception e){}
 
         refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
         refundPayment = refundPaymentRepository.save(refundPayment);
