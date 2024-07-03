@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.ConfigurationDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.MerchantDto;
 import fi.hel.verkkokauppa.configuration.api.merchant.dto.PaytrailMerchantMappingDto;
+import fi.hel.verkkokauppa.configuration.model.ConfigurationModel;
 import fi.hel.verkkokauppa.configuration.service.DecryptService;
 import fi.hel.verkkokauppa.configuration.service.EncryptService;
 import fi.hel.verkkokauppa.configuration.service.MerchantService;
@@ -20,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+
+import static fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID;
 
 @Slf4j
 @Validated
@@ -57,7 +60,20 @@ public class MerchantController {
                 returnDto = merchantService.save(merchantDto);
             }
 
-            String merchantPaytrailMerchantId = returnDto.getMerchantPaytrailMerchantId();
+            // search configurations for paytrail merchant id
+            String merchantPaytrailMerchantId = null;
+            for(ConfigurationModel merchantConfiguration : returnDto.getConfigurations()){
+                if(merchantConfiguration.getKey().equals(MERCHANT_PAYTRAIL_MERCHANT_ID)){
+                    merchantPaytrailMerchantId = merchantConfiguration.getValue();
+                    break;
+                }
+            }
+
+            if( merchantPaytrailMerchantId == null ){
+                // check merchant entity for paytrail merchant id
+                merchantPaytrailMerchantId = returnDto.getMerchantPaytrailMerchantId();
+            }
+
             if (merchantPaytrailMerchantId != null) {
                 PaytrailMerchantMappingDto paytrailMerchantMappingDto = merchantService.getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(merchantPaytrailMerchantId, returnDto.getNamespace());
                 if (paytrailMerchantMappingDto != null) {
