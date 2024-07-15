@@ -34,6 +34,8 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.Thread.sleep;
+
 @Service
 @Slf4j
 public class PaytrailRefundPaymentService {
@@ -185,6 +187,10 @@ public class PaytrailRefundPaymentService {
         if (refundPayment.getRefundPaymentId() == null || refundResponse.getTransactionId() == null) {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
+
+//        try {
+//            sleep(10000);
+//        }catch (Exception e){}
 
         refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
         refundPayment = refundPaymentRepository.save(refundPayment);
