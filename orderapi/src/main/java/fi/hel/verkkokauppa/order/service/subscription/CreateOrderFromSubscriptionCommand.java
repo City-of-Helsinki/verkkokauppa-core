@@ -216,21 +216,23 @@ public class CreateOrderFromSubscriptionCommand {
 
             // Fetch subscription.
             subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
-            log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+            log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {} vatPercentage: {}",
                     subscription.getSubscriptionId(),
                     subscription.getPriceNet(),
                     subscription.getPriceVat(),
-                    subscription.getPriceGross()
+                    subscription.getPriceGross(),
+                    subscription.getVatPercentage()
             );
             // Set new prices to subscription from result.
             subscription.setPriceNet(resultDto.getPriceNet());
             subscription.setPriceVat(resultDto.getPriceVat());
             subscription.setPriceGross(resultDto.getPriceGross());
-            log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+            log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {} vatPercentage: {}",
                     resultDto.getSubscriptionId(),
                     resultDto.getPriceNet(),
                     resultDto.getPriceVat(),
-                    resultDto.getPriceGross()
+                    resultDto.getPriceGross()                    ,
+                    resultDto.getVatPercentage()
             );
             // Save given subscription values to database
             subscription = subscriptionRepository.save(subscription);
@@ -239,6 +241,10 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.setPriceNet(subscription.getPriceNet());
             subscriptionDto.setPriceVat(subscription.getPriceVat());
             subscriptionDto.setPriceGross(subscription.getPriceGross());
+            // if VAT Percentage was given then set it (KYV-1064)
+            if( resultDto.getVatPercentage() != null ){
+                subscriptionDto.setVatPercentage(resultDto.getVatPercentage());
+            }
 
         } catch (Exception e) {
             log.error("Error/new price not found when requesting new price to subscription request:{}", request, e);

@@ -227,6 +227,9 @@ public class ServiceConfigurationController {
         // TODO fail if empty salt
 
         ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_API_ACCESS_TOKEN);
+        if( sc == null){
+            return ResponseEntity.notFound().build();
+        }
         String encryptedNamespaceAccessToken = sc.getConfigurationValue();
 
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
