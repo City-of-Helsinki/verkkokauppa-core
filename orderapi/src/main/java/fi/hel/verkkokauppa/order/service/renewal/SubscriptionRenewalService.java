@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -61,15 +62,29 @@ public class SubscriptionRenewalService {
     private ObjectMapper objectMapper;
 
     public String renewSubscription(String subscriptionId) {
+        String orderId = null;
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
-        String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        // If order ids matches prevents sending renewal order created event.
-        if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
-            Order order = orderService.findById(orderId);
-            log.info("Trigger order created event for subscriptionId: {}", subscriptionId);
-            orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
-        } else {
-            log.info("Order ids doesn't match, can be duplicate, don't create new order for subscriptionId: {}", subscriptionId);
+
+        // multiple calls to this can create new orders even if subscription was just renewed
+        // check that end date for subscription is not suspiciously far in the future (KYV-)
+        LocalDateTime endDate = subscriptionDto.getEndDate();
+        if( endDate.isAfter(LocalDateTime.now().plusDays(5)))
+        {
+            log.info("End date for subscriptionId: {} is {}. Do not renew yet.", subscriptionId, endDate);
+        }
+        else
+        {
+            // end date is close so we can renew
+            log.info("End date for subscriptionId: {} is {}. Time to renew.", subscriptionId, endDate);
+            orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            // If order ids matches prevents sending renewal order created event.
+            if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
+                Order order = orderService.findById(orderId);
+                log.info("Trigger order created event for subscriptionId: {}", subscriptionId);
+                orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
+            } else {
+                log.info("Order ids doesn't match, can be duplicate, don't create new order for subscriptionId: {}", subscriptionId);
+            }
         }
 
         return orderId;
