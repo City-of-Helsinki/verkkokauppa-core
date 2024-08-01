@@ -100,7 +100,8 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
             paymentItem.setUnitPrice(PaymentUtil.convertToCents(orderItemDto.getPriceGross()).intValue());
             paymentItem.setUnits(orderItemDto.getQuantity());
             // KYV-1064 support one decimal (paytrail limit) in VAT
-            paymentItem.setVatPercentage(Double.parseDouble(String.format("%.1f", orderItemDto.getVatPercentage())));
+//            paymentItem.setVatPercentage(Double.parseDouble(String.format("%.1f", orderItemDto.getVatPercentage())));
+            paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
             paymentItem.setProductCode(orderItemDto.getProductId());
             paymentItem.setDescription(orderItemDto.getProductName());
 
