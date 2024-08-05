@@ -374,6 +374,18 @@ public class OrderService {
 
         List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
                 .map(order -> getOrderWithItems(order.getOrderId()))
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
+    }
+
+    public List<OrderAggregateDto> findConfirmedBySubscription(String subscriptionId) {
+        List<Order> orderIds = orderRepository.findOrdersBySubscriptionId(subscriptionId);
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(order -> getOrderWithItems(order.getOrderId()))
                 .filter( order -> !order.getOrder().getStatus().equals("cancelled") ) // filter out cancelled orders
                 .distinct()
                 .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
@@ -391,7 +403,7 @@ public class OrderService {
     }
 
     public Order getLatestOrderWithSubscriptionId(String subscriptionId) {
-        List<OrderAggregateDto> orders = findBySubscription(subscriptionId);
+        List<OrderAggregateDto> orders = findConfirmedBySubscription(subscriptionId); // do not get cancelled orders
 
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
