@@ -374,6 +374,7 @@ public class OrderService {
 
         List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
                 .map(order -> getOrderWithItems(order.getOrderId()))
+                .filter( order -> !order.getOrder().getStatus().equals("cancelled") ) // filter out cancelled orders
                 .distinct()
                 .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
                 .collect(Collectors.toList());
