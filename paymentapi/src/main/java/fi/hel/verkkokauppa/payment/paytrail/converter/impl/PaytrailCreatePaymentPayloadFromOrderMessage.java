@@ -14,6 +14,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 @Component
@@ -48,7 +49,10 @@ public class PaytrailCreatePaymentPayloadFromOrderMessage implements IPaytrailPa
         paymentItem.setUnitPrice(PaymentUtil.convertToCents(new BigDecimal(message.getPriceGross())).intValue());
         paymentItem.setUnits(Integer.parseInt(message.getProductQuantity()));
         // KYV-1064 support one decimal (paytrail limit) in VAT
-        paymentItem.setVatPercentage(Double.parseDouble(String.format("%.1f", message.getVatPercentage())));
+        DecimalFormat df = new DecimalFormat("#.0");
+        String roundedStr = df.format(Double.parseDouble(message.getVatPercentage()));
+        // parseDouble does not support , as decimal point. convert possible ,'s to .'s
+        paymentItem.setVatPercentage(Double.parseDouble(roundedStr.replace(',','.')));
 //        paymentItem.setVatPercentage(Integer.valueOf(message.getVatPercentage()));
         paymentItem.setProductCode(message.getProductId());
         paymentItem.setDescription(message.getProductName());
