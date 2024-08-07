@@ -227,11 +227,15 @@ public class CreateOrderFromSubscriptionCommand {
             subscription.setPriceNet(resultDto.getPriceNet());
             subscription.setPriceVat(resultDto.getPriceVat());
             subscription.setPriceGross(resultDto.getPriceGross());
+            // if VAT Percentage was given then set it (KYV-1064)
+            if( resultDto.getVatPercentage() != null ){
+                subscription.setVatPercentage(resultDto.getVatPercentage());
+            }
             log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {} vatPercentage: {}",
                     resultDto.getSubscriptionId(),
                     resultDto.getPriceNet(),
                     resultDto.getPriceVat(),
-                    resultDto.getPriceGross()                    ,
+                    resultDto.getPriceGross(),
                     resultDto.getVatPercentage()
             );
             // Save given subscription values to database
@@ -241,10 +245,8 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.setPriceNet(subscription.getPriceNet());
             subscriptionDto.setPriceVat(subscription.getPriceVat());
             subscriptionDto.setPriceGross(subscription.getPriceGross());
-            // if VAT Percentage was given then set it (KYV-1064)
-            if( resultDto.getVatPercentage() != null ){
-                subscriptionDto.setVatPercentage(resultDto.getVatPercentage());
-            }
+            subscriptionDto.setVatPercentage(subscription.getVatPercentage());
+
 
         } catch (Exception e) {
             log.error("Error/new price not found when requesting new price to subscription request:{}", request, e);
