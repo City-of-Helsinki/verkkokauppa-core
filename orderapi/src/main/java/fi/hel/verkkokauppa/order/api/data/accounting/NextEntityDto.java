@@ -20,7 +20,7 @@ import org.joda.time.DateTime;
  */
 
 @Data
-public class ProductAccountingDto {
+public class NextEntityDto {
 
     private String productId;
 
@@ -39,8 +39,4 @@ public class ProductAccountingDto {
     private String project;
 
     private String operationArea;
-
-    private DateTime activeFrom;
-
-    private NextEntityDto nextEntity;
 }
