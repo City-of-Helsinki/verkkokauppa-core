@@ -7,6 +7,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDateTime;
+
 @Document(indexName = "accounting")
 @Data
 public class ProductAccounting extends BaseModel {
@@ -37,8 +39,8 @@ public class ProductAccounting extends BaseModel {
     @Field(type = FieldType.Text)
     private String operationArea;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
-    private String activeFrom;
+    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    private LocalDateTime activeFrom;
 
     @Field(type = FieldType.Object)
     private NextEntity nextEntity;

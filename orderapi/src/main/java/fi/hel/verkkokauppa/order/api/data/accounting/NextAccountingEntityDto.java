@@ -1,7 +1,6 @@
 package fi.hel.verkkokauppa.order.api.data.accounting;
 
 import lombok.Data;
-import org.joda.time.DateTime;
 
 /**
  * Yritys
@@ -20,9 +19,9 @@ import org.joda.time.DateTime;
  */
 
 @Data
-public class NextEntityDto {
+public class NextAccountingEntityDto {
 
-    private String productId;
+//    private String productId;
 
     private String companyCode;
 

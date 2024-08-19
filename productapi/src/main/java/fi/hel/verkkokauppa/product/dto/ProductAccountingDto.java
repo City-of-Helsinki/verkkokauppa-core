@@ -1,9 +1,9 @@
 package fi.hel.verkkokauppa.product.dto;
 
+import fi.hel.verkkokauppa.product.model.NextEntity;
 import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 /**
  * Yritys
@@ -41,4 +41,12 @@ public class ProductAccountingDto extends BaseDto {
     private String project;
 
     private String operationArea;
+
+//    /**
+//     *
+//     */
+//    private String activeFrom;
+    private LocalDateTime activeFrom;
+
+    private NextEntity nextEntity;
 }
