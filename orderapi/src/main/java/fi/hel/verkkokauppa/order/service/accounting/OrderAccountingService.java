@@ -31,9 +31,9 @@ public class OrderAccountingService {
         return productAccountingEntity;
     }
 
-    public OrderAccountingDto createOrderAccounting(String orderId, List<OrderItemAccountingDto> orderItemAccountings) {
+    public OrderAccountingDto createOrderAccounting(String orderId, String namespace, List<OrderItemAccountingDto> orderItemAccountings) {
         LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
-        OrderAccountingDto orderAccountingDto = new OrderAccountingDto(orderId, createdAt, orderItemAccountings);
+        OrderAccountingDto orderAccountingDto = new OrderAccountingDto(orderId, namespace, createdAt, orderItemAccountings);
         createOrderAccounting(orderAccountingDto);
 
         return orderAccountingDto;

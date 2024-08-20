@@ -11,6 +11,7 @@ public class CreateRefundAccountingRequestDto {
 
     private String refundId;
     private String orderId;
+    private String namespace;
     private List<ProductAccountingDto> dtos;
 
 }

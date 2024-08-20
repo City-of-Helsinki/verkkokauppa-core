@@ -41,9 +41,8 @@ public class OrderAccountingController {
                 log.info("Accounting for order already created");
                 return ResponseEntity.ok().build();
             }
-            // TODO add namespace to accounting
             List<OrderItemAccountingDto> orderItemAccountings = orderItemAccountingService.createOrderItemAccountings(request);
-            OrderAccountingDto orderAccountingDto = orderAccountingService.createOrderAccounting(orderId, orderItemAccountings);
+            OrderAccountingDto orderAccountingDto = orderAccountingService.createOrderAccounting(orderId, request.getNamespace(), orderItemAccountings);
 
             return ResponseEntity.ok().body(orderAccountingDto);
 
