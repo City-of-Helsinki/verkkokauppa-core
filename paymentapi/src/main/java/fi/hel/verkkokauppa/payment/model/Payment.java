@@ -15,6 +15,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -90,6 +91,9 @@ public class Payment implements Persistable<String> {
 	@LastModifiedDate
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	LocalDateTime updatedAt;
+
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	LocalDateTime paidAt; // Timestamp when the transaction was paid
 
 	public String getId() {
 		return this.paymentId;

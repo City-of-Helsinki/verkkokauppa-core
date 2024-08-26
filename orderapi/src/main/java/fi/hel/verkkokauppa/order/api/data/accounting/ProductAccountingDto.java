@@ -33,6 +33,7 @@ public class ProductAccountingDto {
     private String project;
     private String operationArea;
     private LocalDateTime activeFrom;
+    private LocalDateTime paidAt;
     private NextAccountingEntityDto nextEntity;
     private String namespace;
 
@@ -105,6 +106,7 @@ public class ProductAccountingDto {
     }
 
     private boolean isActiveFromExceeded() {
-        return activeFrom != null && activeFrom.isBefore(LocalDateTime.now());
+        LocalDateTime referenceTime = paidAt != null ? paidAt : LocalDateTime.now();
+        return activeFrom != null && activeFrom.isBefore(referenceTime);
     }
 }

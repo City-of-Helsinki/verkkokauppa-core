@@ -40,7 +40,6 @@ public class OrderItemAccountingService {
 
         String orderId = request.getOrderId();
         List<ProductAccountingDto> productAccountingDtos = request.getDtos();
-
         List<OrderItem> orderItems = orderItemService.findByOrderId(orderId);
         for (OrderItem orderItem : orderItems) {
             String orderItemProductId = orderItem.getProductId();

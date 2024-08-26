@@ -25,6 +25,7 @@ import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.model.paytrail.payment.PaytrailPaymentProviderModel;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
@@ -36,6 +37,7 @@ import org.helsinki.paytrail.PaytrailClient;
 import org.helsinki.paytrail.constants.CheckoutAlgorithm;
 import org.helsinki.paytrail.constants.CheckoutMethod;
 import org.helsinki.paytrail.model.paymentmethods.PaytrailPaymentMethod;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentResponse;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
@@ -51,7 +53,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
+import java.time.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -77,6 +79,8 @@ public class PaymentPaytrailService {
 
     @Autowired
     private RestServiceClient restServiceClient;
+    @Autowired
+    private PaytrailPaymentStatusClient paytrailPaymentStatusClient;
 
     @Autowired
     private SendEventService sendEventService;
@@ -158,6 +162,10 @@ public class PaymentPaytrailService {
 
     public PaytrailPaymentContext buildPaytrailContext(String namespace, String merchantId) throws CommonApiException {
         return paymentContextBuilder.buildFor(namespace, merchantId, false);
+    }
+
+    public PaytrailPayment getPaytrailPayment(String paytrailTransactionId, String namespace, String merchantId) {
+        return paytrailPaymentStatusClient.getPaytrailPayment(buildPaytrailContext(namespace, merchantId), paytrailTransactionId);
     }
 
     public PaytrailTokenResponse getToken(PaytrailPaymentContext context, String tokenizationId) throws ExecutionException, InterruptedException {
@@ -432,5 +440,17 @@ public class PaymentPaytrailService {
     public JSONObject sendMitChargeNotify(String orderId) {
         log.info("sendMitChargeNotify called with orderId: {}", orderId);
         return restServiceClient.makeAdminGetCall(paymentExperienceUrl + "paytrailOnlinePayment/mitCharge/notify" + "?orderId=" + orderId);
+    }
+
+    public Payment updatePaymentWithPaytrailPayment(String paymentId, PaytrailPayment paytrailPayment) {
+        Payment payment = paymentRepository.findByPaymentId(paymentId);
+        LocalDateTime helsinkiLocalDateTime = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
+
+        payment.setPaidAt(helsinkiLocalDateTime);
+        return paymentRepository.save(payment);
+    }
+
+    public Payment getPayment(String paymentId) {
+        return paymentRepository.findByPaymentId(paymentId);
     }
 }
