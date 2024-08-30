@@ -444,9 +444,10 @@ public class PaymentPaytrailService {
 
     public Payment updatePaymentWithPaytrailPayment(String paymentId, PaytrailPayment paytrailPayment) {
         Payment payment = paymentRepository.findByPaymentId(paymentId);
-        LocalDateTime helsinkiLocalDateTime = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
+        LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
 
-        payment.setPaidAt(helsinkiLocalDateTime);
+        payment.setPaidAt(paidAt);
+        payment.setPaymentProviderStatus(paytrailPayment.status);
         return paymentRepository.save(payment);
     }
 

@@ -15,7 +15,6 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -36,6 +35,9 @@ public class Payment implements Persistable<String> {
 
 	@Field(type = FieldType.Text)
 	String status;
+
+	@Field(type = FieldType.Text)
+	String paymentProviderStatus;
 
 	@Field(type = FieldType.Text)
 	String paymentMethod;
