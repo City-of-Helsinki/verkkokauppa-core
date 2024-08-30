@@ -37,6 +37,9 @@ public class Payment implements Persistable<String> {
 	String status;
 
 	@Field(type = FieldType.Text)
+	String paymentProviderStatus;
+
+	@Field(type = FieldType.Text)
 	String paymentMethod;
 
 	@Field(type = FieldType.Text)
@@ -90,6 +93,9 @@ public class Payment implements Persistable<String> {
 	@LastModifiedDate
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	LocalDateTime updatedAt;
+
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	LocalDateTime paidAt; // Timestamp when the transaction was paid
 
 	public String getId() {
 		return this.paymentId;

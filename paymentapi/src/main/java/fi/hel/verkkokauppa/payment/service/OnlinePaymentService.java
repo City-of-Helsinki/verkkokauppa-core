@@ -45,6 +45,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -254,6 +255,18 @@ public class OnlinePaymentService {
         if (!payment.isPresent()) {
             log.debug("payment not found, paymentId: " + paymentId);
             Error error = new Error("payment-not-found-from-backend", "payment with payment id [" + paymentId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return payment.get();
+    }
+
+    public Payment getPaymentWithPaytrailTransactionId(String paytrailTransactionId) {
+        Optional<Payment> payment = paymentRepository.findById(paytrailTransactionId);
+
+        if (!payment.isPresent()) {
+            log.debug("payment not found, with paytrailTransactionId: " + paytrailTransactionId);
+            Error error = new Error("payment-not-found-from-backend-with-transaction-id", "payment with transaction id [" + paytrailTransactionId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 

@@ -34,8 +34,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Objects;
 
-import static java.lang.Thread.sleep;
-
 @Service
 @Slf4j
 public class PaytrailRefundPaymentService {

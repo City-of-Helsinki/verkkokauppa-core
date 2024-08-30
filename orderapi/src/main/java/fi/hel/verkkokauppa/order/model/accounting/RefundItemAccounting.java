@@ -55,5 +55,4 @@ public class RefundItemAccounting {
 
     @Field(type = FieldType.Text)
     private String operationArea;
-
 }

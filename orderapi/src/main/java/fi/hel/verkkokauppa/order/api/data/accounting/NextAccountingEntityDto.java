@@ -1,9 +1,6 @@
-package fi.hel.verkkokauppa.product.dto;
+package fi.hel.verkkokauppa.order.api.data.accounting;
 
-import fi.hel.verkkokauppa.product.model.NextEntity;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * Yritys
@@ -22,9 +19,9 @@ import java.time.LocalDateTime;
  */
 
 @Data
-public class ProductAccountingDto extends BaseDto {
+public class NextAccountingEntityDto {
 
-    private String productId;
+//    private String productId;
 
     private String companyCode;
 
@@ -41,12 +38,4 @@ public class ProductAccountingDto extends BaseDto {
     private String project;
 
     private String operationArea;
-
-//    /**
-//     *
-//     */
-//    private String activeFrom;
-    private LocalDateTime activeFrom;
-
-    private NextEntity nextEntity;
 }
