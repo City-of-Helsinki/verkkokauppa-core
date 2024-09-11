@@ -96,6 +96,10 @@ public class PaytrailRefundPaymentService {
         }
     }
 
+    public List<RefundPayment> getRefundPaymentForOrderByRefundId(String refundId) {
+        return refundPaymentRepository.findByRefundId(refundId);
+    }
+
     public List<RefundPayment> getPaymentsForOrder(String orderId, String namepace) {
         return refundPaymentRepository.findByNamespaceAndOrderId(namepace, orderId);
     }
