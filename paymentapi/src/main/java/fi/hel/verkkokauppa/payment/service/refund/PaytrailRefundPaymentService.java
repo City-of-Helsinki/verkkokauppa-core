@@ -81,8 +81,8 @@ public class PaytrailRefundPaymentService {
         refundPaymentRepository.save(refundPayment);
     }
 
-    public RefundPayment getRefundPaymentForOrder(String orderId) {
-        List<RefundPayment> refundPayments = refundPaymentRepository.findByOrderId(orderId);
+    public RefundPayment getRefundPaymentForOrder(String refundId) {
+        List<RefundPayment> refundPayments = refundPaymentRepository.findByRefundId(refundId);
 
         RefundPayment paidRefundPayment = selectPaidRefundPayment(refundPayments);
         RefundPayment payablePayment = selectPayableRefundPayment(refundPayments);
@@ -290,18 +290,18 @@ public class PaytrailRefundPaymentService {
         log.debug("triggered event REFUND_FAILED for refundId: " + refundPayment.getRefundId());
     }
 
-    public RefundPayment findByIdValidateByUser(String namespace, String orderId, String userId) {
-        RefundPayment refundPayment = getRefundPaymentForOrder(orderId);
+    public RefundPayment findByIdValidateByUser(String namespace, String refundId, String userId) {
+        RefundPayment refundPayment = getRefundPaymentForOrder(refundId);
         if (refundPayment == null) {
-            log.debug("no returnable refundPayment, orderId: " + orderId);
-            Error error = new Error("refund-payment-not-found-from-backend", "paid or payable refundPayment with order id [" + orderId + "] not found from backend");
+            log.debug("no returnable refundPayment, refundId: " + refundId);
+            Error error = new Error("refund-payment-not-found-from-backend", "paid or payable refundPayment with refund id [" + refundId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
         String paymentUserId = refundPayment.getUserId();
         if (!paymentUserId.equals(userId)) {
             log.error("unauthorized attempt to load refundPayment, userId does not match");
-            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + orderId + "] and user id [" + userId + "] not found from backend");
+            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with refund id [" + refundId + "] and refund id [" + userId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
