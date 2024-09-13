@@ -10,6 +10,7 @@ import java.util.List;
 public interface RefundPaymentRepository extends ElasticsearchRepository<RefundPayment, String> {
 
     List<RefundPayment> findByOrderId(String orderId);
+    List<RefundPayment> findByRefundId(String refundId);
     List<RefundPayment> findByNamespaceAndOrderId(String namespace, String orderId);
     List<RefundPayment> findByNamespaceAndOrderIdAndStatus(String namespace, String orderId, String status);
 

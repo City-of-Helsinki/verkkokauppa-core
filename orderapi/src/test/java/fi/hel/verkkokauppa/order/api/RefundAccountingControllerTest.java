@@ -85,12 +85,12 @@ public class RefundAccountingControllerTest extends AccountingTestUtils {
 
         RefundItemAccounting refundItemAccounting = refundItemAccountingRepository.findByRefundItemId(refundItem1.getRefundItemId());
         assertNotNull(refundItemAccounting);
-        assertEquals(refundItem1.getPriceGross(), refundItemAccounting.getPriceGross());
+        assertEquals(refundItem1.getRowPriceTotal(), refundItemAccounting.getPriceGross());
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());
 
         RefundItemAccounting refundItemAccounting2 = refundItemAccountingRepository.findByRefundItemId(refundItem2.getRefundItemId());
         assertNotNull(refundItemAccounting2);
-        assertEquals(refundItem2.getPriceGross(), refundItemAccounting2.getPriceGross());
+        assertEquals(refundItem2.getRowPriceTotal(), refundItemAccounting2.getPriceGross());
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting2.getRefundItemId());
 
     }
