@@ -43,6 +43,7 @@ public class ProductAccountingController {
         }
     }
 
+    // FIXME Uses request body even when this is get request
     @GetMapping("/product/accounting/list")
     public ResponseEntity<List<ProductAccounting>> listProductAccountings(@RequestBody GetProductAccountingListRequestDto request) {
         try {
@@ -64,26 +65,26 @@ public class ProductAccountingController {
         }
     }
 
-//    TODO remove when ready implementation
-//    @PostMapping("/product/accounting/list")
-//    public ResponseEntity<List<ProductAccounting>> listProductAccountings1(@RequestBody GetProductAccountingListRequestDto request) {
-//        try {
-//            List<ProductAccounting> productAccountings = new ArrayList<>();
-//
-//            List<String> productIds = request.getProductIds();
-//            for (String productId : productIds) {
-//                ProductAccounting productAccounting = productAccountingService.getProductAccounting(productId);
-//                productAccountings.add(productAccounting);
-//            }
-//            return ResponseEntity.ok().body(productAccountings);
-//
-//        } catch (Exception e) {
-//            log.error("listing product accountings failed", e);
-//            throw new CommonApiException(
-//                    HttpStatus.INTERNAL_SERVER_ERROR,
-//                    new Error("failed-to-list-product-accountings", "failed to list product accountings")
-//            );
-//        }
-//    }
+    // Duplicates the upper but is post to allow swagger to work
+    @PostMapping("/product/accounting/list")
+    public ResponseEntity<List<ProductAccounting>> listProductAccountingsPost(@RequestBody GetProductAccountingListRequestDto request) {
+        try {
+            List<ProductAccounting> productAccountings = new ArrayList<>();
+
+            List<String> productIds = request.getProductIds();
+            for (String productId : productIds) {
+                ProductAccounting productAccounting = productAccountingService.getProductAccounting(productId);
+                productAccountings.add(productAccounting);
+            }
+            return ResponseEntity.ok().body(productAccountings);
+
+        } catch (Exception e) {
+            log.error("listing product accountings failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-list-product-accountings", "failed to list product accountings")
+            );
+        }
+    }
 
 }

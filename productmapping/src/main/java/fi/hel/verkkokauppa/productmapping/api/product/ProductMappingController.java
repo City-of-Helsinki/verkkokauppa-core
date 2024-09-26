@@ -50,6 +50,31 @@ public class ProductMappingController {
 	/**
 	 * Find the namespace and namespace specific product id via the common product id.
 	 *
+	 * @return ProductMapping with common productId as a UUID string and original backend identifiers
+	 */
+	@GetMapping("/productmappings/get")
+	public ResponseEntity<List<ProductMapping>> getProductMappingsByNamespace(@RequestParam(value = "namespace") String namespace) {
+		List<ProductMapping> productMappings = null;
+
+		try {
+			productMappings = service.findByNamespace(namespace);
+		} catch (Exception e) {
+			log.error("getting product mapping failed, namespace: " + namespace, e);
+			Error error = new Error("failed-to-get-product mapping", "failed to get mapping for product [" + namespace + "]");
+			throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+		}
+
+		if (productMappings == null) {
+			throw new CommonApiException(HttpStatus.NOT_FOUND, new Error("product-mapping-not-found", "Mapping for product [" + namespace + "] not found"));
+		}
+
+		return ResponseEntity.ok().body(productMappings);
+	}
+
+
+	/**
+	 * Find the namespace and namespace specific product id via the common product id.
+	 *
 	 * @param namespaceEntityId
 	 * @return ProductMapping with common namespaceEntityId as a UUID string and original backend identifiers
 	 */
