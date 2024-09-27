@@ -52,7 +52,7 @@ public class ProductMappingController {
 	 *
 	 * @return ProductMapping with common productId as a UUID string and original backend identifiers
 	 */
-	@GetMapping("/productmappings/get")
+	@GetMapping("/productmappings/get/namespace")
 	public ResponseEntity<List<ProductMapping>> getProductMappingsByNamespace(@RequestParam(value = "namespace") String namespace) {
 		List<ProductMapping> productMappings = null;
 
