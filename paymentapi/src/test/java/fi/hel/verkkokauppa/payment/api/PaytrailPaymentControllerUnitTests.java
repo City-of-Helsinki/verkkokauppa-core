@@ -725,7 +725,7 @@ public class PaytrailPaymentControllerUnitTests {
         orderDto.setType("order");
         orderDto.setCustomerFirstName("Martin");
         orderDto.setCustomerLastName("Leh");
-        orderDto.setCustomerEmail("testi@ambientia.fi");
+        orderDto.setCustomerEmail("testi@hiq.fi");
         orderDto.setPriceNet("1234");
         orderDto.setPriceVat("0");
         // Sets total price to be 1 eur

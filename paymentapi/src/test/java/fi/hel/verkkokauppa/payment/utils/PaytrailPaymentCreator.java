@@ -57,7 +57,7 @@ public class PaytrailPaymentCreator extends TestPaymentCreator {
         payload.setItems(items1);
 
         PaymentCustomer customer = new PaymentCustomer();
-        customer.setEmail("test@ambientia.fi");
+        customer.setEmail("test@hiq.fi");
         payload.setCustomer(customer);
 
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
