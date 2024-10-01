@@ -447,14 +447,12 @@ public class PaymentPaytrailService {
         if( paytrailPayment.paidAt != null )      {
             LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
             payment.setPaidAt(paidAt);
-        }
-        else{
+        } else {
             log.debug("updatePaymentWithPaytrailPayment paymentId: {}. paytrailPayment.paidAt was null.", paymentId);
         }
         if( paytrailPayment.status != null )      {
             payment.setPaymentProviderStatus(paytrailPayment.status);
-        }
-        else{
+        } else {
             log.debug("updatePaymentWithPaytrailPayment paymentId: {}. paytrailPayment.status was null.", paymentId);
         }
         return paymentRepository.save(payment);
