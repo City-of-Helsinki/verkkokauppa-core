@@ -69,7 +69,7 @@ public class PaytrailRefundPaymentServiceTest extends PaytrailPaymentCreator {
         refundDto.setPriceNet("10");
         refundDto.setPriceVat("0");
         refundDto.setPriceTotal("10");
-        refundDto.setCustomerEmail(UUID.randomUUID() + "@ambientia.fi");
+        refundDto.setCustomerEmail(UUID.randomUUID() + "@hiq.fi");
 
         refundAggregateDto.setRefund(refundDto);
         ArrayList<RefundItemDto> refundItemDtos = new ArrayList<>();

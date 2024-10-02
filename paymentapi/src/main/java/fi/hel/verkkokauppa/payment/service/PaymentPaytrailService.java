@@ -444,10 +444,17 @@ public class PaymentPaytrailService {
 
     public Payment updatePaymentWithPaytrailPayment(String paymentId, PaytrailPayment paytrailPayment) {
         Payment payment = paymentRepository.findByPaymentId(paymentId);
-        LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
-
-        payment.setPaidAt(paidAt);
-        payment.setPaymentProviderStatus(paytrailPayment.status);
+        if( paytrailPayment.paidAt != null )      {
+            LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
+            payment.setPaidAt(paidAt);
+        } else {
+            log.debug("updatePaymentWithPaytrailPayment paymentId: {}. paytrailPayment.paidAt was null.", paymentId);
+        }
+        if( paytrailPayment.status != null )      {
+            payment.setPaymentProviderStatus(paytrailPayment.status);
+        } else {
+            log.debug("updatePaymentWithPaytrailPayment paymentId: {}. paytrailPayment.status was null.", paymentId);
+        }
         return paymentRepository.save(payment);
     }
 

@@ -414,7 +414,7 @@ public class PaymentAdminControllerTest extends BaseFunctionalTest {
 //                        .merchantId(getFirstMerchantIdFromNamespace("venepaikat"))
 //                        .productId("489834c0-255e-3ee2-a66b-99d092bf81f4")
 //                        .priceGross("100")
-//                        .customerEmail(UUID.randomUUID().toString() + "@ambientia.fi")
+//                        .customerEmail(UUID.randomUUID().toString() + "@hiq.fi")
 //                        .customerFirstName("dummy_firstname")
 //                        .customerLastName("dummy_lastname")
 //                        .build()
