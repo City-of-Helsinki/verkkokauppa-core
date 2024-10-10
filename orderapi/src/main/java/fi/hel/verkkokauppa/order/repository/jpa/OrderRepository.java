@@ -16,5 +16,6 @@ public interface OrderRepository extends ElasticsearchRepository<Order, String> 
     List<Order> findByUser(String user);
     List<Order> findOrdersBySubscriptionId(String subscriptionId);
     List<Order> findOrdersBySubscriptionIdAndEndDate(String subscriptionId, LocalDateTime endDate);
+    List<Order> findOrdersBySubscriptionIdAndEndDateAndStatus(String subscriptionId, LocalDateTime endDate, String status);
 
 }
