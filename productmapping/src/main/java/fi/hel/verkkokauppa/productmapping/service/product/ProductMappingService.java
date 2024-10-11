@@ -21,9 +21,8 @@ public class ProductMappingService {
     private ProductMappingRepository productMappingRepository;
 
 
-    public List<ProductMapping> findBy(String namespace) {
-        List<ProductMapping> mappings = productMappingRepository.findByNamespace(namespace);
-        return mappings;
+    public List<ProductMapping> findByNamespace(String namespace) {
+        return productMappingRepository.findByNamespace(namespace);
     }
 
     public ProductMapping findById(String productId) {
@@ -75,4 +74,5 @@ public class ProductMappingService {
     public ProductMapping findByNamespaceEntityId(String namespaceEntityId) {
         return this.productMappingRepository.findByNamespaceEntityId(namespaceEntityId);
     }
+
 }

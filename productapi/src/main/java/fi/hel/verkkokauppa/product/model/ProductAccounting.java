@@ -39,6 +39,9 @@ public class ProductAccounting extends BaseModel {
     @Field(type = FieldType.Text)
     private String operationArea;
 
+    @Field(type = FieldType.Text)
+    private String namespace;
+
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime activeFrom;
 
