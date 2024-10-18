@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum PaymentGatewayEnum {
     VISMA("online"),
     PAYTRAIL("online-paytrail"),
+    FREE("free"),
     INVOICE("offline");
 
     @JsonValue
