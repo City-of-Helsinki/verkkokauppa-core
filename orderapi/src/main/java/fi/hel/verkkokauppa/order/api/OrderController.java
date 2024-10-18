@@ -307,7 +307,7 @@ public class OrderController {
     @PostMapping(value = "/order/setAccounted", produces = MediaType.APPLICATION_JSON_VALUE)
     public void setOrderAsAccounted(@RequestParam(value = "orderId") String orderId) {
         try {
-
+            log.info("/order/setAccounted - Setting order accounted outside accounting process, orderId: " + orderId);
             orderService.markAsAccounted(orderId);
 
         } catch (Exception e) {

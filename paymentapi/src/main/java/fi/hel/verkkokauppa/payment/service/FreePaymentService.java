@@ -168,8 +168,4 @@ public class FreePaymentService {
 
         return new PaymentReturnDto(isValid, isPaymentPaid, canRetry, isAuthorized);
     }
-
-    private boolean isSuccessful(String status) {
-        return org.helsinki.paytrail.constants.PaymentStatus.OK.getStatus().equals(status);
-    }
 }
