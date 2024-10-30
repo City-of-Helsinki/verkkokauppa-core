@@ -33,9 +33,13 @@ public class ProductAccountingDto {
     private String project;
     private String operationArea;
     private LocalDateTime activeFrom;
-    private LocalDateTime paidAt;
     private NextAccountingEntityDto nextEntity;
+    private LocalDateTime paidAt;
+    private LocalDateTime refundCreatedAt;
+    private String merchantId;
     private String namespace;
+    private String paytrailTransactionId;
+    private String refundTransactionId;
 
     public String getCompanyCode() {
         if (isActiveFromExceeded() && nextEntity != null) {

@@ -54,6 +54,12 @@ public class OrderItemAccountingService {
                     String priceVat = orderItem.getRowPriceVat();
                     OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
                             priceNet, priceVat, productAccountingDto);
+                    // TODO add data using setters
+                    orderItemAccountingDto.setPaidAt(productAccountingDto.getPaidAt());
+                    orderItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
+                    orderItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
+                    orderItemAccountingDto.setPaytrailTransactionId(productAccountingDto.getPaytrailTransactionId());
+
 
                     createOrderItemAccounting(orderItemAccountingDto);
                     orderItemAccountings.add(orderItemAccountingDto);

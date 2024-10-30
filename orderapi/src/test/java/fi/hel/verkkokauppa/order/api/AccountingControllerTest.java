@@ -2,10 +2,13 @@ package fi.hel.verkkokauppa.order.api;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.accounting.*;
-import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
+import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
+import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
+import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
+import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
+import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
@@ -330,7 +334,12 @@ public class AccountingControllerTest extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"
+                );
 
         orderItemAccounting = orderItemAccountingRepository.save(orderItemAccounting);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting.getOrderItemId());
@@ -385,7 +394,11 @@ public class AccountingControllerTest extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
 
         refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());
