@@ -663,6 +663,30 @@ class OrderServiceTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
+    void createOrderWithFeeItemAndMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderWithFreeItemToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
     void createFreeOrderWithMerchantId() throws JsonProcessingException {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");

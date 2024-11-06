@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -44,19 +45,23 @@ public class OrderItemAccountingService {
         for (OrderItem orderItem : orderItems) {
             String orderItemProductId = orderItem.getProductId();
 
-            for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
-                String productId = productAccountingDto.getProductId();
+            // if item has price then create accounting for it
+            if(Double.parseDouble(orderItem.getRowPriceTotal().replace(",", ".")) != 0.0 )
+            {
+                for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
+                    String productId = productAccountingDto.getProductId();
 
-                if (productId.equalsIgnoreCase(orderItemProductId)) {
-                    String orderItemId = orderItem.getOrderItemId();
-                    String priceGross = orderItem.getRowPriceTotal();
-                    String priceNet = orderItem.getRowPriceNet();
-                    String priceVat = orderItem.getRowPriceVat();
-                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
-                            priceNet, priceVat, productAccountingDto);
+                    if (productId.equalsIgnoreCase(orderItemProductId)) {
+                        String orderItemId = orderItem.getOrderItemId();
+                        String priceGross = orderItem.getRowPriceTotal();
+                        String priceNet = orderItem.getRowPriceNet();
+                        String priceVat = orderItem.getRowPriceVat();
+                        OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
+                                priceNet, priceVat, productAccountingDto);
 
-                    createOrderItemAccounting(orderItemAccountingDto);
-                    orderItemAccountings.add(orderItemAccountingDto);
+                        createOrderItemAccounting(orderItemAccountingDto);
+                        orderItemAccountings.add(orderItemAccountingDto);
+                    }
                 }
             }
         }
