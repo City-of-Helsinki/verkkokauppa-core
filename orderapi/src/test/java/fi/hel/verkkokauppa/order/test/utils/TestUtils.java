@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
@@ -29,7 +30,12 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
@@ -38,6 +44,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -92,6 +99,8 @@ public class TestUtils extends DummyData {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    ElasticSearchRestClientResolver clientResolver;
 
     /**
      * Exclude field names by providing the field name as a string.
@@ -399,5 +408,20 @@ public class TestUtils extends DummyData {
         );
         log.info(jsonResponse.toString());
         return jsonResponse;
+    }
+
+    public IndexResponse createTestPayment(TestPayment payment) throws IOException {
+        // Convert Payment object to JSON
+        String paymentJson = objectMapper.writeValueAsString(payment);
+
+        // Create an IndexRequest for the specified index
+        IndexRequest indexRequest = new IndexRequest("payments")
+                .id(payment.getPaymentId()) // Optional: use payment ID as document ID
+                .source(paymentJson, XContentType.JSON);
+
+        // Execute the index request
+
+        // Return the document ID of the newly indexed document
+        return this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
     }
 }
