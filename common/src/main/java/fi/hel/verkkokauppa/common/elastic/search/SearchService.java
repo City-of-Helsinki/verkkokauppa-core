@@ -38,7 +38,6 @@ public class SearchService {
     ) throws IOException {
         List<Dto> results = new ArrayList<>();
         int from = 0;
-        // TODO
         int pageSize = 10000;
         int hitsLength;
 
@@ -55,7 +54,7 @@ public class SearchService {
             searchRequest.source(searchSourceBuilder);
 
             // Log the generated query JSON for debugging
-//            log.info("Generated Query for searchAcrossIndexes: {}", searchSourceBuilder.toString());
+            // log.info("Generated Query for searchAcrossIndexes: {}", searchSourceBuilder.toString());
 
             // Execute the search request
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);

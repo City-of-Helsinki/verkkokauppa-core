@@ -439,7 +439,7 @@ public class TestUtils extends DummyData {
 
 
     public JSONObject queryMailhoqMessages(){
-        // expect a response within a few seconds
+
         HttpClient httpClient = HttpClient.create();
 
         WebClient client = WebClient.builder()

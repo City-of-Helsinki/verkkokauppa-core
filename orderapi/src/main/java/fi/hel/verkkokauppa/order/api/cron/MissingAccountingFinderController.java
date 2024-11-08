@@ -47,13 +47,35 @@ public class MissingAccountingFinderController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("Failed to create accounting data", e);
+            log.error("Failed to find missing accounting data", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-create-accounting-data", "Failed to create accounting data")
+                    new Error("failed-to-find-missing-accounting-data", "Failed to find missing accounting data")
             );
         }
     }
 
+    @GetMapping(value = "/accounting/find-missing-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PaymentResultDto>> findMissingAccountingsBasedOnPaymentPaidNoEmail() {
+        try {
+            List<PaymentResultDto> failedToAccount = this.searchUnAccountedPayments.findUnaccountedPayments();
+
+            if (failedToAccount.isEmpty()) {
+                log.info("All orders and payments are accounted for.");
+                return ResponseEntity.ok().body(failedToAccount);
+            }
+
+            return ResponseEntity.ok().body(failedToAccount);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("Failed to find missing accounting data", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-find-missing-accounting-data", "Failed to find missing accounting data")
+            );
+        }
+    }
 
 }
