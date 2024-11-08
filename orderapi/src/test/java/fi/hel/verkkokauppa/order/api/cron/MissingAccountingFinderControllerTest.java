@@ -311,6 +311,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
         // get email count
         int totalMailsAfter = testUtils.mailHoqMessageCount();
+        // message api / real apis needs to be running for these asserts to work below!
         assertEquals(2, (totalMailsAfter - totalMailsBefore),"There should be two more eMail after the test.");
 
 
