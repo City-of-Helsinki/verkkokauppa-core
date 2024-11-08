@@ -411,7 +411,7 @@ public class OrderService {
 
     // get order for currently active subscription period
     public Order getCurrentPeriodOrderWithSubscriptionId(String subscriptionId, LocalDateTime subscriptionEndDate ) {
-        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDate(subscriptionId, subscriptionEndDate);
+        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDateAndStatus(subscriptionId, subscriptionEndDate, OrderStatus.CONFIRMED);
         Order activeOrder = null;
 
         if (orders.size() == 1) {

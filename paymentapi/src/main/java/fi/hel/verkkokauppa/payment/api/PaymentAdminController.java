@@ -16,6 +16,7 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentFilterService;
 import fi.hel.verkkokauppa.payment.service.PaymentMethodService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
 import org.helsinki.vismapay.response.VismaPayResponse;
 import org.helsinki.vismapay.response.payment.ChargeCardTokenResponse;
@@ -136,6 +137,19 @@ public class PaymentAdminController {
                             throw e;
                         }
                         onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto, card);
+
+                        // update payment from paytrail payment
+                        try {
+                            PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(transactionId, message.getNamespace(), message.getMerchantId());
+                            Payment updatedPayment = this.paymentPaytrailService.updatePaymentWithPaytrailPayment(payment.getPaymentId(), paytrailPayment);
+                        } catch (CommonApiException cae) {
+                            // do not fail renewal just because updating payment info from paytrail failed
+                            log.error("/payment-admin/paytrail/subscription-renewal-order-created-event CommonApiException", cae);
+                        } catch (Exception e) {
+                            // do not fail renewal just because updating payment info from paytrail failed
+                            log.error("/payment-admin/paytrail/subscription-renewal-order-created-event response failed", e);
+                        }
+
                         if (transactionId != null) {
                             onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), transactionId);
                             paymentPaytrailService.sendMitChargeNotify(payment.getOrderId());

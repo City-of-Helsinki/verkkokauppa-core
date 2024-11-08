@@ -155,7 +155,7 @@ public class TestUtils extends DummyData {
         order.setEndDate(LocalDateTime.now().plusMonths(1));
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.get(0).setPeriodFrequency(periodFrequency);
         orderItems.get(0).setPeriodUnit(periodUnit);
@@ -187,7 +187,7 @@ public class TestUtils extends DummyData {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("124"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId("124"));
@@ -203,7 +203,7 @@ public class TestUtils extends DummyData {
         Refund refund = generateDummyRefund(orderId);
 
         refund.setNamespace("venepaikat");
-        refund.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        refund.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<RefundItem> refundItems = generateDummyRefundItemList(refund, orderId, itemCount);
         refundItems.forEach(refundItem -> refundItem.setPriceGross("124"));
         refundItems.forEach(refundItem -> refundItem.setMerchantId("124"));
@@ -217,7 +217,7 @@ public class TestUtils extends DummyData {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
         orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
@@ -225,6 +225,27 @@ public class TestUtils extends DummyData {
         orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewFreeOrderToDatabase(int itemCount, String merchantId) {
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("0"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 

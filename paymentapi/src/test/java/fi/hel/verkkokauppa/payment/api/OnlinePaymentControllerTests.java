@@ -143,7 +143,7 @@ public class OnlinePaymentControllerTests extends BaseFunctionalTest {
         orderDto.setType("subscription");
         orderDto.setCustomerFirstName("severi");
         orderDto.setCustomerLastName("ku");
-        orderDto.setCustomerEmail("testi@ambientia.fi");
+        orderDto.setCustomerEmail("testi@hiq.fi");
         orderDto.setPriceNet("1");
         orderDto.setPriceVat("0");
         // Sets total price to be 1 eur
