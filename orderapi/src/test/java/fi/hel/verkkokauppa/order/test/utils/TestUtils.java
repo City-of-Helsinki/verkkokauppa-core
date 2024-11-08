@@ -32,6 +32,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -40,9 +41,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -53,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Component
 @Slf4j
@@ -416,12 +424,71 @@ public class TestUtils extends DummyData {
 
         // Create an IndexRequest for the specified index
         IndexRequest indexRequest = new IndexRequest("payments")
-                .id(payment.getPaymentId()) // Optional: use payment ID as document ID
+                .id(payment.getPaymentId()) // Use payment ID as document ID
                 .source(paymentJson, XContentType.JSON);
 
         // Execute the index request
+        IndexResponse indexResponse = this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
 
-        // Return the document ID of the newly indexed document
-        return this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
+        // Force a refresh on the "payments" index to make the document immediately searchable
+        this.clientResolver.get().indices().refresh(new RefreshRequest("payments"), RequestOptions.DEFAULT);
+
+        // Return the response from indexing
+        return indexResponse;
+    }
+
+
+    public JSONObject queryMailhoqMessages(){
+        // expect a response within a few seconds
+        HttpClient httpClient = HttpClient.create();
+
+        WebClient client = WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .exchangeStrategies(ExchangeStrategies.builder()
+                        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024)) // Set to 2 MB
+                        .build())
+                .build();
+
+        String jsonResponse = client.get()
+                .uri("http://localhost:8025/api/v2/messages")
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
+    }
+
+    public Integer mailHoqMessageCount(){
+        return Integer.parseInt(this.queryMailhoqMessages().get("total").toString());
+    }
+
+    /**
+     * Filters messages based on a custom condition provided by the predicate.
+     *
+     * @param condition a Predicate that defines the filtering condition on each message
+     * @return a list of messages that match the given condition
+     */
+    public List<JSONObject> filterMailhoqMessages(Predicate<JSONObject> condition) {
+        List<JSONObject> matchingMessages = new ArrayList<>();
+
+        // Get the "items" array from the JSON response
+        JSONArray items = this.queryMailhoqMessages().getJSONArray("items");
+
+        // Loop through each item in the array
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject message = items.getJSONObject(i);
+
+            // Apply the custom condition to determine if the message should be included
+            if (condition.test(message)) {
+                matchingMessages.add(message);
+            }
+        }
+
+        return matchingMessages;
     }
 }

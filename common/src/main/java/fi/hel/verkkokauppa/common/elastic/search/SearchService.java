@@ -55,7 +55,7 @@ public class SearchService {
             searchRequest.source(searchSourceBuilder);
 
             // Log the generated query JSON for debugging
-            log.info("Generated Query for searchAcrossIndexes: {}", searchSourceBuilder.toString());
+//            log.info("Generated Query for searchAcrossIndexes: {}", searchSourceBuilder.toString());
 
             // Execute the search request
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);

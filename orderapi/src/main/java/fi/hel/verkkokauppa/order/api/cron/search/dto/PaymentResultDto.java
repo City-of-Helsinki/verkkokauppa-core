@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api.cron;
+package fi.hel.verkkokauppa.order.api.cron.search.dto;
 
 import lombok.Data;
 
