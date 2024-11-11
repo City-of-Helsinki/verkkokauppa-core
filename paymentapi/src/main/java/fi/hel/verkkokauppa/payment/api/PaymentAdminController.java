@@ -28,7 +28,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -122,7 +124,7 @@ public class PaymentAdminController {
             if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
                 log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
             } else {
-                if ( message.getEndDate().isBefore(LocalDateTime.now()) ){
+                if ( message.getEndDate().toLocalDate().isBefore(LocalDate.now(ZoneId.of("Europe/Helsinki"))) ){
                     // end date has passed. Do not throw error, just skip the payment so no retries will be made
                     log.info("Subscription " + message.getSubscriptionId() + " end date has passed. Not trying to renew payment.");
                 }
