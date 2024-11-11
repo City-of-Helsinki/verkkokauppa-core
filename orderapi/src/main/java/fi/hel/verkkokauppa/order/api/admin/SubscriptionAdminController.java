@@ -272,7 +272,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getRenewableSubscriptions() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Subscription renewal validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setEndDateBefore(validityCheckDate);
@@ -341,7 +341,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Expiring cards validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setStatus(SubscriptionStatus.ACTIVE);
