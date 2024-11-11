@@ -28,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -116,11 +117,16 @@ public class PaymentAdminController {
         try {
             log.debug("payment-api received ORDER_CREATED event for orderId: " + message.getOrderId());
 
+
             Payment existingPayment = onlinePaymentService.getPaymentForOrder(message.getOrderId());
             if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
                 log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
             } else {
-                if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.isCardDefined()) {
+                if ( message.getEndDate().isBefore(LocalDateTime.now()) ){
+                    // end date has passed. Do not throw error, just skip the payment so no retries will be made
+                    log.info("Subscription " + message.getSubscriptionId() + " end date has passed. Not trying to renew payment.");
+                }
+                else if (Boolean.TRUE.equals(message.getIsSubscriptionRenewalOrder()) && message.isCardDefined()) {
                     Payment payment = onlinePaymentService.createSubscriptionRenewalPayment(message);
                     PaymentCardInfoDto card = new PaymentCardInfoDto(message.getCardToken(), message.getCardExpYear(), message.getCardExpMonth(), message.getCardLastFourDigits());
                     try {
