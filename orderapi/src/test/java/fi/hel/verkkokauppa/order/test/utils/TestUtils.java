@@ -31,6 +31,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -453,6 +454,24 @@ public class TestUtils extends DummyData {
 
         // Force a refresh on the "payments" index to make the document immediately searchable
         this.clientResolver.get().indices().refresh(new RefreshRequest("payments"), RequestOptions.DEFAULT);
+
+        // Return the response from indexing
+        return indexResponse;
+    }
+    public IndexResponse createTestProductAccounting(TestProductAccounting payment) throws IOException {
+        // Convert Payment object to JSON
+        String paymentJson = objectMapper.writeValueAsString(payment);
+
+        // Create an IndexRequest for the specified index
+        IndexRequest indexRequest = new IndexRequest("accounting")
+                .id(payment.getProductId()) // Use payment ID as document ID
+                .source(paymentJson, XContentType.JSON);
+
+        // Execute the index request
+        IndexResponse indexResponse = this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
+
+        // Force a refresh on the "accounting" index to make the document immediately searchable
+        this.clientResolver.get().indices().refresh(new RefreshRequest("accounting"), RequestOptions.DEFAULT);
 
         // Return the response from indexing
         return indexResponse;

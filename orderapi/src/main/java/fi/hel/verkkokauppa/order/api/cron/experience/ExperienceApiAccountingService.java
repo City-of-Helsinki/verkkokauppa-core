@@ -49,7 +49,7 @@ public class ExperienceApiAccountingService {
                 }
 
             } catch (Exception e) {
-                log.error("Failed to send create accounting request for orderId {} and paymentId {}",
+                 log.error("Failed to send create accounting request for orderId {} and paymentId {}",
                         paymentResult.getOrderId(), paymentResult.getPaymentId(), e);
             }
         }

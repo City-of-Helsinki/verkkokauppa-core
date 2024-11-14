@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -49,7 +48,7 @@ public class MissingAccountingFinderController {
             @RequestParam(value = "createAccountingAfter", required = false) String createAccountingAfter
     ) {
         try {
-            List<PaymentResultDto> failedToAccount = new ArrayList<>();
+            List<PaymentResultDto> failedToAccount;
 
             // Define date-time formatter
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");

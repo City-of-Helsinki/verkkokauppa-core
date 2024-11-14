@@ -2,12 +2,13 @@ package fi.hel.verkkokauppa.order.api.cron;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
+import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
@@ -16,10 +17,10 @@ import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexResponse;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Test;
@@ -58,6 +59,8 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private RefundRepository refundRepository;
@@ -76,10 +79,6 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Autowired
-    private RestServiceClient restServiceClient;
-
 
     @Autowired
     private TestUtils testUtils;
@@ -212,6 +211,10 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 "Area B"
         );
 
+        // create and save orderitem to db
+        OrderItem orderItem = generateDummyOrderItem(order3);
+        this.orderItemRepository.save(orderItem);
+
         order3.setPriceTotal("0.01");
         order3.setStatus("confirmed");
         // Save needed fields to allow query to find it status = confirmed and price total over 0
@@ -224,6 +227,10 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         payment.setTotal(new BigDecimal(order3.getPriceTotal()));
         IndexResponse testPayment = this.testUtils.createTestPayment(payment);
 
+
+        ProductAccountingDto accountingDto = createDummyProductAccountingDto(orderItem.getProductId(), order3.getOrderId());
+        TestProductAccounting testProductAccounting = objectMapper.convertValue(accountingDto, TestProductAccounting.class);
+        testUtils.createTestProductAccounting(testProductAccounting);
 
         // Define the date-time variables
         LocalDateTime createdAfter = LocalDateTime.now().minusDays(1);
@@ -284,8 +291,12 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         // Create orderAccounting to order3
         createTestOrderAccounting(order3.getOrderId());
 
+        // Wait for 3 seconds to acconting to be created
+        sleep(3000);
         MvcResult result2 = this.mockMvc.perform(
                         get("/accounting/cron/find-missing-accounting")
+                                .param("createdAfter", createdAfterStr)
+                                .param("createAccountingAfter", createAccountingAfterStr)
                 )
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
@@ -298,6 +309,10 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 .anyMatch(paymentResultDto -> Objects.equals(paymentResultDto.getOrderId(), finalOrder3.getOrderId()));
         assertFalse(order3InFailedToAccount, "Order 3 should not be in the failedToAccount response");
 
+
+        assertEquals(1, failedToAccount.size(), "Should only be one that is failed to account");
+
+        assertEquals(0,failedToAccount2.size(),"Accounting should be created (if all endpoint)");
         // First, check the size of failedToAccount before and after accounting is created for order3
         assertEquals(
                 (failedToAccount.size() - 1),
@@ -306,30 +321,6 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         );
 
         sleep(5000);
-        List<JSONObject> matchingMessages = new ArrayList<>();
-
-        // Get the "items" array from the JSON response
-        JSONArray items = testUtils.queryMailhoqMessages().getJSONArray("items");
-
-        // Loop through each item in the array
-        for (int i = 0; i < items.length(); i++) {
-            JSONObject message = items.getJSONObject(i);
-
-            // Access the "Body" of the message content
-            JSONObject content = message.getJSONObject("Content");
-            String body = content.getString("Body");
-
-            // Check if both orderId and paymentId are contained in the body
-            if (body.contains(order3.getOrderId()) && body.contains(payment.getPaymentId())) {
-                matchingMessages.add(message); // Add to the result list if both are found
-            }
-        }
-
-//        // get email count
-//        int totalMailsAfter = testUtils.mailHoqMessageCount();
-//        // message api / real apis needs to be running for these asserts to work below!
-//        assertEquals(2, (totalMailsAfter - totalMailsBefore), "There should be two more eMail after the test.");
-
 
         // Filter messages using the custom condition
         List<JSONObject> totalMailsAfterContainsOrder3 = testUtils.filterMailhoqMessages(mailhoqMessage -> {
