@@ -29,4 +29,8 @@ public final class StringUtils {
 		}
 		return value;
 	}
+
+	public static double getDoubleFromString(String value){
+		return Double.parseDouble(value.replace(",", "."));
+	}
 }

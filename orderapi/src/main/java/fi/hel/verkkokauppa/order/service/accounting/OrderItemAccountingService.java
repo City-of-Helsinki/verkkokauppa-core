@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.common.util.IterableUtils;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateOrderAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
@@ -46,7 +47,7 @@ public class OrderItemAccountingService {
             String orderItemProductId = orderItem.getProductId();
 
             // if item has price then create accounting for it
-            if(Double.parseDouble(orderItem.getRowPriceTotal().replace(",", ".")) != 0.0 )
+            if(StringUtils.getDoubleFromString(orderItem.getRowPriceTotal()) != 0.0 )
             {
                 for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
                     String productId = productAccountingDto.getProductId();
