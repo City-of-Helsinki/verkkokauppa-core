@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
@@ -45,6 +46,9 @@ public class OrderNotificationsQueueListener {
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
 
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
@@ -87,6 +91,9 @@ public class OrderNotificationsQueueListener {
 
         if(subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
             log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
+            log.info("Subscription: {} card token was: {}", message.subscriptionId, message.getCardToken());
+            message.setCardToken(subscription.getPaymentMethodToken());
+            log.info("Subscription: {} card token was set to: {}", message.subscriptionId, message.getCardToken());
             String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
                     paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
                     paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";

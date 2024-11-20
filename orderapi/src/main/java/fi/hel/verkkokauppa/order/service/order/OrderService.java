@@ -361,7 +361,8 @@ public class OrderService {
                     .priceGross(orderItem.getPriceGross())
                     .customerEmail(order.getCustomerEmail())
                     .customerFirstName(order.getCustomerFirstName())
-                    .customerLastName(order.getCustomerLastName());
+                    .customerLastName(order.getCustomerLastName())
+                    .endDate(subscription.getEndDate());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();

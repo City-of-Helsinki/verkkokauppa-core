@@ -6,6 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -48,6 +53,8 @@ public class OrderMessage implements EventMessage {
     public String cardExpYear;
     public String cardExpMonth;
     public String cardLastFourDigits;
+    // KYV-1124
+    private LocalDateTime endDate;
 
     public OrderMessage toCustomerWebhook() {
         return OrderMessage
