@@ -235,6 +235,28 @@ public class TestUtils extends DummyData {
         return orderController.createWithItems(orderAggregateDto);
     }
 
+    public ResponseEntity<OrderAggregateDto> createNewOrderWithFreeItemToDatabase(int itemCount, String merchantId) {
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.add(generateDummyFreeOrderItem(order));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
     public ResponseEntity<OrderAggregateDto> createNewFreeOrderToDatabase(int itemCount, String merchantId) {
         Order order = generateDummyOrder();
 

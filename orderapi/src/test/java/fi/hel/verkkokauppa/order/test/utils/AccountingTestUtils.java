@@ -139,6 +139,42 @@ public class AccountingTestUtils extends DummyData {
         return orderItem;
     }
 
+    public OrderItem createFreeTestOrderItem(Order order, String price) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        OrderItem orderItem = new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "free-product-id",
+                "freeName",
+                "freeLabel",
+                "freeDescription",
+                1,
+                "unit",
+                price,
+                price,
+                price,
+                "0",
+                price,
+                price,
+                price,
+                price,
+                price,
+                price,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        orderItemRepository.save(orderItem);
+        toBeDeletedOrderItemById.add(orderItemId);
+
+        return orderItem;
+    }
+
     public OrderAccounting createTestOrderAccounting(String orderId) {
         OrderAccounting orderAccounting = new OrderAccounting();
         orderAccounting.setOrderId(orderId);

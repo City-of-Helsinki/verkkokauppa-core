@@ -44,8 +44,11 @@ public class OrderItemAccountingService {
         for (OrderItem orderItem : orderItems) {
             String orderItemProductId = orderItem.getProductId();
 
-            for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
-                String productId = productAccountingDto.getProductId();
+            // if item has price then create accounting for it
+            if(StringUtils.getDoubleFromString(orderItem.getRowPriceTotal()) != 0.0 )
+            {
+                for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
+                    String productId = productAccountingDto.getProductId();
 
                 if (productId.equalsIgnoreCase(orderItemProductId)) {
                     String orderItemId = orderItem.getOrderItemId();
@@ -61,8 +64,9 @@ public class OrderItemAccountingService {
                     orderItemAccountingDto.setPaytrailTransactionId(productAccountingDto.getPaytrailTransactionId());
 
 
-                    createOrderItemAccounting(orderItemAccountingDto);
-                    orderItemAccountings.add(orderItemAccountingDto);
+                        createOrderItemAccounting(orderItemAccountingDto);
+                        orderItemAccountings.add(orderItemAccountingDto);
+                    }
                 }
             }
         }

@@ -111,6 +111,38 @@ public abstract class DummyData {
         );
     }
 
+    public OrderItem generateDummyFreeOrderItem(Order order) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        return new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
+                "productName",
+                "productLabel",
+                "productDescription",
+                1,
+                "unit",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
     public ProductAccountingDto createDummyProductAccountingDto(String productId, String prefix){
         ProductAccountingDto dto = new ProductAccountingDto();
         dto.setInternalOrder(prefix + "internalOrder");
