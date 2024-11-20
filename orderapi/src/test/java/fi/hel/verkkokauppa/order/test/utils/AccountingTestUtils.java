@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -165,7 +166,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"
+        );
 
         orderItemAccounting = orderItemAccountingRepository.save(orderItemAccounting);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting.getOrderItemId());
@@ -277,7 +283,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace"
+        );
 
         refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());

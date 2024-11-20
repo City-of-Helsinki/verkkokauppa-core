@@ -128,7 +128,7 @@ public class SubscriptionAdminController {
             // PUBSUPPORT-129
             sendNotificationService.sendErrorNotification(
                     "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
-                    "checkRenevals (subscription) called before previous reneval requests were handled."
+                    "checkRenewals (subscription) called before previous renewal requests were handled."
             );
 
             renewalService.logAll();
