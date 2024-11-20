@@ -42,6 +42,8 @@ public class ProductAccountingDto extends BaseDto {
 
     private String operationArea;
 
+    private String namespace;
+
 //    /**
 //     *
 //     */
