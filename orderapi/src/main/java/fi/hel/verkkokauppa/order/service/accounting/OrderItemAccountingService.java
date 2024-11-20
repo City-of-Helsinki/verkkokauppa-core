@@ -1,7 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.common.util.IterableUtils;
-import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateOrderAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,13 +50,19 @@ public class OrderItemAccountingService {
                 for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
                     String productId = productAccountingDto.getProductId();
 
-                    if (productId.equalsIgnoreCase(orderItemProductId)) {
-                        String orderItemId = orderItem.getOrderItemId();
-                        String priceGross = orderItem.getRowPriceTotal();
-                        String priceNet = orderItem.getRowPriceNet();
-                        String priceVat = orderItem.getRowPriceVat();
-                        OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
-                                priceNet, priceVat, productAccountingDto);
+                if (productId.equalsIgnoreCase(orderItemProductId)) {
+                    String orderItemId = orderItem.getOrderItemId();
+                    String priceGross = orderItem.getRowPriceTotal();
+                    String priceNet = orderItem.getRowPriceNet();
+                    String priceVat = orderItem.getRowPriceVat();
+                    OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
+                            priceNet, priceVat, productAccountingDto);
+                    // Adds data using setters
+                    orderItemAccountingDto.setPaidAt(productAccountingDto.getPaidAt());
+                    orderItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
+                    orderItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
+                    orderItemAccountingDto.setPaytrailTransactionId(productAccountingDto.getPaytrailTransactionId());
+
 
                         createOrderItemAccounting(orderItemAccountingDto);
                         orderItemAccountings.add(orderItemAccountingDto);

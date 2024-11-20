@@ -59,7 +59,11 @@ public class RefundItemAccountingService {
 
                 if (productId.equalsIgnoreCase(refundItemProductId)) {
                     RefundItemAccountingDto refundItemAccountingDto = new RefundItemAccountingDto(refundItem, productAccountingDto);
-
+                    // Add extra data by setter
+                    refundItemAccountingDto.setRefundCreatedAt(productAccountingDto.getRefundCreatedAt());
+                    refundItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
+                    refundItemAccountingDto.setRefundTransactionId(productAccountingDto.getRefundTransactionId());
+                    refundItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
                     createRefundItemAccounting(refundItemAccountingDto);
                     refundItemAccountings.add(refundItemAccountingDto);
                 }

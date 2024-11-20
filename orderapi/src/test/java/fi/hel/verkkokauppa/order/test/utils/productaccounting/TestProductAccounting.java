@@ -1,29 +1,11 @@
-package fi.hel.verkkokauppa.product.dto;
+package fi.hel.verkkokauppa.order.test.utils.productaccounting;
 
-import fi.hel.verkkokauppa.product.model.NextEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * Yritys
- *
- * Pääkirjatili
- *
- * Alv-koodi
- *
- * Sisäinen tilaus
- *
- * Tulosyksikkö
- *
- * Projekti
- *
- * Toimintoalue
- */
-
 @Data
-public class ProductAccountingDto extends BaseDto {
-
+public class TestProductAccounting {
     private String productId;
 
     private String companyCode;
@@ -42,13 +24,7 @@ public class ProductAccountingDto extends BaseDto {
 
     private String operationArea;
 
-    private String namespace;
-
-//    /**
-//     *
-//     */
-//    private String activeFrom;
     private LocalDateTime activeFrom;
 
-    private NextEntity nextEntity;
+    private TestProductAccountingNextEntity nextEntity;
 }

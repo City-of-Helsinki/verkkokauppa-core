@@ -12,13 +12,13 @@ public class RedeliveryConfiguration {
     @Value("${activemq.use-exponential-backoff:#{true}}")
     private Boolean useExponentialBackoff;
 
-    @Value("${activemq.redelivery-delay:#{300000}}")
+    @Value("${activemq.redelivery-delay:#{3600000}}")
     private Long redeliveryDelay;
 
     @Value("${activemq.initial-redelivery-delay:#{60000}}")
     private Long initialRedeliveryDelay;
 
-    @Value("${activemq.back-off-multiplier:#{5}}")
+    @Value("${activemq.back-off-multiplier:#{1}}")
     private Long backOffMultiplier;
 
     @Value("${activemq.maximum-redeliveries:#{5}}")

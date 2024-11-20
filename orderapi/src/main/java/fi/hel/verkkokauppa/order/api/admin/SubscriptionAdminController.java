@@ -128,7 +128,7 @@ public class SubscriptionAdminController {
             // PUBSUPPORT-129
             sendNotificationService.sendErrorNotification(
                     "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
-                    "checkRenevals (subscription) called before previous reneval requests were handled."
+                    "checkRenewals (subscription) called before previous renewal requests were handled."
             );
 
             renewalService.logAll();
@@ -272,7 +272,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getRenewableSubscriptions() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Subscription renewal validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setEndDateBefore(validityCheckDate);
@@ -341,7 +341,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Expiring cards validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setStatus(SubscriptionStatus.ACTIVE);
