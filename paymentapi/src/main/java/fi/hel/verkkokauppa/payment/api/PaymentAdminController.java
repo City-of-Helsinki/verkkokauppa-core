@@ -124,7 +124,7 @@ public class PaymentAdminController {
             if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
                 log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
             } else {
-                if ( message.getEndDate().toLocalDate().isBefore(LocalDate.now(ZoneId.of("Europe/Helsinki"))) ){
+                if ( message.getEndDate() != null && message.getEndDate().toLocalDate().isBefore(LocalDate.now(ZoneId.of("Europe/Helsinki"))) ){
                     // end date has passed. Do not throw error, just skip the payment so no retries will be made
                     log.info("Subscription " + message.getSubscriptionId() + " end date has passed. Not trying to renew payment.");
                 }
