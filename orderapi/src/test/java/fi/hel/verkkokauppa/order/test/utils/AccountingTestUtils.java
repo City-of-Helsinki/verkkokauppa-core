@@ -245,6 +245,22 @@ public class AccountingTestUtils extends DummyData {
         return refundItem;
     }
 
+    public RefundItem createTestRefundItemWithPrice(Refund refund, String gross, String net, String vat) {
+        RefundItem refundItem = generateDummyRefundItem(refund);
+        refundItem.setPriceVat(vat);
+        refundItem.setPriceNet(net);
+        refundItem.setPriceGross(gross);
+        refundItem.setOriginalPriceGross(gross);
+        refundItem.setOriginalPriceVat(vat);
+        refundItem.setOriginalPriceNet(net);
+        refundItem.setRowPriceNet(net);
+        refundItem.setRowPriceTotal(gross);
+        refundItem.setRowPriceVat(vat);
+        refundItem = refundItemRepository.save(refundItem);
+        toBeDeletedRefundItemById.add(refundItem.getRefundItemId());
+        return refundItem;
+    }
+
     public RefundItem createTestRefundItem(Refund refund, String priceGross, String priceNet, String priceVat) {
         RefundItem refundItem = generateDummyRefundItem(refund);
         refundItem.setPriceGross(priceGross);
