@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateRefundAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.RefundItemAccountingDto;
@@ -54,18 +55,21 @@ public class RefundItemAccountingService {
         for (RefundItem refundItem : refundItems) {
             String refundItemProductId = refundItem.getProductId();
 
-            for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
-                String productId = productAccountingDto.getProductId();
+            // if item has price then create accounting for it
+            if(StringUtils.getDoubleFromString(refundItem.getRowPriceTotal()) != 0.0 ) {
+                for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
+                    String productId = productAccountingDto.getProductId();
 
-                if (productId.equalsIgnoreCase(refundItemProductId)) {
-                    RefundItemAccountingDto refundItemAccountingDto = new RefundItemAccountingDto(refundItem, productAccountingDto);
-                    // Add extra data by setter
-                    refundItemAccountingDto.setRefundCreatedAt(productAccountingDto.getRefundCreatedAt());
-                    refundItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
-                    refundItemAccountingDto.setRefundTransactionId(productAccountingDto.getRefundTransactionId());
-                    refundItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
-                    createRefundItemAccounting(refundItemAccountingDto);
-                    refundItemAccountings.add(refundItemAccountingDto);
+                    if (productId.equalsIgnoreCase(refundItemProductId)) {
+                        RefundItemAccountingDto refundItemAccountingDto = new RefundItemAccountingDto(refundItem, productAccountingDto);
+                        // Add extra data by setter
+                        refundItemAccountingDto.setRefundCreatedAt(productAccountingDto.getRefundCreatedAt());
+                        refundItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
+                        refundItemAccountingDto.setRefundTransactionId(productAccountingDto.getRefundTransactionId());
+                        refundItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
+                        createRefundItemAccounting(refundItemAccountingDto);
+                        refundItemAccountings.add(refundItemAccountingDto);
+                    }
                 }
             }
         }
