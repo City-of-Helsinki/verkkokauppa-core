@@ -14,6 +14,8 @@ import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundReturnDto;
+import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
+import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundGateway;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
@@ -23,6 +25,7 @@ import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilde
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
 import fi.hel.verkkokauppa.payment.util.RefundUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.constants.RefundStatus;
 import org.helsinki.paytrail.model.refunds.PaytrailRefundResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,6 +35,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -209,7 +213,7 @@ public class FreeRefundPaymentService {
         refundPayment.setOrderId(refundDto.getOrderId());
         refundPayment.setUserId(refundDto.getUser());
         refundPayment.setRefundMethod(paymentDto.getPaymentMethod());
-        refundPayment.setRefundGateway(RefundGateway.PAYTRAIL.toString());
+        refundPayment.setRefundGateway(RefundGateway.FREE.toString());
         refundPayment.setTimestamp(sdf.format(timestamp));
 
         refundPayment.setTotalExclTax(new BigDecimal(refundDto.getPriceNet()));
@@ -269,23 +273,6 @@ public class FreeRefundPaymentService {
         log.debug("triggered event REFUND_FAILED for refundId: " + refundPayment.getRefundId());
     }
 
-    public RefundPayment findByIdValidateByUser(String namespace, String orderId, String userId) {
-        RefundPayment refundPayment = getRefundPaymentForOrder(orderId);
-        if (refundPayment == null) {
-            log.debug("no returnable refundPayment, orderId: " + orderId);
-            Error error = new Error("refund-payment-not-found-from-backend", "paid or payable refundPayment with order id [" + orderId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        String paymentUserId = refundPayment.getUserId();
-        if (!paymentUserId.equals(userId)) {
-            log.error("unauthorized attempt to load refundPayment, userId does not match");
-            Error error = new Error("refundPayment-not-found-from-backend", "refundPayment with order id [" + orderId + "] and user id [" + userId + "] not found from backend");
-            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
-        }
-
-        return refundPayment;
-    }
 
     public void updateRefundPaymentStatus(String refundId, RefundReturnDto refundReturnDto) {
         RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
@@ -311,6 +298,25 @@ public class FreeRefundPaymentService {
                 log.debug("not triggering events, refund refundPayment not paid but can be retried, refundId: " + refundId);
             }
         }
+    }
+
+    public RefundReturnDto createRefundReturnDto(boolean isValid) {
+        boolean isRefundPaid = true;
+        boolean canRetry = false;
+
+        return new RefundReturnDto(isValid, isRefundPaid, canRetry);
+    }
+
+    public boolean validatePayment(RefundPayment payment) {
+        boolean isValid = false;
+        if( payment != null ){
+            BigDecimal zeroValue = BigDecimal.ZERO;
+            boolean paymentValidation = payment.getTotal().compareTo(zeroValue) == 0;
+            boolean gatewayValidation = payment.getRefundGateway().equals(RefundGateway.FREE.toString());
+            // check that total is zero and gateway is free
+            isValid = gatewayValidation && paymentValidation;
+        }
+        return isValid;
     }
 
 }

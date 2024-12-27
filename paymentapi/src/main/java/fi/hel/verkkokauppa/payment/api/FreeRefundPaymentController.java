@@ -36,7 +36,7 @@ public class FreeRefundPaymentController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("creating refund payment or paytrail refund call failed", e);
+            log.error("creating free refund payment failed", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-create-refund-payment", "failed to create refund payment")
@@ -53,9 +53,10 @@ public class FreeRefundPaymentController {
             @RequestParam Map<String, String> checkoutParams
     ) {
         try {
-            boolean isValid = refundReturnValidator.validatePaytrailChecksum(checkoutParams, merchantId, signature, refundId);
-            RefundReturnDto refundDto = refundReturnValidator.validatePaytrailRefundReturnValues(isValid, status);
-            refundPaymentService.updateRefundPaymentStatus(refundId, refundDto);
+            RefundPayment refundPayment = freeRefundPaymentService.getRefundPaymentWithRefundId(refundId);
+            boolean isValid = freeRefundPaymentService.validatePayment(refundPayment);
+            RefundReturnDto refundDto = freeRefundPaymentService.createRefundReturnDto(isValid);
+            freeRefundPaymentService.updateRefundPaymentStatus(refundId, refundDto);
             return ResponseEntity.status(HttpStatus.OK).body(refundDto);
         } catch (CommonApiException cae) {
             throw cae;
