@@ -199,7 +199,11 @@ public class SubscriptionController {
 
 	@PostMapping(value = "/subscription/set-card-token-event", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Void> setSubscriptionCardTokenEvent(@RequestBody SubscriptionMessage message) {
-		return subscriptionService.setSubscriptionCardInfoInternal(UpdatePaymentCardInfoRequest.fromSubscriptionMessage(message), false);
+		ResponseEntity<Void>  tokenUpdateResponse = subscriptionService.setSubscriptionCardInfoInternal(UpdatePaymentCardInfoRequest.fromSubscriptionMessage(message), false);
+		// Save update card event to history
+		message.setNamespace("internal");
+		saveHistoryService.saveSubscriptionMessageHistory(message);
+		return tokenUpdateResponse;
 	}
 
 
