@@ -377,6 +377,7 @@ public class PaymentPaytrailService {
                 .cardLastFourDigits(card.getCard().getPartialPan())
                 .user(order.getUser())
                 .eventTimestamp(now)
+                .namespace(order.getNamespace())
                 .build();
 
         sendEventService.sendEventMessage(TopicName.SUBSCRIPTIONS, message);
