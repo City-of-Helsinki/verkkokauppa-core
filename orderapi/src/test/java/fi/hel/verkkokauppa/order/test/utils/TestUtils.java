@@ -241,12 +241,12 @@ public class TestUtils extends DummyData {
         order.setNamespace("venepaikat");
         order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
-        orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
-        orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
-        orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
-        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
-        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
-        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("0.0"));
         orderItems.add(generateDummyFreeOrderItem(order));
         orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
