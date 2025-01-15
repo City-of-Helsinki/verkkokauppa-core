@@ -438,9 +438,9 @@ public class PaymentPaytrailService {
         return parameters;
     }
 
-    public JSONObject sendMitChargeNotify(String orderId) {
-        log.info("sendMitChargeNotify called with orderId: {}", orderId);
-        return restServiceClient.makeAdminGetCall(paymentExperienceUrl + "paytrailOnlinePayment/mitCharge/notify" + "?orderId=" + orderId);
+    public JSONObject sendMitChargeNotify(String orderId, String paymentId) {
+        log.info("sendMitChargeNotify called with orderId: {} and paymentId: {}", orderId, paymentId);
+        return restServiceClient.makeAdminGetCall(paymentExperienceUrl + "paytrailOnlinePayment/mitCharge/notify" + "?orderId=" + orderId + "&checkout-stamp=" + paymentId);
     }
 
     public Payment updatePaymentWithPaytrailPayment(String paymentId, PaytrailPayment paytrailPayment) {

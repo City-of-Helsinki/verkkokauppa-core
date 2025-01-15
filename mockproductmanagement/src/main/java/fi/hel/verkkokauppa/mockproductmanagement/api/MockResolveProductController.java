@@ -31,7 +31,7 @@ public class MockResolveProductController {
             JSONObject resolveProductResultDto = new JSONObject();
             resolveProductResultDto.put("subscriptionId","dummyProductId");
             resolveProductResultDto.put("userId","userId");
-            resolveProductResultDto.put("productId","b86337e8-68a0-3599-a18b-754ffae53f5a");
+            resolveProductResultDto.put("productId",data.getOrderItem().getProductId());
             resolveProductResultDto.put("productName","newProductName");
             resolveProductResultDto.put("productLabel","newProductLabel");
             resolveProductResultDto.put("productDescription","newProductDescription");

@@ -186,7 +186,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
                 body.contains("Endpoint: /subscription-admin/check-renewals.")
         );
         Assertions.assertTrue(
-                body.contains("checkRenevals (subscription) called before previous reneval requests were handled.")
+                body.contains("checkRenevals (subscription) called before previous renewal requests were handled.")
         );
     }
 

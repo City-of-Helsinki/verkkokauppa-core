@@ -160,7 +160,7 @@ public class PaymentAdminController {
 
                         if (transactionId != null) {
                             onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), transactionId);
-                            paymentPaytrailService.sendMitChargeNotify(payment.getOrderId());
+                            paymentPaytrailService.sendMitChargeNotify(payment.getOrderId(), payment.getPaymentId());
                         }
                     } catch (Exception e) {
                         log.info("subscription renewal payment failed for orderId: " + payment.getOrderId(), e);
