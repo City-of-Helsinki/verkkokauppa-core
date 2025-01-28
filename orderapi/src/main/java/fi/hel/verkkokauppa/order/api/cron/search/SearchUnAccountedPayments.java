@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.cron.search;
 
+import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import lombok.extern.slf4j.Slf4j;
@@ -94,7 +95,7 @@ public class SearchUnAccountedPayments {
 
         // Filter out unaccounted payments and log the result size
         List<PaymentResultDto> unaccountedPayments = matchedPayments.stream()
-                .filter(payment -> !accountedOrderIds.contains(payment.getOrderId()))
+                .filter(payment -> payment.getPaymentGateway().equals(PaymentGatewayEnum.INVOICE.toString()) || !accountedOrderIds.contains(payment.getOrderId()) )
                 .collect(Collectors.toList());
 
         log.info("Unaccounted payments found: {}", unaccountedPayments.size());
