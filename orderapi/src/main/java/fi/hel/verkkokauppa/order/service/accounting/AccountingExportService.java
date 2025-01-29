@@ -47,7 +47,8 @@ public class AccountingExportService {
         AccountingSlipDto accountingSlipDto = new AccountingSlipTransformer().transformToDto(accountingSlip);
 
         String senderId = accountingSlipDto.getSenderId();
-        String filename = constructAccountingExportFileName(senderId, exportData.getTimestamp());
+        // use current year to construct the name
+        String filename = constructAccountingExportFileName(senderId, LocalDate.now());
 
         fileExportService.export(SAP.Interface.ACCOUNTING, exportData.getXml(), filename);
 
