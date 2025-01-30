@@ -337,6 +337,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
+    restart: on-failure
     depends_on:
       - zookeeper
     ports:

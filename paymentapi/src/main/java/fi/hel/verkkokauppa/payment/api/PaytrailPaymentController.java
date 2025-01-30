@@ -15,6 +15,7 @@ import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
+import org.helsinki.paytrail.model.tokenization.Card;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -185,7 +186,7 @@ public class PaytrailPaymentController {
     }
 
     @PostMapping("/payment/paytrail/check-card-update-return-url")
-    public ResponseEntity<Void> checkCardUpdateReturnUrl(
+    public ResponseEntity<Card> checkCardUpdateReturnUrl(
             @RequestBody GetPaymentRequestDataDto dto,
             @RequestParam Map<String, String> params,
             @RequestParam(value = "signature") String signature,
@@ -200,7 +201,7 @@ public class PaytrailPaymentController {
             PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
 
             paymentPaytrailService.triggerCardUpdateEvent(dto.getOrder().getOrder(), card);
-            return ResponseEntity.status(HttpStatus.OK).build();
+            return ResponseEntity.status(HttpStatus.OK).body(card.getCard());
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
