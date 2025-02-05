@@ -7,6 +7,9 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
@@ -95,6 +98,9 @@ public class CreateOrderFromSubscriptionCommand {
     @Autowired
     private ServiceUrls serviceUrls;
 
+    @Autowired
+    private SaveHistoryService saveHistoryService;
+
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
         List<OrderItemMetaDto> orderItemMetas = new ArrayList<>();
         String namespace = subscriptionDto.getNamespace();
@@ -112,9 +118,20 @@ public class CreateOrderFromSubscriptionCommand {
 
         // Returns null orderId if subscription card is expired
         if (subscriptionService.isCardExpired(subscription)) {
-            log.info("Card is expired, trigger renew validations failed event for subscriptionId: {}", subscriptionDto.getSubscriptionId());
-            subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
-            return null;
+            log.info("Card seems to be expired but trying to renew anyway. SubscriptionId: {}", subscriptionDto.getSubscriptionId());
+
+            saveHistoryService.saveSubscriptionMessageHistory(SubscriptionMessage.builder()
+                    .subscriptionId(subscriptionDto.getSubscriptionId())
+                    .orderId(subscriptionDto.getOrderId())
+                    .orderItemId(subscriptionDto.getOrderItemId())
+                    .namespace(subscriptionDto.getNamespace())
+                    .eventType(EventType.SUBSCRIPTION_RENEWAL_WITH_EXPIRED_CARD)
+                    .cardTokenExpMonth(subscriptionDto.getPaymentMethodExpirationMonth().toString())
+                    .cardTokenExpYear(subscriptionDto.getPaymentMethodExpirationYear().toString())
+                    .cancellationCause("renewal_with_expired_card")
+                    .timestamp(LocalDateTime.now().toString())
+                    .eventTimestamp(LocalDateTime.now().toString())
+                    .build());
         }
 
         try {
