@@ -731,7 +731,7 @@ class OrderServiceTest extends TestUtils {
 
         // Create invoicing accountings
         createMockInvoiceAccountingForProductId(orderItem.getProductId());
-
+        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
         orderItemModel.setInvoicingDate(LocalDate.now());
         orderItemRepository.save(orderItemModel);
         log.info("Created order with orderId: {}", order.getOrderId());

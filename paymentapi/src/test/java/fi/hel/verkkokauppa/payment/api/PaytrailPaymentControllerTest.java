@@ -22,6 +22,8 @@ import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.testing.BaseFunctionalTest;
 import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.tokenization.Card;
+import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.helsinki.paytrail.service.PaytrailSignatureService;
 import org.json.JSONObject;
 import org.junit.After;
@@ -281,8 +283,8 @@ public class PaytrailPaymentControllerTest extends BaseFunctionalTest {
         params.put("checkout-tokenization-id", TOKENIZATION_ID);
         String signature = PaytrailSignatureService.calculateSignature(PaytrailSignatureService.filterCheckoutQueryParametersMap(params), null, secretKey);
         params.put("signature", signature);
-        ResponseEntity<Void> response = paytrailPaymentController.checkCardUpdateReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
-        assertEquals(response.getStatusCode(), HttpStatus.OK);
+        ResponseEntity<Card> response = paytrailPaymentController.checkCardUpdateReturnUrl(paymentRequestDataDto, params, signature, TOKENIZATION_ID);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
