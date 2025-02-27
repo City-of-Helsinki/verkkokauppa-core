@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
@@ -121,8 +122,14 @@ public class PaymentAdminController {
 
 
             Payment existingPayment = onlinePaymentService.getPaymentForOrder(message.getOrderId());
-            if (existingPayment != null && PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus())) {
-                log.warn("paid payment exists, not creating new payment for orderId: " + message.getOrderId());
+            if (existingPayment != null && (PaymentStatus.PAID_ONLINE.equals(existingPayment.getStatus()) || PaymentStatus.CREATED_FOR_MIT_CHARGE.equals(existingPayment.getStatus()))) {
+                log.warn("payment " + existingPayment.getPaymentId() + " with status " + existingPayment.getStatus() + " already exists, not creating new payment for orderId: " + message.getOrderId());
+                if( PaymentStatus.CREATED_FOR_MIT_CHARGE.equals(existingPayment.getStatus()) ) {
+                    sendNotificationService.sendErrorNotification(
+                            "Renewal payment for order " + existingPayment.getOrderId() + " already exists",
+                            "Renewal payment for order " + existingPayment.getOrderId() + " already exists, not creating new one. Payment id " + existingPayment.getPaymentId() + " status " + existingPayment.getStatus()
+                    );
+                }
             } else {
                 if ( message.getEndDate() != null && message.getEndDate().toLocalDate().isBefore(LocalDate.now(ZoneId.of("Europe/Helsinki"))) ){
                     // end date has passed. Do not throw error, just skip the payment so no retries will be made
@@ -144,6 +151,16 @@ public class PaymentAdminController {
                             onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto, card);
                             throw e;
                         }
+
+                        // check that order has not been paid while handling this payment
+                        Payment earlierPayment = onlinePaymentService.getPaymentForOrder(payment.getOrderId());
+
+                        if(earlierPayment != null && !earlierPayment.getPaymentId().equals(payment.getPaymentId()) && PaymentStatus.PAID_ONLINE.equals(earlierPayment.getStatus())){
+                            sendNotificationService.sendErrorNotification(
+                                    "Duplicate payment for order " + earlierPayment.getOrderId(),
+                                    "Duplicate MIT payment made for order " + earlierPayment.getOrderId() + " . New payment id " + payment.getPaymentId()
+                            );
+                        }
                         onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto, card);
 
                         // update payment from paytrail payment
@@ -160,6 +177,7 @@ public class PaymentAdminController {
 
                         if (transactionId != null) {
                             onlinePaymentService.setPaytrailTransactionId(payment.getPaymentId(), transactionId);
+                            onlinePaymentService.savePaymentToHistory( payment, EventType.MIT_CHARGE_PAID );
                             paymentPaytrailService.sendMitChargeNotify(payment.getOrderId(), payment.getPaymentId());
                         }
                     } catch (Exception e) {

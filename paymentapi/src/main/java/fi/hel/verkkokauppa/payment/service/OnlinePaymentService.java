@@ -9,6 +9,8 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -93,6 +95,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private SendNotificationService sendNotificationService;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -363,7 +368,7 @@ public class OnlinePaymentService {
         payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
         payment.setTimestamp(sdf.format(timestamp));
         payment.setPaymentType(OrderType.ORDER);
-        payment.setStatus(PaymentStatus.CREATED);
+        payment.setStatus(PaymentStatus.CREATED_FOR_MIT_CHARGE);
         payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(message.getPriceVat()));
         payment.setTotal(new BigDecimal(message.getPriceTotal()));
@@ -601,6 +606,17 @@ public class OnlinePaymentService {
         orderItemDto.setPriceVat(new BigDecimal(0));
         orderItemDto.setPriceGross(new BigDecimal(chargeAmount));
         return orderItemDto;
+    }
+
+    public void savePaymentToHistory(Payment payment, String event ){
+        saveHistoryService.savePaymentMessageHistory(PaymentMessage.builder()
+                .orderId(payment.getOrderId())
+                .paymentId(payment.getPaymentId())
+                .namespace(payment.getNamespace())
+                .eventType(event)
+                .eventTimestamp(LocalDateTime.now().toString())
+                .paymentPaidTimestamp(payment.getTimestamp())
+                .build());
     }
 
 }

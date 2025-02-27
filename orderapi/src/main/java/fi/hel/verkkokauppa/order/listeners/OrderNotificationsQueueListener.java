@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.time.LocalDateTime;
 
 @Component
 @Slf4j
@@ -82,25 +83,34 @@ public class OrderNotificationsQueueListener {
     }
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
-        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
-        Subscription subscription = null;
-
-        if( StringUtils.isNotEmpty(message.subscriptionId) && StringUtils.isNotEmpty(message.userId) ) {
-            subscription = getSubscriptionQuery.findByIdValidateByUser(message.subscriptionId, message.userId);
-        }
-
-        if(subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
-            log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
-            log.info("Subscription: {} card token was: {}", message.subscriptionId, message.getCardToken());
-            message.setCardToken(subscription.getPaymentMethodToken());
-            log.info("Subscription: {} card token was set to: {}", message.subscriptionId, message.getCardToken());
-            String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
-                    paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
-                    paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
-            callApi(message, url);
+        // multiple calls to this can create new orders even if subscription was just renewed
+        // check that end date for order is not suspiciously far in the future (KYV-1202)
+        LocalDateTime endDate = message.getEndDate();
+        if( endDate.isAfter(LocalDateTime.now().plusDays(40)))
+        {
+            log.info("End date for orderId: {} is {}. Do not pay yet.", message.getOrderId(), endDate);
+            // TODO: error notifikaatti
         }
         else {
-            log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+            restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+            Subscription subscription = null;
+
+            if (StringUtils.isNotEmpty(message.subscriptionId) && StringUtils.isNotEmpty(message.userId)) {
+                subscription = getSubscriptionQuery.findByIdValidateByUser(message.subscriptionId, message.userId);
+            }
+
+            if (subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
+                log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
+                log.info("Subscription: {} card token was: {}", message.subscriptionId, message.getCardToken());
+                message.setCardToken(subscription.getPaymentMethodToken());
+                log.info("Subscription: {} card token was set to: {}", message.subscriptionId, message.getCardToken());
+                String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
+                        paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
+                        paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
+                callApi(message, url);
+            } else {
+                log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+            }
         }
     }
 
