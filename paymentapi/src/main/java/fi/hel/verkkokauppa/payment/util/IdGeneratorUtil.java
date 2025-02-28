@@ -7,10 +7,10 @@ public class IdGeneratorUtil {
 
     public static  String generateIdWithTimestamp(String id) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-        String currentMinute = sdf.format(timestamp);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmssSSS");
+        String currentTimestamp = sdf.format(timestamp);
 
-        return id + "_at_" + currentMinute;
+        return id + "_at_" + currentTimestamp;
     }
 
 }

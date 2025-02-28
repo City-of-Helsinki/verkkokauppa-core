@@ -745,8 +745,12 @@ class OrderServiceTest extends TestUtils {
     void createSubsriptionOrderWithMerchantId() throws JsonProcessingException {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
-        JSONObject response = createMockAccountingForProductId("productId");
-        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+
+        // setup product for test
+        String productId = createMockProductMapping("venepaikat",firstMerchantIdFromNamespace);
+        JSONObject response = createMockAccountingForProductId(productId);
+
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2, true, productId);
         OrderDto order = Objects.requireNonNull(orderResponse.getBody()).getOrder();
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
         log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
