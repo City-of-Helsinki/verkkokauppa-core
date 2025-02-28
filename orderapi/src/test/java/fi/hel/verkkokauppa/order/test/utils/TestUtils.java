@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -148,9 +149,13 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
-        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true);
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true, "productId");
     }
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas) {
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, includeMetas, "productId");
+    }
+
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas, String productId) {
         Order order = generateDummyOrder();
 
         order.setEndDate(LocalDateTime.now().plusMonths(1));
@@ -167,7 +172,7 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setPriceNet("98.5");
         orderItems.get(0).setPriceVat("1.5");
         orderItems.get(0).setVatPercentage("1.5");
-        orderItems.get(0).setProductId("productId");
+        orderItems.get(0).setProductId(productId);
         orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
         List<OrderItemMeta> orderItemMetas;
         if( includeMetas == true ) {
@@ -374,6 +379,19 @@ public class TestUtils extends DummyData {
         JSONArray result = new JSONArray(jsonResponse);
         log.info(result.toString());
         return result.getJSONObject(0).getString("merchantId");
+    }
+
+    public String createMockProductMapping(String namespace, String merchantId) {
+
+        String jsonResponse = restServiceClient.getClient().get()
+                .uri(serviceUrls.getProductMappingServiceUrl() + "/create?namespace=" + namespace +"&namespaceEntityId=automatedtestproduct&merchantId=" + merchantId)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info(jsonResponse);
+        JSONObject result = new JSONObject(jsonResponse);
+        log.info(result.toString());
+        return result.getString("productId");
     }
 
     public JSONObject createMockAccountingForProductId(String productId) throws JsonProcessingException {

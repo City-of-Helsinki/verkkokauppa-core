@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.common.events;
 
 public class    EventType {
     public static String MIT_CHARGE_PAID = "MIT_CHARGE_PAID";
+
     public static String PAYMENT_PAID = "PAYMENT_PAID";
     public static String PAYMENT_FAILED = "PAYMENT_FAILED";
     public static String SUBSCRIPTION_CREATED = "SUBSCRIPTION_CREATED";

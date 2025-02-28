@@ -7,6 +7,7 @@ import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -51,6 +52,9 @@ public class OrderNotificationsQueueListener {
     @Value("${payment.card_token.encryption.password}")
     private String cardTokenEncryptionPassword;
 
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
         log.info("Consuming order-notifications message");
@@ -84,12 +88,15 @@ public class OrderNotificationsQueueListener {
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
         // multiple calls to this can create new orders even if subscription was just renewed
-        // check that end date for order is not suspiciously far in the future (KYV-1202)
+        // check that end date from subscription is not suspiciously far in the future (KYV-1202)
         LocalDateTime endDate = message.getEndDate();
-        if( endDate.isAfter(LocalDateTime.now().plusDays(40)))
+        if( endDate.isAfter(LocalDateTime.now().plusDays(5)))
         {
             log.info("End date for orderId: {} is {}. Do not pay yet.", message.getOrderId(), endDate);
-            // TODO: error notifikaatti
+            sendNotificationService.sendErrorNotification(
+                    "Order " + message.getOrderId() + " being renewed too early",
+                    "End date for subscription " + message.getSubscriptionId() + " is " + endDate + ", not renewing yet."
+            );
         }
         else {
             restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
