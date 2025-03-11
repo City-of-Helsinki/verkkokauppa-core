@@ -17,6 +17,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 		"fi.hel.verkkokauppa.history.configuration",
 		"fi.hel.verkkokauppa.common.elastic",
 		"fi.hel.verkkokauppa.common.error",
+		"fi.hel.verkkokauppa.common.sentry"
 })
 public class HistoryApiApplication {
 

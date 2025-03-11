@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 
@@ -49,6 +50,11 @@ public class RefundItemAccountingDto {
 
     private String operationArea;
 
+    private LocalDateTime refundCreatedAt;
+    private String merchantId;
+    private String namespace;
+    private String refundTransactionId;
+
     public RefundItemAccountingDto(String refundItemId, String refundId, String orderId, String priceGross, String priceNet, String priceVat, ProductAccountingDto productAccountingDto) {
         this.refundItemId = refundItemId;
         this.refundId = refundId;
@@ -70,9 +76,9 @@ public class RefundItemAccountingDto {
         this.refundItemId = refundItem.getRefundItemId();
         this.refundId = refundItem.getRefundId();
         this.orderId = refundItem.getOrderId();
-        this.priceGross = refundItem.getPriceGross();
-        this.priceNet = refundItem.getPriceNet();
-        this.priceVat = refundItem.getPriceVat();
+        this.priceGross = refundItem.getRowPriceTotal();
+        this.priceNet = refundItem.getRowPriceNet();
+        this.priceVat = refundItem.getRowPriceVat();
         this.companyCode = productAccountingDto.getCompanyCode();
         this.mainLedgerAccount = productAccountingDto.getMainLedgerAccount();
         this.vatCode = productAccountingDto.getVatCode();

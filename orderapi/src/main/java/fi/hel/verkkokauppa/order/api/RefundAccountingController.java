@@ -44,7 +44,7 @@ public class RefundAccountingController {
             }
 
             List<RefundItemAccountingDto> refundItemAccountings = refundItemAccountingService.createRefundItemAccountings(request);
-            RefundAccountingDto refundAccountingDto = refundAccountingService.createRefundAccounting(refundId, orderId, refundItemAccountings);
+            RefundAccountingDto refundAccountingDto = refundAccountingService.createRefundAccounting(refundId, orderId, request.getNamespace(), refundItemAccountings);
 
 
             return ResponseEntity.ok().body(refundAccountingDto);

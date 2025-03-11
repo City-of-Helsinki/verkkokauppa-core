@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OrderItemInvoicingStatus {
 
-    CREATED ("created");
+    CREATED ("created"),
+    CANCELLED ("cancelled"),
+
+    INVOICED("invoiced");
 
     @JsonValue
     private final String status;

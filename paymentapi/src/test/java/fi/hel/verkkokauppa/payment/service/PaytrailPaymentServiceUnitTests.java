@@ -5,11 +5,13 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.payment.api.PaytrailPaymentController;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailCreatePaymentPayloadMapper;
 import fi.hel.verkkokauppa.payment.mapper.PaytrailPaymentProviderListMapper;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentClient;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilder;
 import fi.hel.verkkokauppa.payment.paytrail.converter.IPaytrailPayloadConverter;
@@ -101,6 +103,11 @@ public class PaytrailPaymentServiceUnitTests {
 
     @MockBean
     private SendNotificationService sendNotificationService;
+
+    @MockBean
+    private RestServiceClient restServiceClient;
+    @MockBean
+    private PaytrailPaymentStatusClient paytrailPaymentStatusClient;
 
     @BeforeEach
     public void setup() {

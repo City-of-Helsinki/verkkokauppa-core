@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @RestController
@@ -124,21 +125,41 @@ public class SubscriptionAdminController {
             renewalService.createRenewalRequests(renewableSubscriptions);
             return ResponseEntity.ok().build();
         } else {
+            // PUBSUPPORT-129
             sendNotificationService.sendErrorNotification(
                     "Endpoint: /subscription-admin/check-renewals. All subscription renewal requests not processed yet, not creating new requests",
-                    "checkRenevals (subscription) called before previous reneval requests were handled."
+                    "checkRenewals (subscription) called before previous renewal requests were handled."
             );
+
+            renewalService.logAll();
+            renewalService.clearAll();
+            if (!renewalService.renewalRequestsExist()) {
+                log.debug("Cleared all: creating new subscription renewal requests");
+                renewalService.createRenewalRequests(renewableSubscriptions);
+                return ResponseEntity.ok().build();
+            }
+            log.error("Should not happen in here -> renewals could not be emptied");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
     @GetMapping(value = "/subscription-admin/start-processing-renewals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> startProcessingRenewals() {
+    public ResponseEntity<Long> startProcessingRenewals() {
+        long size = 0;
+        try {
+            size = renewalService.renewalProcessCount();
+            log.debug("Started processing subscription renewals count {}", size);
+        } catch (Exception e) {
+            log.debug("Failed to get size of requests");
+        }
+
         while (renewalService.renewalRequestsExist()) {
             try {
-                renewalService.batchProcessNextRenewalRequests();
+                AtomicLong count = renewalService.batchProcessNextRenewalRequests();
+                size -= count.get();
+                log.debug("Subscription size {}", size);
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 sendNotificationService.sendErrorNotification(
                         "Endpoint: /subscription-admin/start-processing-renewals. Processing subscription renewals interrupted.",
                         e
@@ -146,7 +167,7 @@ public class SubscriptionAdminController {
             }
         }
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().body(size);
     }
 
     @GetMapping(value = "/subscription-admin/clear-renewal-requests", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -251,7 +272,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getRenewableSubscriptions() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionRenewalCheckThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Subscription renewal validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setEndDateBefore(validityCheckDate);
@@ -268,6 +289,7 @@ public class SubscriptionAdminController {
                 if (endDate.isBefore(now) && !DateTimeUtil.isSameDay(endDate, now)) {
                     String subscriptionId = subscription.getSubscriptionId();
                     log.debug("Subscription with id {} is expired, setting status to {}", subscriptionId, SubscriptionStatus.CANCELLED);
+                    subscription.setStatus(SubscriptionStatus.CANCELLED);
                     cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.EXPIRED);
                 }
             }
@@ -319,7 +341,7 @@ public class SubscriptionAdminController {
     public List<SubscriptionDto> getSubscriptionsWithExpiringCard() {
         LocalDate currentDate = LocalDate.now();
         LocalDate validityCheckDate = currentDate.plusDays(subscriptionNotificationExpiringCardThresholdDays);
-        log.debug("validityCheckDate: {}", validityCheckDate);
+        log.debug("Expiring cards validityCheckDate: {}", validityCheckDate);
 
         SubscriptionCriteria criteria = new SubscriptionCriteria();
         criteria.setStatus(SubscriptionStatus.ACTIVE);

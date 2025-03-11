@@ -78,7 +78,7 @@ public class SubscriptionControllerTests extends DummyData {
         orderRepository.delete(order);
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, 2);
         orderItems.get(0).setPeriodFrequency(1L);
         orderItems.get(0).setPeriodUnit(Period.DAILY);
@@ -140,7 +140,7 @@ public class SubscriptionControllerTests extends DummyData {
     public void testCreateWithItemsGet() {
         Order order = generateDummyOrder();
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, 2);
         orderItems.get(0).setPeriodFrequency(1L);
         orderItems.get(0).setPeriodUnit(Period.DAILY);

@@ -14,6 +14,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 		"fi.hel.verkkokauppa.common.rest",
 		"fi.hel.verkkokauppa.common.queue",
 		"fi.hel.verkkokauppa.common.configuration",
+		"fi.hel.verkkokauppa.common.sentry"
 })
 public class EventsApplication {
 

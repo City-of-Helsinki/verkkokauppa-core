@@ -33,11 +33,14 @@ public class ServiceConfigurationKeysTest {
                 "subscriptionPriceUrl",
                 "orderCancelRedirectUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "merchantOrderWebhookUrl",
                 "merchantPaymentWebhookUrl",
                 "merchantSubscriptionWebhookUrl",
                 "merchantRefundWebhookUrl",
-                "refundSuccessRedirectUrl"
+                "refundSuccessRedirectUrl",
+                "sendMerchantTermsOfService",
+                "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -74,6 +77,7 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "refundSuccessRedirectUrl",
                 "payment_api_key",
                 "payment_api_version",
@@ -86,7 +90,9 @@ public class ServiceConfigurationKeysTest {
                 "payment_return_url",
                 "payment_submerchant_id",
                 "payment_type",
-                "subscriptionPriceUrl"
+                "subscriptionPriceUrl",
+                "sendMerchantTermsOfService",
+                "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -108,9 +114,11 @@ public class ServiceConfigurationKeysTest {
 
         List<String> knownKeys = Arrays.asList(
                 "merchantTermsOfServiceUrl",
+                "sendMerchantTermsOfService",
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
-                "subscriptionPriceUrl"
+                "subscriptionPriceUrl",
+                "subscriptionResolveProductUrl"
         );
 
         ObjectMapper mapper = new ObjectMapper();
@@ -148,8 +156,11 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
                 "orderSuccessRedirectUrl",
+                "orderPaymentFailedRedirectUrl",
                 "subscriptionPriceUrl",
-                "refundSuccessRedirectUrl"
+                "refundSuccessRedirectUrl",
+                "sendMerchantTermsOfService",
+                "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -180,7 +191,9 @@ public class ServiceConfigurationKeysTest {
                 "merchantZip",
                 "orderRightOfPurchaseIsActive",
                 "orderRightOfPurchaseUrl",
-                "subscriptionPriceUrl"
+                "sendMerchantTermsOfService",
+                "subscriptionPriceUrl",
+                "subscriptionResolveProductUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());

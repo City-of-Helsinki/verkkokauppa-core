@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -165,9 +166,10 @@ public class AccountingSlipService {
         List<OrderAccounting> orderAccountings = orderAccountingService.getOrderAccountings(orderIds);
 
         for (OrderAccounting orderAccounting : orderAccountings) {
-            LocalDate createdAt = orderAccounting.getCreatedAt().toLocalDate();
+            LocalDate createdAt = DateTimeUtil.toFinnishDate(orderAccounting.getCreatedAt());
+            LocalDate now = DateTimeUtil.toFinnishDate(LocalDateTime.now());
 
-            if (createdAt.isBefore(LocalDate.now())) {
+            if (createdAt.isBefore(now)) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -193,9 +195,10 @@ public class AccountingSlipService {
         List<RefundAccounting> refundAccountings = refundAccountingService.getRefundAccountings(refundIds);
 
         for (RefundAccounting refundAccounting : refundAccountings) {
-            LocalDate createdAt = refundAccounting.getCreatedAt().toLocalDate();
+            LocalDate createdAt = DateTimeUtil.toFinnishDate(refundAccounting.getCreatedAt());
+            LocalDate now = DateTimeUtil.toFinnishDate(LocalDateTime.now());
 
-            if (createdAt.isBefore(LocalDate.now())) {
+            if (createdAt.isBefore(now)) {
                 List<String> accountingsForDate = map.get(createdAt);
 
                 if (accountingsForDate == null) {
@@ -219,6 +222,7 @@ public class AccountingSlipService {
 
         int referenceNumber = postingDate.getDayOfYear();
 
+        // TODO: collect also orderids to summed accountings. Can order have items in multiple accountingSlips?
         Map<String, List<OrderItemAccountingDto>> summedOrderItemAccountings = getSummedOrderItemAccountingsForDate(orderAccountingsForDate);
         Map<String, List<RefundItemAccountingDto>> summedRefundItemAccountings = getSummedRefundItemAccountingsForDate(refundAccountingsForDate);
 
@@ -232,6 +236,7 @@ public class AccountingSlipService {
             List<OrderItemAccountingDto> summedOrderItemAccountingsForCompanyCode = summedOrderItemAccountings.get(companyCode);
             List<RefundItemAccountingDto> summedRefundItemAccountingsForCompanyCode = summedRefundItemAccountings.get(companyCode);
 
+            // TODO: if one accounting is missed and done later we overwrite earlier accounting export data with just one accounting row. How to make this unique? postingDate plus counter?
             String accountingSlipId = UUIDGenerator.generateType3UUIDString(postingDate.toString(), companyCode);
 
             String headerTextDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(postingDate);
@@ -297,6 +302,7 @@ public class AccountingSlipService {
             String referenceNumberFormatted = String.format("%1$" + REFERENCE_NUMBER_LENGTH + "s", referenceNumber).replace(' ', '0');
             String reference = referenceYear + companyCode + referenceNumberFormatted;
 
+            // TODO: add order ids to slip dto and db row
             AccountingSlipDto accountingSlipDto = new AccountingSlipDto(
                     accountingSlipId,
                     companyCode,
@@ -314,10 +320,12 @@ public class AccountingSlipService {
 
             AccountingExportDataDto accountingExportDataDto = accountingExportDataService.createAccountingExportDataDto(accountingSlipDto);
             accountingExportService.exportAccountingData(accountingExportDataDto);
+            // TODO: add accountingSlipID to orderItemAccountings and refundItemAccountings if feasible.
         }
 
         if (orderAccountingsForDate != null) {
             orderAccountingsForDate.forEach(orderId -> orderService.markAsAccounted(orderId));
+            orderAccountingsForDate.forEach(orderId -> orderAccountingService.markAsAccounted(orderId));
         }
         if (refundAccountingsForDate != null) {
             refundAccountingsForDate.forEach(refundId -> refundService.markAsAccounted(refundId));
@@ -394,9 +402,9 @@ public class AccountingSlipService {
                     .accountingSlipRowId(accountingSlipRowId)
                     .accountingSlipId(accountingSlipId)
                     .taxCode(summedItemAccounting.getVatCode())
-                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
-                    .baseAmount(formatSum(summedItemAccounting.getPriceNetAsDouble()))
-                    .vatAmount(formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .amountInDocumentCurrency(formatOrderSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatOrderSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatOrderSum(summedItemAccounting.getPriceVatAsDouble()))
                     .lineText(lineText)
                     .glAccount(summedItemAccounting.getMainLedgerAccount())
                     .profitCenter(summedItemAccounting.getProfitCenter())
@@ -430,9 +438,9 @@ public class AccountingSlipService {
                     .accountingSlipRowId(accountingSlipRowId)
                     .accountingSlipId(accountingSlipId)
                     .taxCode(summedItemAccounting.getVatCode())
-                    .amountInDocumentCurrency(formatSum(summedItemAccounting.getPriceGrossAsDouble()))
-                    .baseAmount("+" + formatSum(summedItemAccounting.getPriceNetAsDouble()))
-                    .vatAmount("+" + formatSum(summedItemAccounting.getPriceVatAsDouble()))
+                    .amountInDocumentCurrency(formatRefundSum(summedItemAccounting.getPriceGrossAsDouble()))
+                    .baseAmount(formatRefundSum(summedItemAccounting.getPriceNetAsDouble()))
+                    .vatAmount(formatRefundSum(summedItemAccounting.getPriceVatAsDouble()))
                     .lineText(lineText)
                     .glAccount(summedItemAccounting.getMainLedgerAccount())
                     .profitCenter(summedItemAccounting.getProfitCenter())
@@ -566,11 +574,18 @@ public class AccountingSlipService {
         return accountingSlip;
     }
 
-    private String formatSum(Double sum) {
+    private String formatOrderSum(Double sum) {
         DecimalFormat decimalFormat = new DecimalFormat("0.00");
         decimalFormat.setNegativePrefix("-");
 
         return decimalFormat.format(-sum).replace(".", ",");
+    }
+
+    private String formatRefundSum(Double sum) {
+        DecimalFormat decimalFormat = new DecimalFormat("0.00");
+        decimalFormat.setPositivePrefix("+");
+
+        return decimalFormat.format(sum).replace(".", ",");
     }
 
 

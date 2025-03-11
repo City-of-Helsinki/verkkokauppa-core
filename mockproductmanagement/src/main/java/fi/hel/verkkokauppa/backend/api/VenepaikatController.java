@@ -37,7 +37,7 @@ public class VenepaikatController {
         availabilities.put("12345", new MockAvailability("availability_generic_12345", "venepaikat", "12345", true));
         purchaseRights.put("12345", new MockRightOfPurchase("rightofpurchase_generic_12345", "venepaikat", "12345", true));
         // Venepaikat 2023
-        products.put("123456", new MockProduct("123456", "Trailerin kesäsäilytys 2023", "Helsingin kaupunki, Venepaikat, Traileripaikka", "venepaikat"));
+        products.put("123456", new MockProduct("123456", "Trailerin kesäsäilytys", "Helsingin kaupunki, Venepaikat, Traileripaikka", "venepaikat"));
         prices.put("123456", new MockPrice("price_generic_123456", "venepaikat", "123456", "70.97", "24", "17.03", "88"));
         availabilities.put("123456", new MockAvailability("availability_generic_123456", "venepaikat", "123456", true));
         purchaseRights.put("123456", new MockRightOfPurchase("rightofpurchase_generic_123456", "venepaikat", "123456", true));

@@ -12,6 +12,8 @@ trigger:
       - master
       - development
 
+variables: 
+  deployToDrtest: False
 
 # By default, use self-hosted agents
 pool: Default

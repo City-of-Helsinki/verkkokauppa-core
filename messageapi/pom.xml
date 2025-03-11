@@ -140,7 +140,16 @@
             <version>1.6.9</version>
         </dependency>
         <!--Swagger-->
-
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter</artifactId>
+            <version>7.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-logback</artifactId>
+            <version>7.1.0</version>
+        </dependency>
         <!-- Development -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

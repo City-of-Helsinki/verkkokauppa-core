@@ -30,6 +30,12 @@ public class PaytrailCreateRefundPayloadConverter implements IPaytrailPayloadCon
         PaymentCallbackUrls callbackUrls = new PaymentCallbackUrls();
         callbackUrls.setSuccess(env.getRequiredProperty("paytrail_refund_success_url"));
         callbackUrls.setCancel(env.getRequiredProperty("paytrail_refund_cancel_url"));
+        if (context.getRefundCallbackSuccessUrl() != null && !context.getRefundCallbackSuccessUrl().isEmpty()) {
+            callbackUrls.setSuccess(context.getRefundCallbackSuccessUrl());
+        }
+        if (context.getRefundCallbackCancelUrl() != null && !context.getRefundCallbackCancelUrl().isEmpty()) {
+            callbackUrls.setCancel(context.getRefundCallbackCancelUrl());
+        }
 
         payload.setCallbackUrls(callbackUrls);
 

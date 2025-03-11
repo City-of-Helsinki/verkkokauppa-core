@@ -8,10 +8,8 @@ import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.id.IncrementId;
-import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.common.util.ListUtil;
-import fi.hel.verkkokauppa.common.util.StringUtils;
-import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
@@ -32,6 +30,7 @@ import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -90,6 +89,12 @@ public class OrderService {
 
     @Autowired
     private IncrementId incrementId;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -339,7 +344,7 @@ public class OrderService {
             OrderItem orderItem = orderitems.get(0); // orders created from subscription have only one item
 
             orderMessageBuilder
-                    .cardToken(paymentMethodToken)
+                    .cardToken(EncryptorUtil.encryptValue(paymentMethodToken, cardTokenEncryptionPassword))
                     .cardExpYear(String.valueOf(subscription.getPaymentMethodExpirationYear()))
                     .cardExpMonth(String.valueOf(subscription.getPaymentMethodExpirationMonth()))
                     .cardLastFourDigits(subscription.getPaymentMethodCardLastFourDigits())
@@ -356,12 +361,13 @@ public class OrderService {
                     .priceGross(orderItem.getPriceGross())
                     .customerEmail(order.getCustomerEmail())
                     .customerFirstName(order.getCustomerFirstName())
-                    .customerLastName(order.getCustomerLastName());
+                    .customerLastName(order.getCustomerLastName())
+                    .endDate(subscription.getEndDate());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();
-        sendEventService.sendEventMessage(TopicName.ORDERS, orderMessage);
-        log.debug("triggered event " + eventType + " for orderId: " + order.getOrderId());
+        sendNotificationService.sendOrderMessageNotification(orderMessage);
+        log.debug("triggered notification " + eventType + " for orderId: " + order.getOrderId());
     }
 
     public List<OrderAggregateDto> findBySubscription(String subscriptionId) {
@@ -369,6 +375,19 @@ public class OrderService {
 
         List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
                 .map(order -> getOrderWithItems(order.getOrderId()))
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
+    }
+
+    public List<OrderAggregateDto> findConfirmedBySubscription(String subscriptionId) {
+        List<Order> orderIds = orderRepository.findOrdersBySubscriptionId(subscriptionId);
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(order -> getOrderWithItems(order.getOrderId()))
+                .filter( order -> !order.getOrder().getStatus().equals("cancelled") ) // filter out cancelled orders
                 .distinct()
                 .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
                 .collect(Collectors.toList());
@@ -385,9 +404,29 @@ public class OrderService {
     }
 
     public Order getLatestOrderWithSubscriptionId(String subscriptionId) {
-        List<OrderAggregateDto> orders = findBySubscription(subscriptionId);
+        List<OrderAggregateDto> orders = findConfirmedBySubscription(subscriptionId); // do not get cancelled orders
 
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
+    }
+
+    // get order for currently active subscription period
+    public Order getCurrentPeriodOrderWithSubscriptionId(String subscriptionId, LocalDateTime subscriptionEndDate ) {
+        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDateAndStatus(subscriptionId, subscriptionEndDate, OrderStatus.CONFIRMED);
+        Order activeOrder = null;
+
+        if (orders.size() == 1) {
+            activeOrder = orders.get(0);
+            log.debug("Currently active order for subscription with subscriptionId {} is orderId {}", subscriptionId, activeOrder.getOrderId());
+        }
+        else {
+            if( orders.size() > 1 )
+            {
+                log.error("Found more than one active order for subscription {}", subscriptionId);
+            }else {
+                log.debug("Could not find active order for subscription {}", subscriptionId);
+            }
+        }
+        return activeOrder;
     }
 }

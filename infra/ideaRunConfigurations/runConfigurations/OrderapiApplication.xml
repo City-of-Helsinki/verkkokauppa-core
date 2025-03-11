@@ -21,6 +21,7 @@
       <env name="logging.level.org.springframework.data.elasticsearch.client.WIRE" value="trace" />
       <env name="server.port" value="8183" />
       <env name="logging.level.org.springframework.web" value="TRACE" />
+      <env name="PAYMENT_CARD_TOKEN_ENCRYPTION_PASSWORD" value="laIRHri2cUWE4et" />
     </envs>
     <method v="2">
       <option name="Make" enabled="true" />

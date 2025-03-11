@@ -22,4 +22,6 @@ public class RefundAccounting {
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime createdAt;
 
+    @Field(type = FieldType.Text)
+    private String namespace;
 }

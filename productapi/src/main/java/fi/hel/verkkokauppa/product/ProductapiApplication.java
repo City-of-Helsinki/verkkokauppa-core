@@ -7,7 +7,11 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 
 @SpringBootApplication
 @EnableElasticsearchRepositories
-@ComponentScan({"fi.hel.verkkokauppa.product", "fi.hel.verkkokauppa.common"})
+@ComponentScan({
+		"fi.hel.verkkokauppa.product",
+		"fi.hel.verkkokauppa.common",
+		"fi.hel.verkkokauppa.common.sentry"
+})
 public class ProductapiApplication {
 
 	public static void main(String[] args) {

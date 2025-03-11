@@ -47,11 +47,12 @@ public class OrderMessageListener {
             log.info("orderCreatedlistener [{}]", jsonMessage);
             OrderMessage message = objectMapper.readValue(jsonMessage, OrderMessage.class);
 
+            // Already moved to ActiveMQ
             if (EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED.equals(message.getEventType())) {
                 log.info("event type is SUBSCRIPTION_RENEWAL_ORDER_CREATED");
                 subscriptionRenewalOrderCreatedAction(message);
             }
-
+            // TODO: needs to be moved to ActiveMQ
             if (EventType.ORDER_CANCELLED.equals(message.getEventType())) {
                 log.info("event type is {}", message.getEventType());
                 triggerOrderWebhook(message, "/order/order-cancelled-webhook");
@@ -87,6 +88,6 @@ public class OrderMessageListener {
         //format payload, message to json string conversion
         String body = objectMapper.writeValueAsString(message);
         //send to target url
-        restServiceClient.makeVoidPostCall(url, body);
+        restServiceClient.makeVoidPostCall(url, body, message.getNamespace());
     }
 }

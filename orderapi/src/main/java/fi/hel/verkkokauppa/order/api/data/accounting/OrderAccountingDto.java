@@ -11,6 +11,7 @@ import java.util.List;
 public class OrderAccountingDto {
 
     private String orderId;
+    private String namespace;
 
     private LocalDateTime createdAt;
 

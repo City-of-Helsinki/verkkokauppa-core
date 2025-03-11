@@ -18,11 +18,14 @@ import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.model.FlowStep;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalRequest;
 import fi.hel.verkkokauppa.order.model.subscription.Period;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.FlowStepRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalRequestRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.renewal.SubscriptionRenewalService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
@@ -42,20 +45,16 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -79,6 +78,8 @@ class OrderServiceTest extends TestUtils {
 
     @Autowired
     private OrderRepository orderRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private FlowStepRepository flowStepRepository;
@@ -96,6 +97,9 @@ class OrderServiceTest extends TestUtils {
 
     @Autowired
     private SubscriptionAdminController subscriptionAdminController;
+
+    @Autowired
+    private SubscriptionRenewalRequestRepository requestRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -310,6 +314,10 @@ class OrderServiceTest extends TestUtils {
         if (refetchFirstSubscription.isPresent()) {
             firstSubscription = refetchFirstSubscription.get();
             Assertions.assertEquals(SubscriptionStatus.CANCELLED, firstSubscription.getStatus());
+
+            // Cancelled subscription should not be renewed
+            Optional<SubscriptionRenewalRequest> getRenewalRequest = requestRepository.findById(firstSubscription.getSubscriptionId());
+            Assertions.assertFalse(getRenewalRequest.isPresent());
         }
         // RENEWAL PROCESS END 3
     }
@@ -649,7 +657,87 @@ class OrderServiceTest extends TestUtils {
         order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
         orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithFeeItemAndMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderWithFreeItemToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createFreeOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewFreeOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createInvoiceTypeOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        log.info("Creating invoice type order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItem orderItemModel = orderItemService.findByOrderId(order.getOrderId()).get(0);
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+        orderRepository.save(order);
+
+        // Create invoicing accountings
+        createMockInvoiceAccountingForProductId(orderItem.getProductId());
+        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
+        orderItemModel.setInvoicingDate(LocalDate.now());
+        orderItemRepository.save(orderItemModel);
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
     }
 
     @Test
@@ -657,8 +745,12 @@ class OrderServiceTest extends TestUtils {
     void createSubsriptionOrderWithMerchantId() throws JsonProcessingException {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
-        JSONObject response = createMockAccountingForProductId("productId");
-        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2);
+
+        // setup product for test
+        String productId = createMockProductMapping("venepaikat",firstMerchantIdFromNamespace);
+        JSONObject response = createMockAccountingForProductId(productId);
+
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2, true, productId);
         OrderDto order = Objects.requireNonNull(orderResponse.getBody()).getOrder();
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
         log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());

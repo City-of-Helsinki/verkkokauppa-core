@@ -7,21 +7,26 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
+import fi.hel.verkkokauppa.common.events.EventType;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
+import fi.hel.verkkokauppa.order.api.data.subscription.outbound.ResolveProductResultDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.outbound.SubscriptionPriceResultDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemMetaTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
+import fi.hel.verkkokauppa.order.api.request.subscription.ResolveProductRequest;
 import fi.hel.verkkokauppa.order.api.request.subscription.SubscriptionPriceRequest;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionCancellationCause;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionItemMeta;
+import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemMetaRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionItemMetaRepository;
@@ -93,48 +98,93 @@ public class CreateOrderFromSubscriptionCommand {
     @Autowired
     private ServiceUrls serviceUrls;
 
+    @Autowired
+    private SaveHistoryService saveHistoryService;
+
     public String createFromSubscription(SubscriptionDto subscriptionDto) {
+        List<OrderItemMetaDto> orderItemMetas = new ArrayList<>();
         String namespace = subscriptionDto.getNamespace();
         String user = subscriptionDto.getUser();
 
         String subscriptionId = subscriptionDto.getSubscriptionId();
 
-        String activeOrderFromSubscription = hasDuplicateOrder(subscriptionId, user);
-
-        if (activeOrderFromSubscription != null) {
-            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
-            return activeOrderFromSubscription;
-        }
-
         Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionDto.getSubscriptionId(), user);
+
+        // check if subscription is cancelled
+        if(subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.CANCELLED)){
+            log.info("Subscription has been cancelled, not renewing it. SubscriptionId: {}", subscription.getSubscriptionId());
+            return null;
+        }
 
         // Returns null orderId if subscription card is expired
         if (subscriptionService.isCardExpired(subscription)) {
-            log.info("Card is expired, trigger renew validations failed event for subscriptionId: {}", subscriptionDto.getSubscriptionId());
-            subscriptionService.triggerSubscriptionRenewValidationFailedEvent(subscription);
-            return null;
+            log.info("Card seems to be expired but trying to renew anyway. SubscriptionId: {}", subscriptionDto.getSubscriptionId());
+
+            saveHistoryService.saveSubscriptionMessageHistory(SubscriptionMessage.builder()
+                    .subscriptionId(subscriptionDto.getSubscriptionId())
+                    .orderId(subscriptionDto.getOrderId())
+                    .orderItemId(subscriptionDto.getOrderItemId())
+                    .namespace(subscriptionDto.getNamespace())
+                    .eventType(EventType.SUBSCRIPTION_RENEWAL_WITH_EXPIRED_CARD)
+                    .cardTokenExpMonth(subscriptionDto.getPaymentMethodExpirationMonth().toString())
+                    .cardTokenExpYear(subscriptionDto.getPaymentMethodExpirationYear().toString())
+                    .cancellationCause("renewal_with_expired_card")
+                    .timestamp(LocalDateTime.now().toString())
+                    .eventTimestamp(LocalDateTime.now().toString())
+                    .build());
         }
-        boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
-        // Returns null orderId if subscription right of purchase is false.
-        if (!hasRightToPurchase) {
-            log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
-            cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
+
+        try {
+            // Resolve product
+            subscription = getUpdatedProductInformationFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription, orderItemMetas);
+
+            boolean hasRightToPurchase = orderService.validateRightOfPurchase(subscriptionDto.getOrderId(), user, namespace);
+            // Returns null orderId if subscription right of purchase is false.
+            if (!hasRightToPurchase) {
+                log.info("subscription-renewal-no-right-of-purchase {}", subscriptionDto.getSubscriptionId());
+                cancelSubscriptionCommand.cancel(subscription.getSubscriptionId(), subscription.getUser(), SubscriptionCancellationCause.NO_RIGHT_OF_PURCHASE);
+                return null;
+            }
+
+            // resolve price and update prices
+            subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
+        } catch (Exception e){
+            log.error("Subscription renewal failed while updating subscription information.",e);
+            // if resolve product/price fails then do not complete the subscription renewal
             return null;
         }
 
-        Order order = orderService.createByParams(namespace, user);
+        Order order;
+
+        String activeOrderFromSubscription = hasOrderForNextPeriod(subscription);
+        if (activeOrderFromSubscription != null) {
+            log.info("Active order already found from subscription with orderId: {}", activeOrderFromSubscription);
+            order = orderService.findById(activeOrderFromSubscription);
+        } else {
+            log.info("Creating new order from subscription with subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            order = orderService.createByParams(namespace, user);
+        }
+
+        if (order == null) {
+            log.error("Failed to create order for subscriptionId: {}", subscriptionDto.getSubscriptionId());
+            return null;
+        }
+
         order.setType(OrderType.ORDER);
-
-        subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
 
         orderService.setStartDateAndCalculateNextEndDateAfterRenewal(order, subscription, subscription.getEndDate());
         copyCustomerInfoFromSubscription(subscriptionDto, order);
         orderService.setTotals(order, subscriptionDto.getPriceNet(), subscriptionDto.getPriceVat(), subscriptionDto.getPriceGross());
 
         String orderId = order.getOrderId();
-        String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
-        copyOrderItemMetaFieldsFromSubscription(subscriptionDto, orderId, orderItemId);
-
+        try {
+            String orderItemId = createOrderItemFieldsFromSubscription(orderId, subscriptionDto);
+            copyOrderItemMetaFieldsForSubscriptionOrderItem(orderId, orderItemId, orderItemMetas);
+        } catch (Exception e){
+            log.error("Subscription renewal failed while updating orderItem.",e);
+            // if resolve product/price fails then do not complete the subscription renewal
+            return null;
+        }
         orderService.confirm(order);
         orderRepository.save(order);
 
@@ -143,7 +193,7 @@ public class CreateOrderFromSubscriptionCommand {
         return orderId;
     }
 
-    private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) {
+    private Subscription setUpdateSubscriptionPricesFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription) throws Exception {
 
         String merchantId;
         try {
@@ -153,54 +203,15 @@ public class CreateOrderFromSubscriptionCommand {
             merchantId = dto.getMerchantId();
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize productmapping", e);
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-prices", "failed to update subscription prices from merchant"));
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-subscription-price", "failed to update subscription price from merchant"));
         }
 
         SubscriptionPriceRequest request = new SubscriptionPriceRequest();
         request.setSubscriptionId(subscriptionId);
         request.setNamespace(namespace);
         request.setUserId(user);
-        OrderItemDto orderItem = orderItemTransformer.transformToDto(new OrderItem(
-            subscriptionDto.getOrderItemId(),
-            subscriptionDto.getOrderId(),
-            merchantId,
-            subscriptionDto.getProductId(),
-            subscriptionDto.getProductName(),
-            subscriptionDto.getProductLabel(),
-            subscriptionDto.getProductDescription(),
-            subscriptionDto.getQuantity(),
-            subscriptionDto.getUnit(),
-            null,
-            null,
-            null,
-            subscriptionDto.getVatPercentage(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            subscriptionDto.getPeriodUnit(),
-            subscriptionDto.getPeriodFrequency(),
-            subscriptionDto.getPeriodCount(),
-            subscriptionDto.getBillingStartDate(),
-            subscriptionDto.getStartDate(),
-            null
-        ));
-        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
-        List<OrderItemMetaDto> meta = new ArrayList<>();
-        for (SubscriptionItemMeta m : subscriptionMeta) {
-            meta.add(new OrderItemMetaDto(
-                null,
-                m.getOrderItemId(),
-                m.getOrderId(),
-                m.getKey(),
-                m.getValue(),
-                m.getLabel(),
-                m.getVisibleInCheckout(),
-                m.getOrdinal()
-            ));
-        }
+        OrderItemDto orderItem = getOrderItem(subscriptionDto, merchantId);
+        List<OrderItemMetaDto> meta = getOrderItemMetaDtos(subscriptionDto);
         orderItem.setMeta(meta);
         request.setOrderItem(orderItem);
         ResponseEntity<JSONObject> response;
@@ -222,21 +233,27 @@ public class CreateOrderFromSubscriptionCommand {
 
             // Fetch subscription.
             subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
-            log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+            log.info("Old prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {} vatPercentage: {}",
                     subscription.getSubscriptionId(),
                     subscription.getPriceNet(),
                     subscription.getPriceVat(),
-                    subscription.getPriceGross()
+                    subscription.getPriceGross(),
+                    subscription.getVatPercentage()
             );
             // Set new prices to subscription from result.
             subscription.setPriceNet(resultDto.getPriceNet());
             subscription.setPriceVat(resultDto.getPriceVat());
             subscription.setPriceGross(resultDto.getPriceGross());
-            log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {}",
+            // if VAT Percentage was given then set it (KYV-1064)
+            if( resultDto.getVatPercentage() != null ){
+                subscription.setVatPercentage(resultDto.getVatPercentage());
+            }
+            log.info("New prices for subscription: {} getPriceNet:{} getPriceVat: {} getPriceGross: {} vatPercentage: {}",
                     resultDto.getSubscriptionId(),
                     resultDto.getPriceNet(),
                     resultDto.getPriceVat(),
-                    resultDto.getPriceGross()
+                    resultDto.getPriceGross(),
+                    resultDto.getVatPercentage()
             );
             // Save given subscription values to database
             subscription = subscriptionRepository.save(subscription);
@@ -245,34 +262,163 @@ public class CreateOrderFromSubscriptionCommand {
             subscriptionDto.setPriceNet(subscription.getPriceNet());
             subscriptionDto.setPriceVat(subscription.getPriceVat());
             subscriptionDto.setPriceGross(subscription.getPriceGross());
+            subscriptionDto.setVatPercentage(subscription.getVatPercentage());
+
 
         } catch (Exception e) {
             log.error("Error/new price not found when requesting new price to subscription request:{}", request, e);
+            throw e;
         }
         return subscription;
     }
 
-    public String hasDuplicateOrder(String subscriptionId, String user) {
-        try {
+    private Subscription getUpdatedProductInformationFromMerchant(SubscriptionDto subscriptionDto, String namespace, String user, String subscriptionId, Subscription subscription, List<OrderItemMetaDto> returnOrderItemMetas) throws Exception {
 
-            Subscription subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
-            Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscriptionId);
+        String merchantId;
+
+        if (returnOrderItemMetas == null){
+            log.error("Output parameter returnOrderItemMetas was uninitialized");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("output-parameter-uninitialized", "Output parameter returnOrderItemMetas was uninitialized"));
+        }
+
+        try {
+            log.info("Fetching product-mapping for subscriptionId:" + subscriptionId + " and productId: " + subscriptionDto.getProductId());
+            JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + subscriptionDto.getProductId());
+            ProductMappingDto dto = objectMapper.readValue(response.toString(), ProductMappingDto.class);
+            merchantId = dto.getMerchantId();
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize productmapping", e);
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, new Error("failed-to-update-product-information", "failed to update product information from merchant"));
+        }
+
+        ResolveProductRequest request = new ResolveProductRequest();
+        request.setSubscriptionId(subscriptionId);
+        request.setNamespace(namespace);
+        request.setUserId(user);
+        OrderItemDto orderItem = getOrderItem(subscriptionDto, merchantId);
+        List<OrderItemMetaDto> meta = getOrderItemMetaDtos(subscriptionDto);
+        orderItem.setMeta(meta);
+        request.setOrderItem(orderItem);
+        ResponseEntity<JSONObject> response;
+        ResolveProductResultDto resultDto;
+        try {
+            response = customerApiCallService.postCall(request, ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, namespace);
+            if (response.getStatusCode() != HttpStatus.OK) {
+                throw new Exception("Resolve product call failed request: " + request);
+            }
+            resultDto = objectMapper.readValue(Objects.requireNonNull(response.getBody()).toString(), ResolveProductResultDto.class);
+
+            // Fetch subscription.
+            subscription = getSubscriptionQuery.findByIdValidateByUser(subscriptionId, user);
+            log.info("Old product information from subscription: {} getProductId: {} getProductName:{} getProductLabel: {} getProductDescription: {}",
+                    subscription.getSubscriptionId(),
+                    subscription.getProductId(),
+                    subscription.getProductName(),
+                    subscription.getProductLabel(),
+                    subscription.getProductDescription()
+            );
+            // Set new product information to subscription from result.
+            subscription.setProductId(resultDto.getProductId());
+            subscription.setProductName(resultDto.getProductName());
+            subscription.setProductLabel(resultDto.getProductLabel());
+            subscription.setProductDescription(resultDto.getProductDescription());
+            log.info("New product information for subscription: {} getProductId: {} getProductName:{} getProductLabel: {} getProductDescription: {}",
+                    resultDto.getSubscriptionId(),
+                    resultDto.getProductId(),
+                    resultDto.getProductName(),
+                    resultDto.getProductLabel(),
+                    resultDto.getProductDescription()
+            );
+            // Save given subscription values to database
+            subscription = subscriptionRepository.save(subscription);
+            // Update dto from subscription because
+            // we want new order to use these values
+            subscriptionDto.setProductId(subscription.getProductId());
+            subscriptionDto.setProductName(subscription.getProductName());
+            subscriptionDto.setProductLabel(subscription.getProductLabel());
+            subscriptionDto.setProductDescription(subscription.getProductDescription());
+
+            // return new orderItemMetas
+            OrderItemMetaDto[] metaArray = resultDto.getOrderItemMetas();
+            if( metaArray != null ) {
+                for (OrderItemMetaDto orderItemMeta : metaArray) {
+                    returnOrderItemMetas.add(orderItemMeta);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("Error/Resolve product failed with subscription request:{}", request, e);
+            throw e;
+        }
+        return subscription;
+    }
+
+    private List<OrderItemMetaDto> getOrderItemMetaDtos(SubscriptionDto subscriptionDto) {
+        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
+        List<OrderItemMetaDto> meta = new ArrayList<>();
+        for (SubscriptionItemMeta m : subscriptionMeta) {
+            meta.add(new OrderItemMetaDto(
+                    null,
+                    m.getOrderItemId(),
+                    m.getOrderId(),
+                    m.getKey(),
+                    m.getValue(),
+                    m.getLabel(),
+                    m.getVisibleInCheckout(),
+                    m.getOrdinal()
+            ));
+        }
+        return meta;
+    }
+
+    private OrderItemDto getOrderItem(SubscriptionDto subscriptionDto, String merchantId) {
+        return orderItemTransformer.transformToDto(new OrderItem(
+                subscriptionDto.getOrderItemId(),
+                subscriptionDto.getOrderId(),
+                merchantId,
+                subscriptionDto.getProductId(),
+                subscriptionDto.getProductName(),
+                subscriptionDto.getProductLabel(),
+                subscriptionDto.getProductDescription(),
+                subscriptionDto.getQuantity(),
+                subscriptionDto.getUnit(),
+                null,
+                null,
+                null,
+                subscriptionDto.getVatPercentage(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                subscriptionDto.getPeriodUnit(),
+                subscriptionDto.getPeriodFrequency(),
+                subscriptionDto.getPeriodCount(),
+                subscriptionDto.getBillingStartDate(),
+                subscriptionDto.getStartDate(),
+                null
+        ));
+    }
+
+    public String hasOrderForNextPeriod(Subscription subscription) {
+        Order lastOrder = orderService.getLatestOrderWithSubscriptionId(subscription.getSubscriptionId());
+        try {
             if (lastOrder != null) {
                 // order endDate greater than current subscription endDate
-                if (hasActiveSubscriptionOrder(subscription, lastOrder)) {
+                if (hasNextSubscriptionOrder(subscription, lastOrder)) {
                     log.info("End date is greater than current subscription endDate for orderId: {}", lastOrder.getOrderId());
                     return lastOrder.getOrderId();
                 }
             }
             return null;
         } catch (Exception e) {
-            //
             log.info(String.valueOf(e));
             return null;
         }
     }
 
-    public boolean hasActiveSubscriptionOrder(Subscription subscription, Order lastOrder) {
+    public boolean hasNextSubscriptionOrder(Subscription subscription, Order lastOrder) {
         LocalDateTime subscriptionEndDate = subscription.getEndDate();
         LocalDateTime lastOrderEndDate = lastOrder.getEndDate();
         // Prevents NPO
@@ -292,8 +438,8 @@ public class CreateOrderFromSubscriptionCommand {
         orderService.setCustomer(order, customerFirstName, customerLastName, customerEmail, customerPhone);
     }
 
-    private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) {
-        return orderItemService.addItem(
+    private String createOrderItemFieldsFromSubscription(String orderId, SubscriptionDto subscriptionDto) throws Exception {
+        return orderItemService.addOrUpdateItem(
                 orderId,
                 subscriptionDto.getMerchantId(),
                 subscriptionDto.getProductId(),
@@ -322,10 +468,9 @@ public class CreateOrderFromSubscriptionCommand {
 
     }
 
-    private void copyOrderItemMetaFieldsFromSubscription(SubscriptionDto subscriptionDto, String orderId, String orderItemId) {
-        List<SubscriptionItemMeta> subscriptionMeta = subscriptionItemMetaRepository.findBySubscriptionId(subscriptionDto.getSubscriptionId());
-        if (!subscriptionMeta.isEmpty()) {
-            subscriptionMeta.forEach(meta -> {
+    private void copyOrderItemMetaFieldsForSubscriptionOrderItem(String orderId, String orderItemId, List<OrderItemMetaDto> orderItemMetas) {
+        if (!orderItemMetas.isEmpty()) {
+            orderItemMetas.forEach(meta -> {
                 OrderItemMetaDto orderItemMeta = new OrderItemMetaDto(
                         null,
                         orderItemId,
@@ -337,7 +482,7 @@ public class CreateOrderFromSubscriptionCommand {
                         meta.getOrdinal()
                 );
 
-                String createdOrderItemMetaId = orderItemMetaService.addItemMeta(orderItemMeta);
+                String createdOrderItemMetaId = orderItemMetaService.addOrUpdateItemMeta(orderItemMeta);
 
                 log.debug("created new orderItemMeta " + createdOrderItemMetaId + " from subscriptionItemMeta: " + meta.getOrderItemMetaId());
             });

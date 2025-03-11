@@ -9,6 +9,8 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -45,6 +47,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,6 +95,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private SendNotificationService sendNotificationService;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -224,7 +230,7 @@ public class OnlinePaymentService {
         if (payments != null)
             for (Payment payment : payments) {
                 // in an unpayable state
-                if (payment.getStatus() == PaymentStatus.PAID_ONLINE || payment.getStatus() == PaymentStatus.CANCELLED)
+                if (Objects.equals(payment.getStatus(), PaymentStatus.PAID_ONLINE) || Objects.equals(payment.getStatus(), PaymentStatus.CANCELLED) || payment.getStatus().equals(PaymentStatus.INVOICE))
                     continue;
 
                 // an earlier selected payment is newer
@@ -237,13 +243,14 @@ public class OnlinePaymentService {
         return payablePayment;
     }
 
-    private Payment selectPaidPayment(List<Payment> payments) {
-        if (payments != null)
+    public Payment selectPaidPayment(List<Payment> payments) {
+        if (payments != null){
             for (Payment payment : payments) {
-                if (payment.getStatus() == PaymentStatus.PAID_ONLINE)
+                if (Objects.equals(payment.getStatus(), PaymentStatus.PAID_ONLINE) || payment.getStatus().equals(PaymentStatus.INVOICE)){
                     return payment;
+                }
             }
-
+        }
         return null;
     }
 
@@ -253,6 +260,18 @@ public class OnlinePaymentService {
         if (!payment.isPresent()) {
             log.debug("payment not found, paymentId: " + paymentId);
             Error error = new Error("payment-not-found-from-backend", "payment with payment id [" + paymentId + "] not found from backend");
+            throw new CommonApiException(HttpStatus.NOT_FOUND, error);
+        }
+
+        return payment.get();
+    }
+
+    public Payment getPaymentWithPaytrailTransactionId(String paytrailTransactionId) {
+        Optional<Payment> payment = paymentRepository.findById(paytrailTransactionId);
+
+        if (!payment.isPresent()) {
+            log.debug("payment not found, with paytrailTransactionId: " + paytrailTransactionId);
+            Error error = new Error("payment-not-found-from-backend-with-transaction-id", "payment with transaction id [" + paytrailTransactionId + "] not found from backend");
             throw new CommonApiException(HttpStatus.NOT_FOUND, error);
         }
 
@@ -349,7 +368,7 @@ public class OnlinePaymentService {
         payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
         payment.setTimestamp(sdf.format(timestamp));
         payment.setPaymentType(OrderType.ORDER);
-        payment.setStatus(PaymentStatus.CREATED);
+        payment.setStatus(PaymentStatus.CREATED_FOR_MIT_CHARGE);
         payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(message.getPriceVat()));
         payment.setTotal(new BigDecimal(message.getPriceTotal()));
@@ -587,6 +606,17 @@ public class OnlinePaymentService {
         orderItemDto.setPriceVat(new BigDecimal(0));
         orderItemDto.setPriceGross(new BigDecimal(chargeAmount));
         return orderItemDto;
+    }
+
+    public void savePaymentToHistory(Payment payment, String event ){
+        saveHistoryService.savePaymentMessageHistory(PaymentMessage.builder()
+                .orderId(payment.getOrderId())
+                .paymentId(payment.getPaymentId())
+                .namespace(payment.getNamespace())
+                .eventType(event)
+                .eventTimestamp(LocalDateTime.now().toString())
+                .paymentPaidTimestamp(payment.getTimestamp())
+                .build());
     }
 
 }

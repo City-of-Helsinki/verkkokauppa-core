@@ -7,9 +7,7 @@ import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ServiceConfigurationDto;
 import fi.hel.verkkokauppa.common.util.ConfigurationParseUtil;
-
 import lombok.extern.slf4j.Slf4j;
-import org.helsinki.paytrail.model.payments.PaymentCallbackUrls;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -86,6 +84,13 @@ public class PaytrailPaymentContextBuilder {
 
             if (key.equals("payment_notification_url") && value != null) {
                 context.setNotifyUrl(value);
+            }
+
+            if (key.equals("refund_success_notification_url") && value != null) {
+                context.setRefundCallbackSuccessUrl(value);
+            }
+            if (key.equals("refund_cancel_notification_url") && value != null) {
+                context.setRefundCallbackCancelUrl(value);
             }
 
             if (key.equals("payment_cp") && value != null) {

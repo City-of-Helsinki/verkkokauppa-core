@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.NamespaceType;
-import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
@@ -73,8 +72,8 @@ public class RestServiceClient {
     }
 
 
-    public void makeVoidPostCall(String url, String body) {
-        WebClient client = getClient();
+    public void makeVoidPostCall(String url, String body, String namespace) {
+        WebClient client = getWebhookAuthClient(namespace);
         postVoidQueryJsonService(client, url, body);
     }
 
@@ -89,6 +88,32 @@ public class RestServiceClient {
 
         WebClient client = WebClient.builder()
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+
+        return client;
+    }
+
+    public WebClient getWebhookAuthClient(String namespace) {
+        // expect a response within a few seconds
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT)
+                .responseTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
+
+        String apiKey = null;
+        try {
+            apiKey = configurationClient.getWebhookAuthKey(namespace);
+        } catch (Exception e) {
+            log.info("Cant fetch webhook api key for namespace " + namespace);
+        }
+
+        WebClient client = WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader("webhook-api-key", apiKey)
+                .defaultHeader("namespace", namespace)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 

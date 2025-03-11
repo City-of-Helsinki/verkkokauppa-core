@@ -4,12 +4,14 @@ import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
+import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,22 @@ public abstract class DummyData {
         order.setType("dummy_type");
 
         return order;
+    }
+
+    public Subscription generateDummySubscription(Order order) {
+        Subscription subscription = new Subscription();
+        subscription.setSubscriptionId("1");
+        subscription.setOrderId(order.getOrderId());
+        subscription.setOrderItemId("1");
+        subscription.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        subscription.setUser("dummy_user");
+        subscription.setNamespace("dummy_namespace");
+        subscription.setStatus("dummy_status");
+        subscription.setCustomerFirstName("dummy_firstname");
+        subscription.setCustomerLastName("dummy_lastname");
+        subscription.setCustomerEmail("dummy@dummymail.com");
+
+        return subscription;
     }
 
     public OrderDto generateDummyOrderDto() {
@@ -93,6 +111,53 @@ public abstract class DummyData {
         );
     }
 
+    public OrderItem generateDummyFreeOrderItem(Order order) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        return new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
+                "productName",
+                "productLabel",
+                "productDescription",
+                1,
+                "unit",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                "0.0",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    public ProductAccountingDto createDummyProductAccountingDto(String productId, String prefix){
+        ProductAccountingDto dto = new ProductAccountingDto();
+        dto.setInternalOrder(prefix + "internalOrder");
+        dto.setMainLedgerAccount(prefix + "mainLedgerAccount");
+        dto.setProject(prefix + "project");
+        dto.setOperationArea(prefix + "operationArea");
+        dto.setVatCode(prefix + "vatCode");
+        dto.setProfitCenter(prefix + "profitCenter");
+        dto.setCompanyCode(prefix + "companyCode");
+        dto.setProductId(productId);
+        dto.setBalanceProfitCenter(prefix + "balanceProfitCenter");
+
+        return dto;
+    }
+
     public OrderItemMeta generateDummyOrderItemMeta(OrderItem orderItem,String ordinal) {
         String orderItemMetaId = UUIDGenerator.generateType4UUID().toString();
         //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
@@ -131,13 +196,13 @@ public abstract class DummyData {
     public List<OrderAccounting> generateDummyOrderAccountingList() {
         OrderAccounting orderAccounting1 = new OrderAccounting();
         orderAccounting1.setOrderId("1");
-        orderAccounting1.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
+        orderAccounting1.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01 20:30:00"));
         OrderAccounting orderAccounting2 = new OrderAccounting();
         orderAccounting2.setOrderId("2");
-        orderAccounting2.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01"));
+        orderAccounting2.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-01 23:00:00"));
         OrderAccounting orderAccounting3 = new OrderAccounting();
         orderAccounting3.setOrderId("3");
-        orderAccounting3.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-02"));
+        orderAccounting3.setCreatedAt(DateTimeUtil.fromFormattedDateString("2021-09-02 16:00:00"));
 
         List<OrderAccounting> orderAccountings = new ArrayList<>();
         orderAccountings.add(orderAccounting1);

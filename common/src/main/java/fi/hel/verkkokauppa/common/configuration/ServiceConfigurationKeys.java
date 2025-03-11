@@ -15,6 +15,7 @@ public class ServiceConfigurationKeys {
     //
     // Stays in ServiceConfigurations START
     public static String NAMESPACE_API_ACCESS_TOKEN = "namespaceApiAccessToken";
+    public static String NAMESPACE_WEBHOOK_ACCESS_TOKEN = "namespaceWebhookAccessToken";
     public static String PAYMENT_API_VERSION = "payment_api_version";
     public static String PAYMENT_API_KEY = "payment_api_key";
     public static String PAYMENT_ENCRYPTION_KEY = "payment_encryption_key";
@@ -48,9 +49,12 @@ public class ServiceConfigurationKeys {
     // NamespaceModel keys START [KYV-605] (values can be fetched from serviceconfiguration,namespace model)
     // Subscription price end point KYV-462
     public static String SUBSCRIPTION_PRICE_URL = "subscriptionPriceUrl";
+    public static String SUBSCRIPTION_RESOLVE_PRODUCT_URL = "subscriptionResolveProductUrl";
     public static String MERCHANT_TERMS_OF_SERVICE_URL = "merchantTermsOfServiceUrl";
+    public static String SEND_MERCHANT_TERMS_OF_SERVICE = "sendMerchantTermsOfService";
     public static String ORDER_CANCEL_REDIRECT_URL = "orderCancelRedirectUrl";
     public static String ORDER_SUCCESS_REDIRECT_URL = "orderSuccessRedirectUrl";
+    public static String ORDER_PAYMENT_FAILED_REDIRECT_URL = "orderPaymentFailedRedirectUrl";
     public static String REFUND_SUCCESS_REDIRECT_URL = "refundSuccessRedirectUrl";
     // Order right of purchase [KYV-233]
     public static String ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE = "orderRightOfPurchaseIsActive";
@@ -115,6 +119,7 @@ public class ServiceConfigurationKeys {
                 MERCHANT_REFUND_WEBHOOK_URL,       // must not be overwritten by (merchant)
                 ORDER_CANCEL_REDIRECT_URL,         // must not be overwritten by (merchant)
                 ORDER_SUCCESS_REDIRECT_URL,        // must not be overwritten by (merchant)
+                ORDER_PAYMENT_FAILED_REDIRECT_URL, // must not be overwritten by (merchant)
                 REFUND_SUCCESS_REDIRECT_URL        // must not be overwritten by (merchant)
         ).collect(Collectors.toList());
 
@@ -153,9 +158,11 @@ public class ServiceConfigurationKeys {
     public static List<String> getOverridableMerchantKeys() {
         return Stream.of(
                 MERCHANT_TERMS_OF_SERVICE_URL,     // can be overwritten by (merchant)
+                SEND_MERCHANT_TERMS_OF_SERVICE,    // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, // can be overwritten by (merchant)
                 ORDER_RIGHT_OF_PURCHASE_URL,       // can be overwritten by (merchant)
-                SUBSCRIPTION_PRICE_URL            // can be overwritten by (merchant)
+                SUBSCRIPTION_PRICE_URL,            // can be overwritten by (merchant)
+                SUBSCRIPTION_RESOLVE_PRODUCT_URL   // can be overwritten by (merchant)
         ).sorted().collect(Collectors.toList());
     }
 

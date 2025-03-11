@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 
 public enum RefundGateway {
-    PAYTRAIL("online-paytrail");
+    PAYTRAIL("online-paytrail"),
+    FREE("free");
 
     @JsonValue
     private final String type;

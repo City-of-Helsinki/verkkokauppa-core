@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class )
+@RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 public class AccountingSlipServiceTests extends DummyData {
 
@@ -49,6 +49,8 @@ public class AccountingSlipServiceTests extends DummyData {
                 .map(Order::getOrderId)
                 .collect(Collectors.toList());
 
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
         List<OrderAccounting> orderAccountings = generateDummyOrderAccountingList();
 
         when(mockOrderAccountingService.getOrderAccountings(orderIds)).thenReturn(orderAccountings);
@@ -57,8 +59,8 @@ public class AccountingSlipServiceTests extends DummyData {
         assertFalse(result.isEmpty());
 
         Map<LocalDate, List<String>> expectedResult = new HashMap<>();
-        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-01").toLocalDate(), List.of("1", "2"));
-        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-02").toLocalDate(), Collections.singletonList("3"));
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-01").toLocalDate(), Collections.singletonList("1"));
+        expectedResult.put(DateTimeUtil.fromFormattedDateString("2021-09-02").toLocalDate(), List.of("2", "3"));
         assertEquals(expectedResult, result);
     }
 
@@ -70,17 +72,37 @@ public class AccountingSlipServiceTests extends DummyData {
 
         String companyCode1 = "1234";
         OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting("1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 1", "Area A");
+                "profitCenter", "balanceProfitCenter", "project 1", "Area A",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting2 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting3 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId");
 
         String companyCode2 = "5678";
         OrderItemAccounting orderItemAccounting4 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting5 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId");
 
         List<OrderItemAccounting> list = new ArrayList<>();
         list.add(orderItemAccounting2);
@@ -100,7 +122,11 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderItemAccountingDto> resultListForCompanyCode1 = new ArrayList<>(dtosForCompanyCode1);
 
         List<OrderItemAccountingDto> expectedListForCompanyCode1 = new ArrayList<>();
-        expectedListForCompanyCode1.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode1.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"));
         expectedListForCompanyCode1.add(new OrderItemAccountingTransformer().transformToDto(orderItemAccounting1));
 
         assertEquals(expectedListForCompanyCode1, resultListForCompanyCode1);
@@ -109,7 +135,11 @@ public class AccountingSlipServiceTests extends DummyData {
         List<OrderItemAccountingDto> resultListForCompanyCode2 = new ArrayList<>(dtosForCompanyCode2);
 
         List<OrderItemAccountingDto> expectedListForCompanyCode2 = new ArrayList<>();
-        expectedListForCompanyCode2.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode2.add(new OrderItemAccountingDto("2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"));
 
         assertEquals(expectedListForCompanyCode2, resultListForCompanyCode2);
     }
@@ -122,17 +152,37 @@ public class AccountingSlipServiceTests extends DummyData {
 
         String companyCode1 = "1234";
         RefundItemAccounting refundItemAccounting1 = new RefundItemAccounting("1", "1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 1", "Area A");
+                "profitCenter", "balanceProfitCenter", "project 1", "Area A",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
         RefundItemAccounting refundItemAccounting2 = new RefundItemAccounting("2", "2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
         RefundItemAccounting refundItemAccounting3 = new RefundItemAccounting("3", "2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
 
         String companyCode2 = "5678";
         RefundItemAccounting refundItemAccounting4 = new RefundItemAccounting("4", "2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
         RefundItemAccounting refundItemAccounting5 = new RefundItemAccounting("5", "2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
-                "profitCenter", "balanceProfitCenter", "project 2", "Area B");
+                "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace");
 
         List<RefundItemAccounting> list = new ArrayList<>();
         list.add(refundItemAccounting2);
@@ -152,7 +202,11 @@ public class AccountingSlipServiceTests extends DummyData {
         List<RefundItemAccountingDto> resultListForCompanyCode1 = new ArrayList<>(dtosForCompanyCode1);
 
         List<RefundItemAccountingDto> expectedListForCompanyCode1 = new ArrayList<>();
-        expectedListForCompanyCode1.add(new RefundItemAccountingDto("2", "2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode1.add(new RefundItemAccountingDto("2", "2", "2", "20", "10", "10", companyCode1, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace"));
         expectedListForCompanyCode1.add(new RefundItemAccountingTransformer().transformToDto(refundItemAccounting1));
 
         assertEquals(expectedListForCompanyCode1, resultListForCompanyCode1);
@@ -161,7 +215,11 @@ public class AccountingSlipServiceTests extends DummyData {
         List<RefundItemAccountingDto> resultListForCompanyCode2 = new ArrayList<>(dtosForCompanyCode2);
 
         List<RefundItemAccountingDto> expectedListForCompanyCode2 = new ArrayList<>();
-        expectedListForCompanyCode2.add(new RefundItemAccountingDto("2", "2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B"));
+        expectedListForCompanyCode2.add(new RefundItemAccountingDto("2", "2", "2", "20", "10", "10", companyCode2, "account", "24", "yes", "profitCenter", "balanceProfitCenter", "project 2", "Area B",
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace"));
 
         assertEquals(expectedListForCompanyCode2, resultListForCompanyCode2);
     }

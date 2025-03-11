@@ -45,4 +45,8 @@ public class IncrementId {
       return null;
     }
   }
+
+  public Long generateInvoicingIncrementId() throws IOException {
+    return this.generateIncrementId("invoicing");
+  }
 }

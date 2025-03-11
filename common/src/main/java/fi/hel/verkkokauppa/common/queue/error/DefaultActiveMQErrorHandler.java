@@ -37,8 +37,9 @@ public class DefaultActiveMQErrorHandler implements ErrorHandler {
             log.error("DefaultActiveMqError: "+ mapper.writeValueAsString(t));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize error for logging.");
-            log.error("Error cause: {}", e.getCause());
+            log.error("Error: {}", e.toString());
             log.error("Error message: {}", e.getMessage());
+            log.error("Original message: {}", t.getMessage());
         }
         if (t.getCause() instanceof SubscriptionMessageProcessingException) {
             SubscriptionMessage subscriptionMessage = ((SubscriptionMessageProcessingException) t.getCause()).getSubscriptionMessage();

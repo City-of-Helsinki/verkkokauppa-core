@@ -52,9 +52,9 @@ public class RefundAccountingService {
         return null;
     }
 
-    public RefundAccountingDto createRefundAccounting(String refundId, String orderId, List<RefundItemAccountingDto> refundItemAccountings) {
+    public RefundAccountingDto createRefundAccounting(String refundId, String orderId, String namespace, List<RefundItemAccountingDto> refundItemAccountings) {
         LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
-        RefundAccountingDto refundAccountingDto = new RefundAccountingDto(refundId, orderId, createdAt, refundItemAccountings);
+        RefundAccountingDto refundAccountingDto = new RefundAccountingDto(refundId, orderId, namespace, createdAt, refundItemAccountings);
         createRefundAccounting(refundAccountingDto);
 
         return refundAccountingDto;

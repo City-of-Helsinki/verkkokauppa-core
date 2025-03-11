@@ -1,7 +1,6 @@
 package fi.hel.verkkokauppa.common.util;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
@@ -68,4 +67,24 @@ public class DateTimeUtil {
         return fmt.format(date1).equals(fmt.format(date2));
     }
 
+    public static ZonedDateTime toFinnishZonedDateTime(ZonedDateTime zdt) {
+        return zdt.withZoneSameInstant(ZoneId.of("Europe/Helsinki"));
+    }
+
+    // LocalDateTime ldt must have originated from the same timezone as the current timezone for correct result
+    public static ZonedDateTime toFinnishZonedDateTime(LocalDateTime ldt) {
+        return toFinnishZonedDateTime(ldt.atZone(ZoneId.systemDefault()));
+    }
+
+    public static LocalDate toFinnishDate(LocalDateTime ldt) {
+        return toFinnishZonedDateTime(ldt).toLocalDate();
+    }
+
+    public static LocalDateTime offsetDateTimeToLocalDateTime(String utc0StringAsDate) {
+        // Parse the input string into an OffsetDateTime (assuming the input string is in UTC)
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(utc0StringAsDate);
+
+        // Converts back to LocalDateTime we need only the local date-time without timezone
+        return offsetDateTime.toLocalDateTime();
+    }
 }

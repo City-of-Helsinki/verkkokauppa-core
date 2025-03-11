@@ -1,10 +1,16 @@
 package fi.hel.verkkokauppa.payment.api.data;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderItemDto {
 
 	private String orderItemId;
@@ -21,5 +27,7 @@ public class OrderItemDto {
 	private BigDecimal priceNet;
 	private BigDecimal priceVat;
 	private BigDecimal priceGross;
+	private String productLabel;
+	private String productDescription;
 
 }

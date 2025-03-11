@@ -14,10 +14,12 @@ import org.helsinki.paytrail.model.payments.PaymentCustomer;
 import org.helsinki.paytrail.model.payments.PaymentItem;
 import org.helsinki.paytrail.request.payments.PaytrailPaymentCreateRequest.CreatePaymentPayload;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +32,10 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
 
     @Autowired
     private ObjectMapper mapper;
+
+    // if not set defaults to false
+    @Value("${elasticsearch.service.local.environment:#{false}}")
+    private Boolean isLocalEnvironment;
 
     @Override
     public CreatePaymentPayload convertToPayload(PaytrailPaymentContext context, OrderWrapper orderWrapper, String stamp) {
@@ -62,6 +68,12 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
         callbackUrls.setSuccess(env.getRequiredProperty("paytrail_payment_notify_success_url"));
         callbackUrls.setCancel(env.getRequiredProperty("paytrail_payment_notify_cancel_url"));
 
+        // Get from context if local environment
+        if (this.isLocalEnvironment && !context.getNotifyUrl().isEmpty() && context.getNotifyUrl().contains("ngrok")) {
+            callbackUrls.setSuccess(context.getNotifyUrl() + "/success");
+            callbackUrls.setCancel(context.getNotifyUrl() + "/cancel");
+        }
+
         payload.setRedirectUrls(redirectUrls);
         payload.setCallbackUrls(callbackUrls);
 
@@ -88,7 +100,12 @@ public class PaytrailCreatePaymentPayloadConverter implements IPaytrailPayloadCo
             paymentItem.setMerchant(context.getShopId());
             paymentItem.setUnitPrice(PaymentUtil.convertToCents(orderItemDto.getPriceGross()).intValue());
             paymentItem.setUnits(orderItemDto.getQuantity());
-            paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
+            // KYV-1064 support one decimal (paytrail limit) in VAT
+            DecimalFormat df = new DecimalFormat("#.0");
+            String roundedStr = df.format(Double.parseDouble(orderItemDto.getVatPercentage()));
+            // parseDouble does not support , as decimal point. convert possible ,'s to .'s
+            paymentItem.setVatPercentage(Double.parseDouble(roundedStr.replace(',','.')));
+//            paymentItem.setVatPercentage(Integer.valueOf(orderItemDto.getVatPercentage()));
             paymentItem.setProductCode(orderItemDto.getProductId());
             paymentItem.setDescription(orderItemDto.getProductName());
 

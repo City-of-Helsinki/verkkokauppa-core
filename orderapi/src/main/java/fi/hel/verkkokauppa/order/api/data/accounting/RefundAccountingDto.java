@@ -13,6 +13,7 @@ public class RefundAccountingDto {
     private String refundId;
 
     private String orderId;
+    private String namespace;
 
     private LocalDateTime createdAt;
 

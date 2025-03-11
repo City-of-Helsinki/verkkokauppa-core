@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.payment.api.data.UpdateFromPaytrailPaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
@@ -12,7 +13,9 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.helsinki.paytrail.model.payments.PaytrailPaymentMitChargeSuccessResponse;
+import org.helsinki.paytrail.model.tokenization.Card;
 import org.helsinki.paytrail.model.tokenization.PaytrailTokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -183,7 +186,7 @@ public class PaytrailPaymentController {
     }
 
     @PostMapping("/payment/paytrail/check-card-update-return-url")
-    public ResponseEntity<Void> checkCardUpdateReturnUrl(
+    public ResponseEntity<Card> checkCardUpdateReturnUrl(
             @RequestBody GetPaymentRequestDataDto dto,
             @RequestParam Map<String, String> params,
             @RequestParam(value = "signature") String signature,
@@ -198,7 +201,7 @@ public class PaytrailPaymentController {
             PaytrailTokenResponse card = paymentPaytrailService.getToken(context, tokenizationId);
 
             paymentPaytrailService.triggerCardUpdateEvent(dto.getOrder().getOrder(), card);
-            return ResponseEntity.status(HttpStatus.OK).build();
+            return ResponseEntity.status(HttpStatus.OK).body(card.getCard());
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
@@ -206,6 +209,26 @@ public class PaytrailPaymentController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-check-card-update-return-response", "failed to check card update return response")
+            );
+        }
+    }
+
+    @PostMapping("/payment/paytrail/update-from-paytrail-payment")
+    public ResponseEntity<Payment> updatePaymentFromPaytrailPayment(
+            @RequestBody UpdateFromPaytrailPaymentDto dto
+    ) {
+        try {
+            Payment currentPayment = this.paymentPaytrailService.getPayment(dto.getPaymentId());
+            PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(currentPayment.getPaytrailTransactionId(), dto.getNamespace(), dto.getMerchantId());
+            Payment updatedPayment = this.paymentPaytrailService.updatePaymentWithPaytrailPayment(dto.getPaymentId(), paytrailPayment);
+            return ResponseEntity.status(HttpStatus.OK).body(updatedPayment);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment/paytrail/update-from-paytrail-payment response failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-update-from-paytrail-payment", "failed to update fields (paidAt) from paytrail payment return response")
             );
         }
     }

@@ -7,11 +7,13 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(indexName = "orderaccountings")
 @Data
 public class OrderAccounting {
+    public static final String INDEX_NAME = "orderaccountings";
 
     @Id
     private String orderId;
@@ -19,4 +21,9 @@ public class OrderAccounting {
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
     private LocalDateTime createdAt;
 
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    LocalDate accounted;
+
+    @Field(type = FieldType.Text)
+    private String namespace;
 }

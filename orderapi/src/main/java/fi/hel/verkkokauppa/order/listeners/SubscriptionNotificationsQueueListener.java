@@ -41,12 +41,17 @@ public class SubscriptionNotificationsQueueListener {
 
     @JmsListener(destination = "${queue.subscription.notifications:subscription-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
-
+        log.info("Consuming subscription-notifications message");
         SubscriptionMessage message = getSubscriptionMessageFromTextMessage(textMessage);
 
         logMessageData((ActiveMQTextMessage) textMessage, message);
-        // EventType.SUBSCRIPTION_CREATED
-        subscriptionCreatedAction(message);
+
+        if (EventType.SUBSCRIPTION_CREATED.equals(message.getEventType())) {
+            subscriptionCreatedAction(message);
+        }
+        if (EventType.SUBSCRIPTION_CARD_EXPIRED.equals(message.getEventType())) {
+            subscriptionCardExpiredAction(message);
+        }
 
         // Save history
         saveHistoryService.saveSubscriptionMessageHistory(message);
@@ -64,8 +69,9 @@ public class SubscriptionNotificationsQueueListener {
      * Logs redelivery count and orderId and subscriptionId from SubscriptionMessage
      */
     private void logMessageData(ActiveMQTextMessage textMessage, SubscriptionMessage message) throws JsonProcessingException {
-        log.info(mapper.writeValueAsString(message));
-        log.info("Message orderId: {} subscriptionId: {} redeliveryCounter: {}", message.getOrderId(), message.getSubscriptionId(), textMessage.getRedeliveryCounter());
+        log.info("ActiveMQ text message: {}", textMessage != null ? textMessage.toString() : null);
+        log.info("Subscription message: {}", mapper.writeValueAsString(message));
+        log.info("Subscription Message orderId: {} subscriptionId: {} redeliveryCounter: {}", message.getOrderId(), message.getSubscriptionId(), textMessage.getRedeliveryCounter());
     }
 
     /**
@@ -94,10 +100,12 @@ public class SubscriptionNotificationsQueueListener {
         if (EventType.SUBSCRIPTION_CARD_EXPIRED.equals(message.getEventType())) {
             log.info("event type is {}", message.getEventType());
 
-            restServiceClient.makeAdminGetCall(
+            restServiceClient.makeAdminPostCall(
                     experienceUrls.getOrderExperienceUrl()
+                    + "/subscription/"
                     + message.getSubscriptionId()
-                    + "/emailSubscriptionCardExpired"
+                    + "/emailSubscriptionCardExpired",
+                    "{}"
             );
 
         }

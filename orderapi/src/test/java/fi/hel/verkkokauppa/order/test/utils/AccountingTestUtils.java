@@ -1,11 +1,13 @@
 package fi.hel.verkkokauppa.order.test.utils;
 
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateRefundAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
 import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.order.model.OrderItem;
 import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
@@ -19,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +32,9 @@ import java.util.UUID;
 public class AccountingTestUtils extends DummyData {
     @Autowired
     public OrderRepository orderRepository;
+
+    @Autowired
+    public OrderItemRepository orderItemRepository;
 
     @Autowired
     public RefundRepository refundRepository;
@@ -49,6 +55,7 @@ public class AccountingTestUtils extends DummyData {
     public RefundItemAccountingRepository refundItemAccountingRepository;
 
     protected ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
+    protected ArrayList<String> toBeDeletedOrderItemById = new ArrayList<>();
     protected ArrayList<String> toBeDeletedOrderAccountingById = new ArrayList<>();
     protected ArrayList<String> toBeDeletedOrderItemAccountingById = new ArrayList<>();
     protected ArrayList<String> toBeDeletedRefundById = new ArrayList<>();
@@ -60,6 +67,7 @@ public class AccountingTestUtils extends DummyData {
     public void tearDown() {
         try {
             toBeDeletedOrderById.forEach(orderId -> orderRepository.deleteById(orderId));
+            toBeDeletedOrderItemById.forEach(orderItemId -> orderItemRepository.deleteById(orderItemId));
             toBeDeletedRefundById.forEach(refundId -> refundRepository.deleteById(refundId));
             toBeDeletedRefundItemById.forEach(refundId -> refundItemRepository.deleteById(refundId));
             toBeDeletedOrderAccountingById.forEach(id -> orderAccountingRepository.deleteById(id));
@@ -67,6 +75,7 @@ public class AccountingTestUtils extends DummyData {
             toBeDeletedOrderItemAccountingById.forEach(id -> orderItemAccountingRepository.deleteById(id));
             toBeDeletedRefundItemAccountingById.forEach(id -> refundItemAccountingRepository.deleteById(id));
             toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedOrderItemById = new ArrayList<>();
             toBeDeletedOrderAccountingById = new ArrayList<>();
             toBeDeletedOrderItemAccountingById = new ArrayList<>();
             toBeDeletedRefundById = new ArrayList<>();
@@ -76,6 +85,7 @@ public class AccountingTestUtils extends DummyData {
         } catch (Exception e) {
             log.info("delete error {}", e.toString());
             toBeDeletedOrderById = new ArrayList<>();
+            toBeDeletedOrderItemById = new ArrayList<>();
             toBeDeletedOrderAccountingById = new ArrayList<>();
             toBeDeletedOrderItemAccountingById = new ArrayList<>();
             toBeDeletedRefundById = new ArrayList<>();
@@ -91,6 +101,78 @@ public class AccountingTestUtils extends DummyData {
         order = orderRepository.save(order);
         toBeDeletedOrderById.add(order.getOrderId());
         return order;
+    }
+
+    public OrderItem createTestOrderItem(Order order) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        OrderItem orderItem = new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
+                "productName",
+                "productLabel",
+                "productDescription",
+                1,
+                "unit",
+                "100",
+                "100",
+                "100",
+                "0",
+                order.getPriceNet(),
+                order.getPriceVat(),
+                "100",
+                order.getPriceNet(),
+                order.getPriceVat(),
+                "100",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        orderItemRepository.save(orderItem);
+        toBeDeletedOrderItemById.add(orderItemId);
+
+        return orderItem;
+    }
+
+    public OrderItem createFreeTestOrderItem(Order order, String price) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        OrderItem orderItem = new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "free-product-id",
+                "freeName",
+                "freeLabel",
+                "freeDescription",
+                1,
+                "unit",
+                price,
+                price,
+                price,
+                "0",
+                price,
+                price,
+                price,
+                price,
+                price,
+                price,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        orderItemRepository.save(orderItem);
+        toBeDeletedOrderItemById.add(orderItemId);
+
+        return orderItem;
     }
 
     public OrderAccounting createTestOrderAccounting(String orderId) {
@@ -120,7 +202,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"
+        );
 
         orderItemAccounting = orderItemAccountingRepository.save(orderItemAccounting);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting.getOrderItemId());
@@ -153,6 +240,22 @@ public class AccountingTestUtils extends DummyData {
 
     public RefundItem createTestRefundItem(Refund refund) {
         RefundItem refundItem = generateDummyRefundItem(refund);
+        refundItem = refundItemRepository.save(refundItem);
+        toBeDeletedRefundItemById.add(refundItem.getRefundItemId());
+        return refundItem;
+    }
+
+    public RefundItem createTestRefundItemWithPrice(Refund refund, String gross, String net, String vat) {
+        RefundItem refundItem = generateDummyRefundItem(refund);
+        refundItem.setPriceVat(vat);
+        refundItem.setPriceNet(net);
+        refundItem.setPriceGross(gross);
+        refundItem.setOriginalPriceGross(gross);
+        refundItem.setOriginalPriceVat(vat);
+        refundItem.setOriginalPriceNet(net);
+        refundItem.setRowPriceNet(net);
+        refundItem.setRowPriceTotal(gross);
+        refundItem.setRowPriceVat(vat);
         refundItem = refundItemRepository.save(refundItem);
         toBeDeletedRefundItemById.add(refundItem.getRefundItemId());
         return refundItem;
@@ -232,7 +335,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace"
+        );
 
         refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());

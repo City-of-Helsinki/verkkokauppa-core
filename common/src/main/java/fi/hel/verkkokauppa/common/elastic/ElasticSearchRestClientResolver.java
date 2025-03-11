@@ -4,17 +4,16 @@ package fi.hel.verkkokauppa.common.elastic;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.RestClients;
+import org.springframework.stereotype.Component;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 @Component
 public class ElasticSearchRestClientResolver {
@@ -33,6 +32,12 @@ public class ElasticSearchRestClientResolver {
     // if not set defaults to false
     @Value("${elasticsearch.service.local.environment:#{false}}")
     private Boolean isLocalEnvironment;
+
+    @Value("${elasticsearch.service.connect.timeout:#{5000}}")
+    private Integer connectTimeout;
+
+    @Value("${elasticsearch.service.socket.timeout:#{60000}}")
+    private Integer socketTimeout;
 
     public RestHighLevelClient get() {
         if (this.isLocalEnvironment) {
@@ -69,6 +74,8 @@ public class ElasticSearchRestClientResolver {
                     .connectedTo(this.serviceUrl)
                     .usingSsl(sslContext, hostnameVerifier)
                     .withBasicAuth(this.username, this.password)
+                    .withConnectTimeout(this.connectTimeout)
+                    .withSocketTimeout(this.socketTimeout)
                     .build();
 
         } catch (Exception e) {
