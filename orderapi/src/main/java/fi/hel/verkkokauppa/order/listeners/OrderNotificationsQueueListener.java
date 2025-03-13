@@ -7,8 +7,10 @@ import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.time.LocalDateTime;
 
 @Component
 @Slf4j
@@ -45,6 +48,12 @@ public class OrderNotificationsQueueListener {
 
     @Autowired
     private GetSubscriptionQuery getSubscriptionQuery;
+
+    @Value("${payment.card_token.encryption.password}")
+    private String cardTokenEncryptionPassword;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
 
     @JmsListener(destination = "${queue.order.notifications:order-notifications}")
     public void consumeMessage(TextMessage textMessage) throws Exception {
@@ -78,22 +87,37 @@ public class OrderNotificationsQueueListener {
     }
 
     private void subscriptionRenewalOrderCreatedAction(OrderMessage message) throws Exception {
-        restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
-        Subscription subscription = null;
-
-        if( StringUtils.isNotEmpty(message.subscriptionId) && StringUtils.isNotEmpty(message.userId) ) {
-            subscription = getSubscriptionQuery.findByIdValidateByUser(message.subscriptionId, message.userId);
-        }
-
-        if(subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
-            log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
-            String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
-                    paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
-                    paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
-            callApi(message, url);
+        // multiple calls to this can create new orders even if subscription was just renewed
+        // check that end date from subscription is not suspiciously far in the future (KYV-1202)
+        LocalDateTime endDate = message.getEndDate();
+        if( endDate.isAfter(LocalDateTime.now().plusDays(5)))
+        {
+            log.info("End date for orderId: {} is {}. Do not pay yet.", message.getOrderId(), endDate);
+            sendNotificationService.sendErrorNotification(
+                    "Order " + message.getOrderId() + " being renewed too early",
+                    "End date for subscription " + message.getSubscriptionId() + " is " + endDate + ", not renewing yet."
+            );
         }
         else {
-            log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+            restWebHookService.postCallWebHook(message.toCustomerWebhook(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, message.getNamespace());
+            Subscription subscription = null;
+
+            if (StringUtils.isNotEmpty(message.subscriptionId) && StringUtils.isNotEmpty(message.userId)) {
+                subscription = getSubscriptionQuery.findByIdValidateByUser(message.subscriptionId, message.userId);
+            }
+
+            if (subscription != null && subscription.getStatus().equalsIgnoreCase(SubscriptionStatus.ACTIVE)) {
+                log.info("Subscription: {} was active so sending SUBSCRIPTION_RENEWAL_ORDER_CREATED to paymentApi", message.subscriptionId);
+                log.info("Subscription: {} card token was: {}", message.subscriptionId, message.getCardToken());
+                message.setCardToken(subscription.getPaymentMethodToken());
+                log.info("Subscription: {} card token was set to: {}", message.subscriptionId, message.getCardToken());
+                String url = message.getPaymentGateway() != null && message.getPaymentGateway().equals(PaymentGatewayEnum.PAYTRAIL) ?
+                        paymentServiceUrl + "/payment-admin/paytrail/subscription-renewal-order-created-event" :
+                        paymentServiceUrl + "/payment-admin/subscription-renewal-order-created-event";
+                callApi(message, url);
+            } else {
+                log.info("Subscription: {} was in status {} so skipping payment handling", message.subscriptionId, subscription.getStatus());
+            }
         }
     }
 
@@ -101,6 +125,6 @@ public class OrderNotificationsQueueListener {
         //format payload, message to json string conversion
         String body = mapper.writeValueAsString(message);
         //send to target url
-        restServiceClient.makeVoidPostCall(url, body);
+        restServiceClient.makeVoidPostCall(url, body, message.getNamespace());
     }
 }

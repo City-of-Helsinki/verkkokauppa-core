@@ -100,7 +100,7 @@ public class PaytrailPaymentClient {
         PaytrailPaymentCreateMitChargeResponse createResponse = createMitChargeResponseMapper.to(response.get());
         if (!createResponse.isValid()) {
             log.info("createMitCharge errors {}", createResponse);
-            throw new IllegalArgumentException("createMitCharge failed with response : " + createResponse.getResultJson());
+            throw new IllegalArgumentException("createMitCharge failed for payment: + " + payload.getStamp() + " with response : " + createResponse.getResultJson());
         }
         return createResponse.getSuccess();
     }

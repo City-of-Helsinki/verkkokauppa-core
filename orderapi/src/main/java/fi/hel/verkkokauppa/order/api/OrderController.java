@@ -304,6 +304,21 @@ public class OrderController {
         }
 	}
 
+    @PostMapping(value = "/order/setAccounted", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void setOrderAsAccounted(@RequestParam(value = "orderId") String orderId) {
+        try {
+            log.info("/order/setAccounted - Setting order accounted outside accounting process, orderId: " + orderId);
+            orderService.markAsAccounted(orderId);
+
+        } catch (Exception e) {
+            log.error("Setting order as accounted failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-set-order-as-accounted", "Failed to set order as accounted")
+            );
+        }
+    }
+
 	private void setItems(String orderId, Order order, OrderAggregateDto dto) {
         if (dto != null && dto.getItems() != null) {
             dto.getItems().stream().forEach(item -> {

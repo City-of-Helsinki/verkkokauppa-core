@@ -23,4 +23,7 @@ public class OrderAccounting {
 
     @Field(type = FieldType.Date, format = DateFormat.date)
     LocalDate accounted;
+
+    @Field(type = FieldType.Text)
+    private String namespace;
 }

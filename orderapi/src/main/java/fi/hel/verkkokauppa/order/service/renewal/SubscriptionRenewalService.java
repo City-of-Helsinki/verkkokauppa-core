@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.renewal;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
@@ -10,7 +11,6 @@ import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalProcess;
 import fi.hel.verkkokauppa.order.model.renewal.SubscriptionRenewalRequest;
-import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalProcessRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRenewalRequestRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
@@ -26,9 +26,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Component
 public class SubscriptionRenewalService {
@@ -55,16 +58,33 @@ public class SubscriptionRenewalService {
     @Autowired
     private CreateOrderFromSubscriptionCommand createOrderFromSubscriptionCommand;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     public String renewSubscription(String subscriptionId) {
+        String orderId = null;
         final SubscriptionDto subscriptionDto = getSubscriptionQuery.getOne(subscriptionId);
-        String orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
-        // If order ids matches prevents sending renewal order created event.
-        if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
-            Order order = orderService.findById(orderId);
-            log.info("Trigger order created event for subscriptionId: {}", subscriptionId);
-            orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
-        } else {
-            log.info("Order ids doesn't match, can be duplicate, don't create new order for subscriptionId: {}", subscriptionId);
+
+        // multiple calls to this can create new orders even if subscription was just renewed
+        // check that end date for subscription is not suspiciously far in the future (KYV-)
+        LocalDateTime endDate = subscriptionDto.getEndDate();
+        if( endDate.isAfter(LocalDateTime.now().plusDays(5)))
+        {
+            log.info("End date for subscriptionId: {} is {}. Do not renew yet.", subscriptionId, endDate);
+        }
+        else
+        {
+            // end date is close so we can renew
+            log.info("End date for subscriptionId: {} is {}. Time to renew.", subscriptionId, endDate);
+            orderId = createOrderFromSubscriptionCommand.createFromSubscription(subscriptionDto);
+            // If order ids matches prevents sending renewal order created event.
+            if (orderId != null && !Objects.equals(subscriptionDto.getOrderId(), orderId)) {
+                Order order = orderService.findById(orderId);
+                log.info("Trigger order created event for subscriptionId: {}", subscriptionId);
+                orderService.triggerOrderCreatedEvent(order, EventType.SUBSCRIPTION_RENEWAL_ORDER_CREATED);
+            } else {
+                log.info("Order ids doesn't match, can be duplicate, don't create new order for subscriptionId: {}", subscriptionId);
+            }
         }
 
         return orderId;
@@ -94,16 +114,19 @@ public class SubscriptionRenewalService {
     }
 
     public boolean startRenewingSubscription(String subscriptionId) {
-        Optional<SubscriptionRenewalRequest> existingRequest = requestRepository.findById(subscriptionId);
         Optional<SubscriptionRenewalProcess> existingProcess = processRepository.findById(subscriptionId);
-        if (existingProcess.isPresent() || existingRequest.isEmpty()) {
+        if (existingProcess.isPresent()) {
             log.info("There is existing process renewing subscription with subscriptionId: {}", subscriptionId);
             // stop, this subscription is already being renewed by another instance of this service
             return false;
         } else {
             SubscriptionRenewalProcess process = SubscriptionRenewalProcess.builder().id(subscriptionId).processingStarted(LocalDateTime.now()).build();
             processRepository.save(process);
-            requestRepository.deleteById(subscriptionId);
+            try {
+                requestRepository.deleteById(subscriptionId);
+            } catch (Exception e) {
+                log.debug("Request deleting failed for {}", subscriptionId);
+            }
             return true;
         }
     }
@@ -120,14 +143,44 @@ public class SubscriptionRenewalService {
         processRepository.deleteAll();
     }
 
-    public void batchProcessNextRenewalRequests() {
+    public AtomicLong batchProcessNextRenewalRequests() {
         log.debug("processing next renewal requests");
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(0, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         log.debug("renewal requests {}", requests);
+        AtomicLong count = new AtomicLong();
         if (requests != null) {
             requests.getContent().forEach(request -> {
                 triggerSubscriptionRenewalEvent(request.getId());
+                requestRepository.deleteById(request.getId());
+                count.getAndDecrement();
             });
+        }
+        return count;
+    }
+
+    public ArrayList<SubscriptionRenewalRequest> getAllRequests() {
+        ArrayList<SubscriptionRenewalRequest> requests = new ArrayList<>();
+        requestRepository.findAll().forEach(requests::add);
+        return requests;
+    }
+
+    public ArrayList<SubscriptionRenewalProcess> getAllProcesses() {
+        ArrayList<SubscriptionRenewalProcess> processes = new ArrayList<>();
+        processRepository.findAll().forEach(processes::add);
+        return processes;
+    }
+
+    public void logAll() {
+        try {
+            log.error(objectMapper.writeValueAsString(this.getAllProcesses()));
+        } catch (JsonProcessingException e) {
+            log.error("Could not serialize getAllProcesses");
+        }
+
+        try {
+            log.error(objectMapper.writeValueAsString(this.getAllRequests()));
+        } catch (JsonProcessingException e) {
+            log.error("Could not serialize getAllRequests");
         }
     }
 

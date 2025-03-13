@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -138,6 +139,42 @@ public class AccountingTestUtils extends DummyData {
         return orderItem;
     }
 
+    public OrderItem createFreeTestOrderItem(Order order, String price) {
+        String orderItemId = UUIDGenerator.generateType4UUID().toString();
+        //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
+        OrderItem orderItem = new OrderItem(
+                orderItemId,
+                order.getOrderId(),
+                "9876",
+                "free-product-id",
+                "freeName",
+                "freeLabel",
+                "freeDescription",
+                1,
+                "unit",
+                price,
+                price,
+                price,
+                "0",
+                price,
+                price,
+                price,
+                price,
+                price,
+                price,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        orderItemRepository.save(orderItem);
+        toBeDeletedOrderItemById.add(orderItemId);
+
+        return orderItem;
+    }
+
     public OrderAccounting createTestOrderAccounting(String orderId) {
         OrderAccounting orderAccounting = new OrderAccounting();
         orderAccounting.setOrderId(orderId);
@@ -165,7 +202,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "namespace",
+                "paytrailTransactionId"
+        );
 
         orderItemAccounting = orderItemAccountingRepository.save(orderItemAccounting);
         toBeDeletedOrderItemAccountingById.add(orderItemAccounting.getOrderItemId());
@@ -198,6 +240,22 @@ public class AccountingTestUtils extends DummyData {
 
     public RefundItem createTestRefundItem(Refund refund) {
         RefundItem refundItem = generateDummyRefundItem(refund);
+        refundItem = refundItemRepository.save(refundItem);
+        toBeDeletedRefundItemById.add(refundItem.getRefundItemId());
+        return refundItem;
+    }
+
+    public RefundItem createTestRefundItemWithPrice(Refund refund, String gross, String net, String vat) {
+        RefundItem refundItem = generateDummyRefundItem(refund);
+        refundItem.setPriceVat(vat);
+        refundItem.setPriceNet(net);
+        refundItem.setPriceGross(gross);
+        refundItem.setOriginalPriceGross(gross);
+        refundItem.setOriginalPriceVat(vat);
+        refundItem.setOriginalPriceNet(net);
+        refundItem.setRowPriceNet(net);
+        refundItem.setRowPriceTotal(gross);
+        refundItem.setRowPriceVat(vat);
         refundItem = refundItemRepository.save(refundItem);
         toBeDeletedRefundItemById.add(refundItem.getRefundItemId());
         return refundItem;
@@ -277,7 +335,12 @@ public class AccountingTestUtils extends DummyData {
                 profitCenter,
                 balanceProfitCenter,
                 project,
-                operationArea);
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "refundTransactionId",
+                "namespace"
+        );
 
         refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
         toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());

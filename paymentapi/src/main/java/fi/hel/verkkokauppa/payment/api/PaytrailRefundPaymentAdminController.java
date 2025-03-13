@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @Slf4j
 public class PaytrailRefundPaymentAdminController {
@@ -43,6 +45,51 @@ public class PaytrailRefundPaymentAdminController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-get-refund-payment", "failed to get refund payment with order id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/refund-admin/refund-payment/get/refundId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RefundPayment>> getRefundPaymentByRefundId(@RequestParam(value = "refundId") String refundId) {
+        try {
+            List<RefundPayment> refundPaymentForRefundId = refundPaymentService.getRefundPaymentForOrderByRefundId(refundId);
+            if (refundPaymentForRefundId == null) {
+                log.error("No refund payments found with given refund id. refundId: " + refundId);
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-refund-payment", "failed to get refund payment with refund id [" + refundId + "]")
+                );
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(refundPaymentForRefundId);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting refund payment failed, refundId: " + refundId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-refund-payment-by-refund-id", "failed to get refund payment with refund id [" + refundId + "]")
+            );
+        }
+    }
+    @GetMapping(value = "/refund-admin/refund-payment/get/refundPaymentId", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RefundPayment> getRefundPaymentByRefundPaymentId(@RequestParam(value = "refundPaymentId") String refundPaymentId) {
+        try {
+            RefundPayment refundPaymentForRefundId = refundPaymentService.getRefundPaymentByRefundPaymentId(refundPaymentId);
+            if (refundPaymentForRefundId == null) {
+                log.error("No refund payments found with given refund id. refundPaymentId: " + refundPaymentId);
+                throw new CommonApiException(
+                        HttpStatus.NOT_FOUND,
+                        new Error("failed-to-get-refund-payment", "failed to get refund payment with refund payment id [" + refundPaymentId + "]")
+                );
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(refundPaymentForRefundId);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("getting refund payment failed, refundPaymentId: " + refundPaymentId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-get-refund-payment-by-refund-payment-id", "failed to get refund payment with refund payment id [" + refundPaymentId + "]")
             );
         }
     }

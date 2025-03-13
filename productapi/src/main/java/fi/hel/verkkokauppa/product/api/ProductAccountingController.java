@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.product.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.product.constants.ApiUrls;
 import fi.hel.verkkokauppa.product.dto.GetProductAccountingListRequestDto;
 import fi.hel.verkkokauppa.product.dto.ProductAccountingDto;
 import fi.hel.verkkokauppa.product.model.ProductAccounting;
@@ -25,7 +24,7 @@ public class ProductAccountingController {
     @Autowired
     private ProductAccountingService productAccountingService;
 
-    @PostMapping(ApiUrls.PRODUCT_ROOT + "/{productId}/" + ApiUrls.ACCOUNTING)
+    @PostMapping("/product/{productId}/accounting")
     public ResponseEntity<ProductAccounting> createProductAccounting(@PathVariable final String productId,
                                         @RequestBody ProductAccountingDto productAccountingDto)
     {
@@ -44,8 +43,31 @@ public class ProductAccountingController {
         }
     }
 
-    @GetMapping(ApiUrls.PRODUCT_ROOT + "/" + ApiUrls.ACCOUNTING + "/list")
+    // FIXME Uses request body even when this is get request
+    @GetMapping("/product/accounting/list")
     public ResponseEntity<List<ProductAccounting>> listProductAccountings(@RequestBody GetProductAccountingListRequestDto request) {
+        try {
+            List<ProductAccounting> productAccountings = new ArrayList<>();
+
+            List<String> productIds = request.getProductIds();
+            for (String productId : productIds) {
+                ProductAccounting productAccounting = productAccountingService.getProductAccounting(productId);
+                productAccountings.add(productAccounting);
+            }
+            return ResponseEntity.ok().body(productAccountings);
+
+        } catch (Exception e) {
+            log.error("listing product accountings failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-list-product-accountings", "failed to list product accountings")
+            );
+        }
+    }
+
+    // Duplicates the upper but is post to allow swagger to work
+    @PostMapping("/product/accounting/list")
+    public ResponseEntity<List<ProductAccounting>> listProductAccountingsPost(@RequestBody GetProductAccountingListRequestDto request) {
         try {
             List<ProductAccounting> productAccountings = new ArrayList<>();
 

@@ -96,6 +96,13 @@ public class PaytrailRefundPaymentService {
         }
     }
 
+    public List<RefundPayment> getRefundPaymentForOrderByRefundId(String refundId) {
+        return refundPaymentRepository.findByRefundId(refundId);
+    }
+    public RefundPayment getRefundPaymentByRefundPaymentId(String refundPaymentId) {
+        return refundPaymentRepository.findById(refundPaymentId).orElse(null);
+    }
+
     public List<RefundPayment> getPaymentsForOrder(String orderId, String namepace) {
         return refundPaymentRepository.findByNamespaceAndOrderId(namepace, orderId);
     }
@@ -185,6 +192,10 @@ public class PaytrailRefundPaymentService {
         if (refundPayment.getRefundPaymentId() == null || refundResponse.getTransactionId() == null) {
             throw new RuntimeException("Didn't manage to create refund payment.");
         }
+
+//        try {
+//            sleep(10000);
+//        }catch (Exception e){}
 
         refundPayment.setRefundTransactionId(refundResponse.getTransactionId());
         refundPayment = refundPaymentRepository.save(refundPayment);

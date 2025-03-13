@@ -361,7 +361,8 @@ public class OrderService {
                     .priceGross(orderItem.getPriceGross())
                     .customerEmail(order.getCustomerEmail())
                     .customerFirstName(order.getCustomerFirstName())
-                    .customerLastName(order.getCustomerLastName());
+                    .customerLastName(order.getCustomerLastName())
+                    .endDate(subscription.getEndDate());
         }
 
         OrderMessage orderMessage = orderMessageBuilder.build();
@@ -381,6 +382,19 @@ public class OrderService {
         return subscriptionOrders;
     }
 
+    public List<OrderAggregateDto> findConfirmedBySubscription(String subscriptionId) {
+        List<Order> orderIds = orderRepository.findOrdersBySubscriptionId(subscriptionId);
+
+        List<OrderAggregateDto> subscriptionOrders = orderIds.stream()
+                .map(order -> getOrderWithItems(order.getOrderId()))
+                .filter( order -> !order.getOrder().getStatus().equals("cancelled") ) // filter out cancelled orders
+                .distinct()
+                .sorted(Comparator.comparing(o -> o.getOrder().getCreatedAt()))
+                .collect(Collectors.toList());
+
+        return subscriptionOrders;
+    }
+
     public boolean validateRightOfPurchase(String orderId, String user, String namespace) {
         Order order = findByIdValidateByUser(orderId, user);
         orderRightOfPurchaseService.setNamespace(namespace);
@@ -390,7 +404,7 @@ public class OrderService {
     }
 
     public Order getLatestOrderWithSubscriptionId(String subscriptionId) {
-        List<OrderAggregateDto> orders = findBySubscription(subscriptionId);
+        List<OrderAggregateDto> orders = findConfirmedBySubscription(subscriptionId); // do not get cancelled orders
 
         Optional<OrderAggregateDto> lastOrder = ListUtil.last(orders);
         return lastOrder.map(orderAggregateDto -> findById(orderAggregateDto.getOrder().getOrderId())).orElse(null);
@@ -398,7 +412,7 @@ public class OrderService {
 
     // get order for currently active subscription period
     public Order getCurrentPeriodOrderWithSubscriptionId(String subscriptionId, LocalDateTime subscriptionEndDate ) {
-        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDate(subscriptionId, subscriptionEndDate);
+        List<Order> orders = orderRepository.findOrdersBySubscriptionIdAndEndDateAndStatus(subscriptionId, subscriptionEndDate, OrderStatus.CONFIRMED);
         Order activeOrder = null;
 
         if (orders.size() == 1) {

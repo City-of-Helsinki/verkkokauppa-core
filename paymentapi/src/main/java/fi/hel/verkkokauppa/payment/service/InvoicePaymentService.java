@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.constant.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.payment.model.Payer;
 import fi.hel.verkkokauppa.payment.model.Payment;
@@ -145,5 +146,25 @@ public class InvoicePaymentService {
 
     public String getPaymentUrl(Payment payment) {
         return env.getRequiredProperty("invoice_payment_url") + "?orderId=" + payment.getOrderId() + "&user=" + payment.getUserId();
+    }
+
+    public boolean validatePayment(Payment payment) {
+        boolean isValid = false;
+        if( payment != null ){
+            BigDecimal zeroValue = BigDecimal.ZERO;
+            boolean paymentValidation = payment.getTotal().compareTo(zeroValue) > 0;
+            boolean gatewayValidation = payment.getPaymentGateway().equals(PaymentGatewayEnum.INVOICE);
+            // check that total is zero and gateway is free
+            isValid = gatewayValidation && paymentValidation;
+        }
+        return isValid;
+    }
+
+    public PaymentReturnDto createPaymentReturnDto(boolean isValid) {
+        boolean isPaymentPaid = true;
+        boolean canRetry = false;
+        boolean isAuthorized = false;
+
+        return new PaymentReturnDto(isValid, isPaymentPaid, canRetry, isAuthorized);
     }
 }

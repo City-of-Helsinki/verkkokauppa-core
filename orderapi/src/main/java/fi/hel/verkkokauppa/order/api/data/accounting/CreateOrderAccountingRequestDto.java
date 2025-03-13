@@ -12,6 +12,8 @@ import java.util.List;
 public class CreateOrderAccountingRequestDto {
 
     private String orderId;
+    private String namespace;
+    private String paidAt;
     private List<ProductAccountingDto> dtos;
 
 }

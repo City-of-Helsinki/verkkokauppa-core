@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
@@ -53,6 +54,14 @@ public class OrderItemAccountingDto {
     private String project;
 
     private String operationArea;
+
+    private LocalDateTime paidAt;
+
+    private String merchantId;
+
+    private String paytrailTransactionId;
+
+    private String namespace;
 
     public OrderItemAccountingDto(String orderItemId, String orderId, String priceGross, String priceNet, String priceVat, ProductAccountingDto productAccountingDto) {
         this.orderItemId = orderItemId;

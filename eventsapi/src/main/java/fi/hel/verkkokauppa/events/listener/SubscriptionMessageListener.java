@@ -94,7 +94,7 @@ public class SubscriptionMessageListener {
         //format payload, message to json string conversion
         String body = objectMapper.writeValueAsString(message);
         //send to target url
-        restServiceClient.makeVoidPostCall(url, body);
+        restServiceClient.makeVoidPostCall(url, body, message.getNamespace());
     }
 
 }

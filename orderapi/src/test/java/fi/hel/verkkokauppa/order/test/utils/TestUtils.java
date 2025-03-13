@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
+import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -29,15 +31,29 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.netty.http.client.HttpClient;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Component
 @Slf4j
@@ -92,6 +109,8 @@ public class TestUtils extends DummyData {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    ElasticSearchRestClientResolver clientResolver;
 
     /**
      * Exclude field names by providing the field name as a string.
@@ -130,15 +149,19 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount) {
-        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true);
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, true, "productId");
     }
     public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas) {
+        return generateSubscriptionOrderData(itemCount, periodFrequency, periodUnit, periodCount, includeMetas, "productId");
+    }
+
+    public ResponseEntity<OrderAggregateDto> generateSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas, String productId) {
         Order order = generateDummyOrder();
 
         order.setEndDate(LocalDateTime.now().plusMonths(1));
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.get(0).setPeriodFrequency(periodFrequency);
         orderItems.get(0).setPeriodUnit(periodUnit);
@@ -146,9 +169,10 @@ public class TestUtils extends DummyData {
         orderItems.get(0).setBillingStartDate(LocalDateTime.now());
         orderItems.get(0).setStartDate(LocalDateTime.now());
         orderItems.get(0).setPriceGross("100");
-        orderItems.get(0).setPriceNet("100");
-        orderItems.get(0).setPriceVat("0");
-        orderItems.get(0).setProductId("b86337e8-68a0-3599-a18b-754ffae53f5a"); // use id created by initializeTestData
+        orderItems.get(0).setPriceNet("98.5");
+        orderItems.get(0).setPriceVat("1.5");
+        orderItems.get(0).setVatPercentage("1.5");
+        orderItems.get(0).setProductId(productId);
         orderItems.get(0).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
         List<OrderItemMeta> orderItemMetas;
         if( includeMetas == true ) {
@@ -169,7 +193,7 @@ public class TestUtils extends DummyData {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("124"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId("124"));
@@ -185,7 +209,7 @@ public class TestUtils extends DummyData {
         Refund refund = generateDummyRefund(orderId);
 
         refund.setNamespace("venepaikat");
-        refund.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        refund.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<RefundItem> refundItems = generateDummyRefundItemList(refund, orderId, itemCount);
         refundItems.forEach(refundItem -> refundItem.setPriceGross("124"));
         refundItems.forEach(refundItem -> refundItem.setMerchantId("124"));
@@ -199,7 +223,7 @@ public class TestUtils extends DummyData {
         Order order = generateDummyOrder();
 
         order.setNamespace("venepaikat");
-        order.setCustomerEmail(UUID.randomUUID().toString() + "@ambientia.fi");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
         orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
@@ -207,6 +231,49 @@ public class TestUtils extends DummyData {
         orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewOrderWithFreeItemToDatabase(int itemCount, String merchantId) {
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("0.0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("0.0"));
+        orderItems.add(generateDummyFreeOrderItem(order));
+        orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
+        List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewFreeOrderToDatabase(int itemCount, String merchantId) {
+        Order order = generateDummyOrder();
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("0"));
+        orderItems.forEach(orderItem -> orderItem.setPriceNet("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceNet("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("0"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("0"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
@@ -314,6 +381,19 @@ public class TestUtils extends DummyData {
         return result.getJSONObject(0).getString("merchantId");
     }
 
+    public String createMockProductMapping(String namespace, String merchantId) {
+
+        String jsonResponse = restServiceClient.getClient().get()
+                .uri(serviceUrls.getProductMappingServiceUrl() + "/create?namespace=" + namespace +"&namespaceEntityId=automatedtestproduct&merchantId=" + merchantId)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        log.info(jsonResponse);
+        JSONObject result = new JSONObject(jsonResponse);
+        log.info(result.toString());
+        return result.getString("productId");
+    }
+
     public JSONObject createMockAccountingForProductId(String productId) throws JsonProcessingException {
 
         JSONObject productAccounting = new JSONObject();
@@ -380,5 +460,115 @@ public class TestUtils extends DummyData {
         ResolvePriceResultDto.put("priceVat","2");
         ResolvePriceResultDto.put("priceGross","10");
         return new ResponseEntity<>( ResolvePriceResultDto, HttpStatus.OK);
+    }
+
+    public JSONObject createMockInvoiceAccountingForProductId(String productId) throws JsonProcessingException {
+
+        JSONObject productAccounting = new JSONObject();
+
+        productAccounting.put("productId", productId);
+        productAccounting.put("salesOrg", "salesOrg");
+        productAccounting.put("salesOffice", "salesOffice");
+        productAccounting.put("material", "material");
+        productAccounting.put("orderType", "orderType");
+
+        JSONObject jsonResponse = restServiceClient.makePostCall(
+                serviceUrls.getProductServiceUrl() + "/product/invoicing",
+                productAccounting.toString()
+        );
+        log.info(jsonResponse.toString());
+        return jsonResponse;
+    }
+
+    public IndexResponse createTestPayment(TestPayment payment) throws IOException {
+        // Convert Payment object to JSON
+        String paymentJson = objectMapper.writeValueAsString(payment);
+
+        // Create an IndexRequest for the specified index
+        IndexRequest indexRequest = new IndexRequest("payments")
+                .id(payment.getPaymentId()) // Use payment ID as document ID
+                .source(paymentJson, XContentType.JSON);
+
+        // Execute the index request
+        IndexResponse indexResponse = this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
+
+        // Force a refresh on the "payments" index to make the document immediately searchable
+        this.clientResolver.get().indices().refresh(new RefreshRequest("payments"), RequestOptions.DEFAULT);
+
+        // Return the response from indexing
+        return indexResponse;
+    }
+    public IndexResponse createTestProductAccounting(TestProductAccounting payment) throws IOException {
+        // Convert Payment object to JSON
+        String paymentJson = objectMapper.writeValueAsString(payment);
+
+        // Create an IndexRequest for the specified index
+        IndexRequest indexRequest = new IndexRequest("accounting")
+                .id(payment.getProductId()) // Use payment ID as document ID
+                .source(paymentJson, XContentType.JSON);
+
+        // Execute the index request
+        IndexResponse indexResponse = this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
+
+        // Force a refresh on the "accounting" index to make the document immediately searchable
+        this.clientResolver.get().indices().refresh(new RefreshRequest("accounting"), RequestOptions.DEFAULT);
+
+        // Return the response from indexing
+        return indexResponse;
+    }
+
+
+    public JSONObject queryMailhoqMessages(){
+
+        HttpClient httpClient = HttpClient.create();
+
+        WebClient client = WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .exchangeStrategies(ExchangeStrategies.builder()
+                        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024)) // Set to 2 MB
+                        .build())
+                .build();
+
+        String jsonResponse = client.get()
+                .uri("http://localhost:8025/api/v2/messages")
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
+    }
+
+    public Integer mailHoqMessageCount(){
+        return Integer.parseInt(this.queryMailhoqMessages().get("total").toString());
+    }
+
+    /**
+     * Filters messages based on a custom condition provided by the predicate.
+     *
+     * @param condition a Predicate that defines the filtering condition on each message
+     * @return a list of messages that match the given condition
+     */
+    public List<JSONObject> filterMailhoqMessages(Predicate<JSONObject> condition) {
+        List<JSONObject> matchingMessages = new ArrayList<>();
+
+        // Get the "items" array from the JSON response
+        JSONArray items = this.queryMailhoqMessages().getJSONArray("items");
+
+        // Loop through each item in the array
+        for (int i = 0; i < items.length(); i++) {
+            JSONObject message = items.getJSONObject(i);
+
+            // Apply the custom condition to determine if the message should be included
+            if (condition.test(message)) {
+                matchingMessages.add(message);
+            }
+        }
+
+        return matchingMessages;
     }
 }

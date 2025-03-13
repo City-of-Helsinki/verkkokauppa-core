@@ -45,7 +45,7 @@ public class RestWebHookService {
         //format payload, message to json string conversion
         String body = objectMapper.writeValueAsString(object);
         log.info("Webhook request body : {} request url :{} ", body, webhookUrl);
-        restServiceClient.makeVoidPostCall(webhookUrl, body);
+        restServiceClient.makeVoidPostCall(webhookUrl, body, namespace);
         return ResponseEntity.ok().build();
     }
 

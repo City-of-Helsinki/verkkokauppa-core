@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.common.util.IterableUtils;
+import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.order.api.data.accounting.CreateOrderAccountingRequestDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.OrderItemAccountingDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
@@ -40,24 +41,33 @@ public class OrderItemAccountingService {
 
         String orderId = request.getOrderId();
         List<ProductAccountingDto> productAccountingDtos = request.getDtos();
-
         List<OrderItem> orderItems = orderItemService.findByOrderId(orderId);
         for (OrderItem orderItem : orderItems) {
             String orderItemProductId = orderItem.getProductId();
 
-            for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
-                String productId = productAccountingDto.getProductId();
+            // if item has price then create accounting for it
+            if(StringUtils.getDoubleFromString(orderItem.getRowPriceTotal()) != 0.0 )
+            {
+                for (ProductAccountingDto productAccountingDto : productAccountingDtos) {
+                    String productId = productAccountingDto.getProductId();
 
-                if (productId.equalsIgnoreCase(orderItemProductId)) {
+                    if (productId.equalsIgnoreCase(orderItemProductId)) {
                     String orderItemId = orderItem.getOrderItemId();
                     String priceGross = orderItem.getRowPriceTotal();
                     String priceNet = orderItem.getRowPriceNet();
                     String priceVat = orderItem.getRowPriceVat();
                     OrderItemAccountingDto orderItemAccountingDto = new OrderItemAccountingDto(orderItemId, orderId, priceGross,
                             priceNet, priceVat, productAccountingDto);
+                    // Adds data using setters
+                    orderItemAccountingDto.setPaidAt(productAccountingDto.getPaidAt());
+                    orderItemAccountingDto.setNamespace(productAccountingDto.getNamespace());
+                    orderItemAccountingDto.setMerchantId(productAccountingDto.getMerchantId());
+                    orderItemAccountingDto.setPaytrailTransactionId(productAccountingDto.getPaytrailTransactionId());
 
-                    createOrderItemAccounting(orderItemAccountingDto);
-                    orderItemAccountings.add(orderItemAccountingDto);
+
+                        createOrderItemAccounting(orderItemAccountingDto);
+                        orderItemAccountings.add(orderItemAccountingDto);
+                    }
                 }
             }
         }

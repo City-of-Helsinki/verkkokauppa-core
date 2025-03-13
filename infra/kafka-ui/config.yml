@@ -1,0 +1,12 @@
+auth:
+  type: disabled
+kafka:
+  clusters:
+    - name: "local"
+      bootstrapServers: "host.docker.internal:29092"
+      zookeeper: "host.docker.internal:2181"
+      properties:
+        security.protocol: "PLAINTEXT"
+rbac:
+  roles: []
+webclient: {}

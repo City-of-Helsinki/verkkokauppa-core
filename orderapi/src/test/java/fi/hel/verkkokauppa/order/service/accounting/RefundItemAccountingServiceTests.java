@@ -80,4 +80,48 @@ public class RefundItemAccountingServiceTests extends AccountingTestUtils {
 
     }
 
+    @Test
+    public void testRefundItemAccountingCreationWitZeroPriceItems() {
+        // create dummy order for test
+        Order order = createTestOrder();
+        order.setOrderId(UUIDGenerator.generateType4UUID().toString());
+        Refund refund = createTestRefund(order.getOrderId());
+
+        // create dummy orderItem with for test
+        RefundItem refundItem = createTestRefundItem(refund);
+        RefundItem refundItemFree = createTestRefundItemWithPrice(refund,"0","0","0");
+        RefundItem refundItemFree2 = createTestRefundItemWithPrice(refund,"0.0","0.0","0.0");
+
+        // create order accounting request
+        ProductAccountingDto dto = createDummyProductAccountingDto(refundItem.getProductId(), "1");
+        ProductAccountingDto dto2 = createDummyProductAccountingDto("productId", "2");
+        ProductAccountingDto dto3 = createDummyProductAccountingDto("productId", "2");
+        List<ProductAccountingDto> dtos = new ArrayList<>();
+        dtos.add(dto3);
+        dtos.add(dto2);
+        dtos.add(dto);
+        CreateRefundAccountingRequestDto request = new CreateRefundAccountingRequestDto();
+        request.setDtos(dtos);
+        request.setOrderId(order.getOrderId());
+        request.setRefundId(refund.getRefundId());
+
+
+        List<RefundItemAccountingDto> refundItemAccountings = refundItemAccountingService.createRefundItemAccountings(request);
+
+        assertEquals(refundItemAccountings.get(0).getPriceGross(), refundItem.getRowPriceTotal());
+        assertEquals(refundItemAccountings.get(0).getPriceNet(), refundItem.getRowPriceNet());
+        assertEquals(refundItemAccountings.get(0).getPriceVat(), refundItem.getRowPriceVat());
+
+        assertEquals(refundItemAccountings.get(0).getInternalOrder(), dto.getInternalOrder());
+        assertEquals(refundItemAccountings.get(0).getMainLedgerAccount(), dto.getMainLedgerAccount());
+        assertEquals(refundItemAccountings.get(0).getCompanyCode(), dto.getCompanyCode());
+        assertEquals(refundItemAccountings.get(0).getOperationArea(), dto.getOperationArea());
+        assertEquals(refundItemAccountings.get(0).getProject(), dto.getProject());
+        assertEquals(refundItemAccountings.get(0).getBalanceProfitCenter(), dto.getBalanceProfitCenter());
+        assertEquals(refundItemAccountings.get(0).getVatCode(), dto.getVatCode());
+        assertEquals(refundItemAccountings.get(0).getProfitCenter(), dto.getProfitCenter());
+
+        assertEquals(refundItemAccountings.size(), 1);
+    }
+
 }

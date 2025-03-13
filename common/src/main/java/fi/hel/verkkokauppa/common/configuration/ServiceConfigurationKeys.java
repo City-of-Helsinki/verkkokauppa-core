@@ -15,6 +15,7 @@ public class ServiceConfigurationKeys {
     //
     // Stays in ServiceConfigurations START
     public static String NAMESPACE_API_ACCESS_TOKEN = "namespaceApiAccessToken";
+    public static String NAMESPACE_WEBHOOK_ACCESS_TOKEN = "namespaceWebhookAccessToken";
     public static String PAYMENT_API_VERSION = "payment_api_version";
     public static String PAYMENT_API_KEY = "payment_api_key";
     public static String PAYMENT_ENCRYPTION_KEY = "payment_encryption_key";

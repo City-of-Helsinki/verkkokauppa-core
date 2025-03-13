@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.common.events;
 
-public class EventType {
+public class    EventType {
+    public static String MIT_CHARGE_PAID = "MIT_CHARGE_PAID";
+
     public static String PAYMENT_PAID = "PAYMENT_PAID";
     public static String PAYMENT_FAILED = "PAYMENT_FAILED";
     public static String SUBSCRIPTION_CREATED = "SUBSCRIPTION_CREATED";
@@ -11,6 +13,7 @@ public class EventType {
     public static String SUBSCRIPTION_CARD_EXPIRED = "SUBSCRIPTION_CARD_EXPIRED";
     public static String SUBSCRIPTION_CARD_RENEWAL_CREATED = "SUBSCRIPTION_CARD_RENEWAL_CREATED";
     public static String SUBSCRIPTION_UPDATE_CARD = "SUBSCRIPTION_UPDATE_CARD";
+    public static String SUBSCRIPTION_RENEWAL_WITH_EXPIRED_CARD = "SUBSCRIPTION_RENEWAL_WITH_EXPIRED_CARD";
     public static String ORDER_CANCELLED = "ORDER_CANCELLED";
     public static String REFUND_CONFIRMED = "REFUND_CONFIRMED";
     public static String REFUND_PAID = "REFUND_PAID";

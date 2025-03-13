@@ -35,4 +35,6 @@ public class PaytrailPaymentContext {
     private String paymentRedirectCancelUrl;
     private String paymentCallbackSuccessUrl;
     private String paymentCallbackCancelUrl;
+    private String refundCallbackSuccessUrl;
+    private String refundCallbackCancelUrl;
 }

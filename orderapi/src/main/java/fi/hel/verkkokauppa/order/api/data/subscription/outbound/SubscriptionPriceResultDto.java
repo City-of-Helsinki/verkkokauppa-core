@@ -10,4 +10,5 @@ public class SubscriptionPriceResultDto {
     private String priceVat;
     private String priceGross;
     private String errorMessage;
+    private String VatPercentage;
 }

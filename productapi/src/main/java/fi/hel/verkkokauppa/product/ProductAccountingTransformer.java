@@ -18,6 +18,10 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         productAccounting.setProfitCenter(dto.getProfitCenter());
         productAccounting.setBalanceProfitCenter(dto.getBalanceProfitCenter());
         productAccounting.setOperationArea(dto.getOperationArea());
+        productAccounting.setActiveFrom(dto.getActiveFrom());
+        productAccounting.setNextEntity(dto.getNextEntity());
+        productAccounting.setNextEntity(dto.getNextEntity());
+        productAccounting.setNamespace(dto.getNamespace());
         return productAccounting;
     }
 
@@ -33,6 +37,9 @@ public class ProductAccountingTransformer implements Transformer<ProductAccounti
         dto.setProfitCenter(productAccounting.getProfitCenter());
         dto.setBalanceProfitCenter(productAccounting.getBalanceProfitCenter());
         dto.setOperationArea(productAccounting.getOperationArea());
+        dto.setNextEntity(productAccounting.getNextEntity());
+        dto.setActiveFrom(productAccounting.getActiveFrom());
+        dto.setNamespace(productAccounting.getNamespace());
         return dto;
     }
 }
