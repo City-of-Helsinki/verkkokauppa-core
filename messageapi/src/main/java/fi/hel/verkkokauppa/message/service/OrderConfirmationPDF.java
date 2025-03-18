@@ -31,6 +31,7 @@ public class OrderConfirmationPDF {
         PDFA2A pdf = new PDFA2A(TITLE);
 
         PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
+        PDType0Font boldFont = pdf.loadFont(PDType1Font.HELVETICA_BOLD);
         pdf.setColorProfile(OrderConfirmationPDF.class.getResourceAsStream("/sRGB2014.icc"), "sRGB IEC61966-2.1", "http://www.color.org");
 
         PDStructureElement currentElement = pdf.addDocumentStructureElement();
@@ -66,7 +67,7 @@ public class OrderConfirmationPDF {
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TH);
         mc = pdf.beginMarkedContent(contentStream, COSName.H);
         contentStream.beginText();
-        contentStream.setFont(font, 16);
+        contentStream.setFont(boldFont, 16);
         contentStream.newLineAtOffset(SIDE_MARGIN, y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING + 25));
         contentStream.showText("Maksutiedot");
         contentStream.endText();
@@ -160,9 +161,7 @@ public class OrderConfirmationPDF {
             contentStream.endText();
             pdf.endMarkedContent(contentStream);
             pdf.addContentStructureElement(currentElement, COSName.P, StandardStructureTypes.P, mc, currentPage);
-
         }
-
 
         pdf.closeContentStream(contentStream);
 
