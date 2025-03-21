@@ -9,6 +9,7 @@ import java.util.List;
 @Setter
 public class GenerateOrderConfirmationPDFRequestDto {
     private String orderId;
-    private String createdAt;
+    private PaymentDto payment;
+    private MerchantDto merchant;
     private List<OrderItemDto> items;
 }
