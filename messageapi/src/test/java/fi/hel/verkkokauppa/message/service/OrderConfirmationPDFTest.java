@@ -26,6 +26,9 @@ public class OrderConfirmationPDFTest {
     public void returnsGeneratedOrderConfirmationPDF() throws BadFieldValueException, IOException, TransformerException {
         GenerateOrderConfirmationPDFRequestDto dto = new GenerateOrderConfirmationPDFRequestDto();
         dto.setOrderId("oid1");
+        dto.setCustomerFirstName("Teppo");
+        dto.setCustomerLastName("Testaaja");
+        dto.setCustomerEmail("teppo@testa.com");
         List<OrderItemDto> items = new ArrayList<>();
         dto.setItems(items);
 
@@ -47,7 +50,7 @@ public class OrderConfirmationPDFTest {
         item2.setProductDescription("Product Description");
         item2.setQuantity(1);
         item2.setVatPercentage("25,5");
-        item2.setRowPriceTotal("50.00");
+        item2.setRowPriceTotal("50,00");
         items.add(item2);
 
         PaymentDto payment = new PaymentDto();
@@ -58,6 +61,14 @@ public class OrderConfirmationPDFTest {
         payment.setTotalExclTax(payment.getTotal().subtract(payment.getTaxAmount()));
 
         dto.setPayment(payment);
+
+        dto.setMerchantName("Testikauppias");
+        dto.setMerchantStreetAddress("Testikatu 4 A 5");
+        dto.setMerchantZipCode("01010");
+        dto.setMerchantCity("Helsinki");
+        dto.setMerchantEmail("testikauppias@testi.fi");
+        dto.setMerchantBusinessId("1234567-1");
+        dto.setMerchantPhoneNumber("010 0010010010");
 
         orderConfirmationPDF.generate("order-confirmation.pdf", dto);
     }

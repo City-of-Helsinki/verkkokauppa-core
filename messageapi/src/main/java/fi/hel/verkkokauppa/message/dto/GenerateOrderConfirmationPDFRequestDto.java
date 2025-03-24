@@ -9,7 +9,18 @@ import java.util.List;
 @Setter
 public class GenerateOrderConfirmationPDFRequestDto {
     private String orderId;
+    private String customerFirstName;
+    private String customerLastName;
+    private String customerEmail;
     private PaymentDto payment;
-    private MerchantDto merchant;
+
+    private String merchantName;
+    private String merchantStreetAddress;
+    private String merchantZipCode;
+    private String merchantCity;
+    private String merchantPhoneNumber;
+    private String merchantEmail;
+    private String merchantBusinessId;
+
     private List<OrderItemDto> items;
 }
