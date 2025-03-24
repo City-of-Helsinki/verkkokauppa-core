@@ -75,7 +75,7 @@ public class OrderConfirmationPDF {
                 String.format("%s Tilausaika %s", dateAndTime[0], dateAndTime[1]));
 
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TABLE);
+//        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TABLE);
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TH);
         addContentElement(contentStream, currentElement, currentPage, COSName.H, StandardStructureTypes.H2,
                 boldFont,
@@ -248,9 +248,17 @@ public class OrderConfirmationPDF {
                 FONT_SIZE,
                 SIDE_MARGIN,
                 y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                "Maksutapa");
+                "Maksutapa"); */
+
+        currentElement = pdf.addStructureElement((PDStructureElement) currentElement.getParent(), StandardStructureTypes.P);
+        addDivider(contentStream, currentElement, currentPage, COSName.P, StandardStructureTypes.P,
+                font,
+                FONT_SIZE,
+                SIDE_MARGIN,
+                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING));
 
         // CUSTOMER INFO
+
 
         // MERCHANT INFO
 
@@ -282,6 +290,20 @@ public class OrderConfirmationPDF {
         } else{
             pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage);
         }
+
+    }
+
+    private void addDivider(PDPageContentStream contentStream, PDStructureElement currentElement, PDPage currentPage,
+                                   COSName markedContentCosName, String standardStructureType,
+                                   PDType0Font font, float fontSize, float tx, float ty) throws IOException {
+        COSDictionary mc = pdf.beginMarkedContent(contentStream, markedContentCosName);
+        contentStream.setFont(font, fontSize);
+        contentStream.setLineWidth(1);
+        contentStream.moveTo(SIDE_MARGIN, ty);
+        contentStream.lineTo(pdf.getUpperRightX(currentPage) - SIDE_MARGIN, ty);
+        contentStream.stroke();
+        pdf.endMarkedContent(contentStream);
+        pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage);
 
     }
 }
