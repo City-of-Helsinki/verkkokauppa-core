@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.message.service;
 
 import fi.hel.verkkokauppa.message.dto.GenerateOrderConfirmationPDFRequestDto;
 import fi.hel.verkkokauppa.message.dto.OrderItemDto;
+import fi.hel.verkkokauppa.message.dto.OrderItemMetaDto;
 import fi.hel.verkkokauppa.message.dto.PaymentDto;
 import org.apache.xmpbox.type.BadFieldValueException;
 import org.junit.Test;
@@ -41,7 +42,6 @@ public class OrderConfirmationPDFTest {
         item.setQuantity(2);
         item.setVatPercentage("25,5");
         item.setRowPriceTotal("100.00");
-        items.add(item);
 
         OrderItemDto item2 = new OrderItemDto();
         item2.setProductLabel("Product Label");
@@ -51,6 +51,36 @@ public class OrderConfirmationPDFTest {
         item2.setQuantity(1);
         item2.setVatPercentage("25,5");
         item2.setRowPriceTotal("50,00");
+
+        OrderItemMetaDto meta1 = new OrderItemMetaDto();
+        List<OrderItemMetaDto> metaList1 = new ArrayList<>() ;
+        meta1.setKey("avain1 not visible");
+        meta1.setLabel("Label1 not visible");
+        meta1.setValue("value1 not visible");
+        meta1.setVisibleInCheckout("false");
+        metaList1.add(meta1);
+        item.setMeta(metaList1);
+
+        List<OrderItemMetaDto> metaList2 = new ArrayList<>() ;
+        OrderItemMetaDto meta2_1 = new OrderItemMetaDto();
+        meta2_1.setKey("avain1");
+        meta2_1.setLabel("Label1");
+        meta2_1.setValue("value1");
+        meta2_1.setVisibleInCheckout("true");
+        metaList2.add(meta2_1);
+        OrderItemMetaDto meta2_2 = new OrderItemMetaDto();
+        meta2_2.setKey("avain2");
+        meta2_2.setValue("value2");
+        meta2_2.setVisibleInCheckout("true");
+        metaList2.add(meta2_1);
+        OrderItemMetaDto meta2_3 = new OrderItemMetaDto();
+        meta2_3.setKey("avain2");
+        meta2_3.setLabel("Label2");
+        meta2_3.setVisibleInCheckout("true");
+        metaList2.add(meta2_3);
+        item2.setMeta(metaList2);
+
+        items.add(item);
         items.add(item2);
 
         PaymentDto payment = new PaymentDto();

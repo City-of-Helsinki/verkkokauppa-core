@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.message.service;
 import fi.hel.verkkokauppa.message.dto.GenerateOrderConfirmationPDFRequestDto;
 import fi.hel.verkkokauppa.message.dto.OrderItemDto;
+import fi.hel.verkkokauppa.message.dto.OrderItemMetaDto;
 import fi.hel.verkkokauppa.message.model.PDFA2A;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
@@ -170,6 +171,30 @@ public class OrderConfirmationPDF {
                     pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, rowPriceTotal),
                     y,
                     rowPriceTotal);
+
+            // Metadata
+            for (OrderItemMetaDto meta : item.getMeta()) {
+                if( meta.getVisibleInCheckout() != null && meta.getVisibleInCheckout().equalsIgnoreCase("true") ){
+                    if( meta.getLabel() != null ) {
+                        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+                        addContentElement(contentStream, currentElement, currentPage, COSName.P, StandardStructureTypes.P,
+                                font,
+                                FONT_SIZE,
+                                SIDE_MARGIN,
+                                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                meta.getLabel());
+                    }
+                    if( meta.getValue() != null ) {
+                        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+                        addContentElement(contentStream, currentElement, currentPage, COSName.P, StandardStructureTypes.P,
+                                font,
+                                FONT_SIZE,
+                                SIDE_MARGIN,
+                                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                meta.getValue());
+                    }
+                }
+            }
 
             y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING);
 
