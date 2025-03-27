@@ -38,7 +38,7 @@ public class OrderConfirmationPDFTest {
         item.setProductName("Hubba Bubba");
         item.setOriginalPriceGross("100");
         item.setPriceGross("50");
-        item.setProductDescription("Product Description");
+        item.setProductDescription("Mansikan makuinen purukumi");
         item.setQuantity(2);
         item.setVatPercentage("25,5");
         item.setRowPriceTotal("100.00");
@@ -54,28 +54,28 @@ public class OrderConfirmationPDFTest {
 
         OrderItemMetaDto meta1 = new OrderItemMetaDto();
         List<OrderItemMetaDto> metaList1 = new ArrayList<>() ;
-        meta1.setKey("avain1 not visible");
-        meta1.setLabel("Label1 not visible");
-        meta1.setValue("value1 not visible");
+        meta1.setKey("meta avain1 not visible");
+        meta1.setLabel("meta Label1 not visible");
+        meta1.setValue("meta value1 not visible");
         meta1.setVisibleInCheckout("false");
         metaList1.add(meta1);
         item.setMeta(metaList1);
 
         List<OrderItemMetaDto> metaList2 = new ArrayList<>() ;
         OrderItemMetaDto meta2_1 = new OrderItemMetaDto();
-        meta2_1.setKey("avain1");
-        meta2_1.setLabel("Label1");
-        meta2_1.setValue("value1");
+        meta2_1.setKey("meta avain1");
+        meta2_1.setLabel("meta Label1");
+        meta2_1.setValue("meta value1");
         meta2_1.setVisibleInCheckout("true");
         metaList2.add(meta2_1);
         OrderItemMetaDto meta2_2 = new OrderItemMetaDto();
-        meta2_2.setKey("avain2");
-        meta2_2.setValue("value2");
+        meta2_2.setKey("meta avain2");
+        meta2_2.setValue("meta value2");
         meta2_2.setVisibleInCheckout("true");
         metaList2.add(meta2_1);
         OrderItemMetaDto meta2_3 = new OrderItemMetaDto();
-        meta2_3.setKey("avain2");
-        meta2_3.setLabel("Label2");
+        meta2_3.setKey("meta avain2");
+        meta2_3.setLabel("meta Label2");
         meta2_3.setVisibleInCheckout("true");
         metaList2.add(meta2_3);
         item2.setMeta(metaList2);
