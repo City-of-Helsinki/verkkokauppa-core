@@ -74,7 +74,7 @@ public class PDFA2A {
     }
 
     public PDPage addPage(PDResources resources) {
-        PDPage page = new PDPage(PDRectangle.LETTER);
+        PDPage page = new PDPage(PDRectangle.A4);
         page.setResources(resources);
         page.getCOSObject().setItem(COSName.getPDFName("Tabs"), COSName.S);
         page.getCOSObject().setItem(COSName.STRUCT_PARENTS, COSInteger.get(0));

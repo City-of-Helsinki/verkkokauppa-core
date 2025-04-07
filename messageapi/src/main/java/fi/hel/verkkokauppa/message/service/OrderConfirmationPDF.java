@@ -7,6 +7,7 @@ import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
 import org.apache.pdfbox.pdmodel.documentinterchange.taggedpdf.StandardStructureTypes;
@@ -31,7 +32,6 @@ public class OrderConfirmationPDF {
     private final int SIDE_MARGIN = 120;
     private final int BOTTOM_MARGIN = 50;
     private final int UPPER_MARGIN = 50;
-    private float USABLE_HEIGHT;
     private final String TITLE = "Tilausvahvistus ja kuitti";
 
     private final int FONT_SIZE = 12;
@@ -55,7 +55,6 @@ public class OrderConfirmationPDF {
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.SECT);
 
         currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
-        USABLE_HEIGHT = currentPage.getMediaBox().getHeight() - (2 * BOTTOM_MARGIN);
 
         float y = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
 
@@ -450,10 +449,8 @@ public class OrderConfirmationPDF {
     private float addContentElement(PDStructureElement currentElement,
                                     COSName markedContentCosName, String standardStructureType,
                                     PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription, Color colour, Boolean pageCheck) throws IOException {
-        if( pageCheck && ty <= USABLE_HEIGHT ){
-
+        if( pageCheck && ty <= BOTTOM_MARGIN ){
             currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
-            USABLE_HEIGHT = currentPage.getMediaBox().getHeight() - (2 * BOTTOM_MARGIN);
 
             contentStream.close();
             contentStream = pdf.createContentStream(currentPage);
@@ -490,9 +487,8 @@ public class OrderConfirmationPDF {
     private float addLink(PDStructureElement currentElement,
                           COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, String linkUrl) throws IOException {
-        if( ty <= USABLE_HEIGHT ){
+        if( ty <= BOTTOM_MARGIN ){
             currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
-            USABLE_HEIGHT = currentPage.getMediaBox().getHeight() - (2 * BOTTOM_MARGIN);
 
             contentStream.close();
             contentStream = pdf.createContentStream(currentPage);
@@ -546,12 +542,12 @@ public class OrderConfirmationPDF {
     private float addDivider(PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float ty) throws IOException {
-        if( ty <= USABLE_HEIGHT ){
+        if( ty <= BOTTOM_MARGIN ){
             currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
-            USABLE_HEIGHT = currentPage.getMediaBox().getHeight() - (2 * BOTTOM_MARGIN);
 
             contentStream.close();
             contentStream = pdf.createContentStream(currentPage);
+            contentStream.setFont(font, fontSize);
 
             ty = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
         }
