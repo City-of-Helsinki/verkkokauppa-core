@@ -2,11 +2,13 @@ package fi.hel.verkkokauppa.order.api.cron.search;
 
 
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Slf4j
 public class SearchCsvService {
 
     public String generateCsvData(List<PaymentResultDto> unaccountedPayments) {
@@ -20,6 +22,7 @@ public class SearchCsvService {
                 payment.getCreatedAt() != null ? payment.getCreatedAt().toString() : "N/A",
                 payment.getPaytrailTransactionId() != null ? payment.getPaytrailTransactionId() : "N/A"
         )));
+        log.info("Csv data: {}", csvBuilder);
 
         return csvBuilder.toString();
     }
