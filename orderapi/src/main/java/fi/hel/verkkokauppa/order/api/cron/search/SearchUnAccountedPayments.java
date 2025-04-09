@@ -64,6 +64,7 @@ public class SearchUnAccountedPayments {
 
         log.info("Unaccounted payments found: {}", unaccountedPayments.size());
         log.info("Unaccounted payment ids: {}", unaccountedPayments.stream().map(PaymentResultDto::getPaymentId));
+        log.info("Unaccounted payment gateway null: {}", unaccountedPayments.stream().filter(Objects::nonNull).filter(paymentResultDto -> paymentResultDto.getPaymentGateway() == null).map(PaymentResultDto::getPaymentId));
 
         return unaccountedPayments;
     }
