@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,12 +56,20 @@ public class SearchUnAccountedPayments {
         );
         log.info("Accounted order IDs retrieved: {}", accountedOrderIds.size());
 
+        return getPaymentResultDtos(matchedPayments, accountedOrderIds);
+    }
+
+    private static List<PaymentResultDto> getPaymentResultDtos(List<PaymentResultDto> matchedPayments, Set<String> accountedOrderIds) {
         // Filter out unaccounted payments and log the result size
-        List<PaymentResultDto> unaccountedPayments = matchedPayments.stream()
-                .filter(payment -> !accountedOrderIds.contains(payment.getOrderId()))
-                .collect(Collectors.toList());
+        List<PaymentResultDto> unaccountedPayments = matchedPayments.stream().filter(Objects::nonNull)
+                .filter(payment ->
+                        (payment.getPaymentGateway() != null && payment.getPaymentGateway().equals(PaymentGatewayEnum.INVOICE.toString()))
+                                || !accountedOrderIds.contains(payment.getOrderId())
+                ).collect(Collectors.toList());
 
         log.info("Unaccounted payments found: {}", unaccountedPayments.size());
+        log.info("Unaccounted payment ids: {}", unaccountedPayments.stream().map(PaymentResultDto::getPaymentId));
+        log.info("Unaccounted payment gateway null: {}", unaccountedPayments.stream().filter(Objects::nonNull).filter(paymentResultDto -> paymentResultDto.getPaymentGateway() == null).map(PaymentResultDto::getPaymentId));
 
         return unaccountedPayments;
     }
@@ -94,12 +103,6 @@ public class SearchUnAccountedPayments {
         log.info("Accounted order IDs retrieved: {}", accountedOrderIds.size());
 
         // Filter out unaccounted payments and log the result size
-        List<PaymentResultDto> unaccountedPayments = matchedPayments.stream()
-                .filter(payment -> payment.getPaymentGateway().equals(PaymentGatewayEnum.INVOICE.toString()) || !accountedOrderIds.contains(payment.getOrderId()) )
-                .collect(Collectors.toList());
-
-        log.info("Unaccounted payments found: {}", unaccountedPayments.size());
-
-        return unaccountedPayments;
+        return getPaymentResultDtos(matchedPayments, accountedOrderIds);
     }
 }

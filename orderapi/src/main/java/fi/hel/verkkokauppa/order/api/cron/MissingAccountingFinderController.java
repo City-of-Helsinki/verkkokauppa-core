@@ -97,6 +97,7 @@ public class MissingAccountingFinderController {
             return ResponseEntity.ok().body(failedToAccount);
 
         } catch (CommonApiException cae) {
+            log.error("Failed to find missing accounting data cae", cae);
             throw cae;
         } catch (Exception e) {
             log.error("Failed to find missing accounting data", e);
