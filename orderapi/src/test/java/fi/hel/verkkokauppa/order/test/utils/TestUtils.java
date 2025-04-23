@@ -6,7 +6,6 @@ import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.refund.RefundAggregateDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -32,6 +31,7 @@ import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.payment.TestRefundPayment;
 import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -498,6 +498,26 @@ public class TestUtils extends DummyData {
         // Return the response from indexing
         return indexResponse;
     }
+
+    public IndexResponse createTestRefundPayment(TestRefundPayment payment) throws IOException {
+        // Convert Payment object to JSON
+        String paymentJson = objectMapper.writeValueAsString(payment);
+
+        // Create an IndexRequest for the specified index
+        IndexRequest indexRequest = new IndexRequest("refund_payments")
+                .id(payment.getPaymentId()) // Use payment ID as document ID
+                .source(paymentJson, XContentType.JSON);
+
+        // Execute the index request
+        IndexResponse indexResponse = this.clientResolver.get().index(indexRequest, RequestOptions.DEFAULT);
+
+        // Force a refresh on the "payments" index to make the document immediately searchable
+        this.clientResolver.get().indices().refresh(new RefreshRequest("refund_payments"), RequestOptions.DEFAULT);
+
+        // Return the response from indexing
+        return indexResponse;
+    }
+
     public IndexResponse createTestProductAccounting(TestProductAccounting payment) throws IOException {
         // Convert Payment object to JSON
         String paymentJson = objectMapper.writeValueAsString(payment);
