@@ -26,6 +26,9 @@ import org.apache.xmpbox.XMPMetadata;
 import org.apache.xmpbox.schema.XMPSchema;
 import org.apache.xmpbox.type.BadFieldValueException;
 import org.apache.xmpbox.xml.XmpSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.xml.transform.TransformerException;
 import java.awt.*;
@@ -40,6 +43,7 @@ public class PDFA2A {
 
     private COSArray nums;
     private COSArray numDictionaries;
+
 
     public PDStructureElement addDocumentStructureElement() {
         PDStructureElement element = new PDStructureElement(StandardStructureTypes.DOCUMENT, null);
@@ -196,7 +200,7 @@ public class PDFA2A {
         this.currentStructureParent = 1;
     }
 
-    public void save(String outputFile) throws IOException {
+    public void save(String outputFile, boolean saveTestPDF) throws IOException {
         if (this.pdf.getDocumentCatalog().getOutputIntents().size() < 1) {
             throw new Error("Document is missing color profile");
         }
@@ -206,7 +210,22 @@ public class PDFA2A {
         nums.add(numDictionaries);
         dict.setItem(COSName.NUMS, nums);
         this.pdf.getDocumentCatalog().getStructureTreeRoot().setParentTree(new PDNumberTreeNode(dict, dict.getClass()));
-        this.pdf.save(outputFile);
+
+        // in local turn this on to save PDF
+        if( saveTestPDF ) {
+            this.pdf.save(outputFile);
+        }
+
         this.pdf.close();
+    }
+
+    public byte[] getPDFByteArray() throws IOException {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // Write PDF to byte array
+            this.pdf.save(outputStream);
+
+            // Return the PDF bytes
+            return outputStream.toByteArray();
+        }
     }
 }

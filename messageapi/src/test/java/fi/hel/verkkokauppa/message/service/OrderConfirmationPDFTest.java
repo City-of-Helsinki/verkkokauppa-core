@@ -84,7 +84,7 @@ public class OrderConfirmationPDFTest {
         items.add(item2);
 
         PaymentDto payment = new PaymentDto();
-        payment.setCreatedAt(LocalDateTime.of(2021, 3, 23, 0, 0));
+        payment.setCreatedAt(LocalDateTime.of(2021, 3, 23, 0, 0).toString());
         payment.setPaymentMethodLabel("Visa");
         payment.setTotal(new BigDecimal(150));
         payment.setTaxAmount(new BigDecimal("32.2"));

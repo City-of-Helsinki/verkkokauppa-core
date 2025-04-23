@@ -20,6 +20,7 @@ import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary;
 import org.apache.xmpbox.type.BadFieldValueException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.xml.transform.TransformerException;
@@ -42,8 +43,10 @@ public class OrderConfirmationPDF {
     private PDPage currentPage = null;
     private PDPageContentStream contentStream = null;
 
+    @Value("${test.pdf.save:false}")
+    private boolean saveTestPDF;
 
-    public void generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
+    public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
         pdf = new PDFA2A(TITLE);
 
         PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
@@ -419,7 +422,10 @@ public class OrderConfirmationPDF {
         // CLOSE PDF
         pdf.closeContentStream(contentStream);
 
-        pdf.save(outputFile);
+        byte[] pdfArray = pdf.getPDFByteArray();
+        pdf.save(outputFile, saveTestPDF);
+
+        return pdfArray;
     }
 
     private float addContentElement(PDStructureElement currentElement,

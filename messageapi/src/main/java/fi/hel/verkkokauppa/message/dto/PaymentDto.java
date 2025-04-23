@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.message.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class PaymentDto {
 	String paymentId;
 	String namespace;
@@ -28,9 +30,9 @@ public class PaymentDto {
 	String paytrailTransactionId;
 //	private PaytrailPaymentProviderModel paytrailProvider;
 //	PaymentGatewayEnum paymentGateway;
-	LocalDateTime createdAt;
-	LocalDateTime updatedAt;
-	LocalDateTime paidAt; // Timestamp when the transaction was paid
+	String createdAt;
+	String updatedAt;
+	String paidAt; // Timestamp when the transaction was paid
 	public String getId() {
 		return this.paymentId;
 	}

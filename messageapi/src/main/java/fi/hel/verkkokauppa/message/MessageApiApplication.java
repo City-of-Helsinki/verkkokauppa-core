@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
         "fi.hel.verkkokauppa.common.queue.error",
         "fi.hel.verkkokauppa.common.queue.service",
         "fi.hel.verkkokauppa.common.queue",
+        "fi.hel.verkkokauppa.common.rest",
         "fi.hel.verkkokauppa.common.sentry"
 })
 public class MessageApiApplication {

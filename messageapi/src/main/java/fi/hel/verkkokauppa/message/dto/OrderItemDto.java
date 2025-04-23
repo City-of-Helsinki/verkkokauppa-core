@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.message.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,6 +11,7 @@ import java.util.List;
 
 @Getter
 @Setter
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class OrderItemDto {
     private String merchantId;
     private String orderItemId;
@@ -34,10 +36,10 @@ public class OrderItemDto {
     private Long periodFrequency;
     private String periodUnit;
     private Integer periodCount;
-    private LocalDateTime startDate;
-    private LocalDateTime billingStartDate;
+    private String startDate;
+    private String billingStartDate;
 
-    private LocalDate invoicingDate;
+    private String invoicingDate;
 
     private String invoicingIncrementId;
 
