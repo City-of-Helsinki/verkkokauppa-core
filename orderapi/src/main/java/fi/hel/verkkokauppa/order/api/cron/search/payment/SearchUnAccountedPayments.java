@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.order.api.cron.search;
+package fi.hel.verkkokauppa.order.api.cron.search.payment;
 
 import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;

@@ -1,13 +1,13 @@
-package fi.hel.verkkokauppa.order.api.cron;
+package fi.hel.verkkokauppa.order.api.cron.search.controllers;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.order.api.cron.experience.ExperienceApiAccountingService;
+import fi.hel.verkkokauppa.order.api.cron.experience.ExperienceApiRefundAccountingService;
 import fi.hel.verkkokauppa.order.api.cron.search.SearchCsvService;
 import fi.hel.verkkokauppa.order.api.cron.search.SearchNotificationService;
-import fi.hel.verkkokauppa.order.api.cron.search.SearchUnAccountedPayments;
-import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.refund.SearchUnAccountedRefunds;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +23,7 @@ import java.util.List;
 
 @RestController
 @Slf4j
-public class MissingAccountingFinderController {
+public class MissingRefundAccountingFinderController {
 
     @Autowired
     private SearchCsvService searchCsvService;
@@ -32,23 +32,23 @@ public class MissingAccountingFinderController {
     private SearchNotificationService searchNotificationService;
 
     @Autowired
-    private SearchUnAccountedPayments searchUnAccountedPayments;
+    private SearchUnAccountedRefunds searchUnAccountedRefunds;
 
     @Autowired
     private RestServiceClient restServiceClient;
 
     @Autowired
-    private ExperienceApiAccountingService experienceApiAccountingService;
+    private ExperienceApiRefundAccountingService experienceApiRefundAccountingService;
 
 
 
-    @GetMapping(value = "/accounting/cron/find-missing-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<PaymentResultDto>> findMissingAccountingsBasedOnPaymentPaid(
+    @GetMapping(value = "/accounting/cron/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnRefundPaid(
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createAccountingAfter", required = false) String createAccountingAfter
     ) {
         try {
-            List<PaymentResultDto> failedToAccount;
+            List<RefundResultDto> failedToAccount;
 
             // Define date-time formatter
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
@@ -59,12 +59,12 @@ public class MissingAccountingFinderController {
 
 
             if (createdAfterDateTime != null) {
-                failedToAccount = this.searchUnAccountedPayments.findUnaccountedPayments(
+                failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds(
                         createdAfterDateTime
                 );
             } else {
                 // Default case find all unaccounted
-                failedToAccount = this.searchUnAccountedPayments.findUnaccountedPayments();
+                failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds();
             }
 
 
@@ -74,14 +74,14 @@ public class MissingAccountingFinderController {
             }
 
             // Notification can have all the
-            String csvData = searchCsvService.generateCsvData(failedToAccount);
+            String csvData = searchCsvService.generateCsvDataRefunds(failedToAccount);
             searchNotificationService.sendUnaccountedPaymentsAlert(failedToAccount.size(), csvData);
 
             if (createAccountingAfterDateTime != null) {
                 log.info("createAccountingAfterDateTime was {}", createAccountingAfter);
-                List<PaymentResultDto> failedToAccountAfterDate = this
-                        .searchUnAccountedPayments
-                        .findUnaccountedPayments(
+                List<RefundResultDto> failedToAccountAfterDate = this
+                        .searchUnAccountedRefunds
+                        .findUnaccountedRefunds(
                                 createAccountingAfterDateTime
                         );
 
@@ -91,30 +91,30 @@ public class MissingAccountingFinderController {
                 }
 
                 // Sends create accounting to experience api
-                this.experienceApiAccountingService.sendCreateAccountingRequests(failedToAccountAfterDate);
+                this.experienceApiRefundAccountingService.sendCreateAccountingRequests(failedToAccountAfterDate);
             }
 
             return ResponseEntity.ok().body(failedToAccount);
 
         } catch (CommonApiException cae) {
-            log.error("Failed to find missing accounting data cae", cae);
+            log.error("Failed to find missing refund accounting data cae", cae);
             throw cae;
         } catch (Exception e) {
-            log.error("Failed to find missing accounting data", e);
+            log.error("Failed to find missing refund accounting data", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-find-missing-accounting-data", "Failed to find missing accounting data")
+                    new Error("failed-to-find-missing-refund-accounting-data", "Failed to find missing refund accounting data")
             );
         }
     }
 
-    @GetMapping(value = "/accounting/find-missing-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<PaymentResultDto>> findMissingAccountingsBasedOnPaymentPaidNoEmail() {
+    @GetMapping(value = "/accounting/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnPaymentPaidNoEmail() {
         try {
-            List<PaymentResultDto> failedToAccount = this.searchUnAccountedPayments.findUnaccountedPayments();
+            List<RefundResultDto> failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds();
 
             if (failedToAccount.isEmpty()) {
-                log.info("All orders and payments are accounted for.");
+                log.info("All orders and refunds are accounted for.");
                 return ResponseEntity.ok().body(failedToAccount);
             }
 
@@ -123,10 +123,10 @@ public class MissingAccountingFinderController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("Failed to find missing accounting data", e);
+            log.error("Failed to find missing refund accounting data", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-find-missing-accounting-data", "Failed to find missing accounting data")
+                    new Error("failed-to-find-missing-refund-accounting-data", "Failed to find missing refund accounting data")
             );
         }
     }
