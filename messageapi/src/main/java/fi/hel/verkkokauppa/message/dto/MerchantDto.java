@@ -11,8 +11,8 @@ import java.util.ArrayList;
 public class MerchantDto {
     String merchantId;
     String namespace;
-    LocalDateTime createdAt;
-    LocalDateTime updatedAt;
+    String createdAt;
+    String updatedAt;
     ArrayList<ConfigurationModelDto> configurations;
     String merchantPaytrailMerchantId;
 }

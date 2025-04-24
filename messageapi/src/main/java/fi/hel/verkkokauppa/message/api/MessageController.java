@@ -43,18 +43,6 @@ public class MessageController {
     @Autowired
     private OrderConfirmationPDF orderConfirmationPdf;
 
-    @Autowired
-    private RestServiceClient restServiceClient;
-
-    @Value("${order.service.url:http://order-api:8080}")
-    private String orderServiceUrl;
-
-    @Value("${payment.service.url:http://payment-api:8080}")
-    private String paymentServiceUrl;
-
-    @Value("${test.pdf.save:false}")
-    private boolean saveTestPDF;
-
 
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/email", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Message> sendMessage(@RequestBody @Valid MessageDto messageDto
@@ -87,28 +75,19 @@ public class MessageController {
     }
 
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/pdf/orderConfirmation", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> generateOrderConfirmationPdf(@RequestParam(value = "orderId") String orderId) throws IOException, TransformerException, BadFieldValueException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        GenerateOrderConfirmationPDFRequestDto dto = new GenerateOrderConfirmationPDFRequestDto();
-        dto.setOrderId(orderId);
+    public ResponseEntity<byte[]> generateOrderConfirmationPdf(@RequestParam(value = "orderId") String orderId) {
+        byte[] pdfArray = null;
+        try {
+            GenerateOrderConfirmationPDFRequestDto dto = service.getPDFRequestDto(orderId);
 
-        JSONObject orderResponse = restServiceClient.makeAdminGetCall(orderServiceUrl + "/order-admin/get/?orderId=" + orderId);
-        OrderAggregateDto orderDto = objectMapper.readValue(orderResponse.toString(), OrderAggregateDto.class);
-
-        dto.setItems(orderDto.getItems());
-
-        JSONObject paymentResponse = restServiceClient.makeAdminGetCall(paymentServiceUrl + "/payment-admin/online/get?orderId=" + orderId);
-        PaymentDto paymentDto = objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
-
-        dto.setPayment(paymentDto);
-
-        byte[] pdfArray = orderConfirmationPdf.generate("order-confirmation.pdf", dto);
-        return new ResponseEntity<>(HttpStatus.OK);
+            pdfArray = orderConfirmationPdf.generate("order-confirmation.pdf", dto);
+        } catch (Exception e){
+            log.error("Error occurred while generating PDF receipt", e);
+            sendNotificationService.sendErrorNotification("Error occurred while generating PDF receipt", e.toString());
+            Error error = new Error("failed-to-create-pdf-receipt", "failed to create pdf receipt");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+        return new ResponseEntity<>(pdfArray, HttpStatus.OK);
     }
 
-//    @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/pdf/orderConfirmation", produces = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<Void> generateOrderConfirmationPdf(@RequestBody GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
-//        orderConfirmationPdf.generate("order-confirmation.pdf", dto);
-//        return new ResponseEntity<>(HttpStatus.OK);
-//    }
 }
