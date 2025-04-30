@@ -224,6 +224,7 @@ public class PDFA2A {
             // Write PDF to byte array
             this.pdf.save(outputStream);
 
+
             // Return the PDF bytes
             return outputStream.toByteArray();
         }

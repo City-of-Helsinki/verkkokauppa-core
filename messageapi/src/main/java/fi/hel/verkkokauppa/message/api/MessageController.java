@@ -14,19 +14,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import fi.hel.verkkokauppa.message.model.Message;
 import fi.hel.verkkokauppa.message.service.MessageService;
 
 import javax.validation.Valid;
 import javax.xml.transform.TransformerException;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 @RestController
@@ -74,7 +74,7 @@ public class MessageController {
         }
     }
 
-    @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/pdf/orderConfirmation", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = ApiUrls.MESSAGE_ROOT + "/pdf/orderConfirmation", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> generateOrderConfirmationPdf(@RequestParam(value = "orderId") String orderId) {
         byte[] pdfArray = null;
         try {
@@ -87,7 +87,12 @@ public class MessageController {
             Error error = new Error("failed-to-create-pdf-receipt", "failed to create pdf receipt");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
-        return new ResponseEntity<>(pdfArray, HttpStatus.OK);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", "generateOrderConfirmation.pdf");
+
+        return ResponseEntity.ok().headers(headers).contentType(MediaType.APPLICATION_PDF).body(pdfArray);
     }
 
 }
