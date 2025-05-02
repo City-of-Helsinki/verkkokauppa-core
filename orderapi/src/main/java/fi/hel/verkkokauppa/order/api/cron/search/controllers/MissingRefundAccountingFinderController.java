@@ -75,7 +75,7 @@ public class MissingRefundAccountingFinderController {
 
             // Notification can have all the
             String csvData = searchCsvService.generateCsvDataRefunds(failedToAccount);
-            searchNotificationService.sendUnaccountedPaymentsAlert(failedToAccount.size(), csvData);
+            searchNotificationService.sendUnaccountedRefundsAlert(failedToAccount.size(), csvData);
 
             if (createAccountingAfterDateTime != null) {
                 log.info("createAccountingAfterDateTime was {}", createAccountingAfter);
@@ -91,7 +91,7 @@ public class MissingRefundAccountingFinderController {
                 }
 
                 // Sends create accounting to experience api
-                this.experienceApiRefundAccountingService.sendCreateAccountingRequests(failedToAccountAfterDate);
+                this.experienceApiRefundAccountingService.sendCreateRefundAccountingRequests(failedToAccountAfterDate);
             }
 
             return ResponseEntity.ok().body(failedToAccount);

@@ -89,7 +89,7 @@ public class SearchUnAccountedRefunds {
         }
 
         // Fetch payments that match the status and order IDs, and log the size
-        List<RefundResultDto> matchedPayments = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "payment_paid_online");
+        List<RefundResultDto> matchedPayments = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "refund_paid_online");
         log.info("Matched refunds with status 'refund_paid_online': {}", matchedPayments.size());
 
         if (matchedPayments.isEmpty()) {

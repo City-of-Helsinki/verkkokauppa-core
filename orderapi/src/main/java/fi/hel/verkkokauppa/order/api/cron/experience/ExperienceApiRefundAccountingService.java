@@ -3,7 +3,7 @@ package fi.hel.verkkokauppa.order.api.cron.experience;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ExperienceUrls;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,32 +25,32 @@ public class ExperienceApiRefundAccountingService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public void sendCreateAccountingRequests(List<PaymentResultDto> paymentResults) {
-        String url = experienceUrls.getPaymentExperienceUrl() + "admin/accounting-create";
+    public void sendCreateRefundAccountingRequests(List<RefundResultDto> paymentResults) {
+        String url = experienceUrls.getPaymentExperienceUrl() + "admin/refund-accounting-create";
 
-        for (PaymentResultDto paymentResult : paymentResults) {
+        for (RefundResultDto paymentResult : paymentResults) {
             try {
-                // Create JSON body with orderId and paymentId
+                // Create JSON body with orderId and refundId
                 String requestBody = objectMapper.writeValueAsString(Map.of(
                         "orderId", paymentResult.getOrderId(),
-                        "paymentId", paymentResult.getPaymentId()
+                        "refundId", paymentResult.getRefundId()
                 ));
-
+                log.info("Calling admin/refund-accounting-create {}", requestBody);
                 // Send POST request
                 JSONObject response = restServiceClient.makeAdminPostCall(url, requestBody);
 
                 // Log response and check if response is not null
                 if (response != null) {
-                    log.info("Response for orderId {} and paymentId {}: {}",
-                            paymentResult.getOrderId(), paymentResult.getPaymentId(), response);
+                    log.info("Response for orderId {} and refundId {}: {}",
+                            paymentResult.getOrderId(), paymentResult.getRefundId(), response);
                 } else {
-                    log.info("Response for orderId {} and paymentId {} was null",
-                            paymentResult.getOrderId(), paymentResult.getPaymentId());
+                    log.info("Response for orderId {} and refundId {} was null",
+                            paymentResult.getOrderId(), paymentResult.getRefundId());
                 }
 
             } catch (Exception e) {
-                 log.error("Failed to send create accounting request for orderId {} and paymentId {}",
-                        paymentResult.getOrderId(), paymentResult.getPaymentId(), e);
+                log.error("Failed to send create accounting request for orderId {} and refundId {}",
+                        paymentResult.getOrderId(), paymentResult.getRefundId(), e);
             }
         }
     }

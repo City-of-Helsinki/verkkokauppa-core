@@ -30,7 +30,7 @@ public class SearchRefundPaymentService {
 
         paymentsQueryBuilder.query(paymentsQuery);
         return searchService.searchAcrossIndexes(
-                List.of("refunds"),
+                List.of("refund_payments"),
                 paymentsQueryBuilder,
                 RefundResultDto.class
         );

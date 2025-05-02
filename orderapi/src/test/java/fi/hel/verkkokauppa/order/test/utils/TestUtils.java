@@ -505,7 +505,7 @@ public class TestUtils extends DummyData {
 
         // Create an IndexRequest for the specified index
         IndexRequest indexRequest = new IndexRequest("refund_payments")
-                .id(payment.getPaymentId()) // Use payment ID as document ID
+                .id(payment.getRefundId()) // Use payment ID as document ID
                 .source(paymentJson, XContentType.JSON);
 
         // Execute the index request

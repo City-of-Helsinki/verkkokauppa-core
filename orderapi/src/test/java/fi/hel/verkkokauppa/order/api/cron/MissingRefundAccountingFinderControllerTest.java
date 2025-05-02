@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
@@ -14,6 +15,7 @@ import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
@@ -62,6 +64,9 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
     private OrderRepository orderRepository;
     @Autowired
     private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private RefundItemRepository refundItemRepository;
 
     @Autowired
     private RefundRepository refundRepository;
@@ -119,7 +124,7 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testAccountingCreate() throws Exception {
+    public void testRefundAccountingCreate() throws Exception {
         Order order1 = createTestOrder();
         Order order2 = createTestOrder();
         Order order3 = createTestOrder();
@@ -230,9 +235,20 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
         // Save needed fields to allow query to find it status = confirmed and price total over 0
         orderRepository.save(order3);
 
+        // create and save orderitem to db
+        RefundItem refundItem = generateDummyRefundItem(refund3);
+        this.refundItemRepository.save(refundItem);
+
+        refund3.setPriceTotal("0.01");
+        refund3.setStatus("confirmed");
+        // Save needed fields to allow query to find it status = confirmed and price total over 0
+        refundRepository.save(refund3);
+
+
+
         TestRefundPayment refundPayment = new TestRefundPayment();
         refundPayment.setRefundId("test-refund-id" + order3.getOrderId());
-        refundPayment.setStatus("refund_created");
+        refundPayment.setStatus("refund_paid_online");
         refundPayment.setOrderId(order3.getOrderId());
         refundPayment.setTotal(new BigDecimal(order3.getPriceTotal()));
         IndexResponse testRefundPayment = this.testUtils.createTestRefundPayment(refundPayment);
@@ -254,7 +270,7 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
 
         log.info("testPaymentOrderId: " + refundPayment.getOrderId());
         MvcResult result = this.mockMvc.perform(
-                        get("/accounting/cron/find-missing-accounting")
+                        get("/accounting/cron/find-missing-refund-accounting")
                                 .param("createdAfter", createdAfterStr)
                                 .param("createAccountingAfter", createAccountingAfterStr)
 
@@ -264,10 +280,10 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
                 .andExpect(status().is(200))
                 .andReturn();
         String responseContent = result.getResponse().getContentAsString();
-        List<PaymentResultDto> failedToAccount = parseFailedToAccount(responseContent);
+        List<RefundResultDto> failedToAccount = parseFailedToAccount(responseContent);
 
         // Find the specific PaymentResultDto by orderId
-        PaymentResultDto foundPayment = failedToAccount.stream()
+        RefundResultDto foundPayment = failedToAccount.stream()
                 .filter(paymentResultDto -> Objects.equals(paymentResultDto.getOrderId(), refundPayment.getOrderId()))
                 .findFirst()
                 .orElse(null); // Returns null if no match is found
@@ -304,7 +320,7 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
         // Wait for 3 seconds to acconting to be created
         sleep(3000);
         MvcResult result2 = this.mockMvc.perform(
-                        get("/accounting/cron/find-missing-accounting")
+                        get("/accounting/cron/find-missing-refund-accounting")
                                 .param("createdAfter", createdAfterStr)
                                 .param("createAccountingAfter", createAccountingAfterStr)
                 )
@@ -312,7 +328,7 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(status().is(200))
                 .andReturn();
-        List<PaymentResultDto> failedToAccount2 = parseFailedToAccount(result2.getResponse().getContentAsString());
+        List<RefundResultDto> failedToAccount2 = parseFailedToAccount(result2.getResponse().getContentAsString());
 
         Order finalOrder3 = order3;
         boolean order3InFailedToAccount = failedToAccount2.stream()
@@ -368,9 +384,9 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
         return orderAccounting;
     }
 
-    public List<PaymentResultDto> parseFailedToAccount(String jsonString) {
+    public List<RefundResultDto> parseFailedToAccount(String jsonString) {
         try {
-            return objectMapper.readValue(jsonString, new TypeReference<List<PaymentResultDto>>() {
+            return objectMapper.readValue(jsonString, new TypeReference<List<RefundResultDto>>() {
             });
         } catch (Exception e) {
             e.printStackTrace();
