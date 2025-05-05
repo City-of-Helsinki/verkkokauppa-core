@@ -1,7 +1,9 @@
 package fi.hel.verkkokauppa.payment.api.cron;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
@@ -11,7 +13,9 @@ import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.payments.PaytrailPayment;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -41,12 +45,16 @@ public class PaytrailStatusCheckController {
     @Autowired
     PaymentPaytrailService paymentPaytrailService;
 
+    @Value("${productmapping.service.url:http://product-mapping-api:8080/productmapping/}")
+    private String productMappingServiceUrl;
+
 
     @GetMapping(value = "/synchronize-paytrail-status", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<SynchronizeResultDto>> checkAndSynchronizePaytrailStatus(
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
+        ObjectMapper objectMapper = new ObjectMapper();
         List<String> errors = new ArrayList();
         List<String> updatedStatuses = new ArrayList();
 
@@ -87,10 +95,11 @@ public class PaytrailStatusCheckController {
                     String productId = items.get(0).getProductId();
 
                     // get merchant id for payment from product mapping
-                    restServiceClient.makeAdminGetCall();
+                    JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/productmapping/get?productId=" + productId);
+                    ProductMappingDto productMapping = objectMapper.readValue(productMappingResponse.toString(), ProductMappingDto.class);
 
                     // get paytrail payment status
-                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), )
+                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), productMapping.getMerchantId());
 
                     // check if paytrail status has changed
                     // Update also payment status accordingly ok -> payment_paid_online, fail -> payment_cancelled

@@ -221,7 +221,7 @@ public class OnlinePaymentService {
     }
 
     public List<PaymentItem> getPaymentItemsForPayment(String paymentId) {
-        return paymentItemRepository.findByPaymentId(paymentId)
+        return paymentItemRepository.findByPaymentId(paymentId);
     }
 
     public List<Payment> getPaymentsForOrder(String orderId, String namepace) {
