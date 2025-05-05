@@ -220,6 +220,10 @@ public class OnlinePaymentService {
                 PaymentGatewayEnum.PAYTRAIL, PaymentStatus.CREATED, createdAfter, createdBefore);
     }
 
+    public List<PaymentItem> getPaymentItemsForPayment(String paymentId) {
+        return paymentItemRepository.findByPaymentId(paymentId)
+    }
+
     public List<Payment> getPaymentsForOrder(String orderId, String namepace) {
         return paymentRepository.findByNamespaceAndOrderId(namepace,orderId);
     }

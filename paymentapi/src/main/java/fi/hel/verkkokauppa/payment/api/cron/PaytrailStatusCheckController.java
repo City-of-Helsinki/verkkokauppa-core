@@ -5,9 +5,12 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.model.PaymentItem;
+import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -34,12 +38,18 @@ public class PaytrailStatusCheckController {
     @Autowired
     private OnlinePaymentService onlinePaymentService;
 
+    @Autowired
+    PaymentPaytrailService paymentPaytrailService;
+
 
     @GetMapping(value = "/synchronize-paytrail-status", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<SynchronizeResultDto>> checkAndSynchronizePaytrailStatus(
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
+        List<String> errors = new ArrayList();
+        List<String> updatedStatuses = new ArrayList();
+
         LocalDateTime createdAfterDateTime = null;
         LocalDateTime createdBeforeDateTime = null;
         LocalDateTime startDate = LocalDateTime.now();
@@ -69,15 +79,42 @@ public class PaytrailStatusCheckController {
             List<Payment> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdAfterDateTime);
 
             // get paytrail statuses for payments
+            for( Payment payment : payments ) {
+                // get product id from first paymentItem
+                List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
+                if( items.size() > 0) {
+                    log.info("Synchronizing payments between {} and {}", createdAfterDateTime, createdBeforeDateTime);
+                    String productId = items.get(0).getProductId();
+
+                    // get merchant id for payment from product mapping
+                    restServiceClient.makeAdminGetCall();
+
+                    // get paytrail payment status
+                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), )
+
+                    // check if paytrail status has changed
+                    // Update also payment status accordingly ok -> payment_paid_online, fail -> payment_cancelled
+                } else {
+                    String error = "Payment " + payment.getPaymentId() + " had no items. Not checking status from paytrail";
+                    log.error(error);
+                    // add error to list
+                    errors.add(error);
+                }
+            }
+
 
             // update payments with new statuses
+
+            // TODO: send error notification email
 
             return ResponseEntity.ok().body(null);
 
         } catch (CommonApiException cae) {
+            // TODO: check if need to send error notification email
             throw cae;
         } catch (Exception e) {
             log.error("Failed to synchronize paytrail status", e);
+            // TODO: check if need to send error notification email
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-synchronize-paytrail-status", "Failed to synchronize paytrail status")
