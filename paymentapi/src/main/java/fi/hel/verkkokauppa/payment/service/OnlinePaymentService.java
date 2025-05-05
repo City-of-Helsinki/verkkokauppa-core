@@ -215,6 +215,11 @@ public class OnlinePaymentService {
             return null;
     }
 
+    public List<Payment> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) {
+        return paymentRepository.findByPaymentGatewayAndStatusAndCreatedAtBetweenAndPaytrailTransactionIdIsNotNull(
+                PaymentGatewayEnum.PAYTRAIL, PaymentStatus.CREATED, createdAfter, createdBefore);
+    }
+
     public List<Payment> getPaymentsForOrder(String orderId, String namepace) {
         return paymentRepository.findByNamespaceAndOrderId(namepace,orderId);
     }

@@ -4,6 +4,9 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
+import fi.hel.verkkokauppa.payment.model.Payment;
+import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +30,9 @@ public class PaytrailStatusCheckController {
 
     @Autowired
     private RestServiceClient restServiceClient;
+
+    @Autowired
+    private OnlinePaymentService onlinePaymentService;
 
 
     @GetMapping(value = "/synchronize-paytrail-status", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -60,6 +66,11 @@ public class PaytrailStatusCheckController {
 
         try {
             // get list of payments to synchronize
+            List<Payment> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdAfterDateTime);
+
+            // get paytrail statuses for payments
+
+            // update payments with new statuses
 
             return ResponseEntity.ok().body(null);
 
