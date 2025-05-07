@@ -59,14 +59,15 @@ public class MissingRefundAccountingFinderController {
 
 
             if (createdAfterDateTime != null) {
+                this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail(createdAfterDateTime);
                 failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds(
                         createdAfterDateTime
                 );
             } else {
+                this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail();
                 // Default case find all unaccounted
                 failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds();
             }
-
 
             if (failedToAccount.isEmpty()) {
                 log.info("All orders and payments are accounted for.");

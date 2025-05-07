@@ -14,4 +14,6 @@ public interface RefundPaymentRepository extends ElasticsearchRepository<RefundP
     List<RefundPayment> findByNamespaceAndOrderId(String namespace, String orderId);
     List<RefundPayment> findByNamespaceAndOrderIdAndStatus(String namespace, String orderId, String status);
 
+    RefundPayment findByRefundTransactionId(String refundTransactionId);
+
 }

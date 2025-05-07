@@ -225,7 +225,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         payment.setStatus("payment_paid_online");
         payment.setOrderId(order3.getOrderId());
         payment.setTotal(new BigDecimal(order3.getPriceTotal()));
-        IndexResponse testPayment = this.testUtils.createTestPayment(payment);
+        IndexResponse testPayment = this.testUtils.saveTestPayment(payment);
 
 
         ProductAccountingDto accountingDto = createDummyProductAccountingDto(orderItem.getProductId(), order3.getOrderId());

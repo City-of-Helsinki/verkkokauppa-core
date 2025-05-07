@@ -22,16 +22,16 @@ public class SearchRefundPaymentService {
     private QueryService queryService;
 
     public List<RefundResultDto> findRefundsByStatusAndOrderIds(List<String> orderIds, String refundStatus) throws IOException {
-        SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
+        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-        paymentsQuery.must(QueryBuilders.termQuery("status", refundStatus));
-        queryService.createOrderIdShouldQuery(orderIds, paymentsQuery);
+        query.must(QueryBuilders.termQuery("status", refundStatus));
+        queryService.createOrderIdShouldQuery(orderIds, query);
 
-        paymentsQueryBuilder.query(paymentsQuery);
+        queryBuilder.query(query);
         return searchService.searchAcrossIndexes(
                 List.of("refund_payments"),
-                paymentsQueryBuilder,
+                queryBuilder,
                 RefundResultDto.class
         );
     }

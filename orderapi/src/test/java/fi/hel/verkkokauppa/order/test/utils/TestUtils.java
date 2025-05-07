@@ -2,6 +2,10 @@ package fi.hel.verkkokauppa.order.test.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Playwright;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.elastic.ElasticSearchRestClientResolver;
@@ -30,7 +34,9 @@ import fi.hel.verkkokauppa.order.repository.jpa.SubscriptionRepository;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import fi.hel.verkkokauppa.order.test.utils.payment.PaytrailHelper;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.payment.TestPaytrailPaymentResponse;
 import fi.hel.verkkokauppa.order.test.utils.payment.TestRefundPayment;
 import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import lombok.extern.slf4j.Slf4j;
@@ -55,14 +61,14 @@ import reactor.netty.http.client.HttpClient;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Predicate;
+
+import static fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID;
 
 @Component
 @Slf4j
@@ -480,7 +486,63 @@ public class TestUtils extends DummyData {
         return jsonResponse;
     }
 
-    public IndexResponse createTestPayment(TestPayment payment) throws IOException {
+    public TestPayment savePaytrailResponseAsPayment(TestPaytrailPaymentResponse paytrailResponse, Order order3) throws IOException {
+        TestPayment payment = new TestPayment();
+        payment.setPaytrailTransactionId(paytrailResponse.getTransactionId());
+        payment.setPaymentId(order3.getOrderId());
+        payment.setOrderId(order3.getOrderId());
+        payment.setUserId(order3.getUser());
+        payment.setStatus("payment_created");
+        payment.setPaymentGateway("PAYTRAIL"); // Enum value is paytrail-online but in db it is PAYTRAIL
+        payment.setTotal(new BigDecimal(order3.getPriceTotal()));
+        payment.setTotalExclTax(new BigDecimal(order3.getPriceTotal()));
+        payment.setNamespace(order3.getNamespace());
+        payment.setDescription(log.getName());
+        IndexResponse indexResponse = this.saveTestPayment(payment);
+        return payment;
+    }
+
+    public void createPaytrailFormAndSubmitSuccessFullPayment(TestPaytrailPaymentResponse paytrailResponse, String providerId) {
+        Map<String, String> formParams = PaytrailHelper.getFormParams(paytrailResponse, providerId);
+        String actionUrl = PaytrailHelper.getFormAction(paytrailResponse, providerId);
+
+        // STEP 3: Launch Playwright and submit the form
+        try (Playwright playwright = Playwright.create()) {
+            Browser browser = playwright.chromium().launch(
+                    new BrowserType.LaunchOptions().setHeadless(false) // set true to run without UI
+            );
+
+            Page page = browser.newPage();
+            page.navigate("about:blank");
+
+            // Build the form using JS
+            StringBuilder js = new StringBuilder("const form = document.createElement('form');");
+            js.append("form.method = 'POST';");
+            js.append("form.action = '").append(actionUrl).append("';");
+            js.append("form.style.display = 'none';");
+
+            assert formParams != null;
+            for (Map.Entry<String, String> entry : formParams.entrySet()) {
+                js.append("{")
+                        .append("let input = document.createElement('input');")
+                        .append("input.type = 'hidden';")
+                        .append("input.name = '").append(entry.getKey()).append("';")
+                        .append("input.value = '").append(entry.getValue()).append("';")
+                        .append("form.appendChild(input);")
+                        .append("}");
+            }
+
+
+            js.append("document.body.appendChild(form); form.submit();");
+
+            page.evaluate(js.toString());
+
+            // Optional: wait to observe redirect
+            page.waitForTimeout(5000);
+        }
+    }
+
+    public IndexResponse saveTestPayment(TestPayment payment) throws IOException {
         // Convert Payment object to JSON
         String paymentJson = objectMapper.writeValueAsString(payment);
 
@@ -590,5 +652,132 @@ public class TestUtils extends DummyData {
         }
 
         return matchingMessages;
+    }
+
+    public String createNamespaceAndMerchantWithSecret(String namespace, String merchantName, String paytrailMerchantId, String paytrailSecret) {
+        String baseUrl = serviceUrls.getMerchantServiceUrl();
+        String merchantId = null;
+
+        // STEP 1: Create Namespace
+        try {
+            JSONObject nsBody = new JSONObject();
+            nsBody.put("namespace", namespace);
+
+            JSONArray nsConfigs = new JSONArray();
+            JSONObject nsConfigItem = new JSONObject();
+            nsConfigItem.put("key", "customTestUtilValue");
+            nsConfigItem.put("value", "true");
+            nsConfigs.put(nsConfigItem);
+            nsBody.put("configurations", nsConfigs);
+
+            restServiceClient.makePostCall(baseUrl + "/namespace/create", nsBody.toString());
+            log.info("✅ Namespace created or updated: {}", namespace);
+        } catch (Exception e) {
+            log.error("❌ Failed to create namespace [{}]: {}", namespace, e.getMessage());
+        }
+
+        // STEP 2: Check if merchant exists by namespace
+        JSONObject existingMerchant = null;
+        try {
+            String findMerchantUrl = baseUrl + "/merchant/list-by-namespace?namespace=" + namespace;
+            JSONArray list = restServiceClient.queryJsonArrayService(restServiceClient.getClient(), findMerchantUrl);
+
+            for (int i = 0; i < list.length(); i++) {
+                JSONObject merchant = list.getJSONObject(i);
+                if (merchantName.equalsIgnoreCase(merchant.optString("merchantName"))) {
+                    existingMerchant = merchant;
+                    break;
+                }
+            }
+
+            if (existingMerchant != null) {
+                log.info("🔄 Existing merchant found, will update: {}", existingMerchant.optString("merchantId"));
+            } else {
+                log.info("🆕 No merchant found for namespace '{}', will create new", namespace);
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to check existing merchant: {}", e.getMessage());
+        }
+
+        // STEP 4: Add Paytrail Secret
+        try {
+            if (existingMerchant != null) {
+                String addSecretUrl = baseUrl + "/merchant/paytrail-secret/add"
+                        + "?merchantId=" + existingMerchant
+                        + "&secret=" + paytrailSecret;
+
+                restServiceClient.makeGetCall(addSecretUrl);
+                log.info("🔐 Paytrail secret added to merchant {}", existingMerchant);
+            } else {
+                log.warn("⚠️ Skipping Paytrail secret addition — merchantId is null");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to add Paytrail secret: {}", e.getMessage());
+        }
+        // STEP 3: Create or update merchant
+        try {
+            JSONObject merchantBody = new JSONObject();
+            merchantBody.put("namespace", namespace);
+            merchantBody.put("merchantName", merchantName);
+//            merchantBody.put("merchantPaytrailMerchantId", paytrailMerchantId);
+
+            if (existingMerchant != null) {
+                merchantBody.put("merchantId", existingMerchant.optString("merchantId"));
+            }
+
+            JSONArray merchantConfigs = new JSONArray();
+            JSONObject configItem = new JSONObject();
+            configItem.put("key", "randomKeyForTesting");
+            configItem.put("value", paytrailMerchantId);
+            merchantConfigs.put(configItem);
+
+            merchantBody.put("configurations", merchantConfigs);
+
+            JSONObject merchantResponse = restServiceClient.makePostCall(baseUrl + "/merchant/upsert", merchantBody.toString());
+            merchantId = merchantResponse.optString("merchantId", null);
+
+
+
+            if (merchantId != null) {
+                log.info("✅ Merchant upserted: {}", merchantId);
+            } else {
+                log.warn("⚠️ Merchant upsert returned null merchantId");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to upsert merchant: {}", e.getMessage());
+        }
+
+        // STEP 4: Add Paytrail Secret
+        try {
+            if (merchantId != null) {
+                String addSecretUrl = baseUrl + "/merchant/paytrail-secret/add"
+                        + "?merchantId=" + merchantId
+                        + "&secret=" + paytrailSecret;
+
+                restServiceClient.makeGetCall(addSecretUrl);
+                log.info("🔐 Paytrail secret added to merchant {}", merchantId);
+
+                JSONObject merchantBody = new JSONObject();
+                merchantBody.put("namespace", namespace);
+                merchantBody.put("merchantName", merchantName);
+                merchantBody.put("merchantId", merchantId);
+                JSONArray merchantUpdateConfigs = new JSONArray();
+                JSONObject updateConfigItem = new JSONObject();
+                updateConfigItem.put("key", MERCHANT_PAYTRAIL_MERCHANT_ID);
+                updateConfigItem.put("value", paytrailMerchantId);
+                merchantUpdateConfigs.put(updateConfigItem);
+
+                merchantBody.put("configurations", merchantUpdateConfigs);
+
+                JSONObject merchantUpdateResponse = restServiceClient.makePostCall(baseUrl + "/merchant/upsert", merchantBody.toString());
+
+            } else {
+                log.warn("⚠️ Skipping Paytrail secret addition — merchantId is null");
+            }
+        } catch (Exception e) {
+            log.error("❌ Failed to add Paytrail secret: {}", e.getMessage());
+        }
+
+        return merchantId;
     }
 }

@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Data()
 public class TestPayment {
+    private String id;
     private String paymentId;
     private String namespace;
     private String orderId;
@@ -17,9 +18,11 @@ public class TestPayment {
     private BigDecimal total;
     private BigDecimal taxAmount;
     private String description;
+    private String paytrailTransactionId;
     private String additionalInfo;
     private String token;
     private String timestamp;
     private String paymentMethodLabel;
+    private String paymentGateway;
 
 }

@@ -3,7 +3,6 @@ package fi.hel.verkkokauppa.order.api.cron;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
@@ -18,12 +17,12 @@ import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
-import fi.hel.verkkokauppa.order.test.utils.payment.TestRefundPayment;
+import fi.hel.verkkokauppa.order.test.utils.payment.*;
 import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexResponse;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Test;
@@ -35,6 +34,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -88,6 +88,9 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
 
     @Autowired
     private TestUtils testUtils;
+
+    @Autowired
+    private OrderApiTestPaymentUtilService orderApiTestPaymentUtilService;
 
     private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
     private ArrayList<String> toBeDeletedOrderAccountingById = new ArrayList<>();
@@ -228,15 +231,41 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
 
         // create and save orderitem to db
         OrderItem orderItem = generateDummyOrderItem(order3);
+
+        String merchantId = testUtils.createNamespaceAndMerchantWithSecret(
+                order3.getNamespace(),
+                log.getName(),
+                OrderApiTestPaymentUtilService.ACCOUNT,
+                OrderApiTestPaymentUtilService.SECRET
+        );
+        orderItem.setMerchantId(merchantId);
         this.orderItemRepository.save(orderItem);
 
-        order3.setPriceTotal("0.01");
+        order3.setPriceTotal("100");
         order3.setStatus("confirmed");
         // Save needed fields to allow query to find it status = confirmed and price total over 0
         orderRepository.save(order3);
 
+        TestPaytrailPaymentResponse paytrailResponse = orderApiTestPaymentUtilService.createTestPaytrailPayment(order3);
+        log.info("paytrailResponse: {}", objectMapper.writeValueAsString(paytrailResponse));
+
+        TestPayment testPayment = testUtils.savePaytrailResponseAsPayment(paytrailResponse, order3);
+        assertNotNull(testPayment);
+        String providerId = "osuuspankki";
+
+        testUtils.createPaytrailFormAndSubmitSuccessFullPayment(paytrailResponse, providerId);
+
+        PaytrailPayment paymentResponse = orderApiTestPaymentUtilService.getTestPaytrailPayment(paytrailResponse.getTransactionId());
+        assertEquals("ok", paymentResponse.status.toLowerCase());
+        TestPaytrailRefundResponse refundPaytrailResponse = orderApiTestPaymentUtilService
+                .createTestPaytrailRefund(
+                        order3,
+                        testPayment
+                );
+
         // create and save orderitem to db
         RefundItem refundItem = generateDummyRefundItem(refund3);
+        refundItem.setMerchantId(merchantId);
         this.refundItemRepository.save(refundItem);
 
         refund3.setPriceTotal("0.01");
@@ -244,15 +273,11 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
         // Save needed fields to allow query to find it status = confirmed and price total over 0
         refundRepository.save(refund3);
 
+        TestRefundPayment refundPayment = saveTestRefundPayment(refund3, order3, refundPaytrailResponse);
 
-
-        TestRefundPayment refundPayment = new TestRefundPayment();
-        refundPayment.setRefundId("test-refund-id" + order3.getOrderId());
-        refundPayment.setStatus("refund_paid_online");
-        refundPayment.setOrderId(order3.getOrderId());
-        refundPayment.setTotal(new BigDecimal(order3.getPriceTotal()));
-        IndexResponse testRefundPayment = this.testUtils.createTestRefundPayment(refundPayment);
-
+        PaytrailPayment refundResponse = orderApiTestPaymentUtilService.getTestPaytrailPayment(refundPaytrailResponse.getTransactionId());
+        assertEquals(refundPaytrailResponse.getTransactionId(), refundResponse.transactionId);
+        assertEquals("ok", refundResponse.status.toLowerCase());
 
         ProductAccountingDto accountingDto = createDummyProductAccountingDto(orderItem.getProductId(), order3.getOrderId());
         TestProductAccounting testProductAccounting = objectMapper.convertValue(accountingDto, TestProductAccounting.class);
@@ -358,6 +383,17 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
 
     }
 
+    private TestRefundPayment saveTestRefundPayment(Refund refund3, Order order3, TestPaytrailRefundResponse refundPaytrailResponse) throws IOException {
+        TestRefundPayment refundPayment = new TestRefundPayment();
+        refundPayment.setRefundId(refund3.getRefundId());
+        refundPayment.setStatus("refund_created");
+        refundPayment.setOrderId(order3.getOrderId());
+        refundPayment.setTotal(new BigDecimal(order3.getPriceTotal()));
+        refundPayment.setRefundTransactionId(refundPaytrailResponse.getTransactionId());
+        refundPayment.setNamespace(order3.getNamespace());
+        IndexResponse testRefundPayment = this.testUtils.createTestRefundPayment(refundPayment);
+        return refundPayment;
+    }
 
     private Order createTestOrder() {
         Order order = generateDummyOrder();
@@ -446,8 +482,8 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
                 operationArea,
                 LocalDateTime.now(),
                 "merchantId",
-                "namespace",
-                "paytrailTransactionId"
+                "paytrailTransactionId",
+                "namespace"
         );
 
         refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);

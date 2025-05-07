@@ -1,23 +1,17 @@
-package fi.hel.verkkokauppa.order.api.cron.search.dto;
+package fi.hel.verkkokauppa.common.payment;
 
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.elasticsearch.annotations.DateFormat;
-import org.springframework.data.elasticsearch.annotations.Field;
-import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-public class RefundResultDto {
+public class RefundPaymentCommonDto {
     // refundId (Refund model id) + timestamp (Like creating paymentId)
     private String refundPaymentId;
 
+    // Paytrail gives this when we create refund for payment
     private String refundTransactionId;
-
-//    private String merchantId;
 
     private String namespace;
 
@@ -32,15 +26,19 @@ public class RefundResultDto {
     private String refundMethod;
 
     // RefundGateway.PAYTRAIL
+
     private String refundGateway;
 
     // refund.getPriceNet()
+
     private BigDecimal totalExclTax;
 
     // refund.getPriceTotal()
+
     private BigDecimal total;
 
     // refund.getRefundId()
+
     private String refundId;
 
     // refund.getPriceVat()
@@ -52,4 +50,7 @@ public class RefundResultDto {
 
     private LocalDateTime updatedAt;
 
+    LocalDateTime paidAt; // Timestamp when the transaction was refunded
+
+    String paymentProviderStatus;
 }

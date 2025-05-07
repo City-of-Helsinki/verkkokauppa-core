@@ -68,8 +68,17 @@ public class SearchUnAccountedPayments {
                 ).collect(Collectors.toList());
 
         log.info("Unaccounted payments found: {}", unaccountedPayments.size());
-        log.info("Unaccounted payment ids: {}", unaccountedPayments.stream().map(PaymentResultDto::getPaymentId));
-        log.info("Unaccounted payment gateway null: {}", unaccountedPayments.stream().filter(Objects::nonNull).filter(paymentResultDto -> paymentResultDto.getPaymentGateway() == null).map(PaymentResultDto::getPaymentId));
+        log.info("Unaccounted payment ids: {}",
+                unaccountedPayments.stream()
+                        .map(PaymentResultDto::getPaymentId)
+                        .collect(Collectors.toList()));
+
+        log.info("Unaccounted payment gateway null: {}",
+                unaccountedPayments.stream()
+                        .filter(Objects::nonNull)
+                        .filter(payment -> payment.getPaymentGateway() == null)
+                        .map(PaymentResultDto::getPaymentId)
+                        .collect(Collectors.toList()));
 
         return unaccountedPayments;
     }
