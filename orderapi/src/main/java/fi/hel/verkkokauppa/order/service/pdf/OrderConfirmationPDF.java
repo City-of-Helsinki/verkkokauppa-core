@@ -1,23 +1,21 @@
-package fi.hel.verkkokauppa.message.service;
-import fi.hel.verkkokauppa.message.dto.GenerateOrderConfirmationPDFRequestDto;
-import fi.hel.verkkokauppa.message.dto.OrderItemDto;
-import fi.hel.verkkokauppa.message.dto.OrderItemMetaDto;
-import fi.hel.verkkokauppa.message.model.PDFA2A;
+package fi.hel.verkkokauppa.order.service.pdf;
+
+
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
+import fi.hel.verkkokauppa.order.model.pdf.GenerateOrderConfirmationPDFRequestDto;
+import fi.hel.verkkokauppa.order.model.pdf.PDFA2A;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
 import org.apache.pdfbox.pdmodel.documentinterchange.taggedpdf.StandardStructureTypes;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary;
 import org.apache.xmpbox.type.BadFieldValueException;
 import org.springframework.beans.factory.annotation.Value;

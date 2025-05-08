@@ -1,9 +1,11 @@
-package fi.hel.verkkokauppa.message.service;
+package fi.hel.verkkokauppa.order.service.order;
 
-import fi.hel.verkkokauppa.message.dto.GenerateOrderConfirmationPDFRequestDto;
-import fi.hel.verkkokauppa.message.dto.OrderItemDto;
-import fi.hel.verkkokauppa.message.dto.OrderItemMetaDto;
-import fi.hel.verkkokauppa.message.dto.PaymentDto;
+
+import fi.hel.verkkokauppa.common.rest.dto.payment.PaymentDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemMetaDto;
+import fi.hel.verkkokauppa.order.model.pdf.GenerateOrderConfirmationPDFRequestDto;
+import fi.hel.verkkokauppa.order.service.pdf.OrderConfirmationPDF;
 import org.apache.xmpbox.type.BadFieldValueException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,8 +23,10 @@ import java.util.List;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
 public class OrderConfirmationPDFTest {
+
     @Autowired
     OrderConfirmationPDF orderConfirmationPDF;
+
     @Test
     public void returnsGeneratedOrderConfirmationPDF() throws BadFieldValueException, IOException, TransformerException {
         GenerateOrderConfirmationPDFRequestDto dto = new GenerateOrderConfirmationPDFRequestDto();

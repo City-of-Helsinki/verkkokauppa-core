@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.message.model;
+package fi.hel.verkkokauppa.order.model.pdf;
 
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSDictionary;
@@ -19,19 +19,13 @@ import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.color.PDOutputIntent;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
 import org.apache.pdfbox.pdmodel.interactive.viewerpreferences.PDViewerPreferences;
 import org.apache.xmpbox.XMPMetadata;
 import org.apache.xmpbox.schema.XMPSchema;
 import org.apache.xmpbox.type.BadFieldValueException;
 import org.apache.xmpbox.xml.XmpSerializer;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import javax.xml.transform.TransformerException;
-import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -201,7 +195,7 @@ public class PDFA2A {
     }
 
     public void save(String outputFile, boolean saveTestPDF) throws IOException {
-        if (this.pdf.getDocumentCatalog().getOutputIntents().size() < 1) {
+        if (this.pdf.getDocumentCatalog().getOutputIntents().isEmpty()) {
             throw new Error("Document is missing color profile");
         }
 

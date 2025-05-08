@@ -1,12 +1,12 @@
-package fi.hel.verkkokauppa.message.dto;
+package fi.hel.verkkokauppa.order.model.pdf;
 
-import lombok.Getter;
-import lombok.Setter;
+import fi.hel.verkkokauppa.common.rest.dto.payment.PaymentDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
+import lombok.Data;
 
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 public class GenerateOrderConfirmationPDFRequestDto {
     private String orderId;
     private String customerFirstName;
