@@ -41,4 +41,12 @@ public class RefundItemService {
         return new ArrayList<RefundItem>();
     }
 
+    public String resolveMerchantIdFromRefundItems(String refundId) {
+        return this.findByRefundId(refundId).stream()
+                .map(RefundItem::getMerchantId)
+                .filter(id -> id != null && !id.isEmpty())
+                .findFirst()
+                .orElse(null);
+    }
+
 }

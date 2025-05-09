@@ -10,7 +10,6 @@ import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.service.refund.RefundItemService;
-import fi.hel.verkkokauppa.order.service.refund.RefundService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,11 +80,7 @@ public class SearchUnAccountedRefunds {
         // Fetch Paytrail secret per refund
         for (RefundResultDto refund : refundResultDtos) {
             try {
-                String merchantId = this.refundItemService.findByRefundId(refund.getRefundId()).stream()
-                        .map(RefundItem::getMerchantId)
-                        .filter(id -> id != null && !id.isEmpty())
-                        .findFirst()
-                        .orElse(null);
+                String merchantId = this.refundItemService.resolveMerchantIdFromRefundItems(refund.getRefundId());
 
                 if (merchantId == null) {
                     log.warn("No valid merchantId found for refundId {}", refund.getRefundId());

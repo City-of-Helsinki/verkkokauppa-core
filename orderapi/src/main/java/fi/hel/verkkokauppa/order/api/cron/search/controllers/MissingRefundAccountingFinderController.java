@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.api.cron.search.controllers;
 
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
@@ -8,6 +9,7 @@ import fi.hel.verkkokauppa.order.api.cron.search.SearchCsvService;
 import fi.hel.verkkokauppa.order.api.cron.search.SearchNotificationService;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.api.cron.search.refund.SearchUnAccountedRefunds;
+import fi.hel.verkkokauppa.order.service.refund.RefundItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,9 +19,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import static fi.hel.verkkokauppa.common.configuration.ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID;
 
 @RestController
 @Slf4j
@@ -36,11 +42,14 @@ public class MissingRefundAccountingFinderController {
 
     @Autowired
     private RestServiceClient restServiceClient;
+    @Autowired
+    private ServiceUrls serviceUrls;
+
+    @Autowired
+    private RefundItemService refundItemService;
 
     @Autowired
     private ExperienceApiRefundAccountingService experienceApiRefundAccountingService;
-
-
 
     @GetMapping(value = "/accounting/cron/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnRefundPaid(
@@ -73,6 +82,8 @@ public class MissingRefundAccountingFinderController {
                 log.info("All orders and payments are accounted for.");
                 return ResponseEntity.ok().body(failedToAccount);
             }
+            // Enriches failedToAccount data with paytrailMerchantId for better troubleshooting in csv data
+            resolvePaytrailMerchantsToFailedToAccountRefunds(failedToAccount);
 
             // Notification can have all the
             String csvData = searchCsvService.generateCsvDataRefunds(failedToAccount);
@@ -98,25 +109,68 @@ public class MissingRefundAccountingFinderController {
             return ResponseEntity.ok().body(failedToAccount);
 
         } catch (CommonApiException cae) {
-            log.error("Failed to find missing refund accounting data cae", cae);
+            log.error("Failed to find missing refund accounting data cae cron", cae);
             throw cae;
         } catch (Exception e) {
             log.error("Failed to find missing refund accounting data", e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-find-missing-refund-accounting-data", "Failed to find missing refund accounting data")
+                    new Error("failed-to-find-missing-refund-accounting-data-cron", "Failed to find missing refund accounting data cron")
             );
         }
     }
 
-    @GetMapping(value = "/accounting/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnPaymentPaidNoEmail() {
+    private void resolvePaytrailMerchantsToFailedToAccountRefunds(List<RefundResultDto> failedToAccount) {
         try {
-            List<RefundResultDto> failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds();
+            failedToAccount.forEach(refundResultDto -> {
+                try {
+                    String merchantId = this.refundItemService.resolveMerchantIdFromRefundItems(refundResultDto.getRefundId());
 
-            if (failedToAccount.isEmpty()) {
-                log.info("All orders and refunds are accounted for.");
-                return ResponseEntity.ok().body(failedToAccount);
+                    // Build the complete URL with query params
+                    String url = serviceUrls.getMerchantServiceUrl()
+                            + "/merchant/getValue"
+                            + "?merchantId=" + URLEncoder.encode(merchantId, StandardCharsets.UTF_8)
+                            + "&namespace=" + URLEncoder.encode(refundResultDto.getNamespace(), StandardCharsets.UTF_8)
+                            + "&key=" + URLEncoder.encode(MERCHANT_PAYTRAIL_MERCHANT_ID, StandardCharsets.UTF_8);
+
+                    String paytrailMerchantId = this.restServiceClient.queryStringService(url);
+
+                    if (paytrailMerchantId != null) {
+                        refundResultDto.setPaytrailMerchantId(paytrailMerchantId);
+                    } else {
+                        log.warn("No value found in response for refundId: {}", refundResultDto.getRefundId());
+                    }
+
+                } catch (Exception innerEx) {
+                    log.error("Error processing refundId {}: {}", refundResultDto.getRefundId(), innerEx.getMessage(), innerEx);
+                }
+            });
+        } catch (Exception e) {
+            log.error("Unexpected error during processing refunds", e);
+        }
+    }
+
+    @GetMapping(value = "/accounting/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnPaymentPaidNoEmail(
+            @RequestParam(value = "createdAfter", required = false) String createdAfter
+    ) {
+        List<RefundResultDto> failedToAccount;
+        try {
+            // Define date-time formatter
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+            // Parse the parameters if they are provided
+            LocalDateTime createdAfterDateTime = createdAfter != null ? LocalDateTime.parse(createdAfter, formatter) : null;
+
+            if (createdAfterDateTime != null) {
+                this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail(createdAfterDateTime);
+                failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds(
+                        createdAfterDateTime
+                );
+            } else {
+                this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail();
+                // Default case find all unaccounted
+                failedToAccount = this.searchUnAccountedRefunds.findUnaccountedRefunds();
             }
 
             return ResponseEntity.ok().body(failedToAccount);
@@ -128,6 +182,38 @@ public class MissingRefundAccountingFinderController {
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     new Error("failed-to-find-missing-refund-accounting-data", "Failed to find missing refund accounting data")
+            );
+        }
+    }
+
+    @GetMapping(value = "/accounting/update-refund-status-from-paytrail", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<RefundResultDto>> findCreatedRefundsAndUpdateStatusFromPaytrail(
+            @RequestParam(value = "createdAfter", required = false) String createdAfter
+    ) {
+        List<RefundResultDto> updatedList;
+        try {
+            // Define date-time formatter
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+            // Parse the parameters if they are provided
+            LocalDateTime createdAfterDateTime = createdAfter != null ? LocalDateTime.parse(createdAfter, formatter) : null;
+
+            if (createdAfterDateTime != null) {
+                updatedList = this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail(createdAfterDateTime);
+            } else {
+                updatedList = this.searchUnAccountedRefunds.findCreatedRefundsAndUpdateStatusFromPaytrail();
+            }
+
+            return ResponseEntity.ok().body(updatedList);
+
+        } catch (CommonApiException cae) {
+            log.error("findCreatedRefundsAndUpdateStatusFromPaytrail ",cae);
+            throw cae;
+        } catch (Exception e) {
+            log.error("Failed to update refund data from paytrail", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-update-refund-data-from-paytrail", "Failed to update refund status from paytrail")
             );
         }
     }

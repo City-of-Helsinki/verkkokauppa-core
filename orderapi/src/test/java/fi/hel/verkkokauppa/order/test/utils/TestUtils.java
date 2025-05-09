@@ -719,7 +719,6 @@ public class TestUtils extends DummyData {
             JSONObject merchantBody = new JSONObject();
             merchantBody.put("namespace", namespace);
             merchantBody.put("merchantName", merchantName);
-//            merchantBody.put("merchantPaytrailMerchantId", paytrailMerchantId);
 
             if (existingMerchant != null) {
                 merchantBody.put("merchantId", existingMerchant.optString("merchantId"));
@@ -735,8 +734,6 @@ public class TestUtils extends DummyData {
 
             JSONObject merchantResponse = restServiceClient.makePostCall(baseUrl + "/merchant/upsert", merchantBody.toString());
             merchantId = merchantResponse.optString("merchantId", null);
-
-
 
             if (merchantId != null) {
                 log.info("✅ Merchant upserted: {}", merchantId);

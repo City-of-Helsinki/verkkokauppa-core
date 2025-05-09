@@ -29,15 +29,18 @@ public class SearchCsvService {
     }
 
     public String generateCsvDataRefunds(List<RefundResultDto> unaccountedRefunds) {
-        StringBuilder csvBuilder = new StringBuilder("orderId,refundId,updatedAt,createdAt,paytrailTransactionId\n");
+        StringBuilder csvBuilder = new StringBuilder("orderId,refundId,updatedAt,createdAt,paytrailTransactionId,paytrailMerchantId,namespace,total\n");
 
         unaccountedRefunds.forEach(refund -> csvBuilder.append(String.format(
-                "%s,%s,%s,%s,%s\n",
+                "%s,%s,%s,%s,%s,%s,%s,%s\n",
                 refund.getOrderId(),
                 refund.getRefundId(),
                 refund.getUpdatedAt() != null ? refund.getUpdatedAt().toString() : "N/A",
                 refund.getCreatedAt() != null ? refund.getCreatedAt().toString() : "N/A",
-                refund.getRefundTransactionId() != null ? refund.getRefundTransactionId() : "N/A"
+                refund.getRefundTransactionId() != null ? refund.getRefundTransactionId() : "N/A",
+                refund.getPaytrailMerchantId() != null ? refund.getPaytrailMerchantId() : "N/A",
+                refund.getNamespace() != null ? refund.getNamespace() : "N/A",
+                refund.getTotal() != null ? refund.getTotal() : "N/A"
         )));
         log.info("Csv data: {}", csvBuilder);
 

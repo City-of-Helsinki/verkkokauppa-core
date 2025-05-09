@@ -16,6 +16,7 @@ public class RefundResultDto {
     private String refundPaymentId;
 
     private String refundTransactionId;
+    private String paytrailMerchantId;
 
 //    private String merchantId;
 
