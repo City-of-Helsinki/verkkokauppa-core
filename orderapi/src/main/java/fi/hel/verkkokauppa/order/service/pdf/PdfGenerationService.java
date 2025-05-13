@@ -43,8 +43,8 @@ public class PdfGenerationService {
 
     public GenerateOrderConfirmationPDFRequestDto getPDFRequestDto(String orderId) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        GenerateOrderConfirmationPDFRequestDto dto = new GenerateOrderConfirmationPDFRequestDto();
-        dto.setOrderId(orderId);
+        GenerateOrderConfirmationPDFRequestDto generatePdfDto = new GenerateOrderConfirmationPDFRequestDto();
+        generatePdfDto.setOrderId(orderId);
 
         try {
 
@@ -57,52 +57,57 @@ public class PdfGenerationService {
                 throw new Exception("Order has not items");
             }
 
-            dto.setItems(items);
-            dto.setCustomerFirstName(orderDto.getOrder().getCustomerFirstName());
-            dto.setCustomerLastName(orderDto.getOrder().getCustomerLastName());
-            dto.setCustomerEmail(orderDto.getOrder().getCustomerEmail());
+            generatePdfDto.setItems(items);
+            generatePdfDto.setCustomerFirstName(orderDto.getOrder().getCustomerFirstName());
+            generatePdfDto.setCustomerLastName(orderDto.getOrder().getCustomerLastName());
+            generatePdfDto.setCustomerEmail(orderDto.getOrder().getCustomerEmail());
 
             // Get Payment
             JSONObject paymentResponse = restServiceClient.makeAdminGetCall(paymentServiceUrl + "/payment-admin/online/get?orderId=" + orderId);
             PaymentDto paymentDto = objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
-            dto.setPayment(paymentDto);
+            generatePdfDto.setPayment(paymentDto);
 
             // Get merchant
-            String merchantId = orderDto.getItems().get(0).getMerchantId();
+            String merchantId = orderService.getFirstMerchantId(orderDto);
+                    // orderDto.getItems().get(0).getMerchantId();
             String nameSpace = orderDto.getOrder().getNamespace();
-            MerchantDto merchantDto = commonServiceConfigurationClient.getMerchantModel(merchantId, nameSpace);
+            updateWithMerchantConfiguration(generatePdfDto, merchantId, nameSpace);
 
-            merchantDto.getConfigurations().forEach(configuration -> {
-                switch( configuration.getKey().toLowerCase() ){
-                    case "merchantemail":
-                        dto.setMerchantEmail(configuration.getValue());
-                        break;
-                    case "merchantcity":
-                        dto.setMerchantCity(configuration.getValue());
-                        break;
-                    case "merchantbusinessid":
-                        dto.setMerchantBusinessId(configuration.getValue());
-                        break;
-                    case "merchantphone":
-                        dto.setMerchantPhoneNumber(configuration.getValue());
-                        break;
-                    case "merchantstreet":
-                        dto.setMerchantStreetAddress(configuration.getValue());
-                        break;
-                    case "merchantzip":
-                        dto.setMerchantZipCode(configuration.getValue());
-                        break;
-                    case "merchantname":
-                        dto.setMerchantName(configuration.getValue());
-                        break;
-                }
-            });
         } catch (Exception e) {
             log.error("Error occurred while collecting data for PDF Receipt",e);
             throw e;
         }
 
-        return dto;
+        return generatePdfDto;
+    }
+
+    private void updateWithMerchantConfiguration(GenerateOrderConfirmationPDFRequestDto generatePdfDto, String merchantId, String nameSpace){
+        MerchantDto merchantDto = commonServiceConfigurationClient.getMerchantModel(merchantId, nameSpace);
+        merchantDto.getConfigurations().forEach(configuration -> {
+            switch( configuration.getKey().toLowerCase() ){
+                case "merchantemail":
+                    generatePdfDto.setMerchantEmail(configuration.getValue());
+                    break;
+                case "merchantcity":
+                    generatePdfDto.setMerchantCity(configuration.getValue());
+                    break;
+                case "merchantbusinessid":
+                    generatePdfDto.setMerchantBusinessId(configuration.getValue());
+                    break;
+                case "merchantphone":
+                    generatePdfDto.setMerchantPhoneNumber(configuration.getValue());
+                    break;
+                case "merchantstreet":
+                    generatePdfDto.setMerchantStreetAddress(configuration.getValue());
+                    break;
+                case "merchantzip":
+                    generatePdfDto.setMerchantZipCode(configuration.getValue());
+                    break;
+                case "merchantname":
+                    generatePdfDto.setMerchantName(configuration.getValue());
+                    break;
+            }
+        });
     }
 
 }

@@ -35,17 +35,6 @@ public class MessageService {
     @Autowired
     private JavaMailSender javaMailSender;
 
-    @Autowired
-    private RestServiceClient restServiceClient;
-
-    @Value("${order.service.url:http://order-api:8080}")
-    private String orderServiceUrl;
-
-    @Value("${payment.service.url:http://payment-api:8080}")
-    private String paymentServiceUrl;
-
-    @Value("${merchant.service.url:http://merchant-api:8080}")
-    private String merchantServiceUrl;
 
     public Message createSendableEmailMessage(MessageDto messageDto) {
         return new Message(
