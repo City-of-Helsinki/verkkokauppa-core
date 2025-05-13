@@ -1,12 +1,17 @@
 package fi.hel.verkkokauppa.message.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
-import fi.hel.verkkokauppa.message.dto.MessageDto;
+import fi.hel.verkkokauppa.message.dto.*;
 import fi.hel.verkkokauppa.message.enums.MessageTypes;
 import fi.hel.verkkokauppa.message.model.Message;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
@@ -17,6 +22,7 @@ import org.springframework.stereotype.Component;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -28,6 +34,7 @@ public class MessageService {
 
     @Autowired
     private JavaMailSender javaMailSender;
+
 
     public Message createSendableEmailMessage(MessageDto messageDto) {
         return new Message(

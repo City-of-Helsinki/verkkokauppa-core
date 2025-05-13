@@ -12,17 +12,13 @@ import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
+import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
 import fi.hel.verkkokauppa.order.logic.subscription.NextDateCalculator;
 import fi.hel.verkkokauppa.order.mapper.FlowStepMapper;
 import fi.hel.verkkokauppa.order.mapper.OrderPaymentMethodMapper;
-import fi.hel.verkkokauppa.order.model.FlowStep;
-import fi.hel.verkkokauppa.order.model.Order;
-import fi.hel.verkkokauppa.order.model.OrderItem;
-import fi.hel.verkkokauppa.order.model.OrderItemMeta;
-import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
-import fi.hel.verkkokauppa.order.model.OrderStatus;
+import fi.hel.verkkokauppa.order.model.*;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
@@ -428,5 +424,13 @@ public class OrderService {
             }
         }
         return activeOrder;
+    }
+
+    public String getFirstMerchantId( OrderAggregateDto order){
+        return order.getItems().stream()
+                .map(OrderItemDto::getMerchantId)
+                .filter(id -> id != null && !id.isEmpty())
+                .findFirst()
+                .orElse(null);
     }
 }
