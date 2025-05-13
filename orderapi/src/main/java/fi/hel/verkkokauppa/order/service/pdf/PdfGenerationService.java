@@ -1,6 +1,7 @@
 package fi.hel.verkkokauppa.order.service.pdf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
@@ -33,12 +34,12 @@ public class PdfGenerationService {
     @Autowired
     CommonServiceConfigurationClient commonServiceConfigurationClient;
 
-    @Value("${payment.service.url:http://payment-api:8080}")
-    private String paymentServiceUrl;
 
-    @Value("${merchant.service.url:http://merchant-api:8080}")
-    private String merchantServiceUrl;
+    private final ServiceUrls serviceUrls;
 
+    public PdfGenerationService(ServiceUrls serviceUrls) {
+        this.serviceUrls = serviceUrls;
+    }
 
 
     public GenerateOrderConfirmationPDFRequestDto getPDFRequestDto(String orderId) throws Exception {
@@ -47,7 +48,6 @@ public class PdfGenerationService {
         generatePdfDto.setOrderId(orderId);
 
         try {
-
             // get Order
             OrderAggregateDto orderDto = orderService.orderAggregateDto(orderId).getBody();
 
@@ -63,7 +63,7 @@ public class PdfGenerationService {
             generatePdfDto.setCustomerEmail(orderDto.getOrder().getCustomerEmail());
 
             // Get Payment
-            JSONObject paymentResponse = restServiceClient.makeAdminGetCall(paymentServiceUrl + "/payment-admin/online/get?orderId=" + orderId);
+            JSONObject paymentResponse = restServiceClient.makeAdminGetCall(serviceUrls.getPaymentServiceUrl() + "/payment-admin/online/get?orderId=" + orderId);
             PaymentDto paymentDto = objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
             generatePdfDto.setPayment(paymentDto);
 
