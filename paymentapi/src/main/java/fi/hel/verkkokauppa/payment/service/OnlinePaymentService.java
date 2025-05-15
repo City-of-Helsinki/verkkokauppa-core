@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.payment.service;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.constants.PaymentType;
+import fi.hel.verkkokauppa.common.elastic.search.SearchService;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -33,6 +34,9 @@ import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
@@ -44,6 +48,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -98,6 +103,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private SaveHistoryService saveHistoryService;
+
+    @Autowired
+    private SearchService searchService;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -215,9 +223,21 @@ public class OnlinePaymentService {
             return null;
     }
 
-    public List<Payment> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) {
-        return paymentRepository.findByPaymentGatewayAndStatusAndCreatedAtBetweenAndPaytrailTransactionIdIsNotNull(
-                PaymentGatewayEnum.PAYTRAIL, PaymentStatus.CREATED, createdAfter, createdBefore);
+    public List<PaymentDto> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) throws IOException {
+        SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
+
+//        paymentsQuery.must(QueryBuilders.existsQuery("PaytrailTransactionId"));
+//        paymentsQuery.must(QueryBuilders.termQuery("paymentGateway", PaymentGatewayEnum.PAYTRAIL));
+        paymentsQuery.must(QueryBuilders.termQuery("status", PaymentStatus.CREATED));
+//        paymentsQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter).lt(createdBefore));
+
+        paymentsQueryBuilder.query(paymentsQuery);
+        return searchService.searchAcrossIndexes(
+                List.of("payments"),
+                paymentsQueryBuilder,
+                PaymentDto.class
+        );
     }
 
     public List<PaymentItem> getPaymentItemsForPayment(String paymentId) {

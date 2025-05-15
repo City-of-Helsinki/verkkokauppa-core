@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
@@ -84,10 +85,10 @@ public class PaytrailStatusCheckController {
 
         try {
             // get list of payments to synchronize
-            List<Payment> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdAfterDateTime);
+            List<PaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdAfterDateTime);
 
             // get paytrail statuses for payments
-            for( Payment payment : payments ) {
+            for( PaymentDto payment : payments ) {
                 // get product id from first paymentItem
                 List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
                 if( items.size() > 0) {
@@ -95,7 +96,7 @@ public class PaytrailStatusCheckController {
                     String productId = items.get(0).getProductId();
 
                     // get merchant id for payment from product mapping
-                    JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/productmapping/get?productId=" + productId);
+                    JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/get?productId=" + productId);
                     ProductMappingDto productMapping = objectMapper.readValue(productMappingResponse.toString(), ProductMappingDto.class);
 
                     // get paytrail payment status
