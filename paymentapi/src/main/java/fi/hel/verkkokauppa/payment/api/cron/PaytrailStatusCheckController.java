@@ -79,13 +79,13 @@ public class PaytrailStatusCheckController {
             createdBeforeDateTime = LocalDateTime.parse(createdBefore, formatter);
         } else {
             // enddatetime not provided, check for today
-            createdBeforeDateTime = startDate.minusMinutes(5);
+            createdBeforeDateTime = LocalDateTime.now().minusMinutes(5);
         }
         log.info("Synchronizing payments between {} and {}", createdAfterDateTime, createdBeforeDateTime);
 
         try {
             // get list of payments to synchronize
-            List<PaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdAfterDateTime);
+            List<PaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdBeforeDateTime);
 
             // get paytrail statuses for payments
             for( PaymentDto payment : payments ) {
@@ -101,7 +101,7 @@ public class PaytrailStatusCheckController {
 
                     // get paytrail payment status
                     PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), productMapping.getMerchantId());
-
+                    log.debug("paytrail response {}", paytrailPayment);
                     // check if paytrail status has changed
                     // Update also payment status accordingly ok -> payment_paid_online, fail -> payment_cancelled
                 } else {

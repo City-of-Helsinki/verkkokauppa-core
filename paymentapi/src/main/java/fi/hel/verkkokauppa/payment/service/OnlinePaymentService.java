@@ -227,10 +227,9 @@ public class OnlinePaymentService {
         SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
         BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
 
-//        paymentsQuery.must(QueryBuilders.existsQuery("PaytrailTransactionId"));
-//        paymentsQuery.must(QueryBuilders.termQuery("paymentGateway", PaymentGatewayEnum.PAYTRAIL));
+        paymentsQuery.must(QueryBuilders.existsQuery("paytrailTransactionId"));
         paymentsQuery.must(QueryBuilders.termQuery("status", PaymentStatus.CREATED));
-//        paymentsQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter).lt(createdBefore));
+        paymentsQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter).lt(createdBefore));
 
         paymentsQueryBuilder.query(paymentsQuery);
         return searchService.searchAcrossIndexes(
