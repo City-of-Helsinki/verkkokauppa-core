@@ -228,7 +228,7 @@ public class OnlinePaymentService {
         BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
 
         paymentsQuery.must(QueryBuilders.existsQuery("paytrailTransactionId"));
-        paymentsQuery.must(QueryBuilders.termQuery("status", PaymentStatus.CREATED));
+        paymentsQuery.must(QueryBuilders.termsQuery("status", PaymentStatus.CREATED, PaymentStatus.CREATED_FOR_MIT_CHARGE));
         paymentsQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter).lt(createdBefore));
 
         paymentsQueryBuilder.query(paymentsQuery);

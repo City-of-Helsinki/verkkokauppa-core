@@ -3,13 +3,19 @@ package fi.hel.verkkokauppa.payment.api.cron;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
+import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
+import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
+import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.PaymentItem;
+import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
+import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +52,15 @@ public class PaytrailStatusCheckController {
     @Autowired
     PaymentPaytrailService paymentPaytrailService;
 
+    @Autowired
+    private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
+
+    @Autowired
+    private SaveHistoryService saveHistoryService;
+
+    @Autowired
+    private SendNotificationService sendNotificationService;
+
     @Value("${productmapping.service.url:http://product-mapping-api:8080/productmapping/}")
     private String productMappingServiceUrl;
 
@@ -55,9 +70,10 @@ public class PaytrailStatusCheckController {
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
+        boolean sendErrorEmail = false;
         ObjectMapper objectMapper = new ObjectMapper();
         List<String> errors = new ArrayList();
-        List<String> updatedStatuses = new ArrayList();
+        List<String> updatedPayments = new ArrayList();
 
         LocalDateTime createdAfterDateTime = null;
         LocalDateTime createdBeforeDateTime = null;
@@ -101,9 +117,40 @@ public class PaytrailStatusCheckController {
 
                     // get paytrail payment status
                     PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), productMapping.getMerchantId());
-                    log.debug("paytrail response {}", paytrailPayment);
-                    // check if paytrail status has changed
-                    // Update also payment status accordingly ok -> payment_paid_online, fail -> payment_cancelled
+
+                    if( payment.getPaymentProviderStatus().isEmpty() || !payment.getPaymentProviderStatus().equals(paytrailPayment.status) ) {
+                        log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
+
+                        PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(true, paytrailPayment.status, null);
+                        if ( payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)){
+
+                            // for mit charge we do not do retries
+                            paymentReturnDto.setCanRetry(false);
+                        }
+                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
+                        Payment updatedPayment = paymentPaytrailService.updatePaymentWithPaytrailPayment(payment.getPaymentId(), paytrailPayment);
+
+                        String updateText = "New status: " + updatedPayment.getStatus() + ". New payment provider status: " + updatedPayment.getPaymentProviderStatus();
+
+                        // log new values to history table
+                        saveHistoryService.saveCustomPaymentMessageHistory(PaymentMessage.builder()
+                                .orderId(payment.getOrderId())
+                                .paymentId(payment.getPaymentId())
+                                .namespace(payment.getNamespace())
+                                .eventType("PAYTRAIL_STATUS_CHECK")
+                                .eventTimestamp(LocalDateTime.now().toString())
+                                .paymentPaidTimestamp(payment.getTimestamp())
+                                .build(),
+                                "Payment updated in paytrail status check. " + updateText
+                        );
+
+                        // add to email (include paytrail merchant id)
+                        // TODO: add paytrail merchant id
+                        updatedPayments.add("Payment for order " + payment.getOrderId() + " updated in paytrail status check. " + updateText);
+
+                    }
+
+
                 } else {
                     String error = "Payment " + payment.getPaymentId() + " had no items. Not checking status from paytrail";
                     log.error(error);
@@ -112,10 +159,29 @@ public class PaytrailStatusCheckController {
                 }
             }
 
+            String message = "";
+            String cause = "";
+            String header = "Paytrail status check - ";
+            if( updatedPayments.size() > 0 ) {
+                sendErrorEmail = true;
+                header += "Updated payments: " + updatedPayments.size();
+                message += "Updated " + updatedPayments.size() + "payments";
+                // TODO: create csv data common service
+                cause += updatedPayments.toString();
+            }
 
-            // update payments with new statuses
+            if( errors.size() > 0 ) {
+                sendErrorEmail = true;
+                header += "Errors: " + errors.size();
+            }
 
-            // TODO: send error notification email
+
+            // send error notification email
+            sendNotificationService.sendErrorNotification(
+                    message,
+                    cause,
+                    header
+            );
 
             return ResponseEntity.ok().body(null);
 

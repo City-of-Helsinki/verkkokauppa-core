@@ -70,6 +70,7 @@ public class ErrorEmailNotificationListener extends BaseEmailNotifier<ErrorMessa
         sendNotificationToEmail(
                 UUID.randomUUID().toString(),
                 receivers,
+                queueMessage.getHeader(),
                 queueMessage.getEventType(),
                 queueMessage.getMessage(),
                 queueMessage.getCause(),

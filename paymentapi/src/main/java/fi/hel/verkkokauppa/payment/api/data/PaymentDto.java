@@ -23,6 +23,7 @@ public class PaymentDto {
 	private String timestamp;
 	private String paymentMethodLabel;
 	private String paytrailTransactionId;
+	private String paymentProviderStatus;
 
 	/**
 	 * There is no way to determine in the paytrail return callback methods if a payment is shopInShop payment or not.
