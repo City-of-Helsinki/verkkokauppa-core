@@ -74,8 +74,8 @@ public class PaytrailStatusCheckController {
     private String productMappingServiceUrl;
 
 
-    @GetMapping(value = "/synchronize-paytrail-status", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> checkAndSynchronizePaytrailStatus(
+    @GetMapping(value = "/synchronize-paytrail-payment-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> checkAndSynchronizePaytrailPaymentStatus(
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
@@ -86,7 +86,6 @@ public class PaytrailStatusCheckController {
 
         LocalDateTime createdAfterDateTime = null;
         LocalDateTime createdBeforeDateTime = null;
-        LocalDateTime startDate = LocalDateTime.now();
         // Define date-time formatter
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
@@ -96,7 +95,7 @@ public class PaytrailStatusCheckController {
             createdAfterDateTime = LocalDateTime.parse(createdAfter, formatter);
         } else {
             // startdatetime not provided, check for today
-            createdAfterDateTime = startDate.with(ChronoField.NANO_OF_DAY, LocalTime.MIDNIGHT.toNanoOfDay());
+            createdAfterDateTime = LocalDateTime.now().minusDays(1);
         }
 
         if( createdBefore != null )
@@ -114,61 +113,67 @@ public class PaytrailStatusCheckController {
 
             // get paytrail statuses for payments
             for( CheckPaymentDto payment : payments ) {
-                // get product id from first paymentItem
-                List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
-                if( items.size() > 0) {
-                    log.info("Synchronizing payments between {} and {}", createdAfterDateTime, createdBeforeDateTime);
-                    String productId = items.get(0).getProductId();
+                try {
+                    // get product id from first paymentItem
+                    List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
+                    if (items.size() > 0) {
+                        log.info("Synchronizing payments between {} and {}", createdAfterDateTime, createdBeforeDateTime);
+                        String productId = items.get(0).getProductId();
 
-                    // get merchant id for payment from product mapping
-                    JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/get?productId=" + productId);
-                    ProductMappingDto productMapping = objectMapper.readValue(productMappingResponse.toString(), ProductMappingDto.class);
-                    String merchantId = productMapping.getMerchantId();
+                        // get merchant id for payment from product mapping
+                        JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/get?productId=" + productId);
+                        ProductMappingDto productMapping = objectMapper.readValue(productMappingResponse.toString(), ProductMappingDto.class);
+                        String merchantId = productMapping.getMerchantId();
 
-                    // get paytrail payment status
-                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), merchantId);
+                        // get paytrail payment status
+                        PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), merchantId);
 
-                    if( payment.getPaymentProviderStatus().isEmpty() || !payment.getPaymentProviderStatus().equals(paytrailPayment.status) ) {
-                        log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
+                        if (payment.getPaymentProviderStatus().isEmpty() || !payment.getPaymentProviderStatus().equals(paytrailPayment.status)) {
+                            log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
 
-                        PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(true, paytrailPayment.status, null);
-                        if ( payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)){
+                            PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(true, paytrailPayment.status, null);
+                            if (payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)) {
 
-                            // for mit charge we do not do retries
-                            paymentReturnDto.setCanRetry(false);
+                                // for mit charge we do not do retries
+                                paymentReturnDto.setCanRetry(false);
+                            }
+                            onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
+                            Payment updatedPayment = paymentPaytrailService.updatePaymentWithPaytrailPayment(payment.getPaymentId(), paytrailPayment);
+
+                            String updateText = "New status: " + updatedPayment.getStatus() + ". New payment provider status: " + updatedPayment.getPaymentProviderStatus();
+
+                            // log new values to history table
+                            saveHistoryService.saveCustomPaymentMessageHistory(PaymentMessage.builder()
+                                            .orderId(payment.getOrderId())
+                                            .paymentId(payment.getPaymentId())
+                                            .namespace(payment.getNamespace())
+                                            .eventType("PAYMENT_STATUS_CHECK_UPDATE")
+                                            .eventTimestamp(LocalDateTime.now().toString())
+                                            .paymentPaidTimestamp(payment.getTimestamp())
+                                            .build(),
+                                    "Payment updated in paytrail status check. " + updateText
+                            );
+                            // add paytrail merchant id
+                            String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, payment.getNamespace(), "merchantPaytrailMerchantId");
+                            payment.setPaytrailMerchantId(paytrailMerchantId);
+
+                            // add to email (include paytrail merchant id)
+                            updatedPayments.add(payment);
+                            log.info("Payment for order {} updated in paytrail status check. {}", payment.getOrderId(), updateText);
+
                         }
-                        onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto);
-                        Payment updatedPayment = paymentPaytrailService.updatePaymentWithPaytrailPayment(payment.getPaymentId(), paytrailPayment);
 
-                        String updateText = "New status: " + updatedPayment.getStatus() + ". New payment provider status: " + updatedPayment.getPaymentProviderStatus();
 
-                        // log new values to history table
-                        saveHistoryService.saveCustomPaymentMessageHistory(PaymentMessage.builder()
-                                .orderId(payment.getOrderId())
-                                .paymentId(payment.getPaymentId())
-                                .namespace(payment.getNamespace())
-                                .eventType("PAYMENT_STATUS_CHECK_UPDATE")
-                                .eventTimestamp(LocalDateTime.now().toString())
-                                .paymentPaidTimestamp(payment.getTimestamp())
-                                .build(),
-                                "Payment updated in paytrail status check. " + updateText
-                        );
-                        // add paytrail merchant id
-                        String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, payment.getNamespace(), "merchantPaytrailMerchantId");
-                        payment.setPaytrailMerchantId(paytrailMerchantId);
-
-                        // add to email (include paytrail merchant id)
-                        updatedPayments.add(payment);
-                        log.info("Payment for order {} updated in paytrail status check. {}", payment.getOrderId(), updateText);
-
+                    } else {
+                        String error = "Payment " + payment.getPaymentId() + " had no items. Not checking status from paytrail";
+                        log.error(error);
+                        // add error to list
+                        errors.add(error);
                     }
-
-
-                } else {
-                    String error = "Payment " + payment.getPaymentId() + " had no items. Not checking status from paytrail";
-                    log.error(error);
-                    // add error to list
-                    errors.add(error);
+                } catch (Exception e) {
+                    String error = "PaytrailPaymentStatusCheck - error processing payment " + payment.getPaymentId() + ".";
+                    log.error("{}\n{}", error, e);
+                    errors.add(error + " " + e.getMessage());
                 }
             }
 
@@ -187,7 +192,7 @@ public class PaytrailStatusCheckController {
             if(!errors.isEmpty()) {
                 sendErrorEmail = true;
                 header += "Errors: " + errors.size();
-                cause += "\nErrors: " + errors;
+                cause += "\n\nErrors: " + errors;
             }
 
 
