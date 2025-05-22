@@ -13,6 +13,7 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.service.dto.CheckPaymentDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
@@ -223,7 +224,7 @@ public class OnlinePaymentService {
             return null;
     }
 
-    public List<PaymentDto> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) throws IOException {
+    public List<CheckPaymentDto> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) throws IOException {
         SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
         BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
 
@@ -235,7 +236,7 @@ public class OnlinePaymentService {
         return searchService.searchAcrossIndexes(
                 List.of("payments"),
                 paymentsQueryBuilder,
-                PaymentDto.class
+                CheckPaymentDto.class
         );
     }
 

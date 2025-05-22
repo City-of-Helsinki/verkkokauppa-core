@@ -1,11 +1,12 @@
-package fi.hel.verkkokauppa.payment.api.data;
+package fi.hel.verkkokauppa.common.service.dto;
 
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
-public class PaymentDto {
+public class CheckPaymentDto {
 
 	private String paymentId;
 	private String namespace;
@@ -23,6 +24,10 @@ public class PaymentDto {
 	private String timestamp;
 	private String paymentMethodLabel;
 	private String paytrailTransactionId;
+	private String paymentProviderStatus;
+	private String paytrailMerchantId;
+	private LocalDateTime createdAt;
+	private LocalDateTime paidAt;
 
 	/**
 	 * There is no way to determine in the paytrail return callback methods if a payment is shopInShop payment or not.

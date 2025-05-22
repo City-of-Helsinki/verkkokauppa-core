@@ -7,7 +7,10 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.service.GenerateCsvService;
+import fi.hel.verkkokauppa.common.service.dto.CheckPaymentDto;
 import fi.hel.verkkokauppa.payment.api.cron.dto.SynchronizeResultDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentDto;
 import fi.hel.verkkokauppa.payment.api.data.PaymentReturnDto;
@@ -44,6 +47,9 @@ import java.util.List;
 public class PaytrailStatusCheckController {
 
     @Autowired
+    private GenerateCsvService generateCsvService;
+
+    @Autowired
     private RestServiceClient restServiceClient;
 
     @Autowired
@@ -61,19 +67,22 @@ public class PaytrailStatusCheckController {
     @Autowired
     private SendNotificationService sendNotificationService;
 
+    @Autowired
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
+
     @Value("${productmapping.service.url:http://product-mapping-api:8080/productmapping/}")
     private String productMappingServiceUrl;
 
 
     @GetMapping(value = "/synchronize-paytrail-status", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<SynchronizeResultDto>> checkAndSynchronizePaytrailStatus(
+    public ResponseEntity<String> checkAndSynchronizePaytrailStatus(
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
         boolean sendErrorEmail = false;
         ObjectMapper objectMapper = new ObjectMapper();
         List<String> errors = new ArrayList();
-        List<String> updatedPayments = new ArrayList();
+        List<CheckPaymentDto> updatedPayments = new ArrayList();
 
         LocalDateTime createdAfterDateTime = null;
         LocalDateTime createdBeforeDateTime = null;
@@ -101,10 +110,10 @@ public class PaytrailStatusCheckController {
 
         try {
             // get list of payments to synchronize
-            List<PaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdBeforeDateTime);
+            List<CheckPaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdBeforeDateTime);
 
             // get paytrail statuses for payments
-            for( PaymentDto payment : payments ) {
+            for( CheckPaymentDto payment : payments ) {
                 // get product id from first paymentItem
                 List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
                 if( items.size() > 0) {
@@ -114,9 +123,10 @@ public class PaytrailStatusCheckController {
                     // get merchant id for payment from product mapping
                     JSONObject productMappingResponse = restServiceClient.makeAdminGetCall(productMappingServiceUrl + "/get?productId=" + productId);
                     ProductMappingDto productMapping = objectMapper.readValue(productMappingResponse.toString(), ProductMappingDto.class);
+                    String merchantId = productMapping.getMerchantId();
 
                     // get paytrail payment status
-                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), productMapping.getMerchantId());
+                    PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), merchantId);
 
                     if( payment.getPaymentProviderStatus().isEmpty() || !payment.getPaymentProviderStatus().equals(paytrailPayment.status) ) {
                         log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
@@ -137,16 +147,19 @@ public class PaytrailStatusCheckController {
                                 .orderId(payment.getOrderId())
                                 .paymentId(payment.getPaymentId())
                                 .namespace(payment.getNamespace())
-                                .eventType("PAYTRAIL_STATUS_CHECK")
+                                .eventType("PAYMENT_STATUS_CHECK_UPDATE")
                                 .eventTimestamp(LocalDateTime.now().toString())
                                 .paymentPaidTimestamp(payment.getTimestamp())
                                 .build(),
                                 "Payment updated in paytrail status check. " + updateText
                         );
+                        // add paytrail merchant id
+                        String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, payment.getNamespace(), "merchantPaytrailMerchantId");
+                        payment.setPaytrailMerchantId(paytrailMerchantId);
 
                         // add to email (include paytrail merchant id)
-                        // TODO: add paytrail merchant id
-                        updatedPayments.add("Payment for order " + payment.getOrderId() + " updated in paytrail status check. " + updateText);
+                        updatedPayments.add(payment);
+                        log.info("Payment for order {} updated in paytrail status check. {}", payment.getOrderId(), updateText);
 
                     }
 
@@ -162,28 +175,32 @@ public class PaytrailStatusCheckController {
             String message = "";
             String cause = "";
             String header = "Paytrail status check - ";
-            if( updatedPayments.size() > 0 ) {
+            if(!updatedPayments.isEmpty()) {
                 sendErrorEmail = true;
                 header += "Updated payments: " + updatedPayments.size();
-                message += "Updated " + updatedPayments.size() + "payments";
+                message += "Updated " + updatedPayments.size() + " payments";
                 // TODO: create csv data common service
-                cause += updatedPayments.toString();
+                cause += generateCsvService.generateCsvData(updatedPayments);
+                log.info("Payment for order {} updated in paytrail status check. \n{}", cause);
             }
 
-            if( errors.size() > 0 ) {
+            if(!errors.isEmpty()) {
                 sendErrorEmail = true;
                 header += "Errors: " + errors.size();
+                cause += "\nErrors: " + errors;
             }
 
 
-            // send error notification email
-            sendNotificationService.sendErrorNotification(
-                    message,
-                    cause,
-                    header
-            );
+            if(sendErrorEmail) {
+                // send error notification email
+                sendNotificationService.sendErrorNotification(
+                        message,
+                        cause,
+                        header
+                );
+            }
 
-            return ResponseEntity.ok().body(null);
+            return ResponseEntity.ok().body(cause);
 
         } catch (CommonApiException cae) {
             // TODO: check if need to send error notification email
