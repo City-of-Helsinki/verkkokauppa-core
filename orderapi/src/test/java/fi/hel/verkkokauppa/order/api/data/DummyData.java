@@ -79,14 +79,18 @@ public abstract class DummyData {
         return orders;
     }
 
-    public OrderItem generateDummyOrderItem(Order order) {
+    public OrderItem generateDummyOrderItem(Order order){
+        return generateDummyOrderItem(order, "9876", "8a8674ed-1ae2-3ca9-a93c-036478b2a032");
+    }
+
+    public OrderItem generateDummyOrderItem(Order order, String merchantId, String productId) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
         //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
         return new OrderItem(
                 orderItemId,
                 order.getOrderId(),
-                "9876",
-                "8a8674ed-1ae2-3ca9-a93c-036478b2a032",
+                merchantId,
+                productId,
                 "productName",
                 "productLabel",
                 "productDescription",
@@ -173,11 +177,15 @@ public abstract class DummyData {
         );
     }
 
-    public List<OrderItem> generateDummyOrderItemList(Order order,int itemCount) {
+    public List<OrderItem> generateDummyOrderItemList(Order order,int itemCount){
+        return generateDummyOrderItemList(order, itemCount, "9876", "8a8674ed-1ae2-3ca9-a93c-036478b2a032");
+    }
+
+    public List<OrderItem> generateDummyOrderItemList(Order order,int itemCount, String merchantId, String productId) {
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (int i = 0; i < itemCount; i++) {
-            orderItems.add(generateDummyOrderItem(order));
+            orderItems.add(generateDummyOrderItem(order, merchantId, productId));
         }
 
         return orderItems;

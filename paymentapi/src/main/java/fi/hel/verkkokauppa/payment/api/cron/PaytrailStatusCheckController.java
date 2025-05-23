@@ -21,6 +21,7 @@ import fi.hel.verkkokauppa.payment.paytrail.PaytrailPaymentStatusClient;
 import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.json.JSONObject;
@@ -74,9 +75,11 @@ public class PaytrailStatusCheckController {
     private String productMappingServiceUrl;
 
 
-    @GetMapping(value = "/synchronize-paytrail-payment-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/synchronize-paytrail-payment-status", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> checkAndSynchronizePaytrailPaymentStatus(
+            @Parameter( description = "Datetime after which to check the payments. Defaults to one day ago. Example: 2025-05-10T00:00:00" )
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
+            @Parameter( description = "Datetime before which to check the payments. Defaults to now - 5 minutes. Example 2025-05-12T12:00:00" )
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
         boolean sendErrorEmail = false;
@@ -158,6 +161,9 @@ public class PaytrailStatusCheckController {
                             payment.setPaytrailMerchantId(paytrailMerchantId);
 
                             // add to email (include paytrail merchant id)
+                            payment.setPaidAt(updatedPayment.getPaidAt());
+                            payment.setStatus(updatedPayment.getStatus());
+                            payment.setPaymentProviderStatus(updatedPayment.getPaymentProviderStatus());
                             updatedPayments.add(payment);
                             log.info("Payment for order {} updated in paytrail status check. {}", payment.getOrderId(), updateText);
 
@@ -179,11 +185,11 @@ public class PaytrailStatusCheckController {
 
             String message = "";
             String cause = "";
-            String header = "Paytrail status check - ";
+            String header = "Paytrail status check";
             if(!updatedPayments.isEmpty()) {
                 sendErrorEmail = true;
-                header += "Updated payments: " + updatedPayments.size();
-                message += "Updated " + updatedPayments.size() + " payments";
+                header += " - Updated payments: " + updatedPayments.size();
+                message += "Updated " + updatedPayments.size() + " payments ";
                 // TODO: create csv data common service
                 cause += generateCsvService.generateCsvData(updatedPayments);
                 log.info("Payment for order {} updated in paytrail status check. \n{}", cause);
@@ -191,8 +197,8 @@ public class PaytrailStatusCheckController {
 
             if(!errors.isEmpty()) {
                 sendErrorEmail = true;
-                header += "Errors: " + errors.size();
-                cause += "\n\nErrors: " + errors;
+                header += " - Errors: " + errors.size();
+                cause += "\n\nErrors:\n" + errors;
             }
 
 

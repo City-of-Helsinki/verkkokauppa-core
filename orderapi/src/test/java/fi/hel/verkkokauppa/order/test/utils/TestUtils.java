@@ -219,12 +219,16 @@ public class TestUtils extends DummyData {
         return refundController.createRefund(refundAggregateDto);
     }
 
-    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId) {
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId){
+        return createNewOrderToDatabase(itemCount, merchantId, "venepaikat", "8a8674ed-1ae2-3ca9-a93c-036478b2a032");
+    }
+
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId, String namespace, String productId) {
         Order order = generateDummyOrder();
 
-        order.setNamespace("venepaikat");
+        order.setNamespace(namespace);
         order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
-        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount, merchantId, productId);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
         orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
         orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
