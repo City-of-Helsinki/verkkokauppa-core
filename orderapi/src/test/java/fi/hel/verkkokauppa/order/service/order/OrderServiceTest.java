@@ -640,10 +640,11 @@ class OrderServiceTest extends TestUtils {
     @Test
     @RunIfProfile(profile = "local")
     void createOrderWithMerchantId() throws JsonProcessingException {
+        String namespace = "venepaikat";
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
-        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032").getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();

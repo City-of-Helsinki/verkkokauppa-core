@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.RefundMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.history.dto.HistoryDto;
 import fi.hel.verkkokauppa.common.history.factory.HistoryFactory;
 import fi.hel.verkkokauppa.common.history.util.HistoryUtil;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
@@ -86,6 +87,19 @@ public class SaveHistoryService {
             return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
         } catch (Exception e) {
             log.info("saveInvoicedEmailHistory processing error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public JSONObject saveCustomPaymentMessageHistory(PaymentMessage message, String description){
+        try {
+            HistoryDto historyDto = historyFactory.fromPaymentMessage(message);
+            historyDto.setDescription(description);
+            String request = historyUtil.toString(historyDto);
+
+            return restServiceClient.makePostCall(serviceUrls.getHistoryServiceUrl() + "/history/create",request);
+        } catch (Exception e) {
+            log.info("saveCustomPaymentMessageHistory processing error: " + e.getMessage());
         }
         return null;
     }
