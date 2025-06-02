@@ -33,7 +33,7 @@ public abstract class BaseEmailNotifier<T> {
 
     protected void sendNotificationToEmail(String id, String receiver, String header, String eventType, String generalInfo, String callstack, T eventPayload) throws IOException {
 
-        if(header==null || header.isEmpty()){
+        if(header == null || header.isEmpty()){
             header = eventType;
         }
 
