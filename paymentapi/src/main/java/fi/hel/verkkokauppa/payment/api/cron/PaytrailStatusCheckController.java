@@ -150,7 +150,7 @@ public class PaytrailStatusCheckController {
                     log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
 
                     PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(true, paytrailPayment.status, null);
-                    if (!payment.getStatus().isEmpty() && payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)) {
+                    if (payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)) {
 
                         // for mit charge we do not do retries
                         paymentReturnDto.setCanRetry(false);
