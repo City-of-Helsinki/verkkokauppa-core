@@ -135,10 +135,6 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
         Refund refund2 = createTestRefund(order2.getOrderId());
         Refund refund3 = createTestRefund(order3.getOrderId());
 
-
-        // get number of emails before test
-//        int totalMailsBefore = testUtils.mailHoqMessageCount();
-
         // set order 1 to be accounted
         setAccounted(order1);
 
@@ -159,62 +155,10 @@ public class MissingRefundAccountingFinderControllerTest extends DummyData {
                 "project 1",
                 "Area A"
         );
-        createTestRefundItemAccounting(
-                refund1.getRefundId(),
-                order1.getOrderId(),
-                "20", "10", "10",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 2",
-                "Area B"
-        );
-        createTestRefundItemAccounting(
-                refund1.getRefundId(),
-                order1.getOrderId(),
-                "30", "20", "10",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 2",
-                "Area B"
-        );
-        createTestRefundItemAccounting(
-                refund1.getRefundId(),
-                order1.getOrderId(),
-                "50", "35", "15",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 3",
-                "Area A"
-        );
         //
         // second company code
         //
         String companyCode2 = "5678";
-        createTestRefundItemAccounting(
-                refund2.getRefundId(),
-                order2.getOrderId(),
-                "10", "5", "5",
-                companyCode2,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter3",
-                "project 2",
-                "Area B"
-        );
         createTestRefundItemAccounting(
                 refund2.getRefundId(),
                 order2.getOrderId(),

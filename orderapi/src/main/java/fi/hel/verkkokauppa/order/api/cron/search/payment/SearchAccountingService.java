@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,20 +25,32 @@ public class SearchAccountingService {
     private QueryService queryService;
 
     public Set<String> getAccountedOrderIds(List<String> paidOrderIds) throws IOException {
-        SearchSourceBuilder orderAccountingsQueryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder orderAccountingsQuery = QueryBuilders.boolQuery();
+        final int CHUNK_SIZE = 500;
+        Set<String> accountedOrderIds = new HashSet<>();
 
-        queryService.createOrderIdShouldQuery(paidOrderIds, orderAccountingsQuery);
+        for (int i = 0; i < paidOrderIds.size(); i += CHUNK_SIZE) {
+            int end = Math.min(paidOrderIds.size(), i + CHUNK_SIZE);
+            List<String> chunk = paidOrderIds.subList(i, end);
 
-        orderAccountingsQueryBuilder.query(orderAccountingsQuery);
-        List<OrderAccounting> foundOrderAccountings = searchService.searchAcrossIndexes(
-                List.of("orderaccountings"),
-                orderAccountingsQueryBuilder,
-                OrderAccounting.class
-        );
+            SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
 
-        return foundOrderAccountings.stream()
-                .map(OrderAccounting::getOrderId)
-                .collect(Collectors.toSet());
+            queryService.createOrderIdShouldQuery(chunk, query);
+
+            queryBuilder.query(query);
+            List<OrderAccounting> results = searchService.searchAcrossIndexes(
+                    List.of("orderaccountings"),
+                    queryBuilder,
+                    OrderAccounting.class
+            );
+
+            accountedOrderIds.addAll(
+                    results.stream()
+                            .map(OrderAccounting::getOrderId)
+                            .collect(Collectors.toSet())
+            );
+        }
+
+        return accountedOrderIds;
     }
 }

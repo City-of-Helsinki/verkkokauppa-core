@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,17 +23,28 @@ public class SearchRefundPaymentService {
     private QueryService queryService;
 
     public List<RefundResultDto> findRefundsByStatusAndOrderIds(List<String> orderIds, String refundStatus) throws IOException {
-        SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder query = QueryBuilders.boolQuery();
+        final int CHUNK_SIZE = 1;
+        List<RefundResultDto> allResults = new ArrayList<>();
 
-        query.must(QueryBuilders.termQuery("status", refundStatus));
-        queryService.createOrderIdShouldQuery(orderIds, query);
+        for (int i = 0; i < orderIds.size(); i += CHUNK_SIZE) {
+            int end = Math.min(orderIds.size(), i + CHUNK_SIZE);
+            List<String> chunk = orderIds.subList(i, end);
 
-        queryBuilder.query(query);
-        return searchService.searchAcrossIndexes(
-                List.of("refund_payments"),
-                queryBuilder,
-                RefundResultDto.class
-        );
+            SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
+            BoolQueryBuilder query = QueryBuilders.boolQuery();
+
+            query.must(QueryBuilders.termQuery("status", refundStatus));
+            queryService.createOrderIdShouldQuery(chunk, query);
+
+            queryBuilder.query(query);
+            List<RefundResultDto> results = searchService.searchAcrossIndexes(
+                    List.of("refund_payments"),
+                    queryBuilder,
+                    RefundResultDto.class
+            );
+            allResults.addAll(results);
+        }
+
+        return allResults;
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,17 +23,29 @@ public class SearchPaymentService {
     private QueryService queryService;
 
     public List<PaymentResultDto> findPaymentsByStatusAndOrderIds(List<String> orderIds, String paymentStatus) throws IOException {
-        SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
+        final int CHUNK_SIZE = 500;
+        List<PaymentResultDto> allResults = new ArrayList<>();
 
-        paymentsQuery.must(QueryBuilders.termQuery("status", paymentStatus));
-        queryService.createOrderIdShouldQuery(orderIds, paymentsQuery);
+        for (int i = 0; i < orderIds.size(); i += CHUNK_SIZE) {
+            int end = Math.min(orderIds.size(), i + CHUNK_SIZE);
+            List<String> chunk = orderIds.subList(i, end);
 
-        paymentsQueryBuilder.query(paymentsQuery);
-        return searchService.searchAcrossIndexes(
-                List.of("payments"),
-                paymentsQueryBuilder,
-                PaymentResultDto.class
-        );
+            SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
+            BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
+
+            paymentsQuery.must(QueryBuilders.termQuery("status", paymentStatus));
+            queryService.createOrderIdShouldQuery(chunk, paymentsQuery);
+
+            paymentsQueryBuilder.query(paymentsQuery);
+            List<PaymentResultDto> results = searchService.searchAcrossIndexes(
+                    List.of("payments"),
+                    paymentsQueryBuilder,
+                    PaymentResultDto.class
+            );
+
+            allResults.addAll(results);
+        }
+
+        return allResults;
     }
 }
