@@ -89,16 +89,14 @@ public class PaytrailStatusCheckController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
         // Parse the parameters if they are provided
-        if( createdAfter != null )
-        {
+        if ( createdAfter != null ) {
             createdAfterDateTime = LocalDateTime.parse(createdAfter, formatter);
         } else {
             // startdatetime not provided, check for today
             createdAfterDateTime = LocalDateTime.now().minusDays(1);
         }
 
-        if( createdBefore != null )
-        {
+        if ( createdBefore != null ) {
             createdBeforeDateTime = LocalDateTime.parse(createdBefore, formatter);
         } else {
             // enddatetime not provided, check for today
@@ -144,6 +142,7 @@ public class PaytrailStatusCheckController {
                     PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), merchantId);
 
                     if (!payment.getPaymentProviderStatus().isEmpty() && payment.getPaymentProviderStatus().equals(paytrailPayment.status)){
+                        log.info("Payment provider status has not changed for payment {}, skipping paytrail status check for this", payment.getPaymentId());
                         continue;
                     }
 
@@ -183,7 +182,7 @@ public class PaytrailStatusCheckController {
                     log.info("Payment for order {} updated in paytrail status check. {}", payment.getOrderId(), updateText);
 
                 } catch (Exception e) {
-                    String error = "PaytrailPaymentStatusCheck - error processing payment " + payment.getPaymentId() + ".";
+                    String error = "PaytrailPaymentStatusCheck - error processing payment " + payment.getPaymentId();
                     log.error("{}\n{}", error, e);
                     errors.add(error + " " + e.getMessage());
                 }
