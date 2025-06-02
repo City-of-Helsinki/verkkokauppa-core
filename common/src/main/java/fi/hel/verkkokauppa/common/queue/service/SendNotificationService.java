@@ -120,12 +120,21 @@ public class SendNotificationService {
             String message,
             String cause
     ) {
+        sendErrorNotification(message, cause, EventType.ERROR_EMAIL_NOTIFICATION);
+    }
+
+    public void sendErrorNotification(
+            String message,
+            String cause,
+            String header
+    ) {
         String toQueue = queueConfigurations.getErrorEmailNotificationsQueue();
         try {
             ActiveMQQueue queue = new ActiveMQQueue(toQueue);
             ErrorMessage queueMessage = ErrorMessage.builder()
                     .eventType(EventType.ERROR_EMAIL_NOTIFICATION)
                     .eventTimestamp(DateTimeUtil.getDateTime())
+                    .header(header)
                     .message(message)
                     .cause(cause)
                     .build();
