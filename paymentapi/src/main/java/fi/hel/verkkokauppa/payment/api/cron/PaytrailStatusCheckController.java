@@ -141,7 +141,7 @@ public class PaytrailStatusCheckController {
                     // get paytrail payment status
                     PaytrailPayment paytrailPayment = paymentPaytrailService.getPaytrailPayment(payment.getPaytrailTransactionId(), payment.getNamespace(), merchantId);
 
-                    if (!payment.getPaymentProviderStatus().isEmpty() && payment.getPaymentProviderStatus().equals(paytrailPayment.status)){
+                    if (payment.getPaymentProviderStatus() != null && payment.getPaymentProviderStatus().equals(paytrailPayment.status)){
                         log.info("Payment provider status has not changed for payment {}, skipping paytrail status check for this", payment.getPaymentId());
                         continue;
                     }
@@ -149,7 +149,7 @@ public class PaytrailStatusCheckController {
                     log.info("Payment provider status has changed for payment {}. New status: {}", payment.getPaymentId(), paytrailPayment.getStatus());
 
                     PaymentReturnDto paymentReturnDto = paytrailPaymentReturnValidator.validateReturnValues(true, paytrailPayment.status, null);
-                    if (!payment.getStatus().isEmpty() && payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)) {
+                    if (payment.getStatus() != null && payment.getStatus().equals(PaymentStatus.CREATED_FOR_MIT_CHARGE)) {
 
                         // for mit charge we do not do retries
                         paymentReturnDto.setCanRetry(false);
@@ -189,7 +189,6 @@ public class PaytrailStatusCheckController {
             }
 
             String response = paytrailStatusCheckService.sendPaytrailStatusCheckReport(updatedPayments, errors);
-
             return ResponseEntity.ok().body(response);
 
         } catch (CommonApiException cae) {
