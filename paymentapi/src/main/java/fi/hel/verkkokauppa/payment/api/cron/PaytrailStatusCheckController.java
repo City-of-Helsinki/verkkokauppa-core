@@ -46,6 +46,7 @@ import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -80,8 +81,8 @@ public class PaytrailStatusCheckController {
             @Parameter( description = "Datetime before which to check the payments. Defaults to now - 5 minutes. Example 2025-05-12T12:00:00" )
             @RequestParam(value = "createdBefore", required = false) String createdBefore
     ) {
-        List<String> errors = new ArrayList();
-        List<CheckPaymentDto> updatedPayments = new ArrayList();
+        List<String> errors = new ArrayList<>();
+        List<CheckPaymentDto> updatedPayments = new ArrayList<>();
 
         LocalDateTime createdAfterDateTime = null;
         LocalDateTime createdBeforeDateTime = null;
@@ -106,19 +107,18 @@ public class PaytrailStatusCheckController {
 
         try {
             // get list of payments to synchronize
-            List<CheckPaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdBeforeDateTime);
+            List<CheckPaymentDto> payments = onlinePaymentService.getUnpaidPaymentsToCheck(createdAfterDateTime, createdBeforeDateTime)
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             // get paytrail statuses for payments
             for( CheckPaymentDto payment : payments ) {
                 try {
-                    if( payment == null ){
-                        continue;
-                    }
-
                     // get product id from first paymentItem
                     List<PaymentItem> items = onlinePaymentService.getPaymentItemsForPayment(payment.getPaymentId());
 
-                    if (items.size() <= 0) {
+                    if (items.isEmpty()) {
                         String error = "Payment " + payment.getPaymentId() + " had no items. Not checking status from paytrail";
                         log.error(error);
                         // add error to list
@@ -127,7 +127,7 @@ public class PaytrailStatusCheckController {
                     }
 
                     log.info("Synchronizing payments between {} and {}", createdAfterDateTime, createdBeforeDateTime);
-//                    String productId = items.get(0).getProductId();
+
                     String productId = items.stream()
                             .filter(Objects::nonNull)
                             .map(PaymentItem::getProductId)
