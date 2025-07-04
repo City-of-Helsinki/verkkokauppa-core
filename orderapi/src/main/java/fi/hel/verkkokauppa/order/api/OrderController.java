@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderStatus;
 import fi.hel.verkkokauppa.order.service.CommonBeanValidationService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoiceService;
+import fi.hel.verkkokauppa.order.service.invoice.OrderItemInvoicingService;
 import fi.hel.verkkokauppa.order.service.order.FlowStepService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
@@ -88,6 +89,9 @@ public class OrderController {
 
     @Autowired
     private OrderTransformer orderTransformer;
+
+    @Autowired
+    private OrderItemInvoicingService orderItemInvoicingService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -180,7 +184,26 @@ public class OrderController {
             Order order = orderService.findByIdValidateByUser(orderId, userId);
 
             orderService.cancel(order);
+
+            orderItemInvoicingService.cancelOrderItemInvoicings(orderId);
+
             return orderAggregateDto(orderId);
+
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("canceling order failed, orderId: " + orderId, e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-cancel-order", "failed to cancel order with id [" + orderId + "]")
+            );
+        }
+    }
+
+    @GetMapping(value = "/order/check/can-cancel", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Boolean> canCancelOrder(@RequestParam(value = "orderId") String orderId) {
+        try {
+            return ResponseEntity.ok(orderItemInvoicingService.canCancel(orderId));
 
         } catch (CommonApiException cae) {
             throw cae;

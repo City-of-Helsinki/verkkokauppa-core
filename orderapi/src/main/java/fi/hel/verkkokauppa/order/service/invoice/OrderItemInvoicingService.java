@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.invoice;
 
+import fi.hel.verkkokauppa.common.constants.TypePrefix;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -82,4 +83,42 @@ public class OrderItemInvoicingService {
         }
         return filteredInvoicings;
     }
+
+    public Boolean canCancel(String orderId){
+        List<OrderItemInvoicing> orderItemInvoicings = orderItemInvoicingRepository.findByOrderId(orderId);
+
+        if( orderItemInvoicings == null || orderItemInvoicings.isEmpty() ){
+            // no order item invoicings, no reason why could not be cancelled
+            return true;
+        }
+
+        for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
+            if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
+                // there is something that can be cancelled
+                return true;
+            }
+        }
+        log.debug("Order has nothing to cancel. OrderId: {}", orderId);
+        return false;
+    }
+
+    public void cancelOrderItemInvoicings(String orderId){
+        List<OrderItemInvoicing> orderItemInvoicings = orderItemInvoicingRepository.findByOrderId(orderId);
+
+        if( orderItemInvoicings == null || orderItemInvoicings.isEmpty() ){
+            // no order item invoicings to cancel
+            return;
+        }
+
+        log.debug("Cancelling order item invoicings for order: {}", orderId);
+        for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
+            if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
+                // there is something that can be cancelled
+                orderItemInvoicing.setStatus(OrderItemInvoicingStatus.CANCELLED);
+                save(orderItemInvoicing);
+            }
+        }
+    }
+
+
 }
