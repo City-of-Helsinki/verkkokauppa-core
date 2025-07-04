@@ -98,7 +98,7 @@ public class OrderItemInvoicingService {
                 return true;
             }
         }
-        log.debug("Order has nothing to cancel. OrderId: {}", orderId);
+        log.info("Order has nothing to cancel. OrderId: {}", orderId);
         return false;
     }
 
@@ -110,9 +110,12 @@ public class OrderItemInvoicingService {
             return;
         }
 
-        log.debug("Cancelling order item invoicings for order: {}", orderId);
+        log.info("Cancelling order item invoicings for order: {}", orderId);
         for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
-            if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
+            if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.INVOICED )){
+              log.info("Cancelling order {} but order item invoincing {} is already invoiced!", orderId, orderItemInvoicing.getOrderItemId());
+            }
+            else if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
                 // there is something that can be cancelled
                 orderItemInvoicing.setStatus(OrderItemInvoicingStatus.CANCELLED);
                 save(orderItemInvoicing);
