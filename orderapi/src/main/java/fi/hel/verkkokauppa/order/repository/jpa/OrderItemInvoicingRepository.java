@@ -11,4 +11,5 @@ import java.util.List;
 @Repository
 public interface OrderItemInvoicingRepository extends ElasticsearchRepository<OrderItemInvoicing, String> {
     List<OrderItemInvoicing> findAllByInvoicingDateLessThanEqualAndStatus(LocalDate invoicingDate, OrderItemInvoicingStatus status);
+    List<OrderItemInvoicing> findByOrderId(String orderId);
 }
