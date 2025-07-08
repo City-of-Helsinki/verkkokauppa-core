@@ -149,7 +149,7 @@ public class CreateOrderFromSubscriptionCommand {
             // resolve price and update prices
             subscription = setUpdateSubscriptionPricesFromMerchant(subscriptionDto, namespace, user, subscriptionId, subscription);
         } catch (Exception e){
-            log.error("Subscription renewal failed while updating subscription information.",e);
+            log.error("Subscription renewal failed while updating subscription information. Subscription id: {}", subscriptionDto.getSubscriptionId(), e);
             // if resolve product/price fails then do not complete the subscription renewal
             return null;
         }
