@@ -8,4 +8,5 @@ import lombok.Getter;
 public class ErrorNotificationDto {
     private String message;
     private String cause;
+    private String header;
 }

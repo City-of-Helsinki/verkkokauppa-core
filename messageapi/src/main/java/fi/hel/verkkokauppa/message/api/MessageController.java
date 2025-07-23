@@ -52,7 +52,7 @@ public class MessageController {
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/errorNotification", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> sendErrorNotification(@RequestBody ErrorNotificationDto dto) {
         try {
-            sendNotificationService.sendErrorNotification(dto.getMessage(), dto.getCause());
+            sendNotificationService.sendErrorNotification(dto.getMessage(), dto.getCause(), dto.getHeader());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (CommonApiException cae) {
             throw cae;
