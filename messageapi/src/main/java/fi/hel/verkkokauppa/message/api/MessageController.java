@@ -4,7 +4,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.message.constants.ApiUrls;
-import fi.hel.verkkokauppa.message.dto.ErrorNotificationDto;
+import fi.hel.verkkokauppa.common.rest.dto.ErrorNotificationDto;
 import fi.hel.verkkokauppa.message.dto.MessageDto;
 import fi.hel.verkkokauppa.message.model.Message;
 import fi.hel.verkkokauppa.message.service.MessageService;

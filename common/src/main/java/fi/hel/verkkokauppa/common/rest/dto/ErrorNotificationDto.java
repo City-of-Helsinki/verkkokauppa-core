@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.message.dto;
+package fi.hel.verkkokauppa.common.rest.dto;
 
 import lombok.Data;
 import lombok.Getter;
