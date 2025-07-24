@@ -482,10 +482,20 @@ public class OrderService {
                 }});
 
             // build list of product id:s
+            String productIds = "";
+            List<OrderItemDto> items = orderDto.getItems();
+            if (!items.isEmpty()) {
+                for(int i = 0; i < items.size(); i++){
+                    if( i > 0 ){
+                        productIds = productIds.concat(", ");
+                    }
+                    productIds = productIds.concat(items.get(i).getProductId());
+                }
+            }
 
             // construct additional test message for notification
             String extraText = String.format(
-                    "\n\nOrder id: %s\nPayment id: %s\nPaytrail Payment id: %s\nPayment status: %s\nPaid At: %s\nPayment Method: %s\nNamespace: %s\nMerchant Id: %s\nPaytrail Transaction Id: %s",
+                    "\n\nOrder id: %s\nPayment id: %s\nPaytrail Payment id: %s\nPayment status: %s\nPaid At: %s\nPayment Method: %s\nNamespace: %s\nMerchant Id: %s\nPaytrail Transaction Id: %s\nProduct Ids: %s",
                     orderDto.getOrder().getOrderId(),
                     paymentDto.getPaymentId() != null ? paymentDto.getPaymentId() : "N/A",
                     paytrailMerchantId.get() != null ? paytrailMerchantId : "N/A",
@@ -493,8 +503,9 @@ public class OrderService {
                     paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : "N/A",
                     paymentDto.getPaymentMethod() != null ? paymentDto.getPaymentMethod() : "N/A",
                     namespace != null ? namespace : "N/A",
-                    merchantId != null ? namespace : "N/A",
-                    paymentDto.getPaytrailTransactionId() != null ? paymentDto.getPaytrailTransactionId() : "N/A");
+                    merchantId != null ? merchantId : "N/A",
+                    paymentDto.getPaytrailTransactionId() != null ? paymentDto.getPaytrailTransactionId() : "N/A",
+                    !productIds.isEmpty() ? productIds : "N/A");
 
 
             return extraText;
