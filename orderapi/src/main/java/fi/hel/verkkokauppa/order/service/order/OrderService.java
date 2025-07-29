@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -9,6 +11,10 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.id.IncrementId;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
+import fi.hel.verkkokauppa.common.rest.dto.payment.PaymentDto;
 import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -23,6 +29,7 @@ import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.GetSubscriptionQuery;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +46,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -91,6 +99,18 @@ public class OrderService {
 
     @Autowired
     private SendNotificationService sendNotificationService;
+
+    @Autowired
+    private RestServiceClient restServiceClient;
+
+    private final ServiceUrls serviceUrls;
+
+    @Autowired
+    CommonServiceConfigurationClient commonServiceConfigurationClient;
+
+    public OrderService(ServiceUrls serviceUrls) {
+        this.serviceUrls = serviceUrls;
+    }
 
     public ResponseEntity<OrderAggregateDto> orderAggregateDto(String orderId) {
         OrderAggregateDto orderAggregateDto = getOrderWithItems(orderId);
@@ -432,5 +452,70 @@ public class OrderService {
                 .filter(id -> id != null && !id.isEmpty())
                 .findFirst()
                 .orElse(null);
+    }
+
+    public String collectDetailedInformationForNotification(String orderId) {
+        try {
+            // Get extra text message from service for detailed order information
+
+            // collect order and merchant data
+
+            // get Order
+            OrderAggregateDto orderDto = orderAggregateDto(orderId).getBody();
+            String namespace = orderDto.getOrder().getNamespace();
+
+            // Get Payment
+            JSONObject paymentResponse = restServiceClient.makeAdminGetCall(serviceUrls.getPaymentServiceUrl() + "/payment-admin/online/get?orderId=" + orderId);
+            ObjectMapper objectMapper = new ObjectMapper();
+            PaymentDto paymentDto = objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
+
+            // Get merchant
+            String merchantId = getFirstMerchantId(orderDto);
+            MerchantDto merchantDto = commonServiceConfigurationClient.getMerchantModel(merchantId, namespace);
+            AtomicReference<String> paytrailMerchantId = new AtomicReference<>();
+
+            merchantDto.getConfigurations().forEach(configuration -> {
+                switch( configuration.getKey().toLowerCase() ){
+                    case "paytrailMerchantId":
+                        paytrailMerchantId.set(configuration.getValue());
+                        break;
+                }});
+
+            // build list of product id:s
+            String productIds = "";
+            List<OrderItemDto> items = orderDto.getItems();
+            if (!items.isEmpty()) {
+                for(int i = 0; i < items.size(); i++){
+                    if( i > 0 ){
+                        productIds = productIds.concat(", ");
+                    }
+                    productIds = productIds.concat(items.get(i).getProductId());
+                }
+            }
+
+            // construct additional test message for notification
+            String extraText = String.format(
+                    "<br><br>Order id: %s<br>Payment id: %s<br>Paytrail Payment id: %s<br>Payment status: %s<br>Paid At: %s<br>Payment Method: %s<br>Namespace: %s<br>Merchant Id: %s<br>Paytrail Transaction Id: %s<br>Product Ids: %s",
+                    orderDto.getOrder().getOrderId(),
+                    paymentDto.getPaymentId() != null ? paymentDto.getPaymentId() : "N/A",
+                    paytrailMerchantId.get() != null ? paytrailMerchantId : "N/A",
+                    paymentDto.getStatus()!= null ? paymentDto.getStatus() : "N/A",
+                    paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : "N/A",
+                    paymentDto.getPaymentMethod() != null ? paymentDto.getPaymentMethod() : "N/A",
+                    namespace != null ? namespace : "N/A",
+                    merchantId != null ? merchantId : "N/A",
+                    paymentDto.getPaytrailTransactionId() != null ? paymentDto.getPaytrailTransactionId() : "N/A",
+                    !productIds.isEmpty() ? productIds : "N/A");
+
+
+            return extraText;
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("Collecting data for error notification failed {}", orderId);
+            Error error = new Error("failed-to-collect-data-for-error-notification", "failed to collect data for error notification");
+            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+        }
+
     }
 }
