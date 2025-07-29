@@ -495,7 +495,7 @@ public class OrderService {
 
             // construct additional test message for notification
             String extraText = String.format(
-                    "\n\nOrder id: %s\nPayment id: %s\nPaytrail Payment id: %s\nPayment status: %s\nPaid At: %s\nPayment Method: %s\nNamespace: %s\nMerchant Id: %s\nPaytrail Transaction Id: %s\nProduct Ids: %s",
+                    "<br><br>Order id: %s<br>Payment id: %s<br>Paytrail Payment id: %s<br>Payment status: %s<br>Paid At: %s<br>Payment Method: %s<br>Namespace: %s<br>Merchant Id: %s<br>Paytrail Transaction Id: %s<br>Product Ids: %s",
                     orderDto.getOrder().getOrderId(),
                     paymentDto.getPaymentId() != null ? paymentDto.getPaymentId() : "N/A",
                     paytrailMerchantId.get() != null ? paytrailMerchantId : "N/A",
