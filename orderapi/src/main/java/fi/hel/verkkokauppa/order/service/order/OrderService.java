@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.order.service.order;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
@@ -13,7 +14,6 @@ import fi.hel.verkkokauppa.common.id.IncrementId;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.dto.payment.PaymentDto;
 import fi.hel.verkkokauppa.common.util.*;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
@@ -46,7 +46,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 
@@ -104,6 +103,9 @@ public class OrderService {
     private RestServiceClient restServiceClient;
 
     private final ServiceUrls serviceUrls;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Autowired
     CommonServiceConfigurationClient commonServiceConfigurationClient;
@@ -465,40 +467,25 @@ public class OrderService {
             String namespace = orderDto.getOrder().getNamespace();
 
             // Get Payment
-            JSONObject paymentResponse = restServiceClient.makeAdminGetCall(serviceUrls.getPaymentServiceUrl() + "/payment-admin/online/get?orderId=" + orderId);
-            ObjectMapper objectMapper = new ObjectMapper();
-            PaymentDto paymentDto = objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
+            PaymentDto paymentDto = getPaymentDtoForErrorNotification(orderId);
+
 
             // Get merchant
             String merchantId = getFirstMerchantId(orderDto);
-            MerchantDto merchantDto = commonServiceConfigurationClient.getMerchantModel(merchantId, namespace);
-            AtomicReference<String> paytrailMerchantId = new AtomicReference<>();
-
-            merchantDto.getConfigurations().forEach(configuration -> {
-                switch( configuration.getKey().toLowerCase() ){
-                    case "paytrailMerchantId":
-                        paytrailMerchantId.set(configuration.getValue());
-                        break;
-                }});
+            String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, "paytrailMerchantId");
 
             // build list of product id:s
-            String productIds = "";
             List<OrderItemDto> items = orderDto.getItems();
-            if (!items.isEmpty()) {
-                for(int i = 0; i < items.size(); i++){
-                    if( i > 0 ){
-                        productIds = productIds.concat(", ");
-                    }
-                    productIds = productIds.concat(items.get(i).getProductId());
-                }
-            }
+            String productIds = items.stream()
+                    .map(OrderItemDto::getProductId) // extract productId
+                    .collect(Collectors.joining(", ")); // join with ", "
 
             // construct additional test message for notification
             String extraText = String.format(
                     "<br><br>Order id: %s<br>Payment id: %s<br>Paytrail Payment id: %s<br>Payment status: %s<br>Paid At: %s<br>Payment Method: %s<br>Namespace: %s<br>Merchant Id: %s<br>Paytrail Transaction Id: %s<br>Product Ids: %s",
                     orderDto.getOrder().getOrderId(),
                     paymentDto.getPaymentId() != null ? paymentDto.getPaymentId() : "N/A",
-                    paytrailMerchantId.get() != null ? paytrailMerchantId : "N/A",
+                    paytrailMerchantId != null ? paytrailMerchantId : "N/A",
                     paymentDto.getStatus()!= null ? paymentDto.getStatus() : "N/A",
                     paymentDto.getPaidAt() != null ? paymentDto.getPaidAt() : "N/A",
                     paymentDto.getPaymentMethod() != null ? paymentDto.getPaymentMethod() : "N/A",
@@ -517,5 +504,16 @@ public class OrderService {
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
 
+    }
+
+    // NOTE!!: does not throw exceptions
+    public PaymentDto getPaymentDtoForErrorNotification(String orderId) {
+        try {
+            JSONObject paymentResponse = restServiceClient.makeAdminGetCall(serviceUrls.getPaymentServiceUrl() + "/payment-admin/online/get?orderId=" + orderId);
+            return objectMapper.readValue(paymentResponse.toString(), PaymentDto.class);
+        } catch (Exception e) {
+            log.error("Error occurred while getting payment for error notification",e);
+        }
+        return null;
     }
 }
