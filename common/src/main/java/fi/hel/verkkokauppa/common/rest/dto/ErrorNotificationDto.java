@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.message.dto;
+package fi.hel.verkkokauppa.common.rest.dto;
 
 import lombok.Data;
 import lombok.Getter;
@@ -8,4 +8,5 @@ import lombok.Getter;
 public class ErrorNotificationDto {
     private String message;
     private String cause;
+    private String header;
 }
