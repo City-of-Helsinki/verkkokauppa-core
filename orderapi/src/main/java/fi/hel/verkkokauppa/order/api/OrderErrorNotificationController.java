@@ -34,13 +34,15 @@ public class OrderErrorNotificationController {
 
             sendNotificationService.sendErrorNotification(dto.getMessage() + extraText, dto.getCause(), dto.getHeader());
             return new ResponseEntity<>(HttpStatus.OK);
-        } catch (CommonApiException cae) {
-            throw cae;
         } catch (Exception e) {
-            log.error("Sending error notification failed {}", dto);
-            Error error = new Error("failed-to-send-error-notification", "failed to send error notification");
-            throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
+            String errorText = String.format(
+                    "Sending error notification with collected order data failed!<br><br>Header: %s<br>Cause: %s<br>Message: %s",
+                    dto.getHeader(),
+                    dto.getCause(),
+                    dto.getMessage());
+            log.error("Sending error notification with order data failed: {}", dto);
+            sendNotificationService.sendErrorNotification(errorText, e.getMessage(),"ERROR - collecting order data and sending error notification failed");
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 }
