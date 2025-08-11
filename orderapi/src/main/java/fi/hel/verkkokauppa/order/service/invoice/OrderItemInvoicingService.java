@@ -112,10 +112,10 @@ public class OrderItemInvoicingService {
 
         log.info("Cancelling order item invoicings for order: {}", orderId);
         for (OrderItemInvoicing orderItemInvoicing : orderItemInvoicings) {
-            if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.INVOICED )){
+            if( orderItemInvoicing.getStatus() != null && orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.INVOICED )){
               log.info("Cancelling order {} but order item invoincing {} is already invoiced!", orderId, orderItemInvoicing.getOrderItemId());
             }
-            else if( orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
+            else if( orderItemInvoicing.getStatus() != null && orderItemInvoicing.getStatus().equals(OrderItemInvoicingStatus.CREATED) ){
                 // there is something that can be cancelled
                 orderItemInvoicing.setStatus(OrderItemInvoicingStatus.CANCELLED);
                 save(orderItemInvoicing);

@@ -208,10 +208,10 @@ public class OrderController {
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
-            log.error("canceling order failed, orderId: " + orderId, e);
+            log.error("Failed to check if order can be cancelled, orderId: " + orderId, e);
             throw new CommonApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    new Error("failed-to-cancel-order", "failed to cancel order with id [" + orderId + "]")
+                    new Error("failed-to-check-if-order-can-be-cancelled", "failed to check if order can be cancelled order with id [" + orderId + "]")
             );
         }
     }
