@@ -62,7 +62,7 @@ public class MerchantController {
 
             // search configurations for paytrail merchant id
             String merchantPaytrailMerchantId = null;
-            if(returnDto.getConfigurations().size()>0){
+            if(returnDto.getConfigurations() != null && !returnDto.getConfigurations().isEmpty()){
                 for(ConfigurationModel merchantConfiguration : returnDto.getConfigurations()){
                     if(merchantConfiguration.getKey() != null && merchantConfiguration.getKey().equals(MERCHANT_PAYTRAIL_MERCHANT_ID)){
                         merchantPaytrailMerchantId = merchantConfiguration.getValue();
@@ -82,7 +82,7 @@ public class MerchantController {
                     addPaytrailSecret(returnDto.getMerchantId(), paytrailMerchantMappingDto.getMerchantPaytrailSecret());
                 } else {
                     String paytrailSecret = getPaytrailSecret(returnDto.getMerchantId()).getBody();
-                    if (paytrailSecret == null || paytrailSecret.equals("")) {
+                    if (paytrailSecret == null || paytrailSecret.isEmpty()) {
                         throw new CommonApiException(
                                 HttpStatus.NOT_FOUND,
                                 new Error("paytrail-merchant-mapping-not-found", "paytrail merchant mapping with namespace, merchantPaytrailMerchantId: [" + merchantDto.getNamespace() + ", " + merchantPaytrailMerchantId + "] not found")

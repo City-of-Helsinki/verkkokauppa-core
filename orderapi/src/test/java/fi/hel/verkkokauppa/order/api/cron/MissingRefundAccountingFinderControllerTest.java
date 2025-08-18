@@ -3,7 +3,7 @@ package fi.hel.verkkokauppa.order.api.cron;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
-import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.constants.RefundAccountingStatusEnum;
@@ -14,13 +14,15 @@ import fi.hel.verkkokauppa.order.model.accounting.OrderItemAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundItemAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.test.utils.TestUtils;
-import fi.hel.verkkokauppa.order.test.utils.payment.TestPayment;
+import fi.hel.verkkokauppa.order.test.utils.payment.*;
 import fi.hel.verkkokauppa.order.test.utils.productaccounting.TestProductAccounting;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.index.IndexResponse;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Test;
@@ -32,6 +34,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -53,7 +56,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 )
 @AutoConfigureMockMvc
 @Slf4j
-public class MissingAccountingFinderControllerTest extends DummyData {
+public class MissingRefundAccountingFinderControllerTest extends DummyData {
     @Autowired
     private MockMvc mockMvc;
 
@@ -61,6 +64,9 @@ public class MissingAccountingFinderControllerTest extends DummyData {
     private OrderRepository orderRepository;
     @Autowired
     private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private RefundItemRepository refundItemRepository;
 
     @Autowired
     private RefundRepository refundRepository;
@@ -82,6 +88,9 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
     @Autowired
     private TestUtils testUtils;
+
+    @Autowired
+    private OrderApiTestPaymentUtilService orderApiTestPaymentUtilService;
 
     private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
     private ArrayList<String> toBeDeletedOrderAccountingById = new ArrayList<>();
@@ -118,14 +127,13 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
     @Test
     @RunIfProfile(profile = "local")
-    public void testAccountingCreate() throws Exception {
+    public void testRefundAccountingCreate() throws Exception {
         Order order1 = createTestOrder();
         Order order2 = createTestOrder();
         Order order3 = createTestOrder();
-
-
-        // get number of emails before test
-//        int totalMailsBefore = testUtils.mailHoqMessageCount();
+        Refund refund1 = createTestRefund(order1.getOrderId());
+        Refund refund2 = createTestRefund(order2.getOrderId());
+        Refund refund3 = createTestRefund(order3.getOrderId());
 
         // set order 1 to be accounted
         setAccounted(order1);
@@ -134,7 +142,8 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         createTestOrderAccounting(order2.getOrderId());
 
         String companyCode1 = "1234";
-        createTestOrderItemAccounting(
+        createTestRefundItemAccounting(
+                refund1.getRefundId(),
                 order1.getOrderId(),
                 "10", "7", "3",
                 companyCode1,
@@ -146,59 +155,12 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 "project 1",
                 "Area A"
         );
-        createTestOrderItemAccounting(
-                order1.getOrderId(),
-                "20", "10", "10",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 2",
-                "Area B"
-        );
-        createTestOrderItemAccounting(
-                order1.getOrderId(),
-                "30", "20", "10",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 2",
-                "Area B"
-        );
-        createTestOrderItemAccounting(
-                order1.getOrderId(),
-                "50", "35", "15",
-                companyCode1,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter2",
-                "project 3",
-                "Area A"
-        );
         //
         // second company code
         //
         String companyCode2 = "5678";
-        createTestOrderItemAccounting(
-                order2.getOrderId(),
-                "10", "5", "5",
-                companyCode2,
-                "account",
-                "24",
-                "yes",
-                "profitCenter",
-                "balanceProfitCenter3",
-                "project 2",
-                "Area B"
-        );
-        createTestOrderItemAccounting(
+        createTestRefundItemAccounting(
+                refund2.getRefundId(),
                 order2.getOrderId(),
                 "10", "5", "5",
                 companyCode2,
@@ -213,20 +175,53 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
         // create and save orderitem to db
         OrderItem orderItem = generateDummyOrderItem(order3);
+
+        String merchantId = testUtils.createNamespaceAndMerchantWithSecret(
+                order3.getNamespace(),
+                log.getName(),
+                OrderApiTestPaymentUtilService.ACCOUNT,
+                OrderApiTestPaymentUtilService.SECRET
+        );
+        orderItem.setMerchantId(merchantId);
         this.orderItemRepository.save(orderItem);
 
-        order3.setPriceTotal("0.01");
+        order3.setPriceTotal("100");
         order3.setStatus("confirmed");
         // Save needed fields to allow query to find it status = confirmed and price total over 0
         orderRepository.save(order3);
 
-        TestPayment payment = new TestPayment();
-        payment.setPaymentId("test-payment-id" + order3.getOrderId());
-        payment.setStatus("payment_paid_online");
-        payment.setOrderId(order3.getOrderId());
-        payment.setTotal(new BigDecimal(order3.getPriceTotal()));
-        IndexResponse testPayment = this.testUtils.saveTestPayment(payment);
+        TestPaytrailPaymentResponse paytrailResponse = orderApiTestPaymentUtilService.createTestPaytrailPayment(order3);
+        log.info("paytrailResponse: {}", objectMapper.writeValueAsString(paytrailResponse));
 
+        TestPayment testPayment = testUtils.savePaytrailResponseAsPayment(paytrailResponse, order3);
+        assertNotNull(testPayment);
+        String providerId = "osuuspankki";
+
+        testUtils.createPaytrailFormAndSubmitSuccessFullPayment(paytrailResponse, providerId);
+
+        PaytrailPayment paymentResponse = orderApiTestPaymentUtilService.getTestPaytrailPayment(paytrailResponse.getTransactionId());
+        assertEquals("ok", paymentResponse.status.toLowerCase());
+        TestPaytrailRefundResponse refundPaytrailResponse = orderApiTestPaymentUtilService
+                .createTestPaytrailRefund(
+                        order3,
+                        testPayment
+                );
+
+        // create and save orderitem to db
+        RefundItem refundItem = generateDummyRefundItem(refund3);
+        refundItem.setMerchantId(merchantId);
+        this.refundItemRepository.save(refundItem);
+
+        refund3.setPriceTotal("0.01");
+        refund3.setStatus("confirmed");
+        // Save needed fields to allow query to find it status = confirmed and price total over 0
+        refundRepository.save(refund3);
+
+        TestRefundPayment refundPayment = saveTestRefundPayment(refund3, order3, refundPaytrailResponse);
+
+        PaytrailPayment refundResponse = orderApiTestPaymentUtilService.getTestPaytrailPayment(refundPaytrailResponse.getTransactionId());
+        assertEquals(refundPaytrailResponse.getTransactionId(), refundResponse.transactionId);
+        assertEquals("ok", refundResponse.status.toLowerCase());
 
         ProductAccountingDto accountingDto = createDummyProductAccountingDto(orderItem.getProductId(), order3.getOrderId());
         TestProductAccounting testProductAccounting = objectMapper.convertValue(accountingDto, TestProductAccounting.class);
@@ -242,9 +237,9 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         String createAccountingAfterStr = createAccountingAfter.format(formatter);
 
 
-        log.info("testPaymentOrderId: " + payment.getOrderId());
+        log.info("testPaymentOrderId: " + refundPayment.getOrderId());
         MvcResult result = this.mockMvc.perform(
-                        get("/accounting/cron/find-missing-accounting")
+                        get("/accounting/cron/find-missing-refund-accounting")
                                 .param("createdAfter", createdAfterStr)
                                 .param("createAccountingAfter", createAccountingAfterStr)
 
@@ -254,11 +249,11 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 .andExpect(status().is(200))
                 .andReturn();
         String responseContent = result.getResponse().getContentAsString();
-        List<PaymentResultDto> failedToAccount = parseFailedToAccount(responseContent);
+        List<RefundResultDto> failedToAccount = parseFailedToAccount(responseContent);
 
         // Find the specific PaymentResultDto by orderId
-        PaymentResultDto foundPayment = failedToAccount.stream()
-                .filter(paymentResultDto -> Objects.equals(paymentResultDto.getOrderId(), payment.getOrderId()))
+        RefundResultDto foundPayment = failedToAccount.stream()
+                .filter(paymentResultDto -> Objects.equals(paymentResultDto.getOrderId(), refundPayment.getOrderId()))
                 .findFirst()
                 .orElse(null); // Returns null if no match is found
 
@@ -294,7 +289,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         // Wait for 3 seconds to acconting to be created
         sleep(3000);
         MvcResult result2 = this.mockMvc.perform(
-                        get("/accounting/cron/find-missing-accounting")
+                        get("/accounting/cron/find-missing-refund-accounting")
                                 .param("createdAfter", createdAfterStr)
                                 .param("createAccountingAfter", createAccountingAfterStr)
                 )
@@ -302,7 +297,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(status().is(200))
                 .andReturn();
-        List<PaymentResultDto> failedToAccount2 = parseFailedToAccount(result2.getResponse().getContentAsString());
+        List<RefundResultDto> failedToAccount2 = parseFailedToAccount(result2.getResponse().getContentAsString());
 
         Order finalOrder3 = order3;
         boolean order3InFailedToAccount = failedToAccount2.stream()
@@ -312,7 +307,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
         assertEquals(1, failedToAccount.size(), "Should only be one that is failed to account");
 
-        assertEquals(0,failedToAccount2.size(),"Accounting should be created (if all endpoint)");
+        assertEquals(0, failedToAccount2.size(), "Accounting should be created (if all endpoint)");
         // First, check the size of failedToAccount before and after accounting is created for order3
         assertEquals(
                 (failedToAccount.size() - 1),
@@ -332,6 +327,17 @@ public class MissingAccountingFinderControllerTest extends DummyData {
 
     }
 
+    private TestRefundPayment saveTestRefundPayment(Refund refund3, Order order3, TestPaytrailRefundResponse refundPaytrailResponse) throws IOException {
+        TestRefundPayment refundPayment = new TestRefundPayment();
+        refundPayment.setRefundId(refund3.getRefundId());
+        refundPayment.setStatus("refund_created");
+        refundPayment.setOrderId(order3.getOrderId());
+        refundPayment.setTotal(new BigDecimal(order3.getPriceTotal()));
+        refundPayment.setRefundTransactionId(refundPaytrailResponse.getTransactionId());
+        refundPayment.setNamespace(order3.getNamespace());
+        IndexResponse testRefundPayment = this.testUtils.createTestRefundPayment(refundPayment);
+        return refundPayment;
+    }
 
     private Order createTestOrder() {
         Order order = generateDummyOrder();
@@ -358,9 +364,9 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         return orderAccounting;
     }
 
-    public List<PaymentResultDto> parseFailedToAccount(String jsonString) {
+    public List<RefundResultDto> parseFailedToAccount(String jsonString) {
         try {
-            return objectMapper.readValue(jsonString, new TypeReference<List<PaymentResultDto>>() {
+            return objectMapper.readValue(jsonString, new TypeReference<List<RefundResultDto>>() {
             });
         } catch (Exception e) {
             e.printStackTrace();
@@ -398,6 +404,38 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         return orderItemAccounting;
     }
 
+
+    private RefundItemAccounting createTestRefundItemAccounting(String refundId, String orderId, String priceGross, String priceNet, String priceVat,
+                                                                String companyCode, String mainLedgerAccount, String vatCode,
+                                                                String internalOrder, String profitCenter, String balanceProfitCenter,
+                                                                String project, String operationArea) {
+        RefundItemAccounting refundItemAccounting = new RefundItemAccounting(
+                UUID.randomUUID().toString(),
+                refundId,
+                orderId,
+                priceGross,
+                priceNet,
+                priceVat,
+                companyCode,
+                mainLedgerAccount,
+                vatCode,
+                internalOrder,
+                profitCenter,
+                balanceProfitCenter,
+                project,
+                operationArea,
+                LocalDateTime.now(),
+                "merchantId",
+                "paytrailTransactionId",
+                "namespace"
+        );
+
+        refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
+        toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());
+
+        return refundItemAccounting;
+    }
+
     private Refund createTestRefund(String orderId) {
         Refund refund = generateDummyRefund(orderId);
         refund.setRefundId(UUID.randomUUID().toString());
@@ -425,36 +463,6 @@ public class MissingAccountingFinderControllerTest extends DummyData {
         toBeDeletedRefundAccountingById.add(refundAccounting.getRefundId());
 
         return refundAccounting;
-    }
-
-    private RefundItemAccounting createTestRefundItemAccounting(String refundId, String orderId, String priceGross, String priceNet, String priceVat,
-                                                                String companyCode, String mainLedgerAccount, String vatCode,
-                                                                String internalOrder, String profitCenter, String balanceProfitCenter,
-                                                                String project, String operationArea) {
-        RefundItemAccounting refundItemAccounting = new RefundItemAccounting(
-                UUID.randomUUID().toString(),
-                refundId,
-                orderId,
-                priceGross,
-                priceNet,
-                priceVat,
-                companyCode,
-                mainLedgerAccount,
-                vatCode,
-                internalOrder,
-                profitCenter,
-                balanceProfitCenter,
-                project,
-                operationArea,
-                LocalDateTime.now(),
-                "merchantId",
-                "refundTransactionId",
-                "namespace");
-
-        refundItemAccounting = refundItemAccountingRepository.save(refundItemAccounting);
-        toBeDeletedRefundItemAccountingById.add(refundItemAccounting.getRefundItemId());
-
-        return refundItemAccounting;
     }
 
 }

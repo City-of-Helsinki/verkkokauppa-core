@@ -22,21 +22,31 @@ public class RefundItemService {
     public RefundItem findById(String refundItemId) {
         Optional<RefundItem> mapping = refundItemRepository.findById(refundItemId);
 
-        if (mapping.isPresent())
+        if (mapping.isPresent()) {
             return mapping.get();
+        }
 
-        log.debug("refundItem not found, refundItemId: " + refundItemId);
+        log.debug("refundItem not found, refundItemId: {}", refundItemId);
         return null;
     }
 
     public List<RefundItem> findByRefundId(String refundId) {
         List<RefundItem> refundItems = refundItemRepository.findByRefundId(refundId);
 
-        if (refundItems.size() > 0)
+        if (!refundItems.isEmpty()) {
             return refundItems;
+        }
 
-        log.debug("refundItems not found, refundId: " + refundId);
+        log.debug("refundItems not found, refundId: {}", refundId);
         return new ArrayList<RefundItem>();
+    }
+
+    public String resolveMerchantIdFromRefundItems(String refundId) {
+        return this.findByRefundId(refundId).stream()
+                .map(RefundItem::getMerchantId)
+                .filter(id -> id != null && !id.isEmpty())
+                .findFirst()
+                .orElse(null);
     }
 
 }

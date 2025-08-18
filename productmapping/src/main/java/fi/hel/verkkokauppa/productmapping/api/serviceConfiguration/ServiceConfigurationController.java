@@ -92,7 +92,7 @@ public class ServiceConfigurationController {
     }
 
     private void overrideConfigurationsFromNamespaceModelConfigurations(String namespace, List<ServiceConfiguration> serviceConfigurations, JSONObject namespaceModelJson) {
-        if (namespaceModelJson.getJSONArray("configurations") != null) {
+        if (namespaceModelJson != null && namespaceModelJson.getJSONArray("configurations") != null) {
             namespaceModelJson.getJSONArray("configurations").forEach(namespaceConfiguration -> {
                 try {
                     ConfigurationModel namespaceConfiguration2 = objectMapper.readValue(namespaceConfiguration.toString(), ConfigurationModel.class);

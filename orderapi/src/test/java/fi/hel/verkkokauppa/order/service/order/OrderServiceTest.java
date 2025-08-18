@@ -649,7 +649,7 @@ class OrderServiceTest extends TestUtils {
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
         OrderItemDto orderItem = createOrderResponse.getItems().get(0);
-
+        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
         log.info("Created order with orderId: {}", order.getOrderId());
         log.info("Created order with userId: {}", order.getUser());
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);

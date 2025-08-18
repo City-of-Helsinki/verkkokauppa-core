@@ -16,6 +16,9 @@ public class ServiceUrls {
     @Value("${merchant.service.url:http://merchant-api:8080}")
     private String merchantServiceUrl;
 
+    @Value("${payment.service.url:http://payment-api:8080}")
+    private String paymentServiceUrl;
+
     @Value("${order.service.url:http://order-api:8080}")
     private String orderServiceUrl;
 
