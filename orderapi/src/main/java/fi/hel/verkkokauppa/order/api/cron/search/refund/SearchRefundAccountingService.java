@@ -2,7 +2,6 @@ package fi.hel.verkkokauppa.order.api.cron.search.refund;
 
 import fi.hel.verkkokauppa.common.elastic.search.QueryService;
 import fi.hel.verkkokauppa.common.elastic.search.SearchService;
-import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -25,9 +24,9 @@ public class SearchRefundAccountingService {
     @Autowired
     private QueryService queryService;
 
-    public Set<String> getAccountedOrderIds(List<String> refundedOrderIds) throws IOException {
+    public Set<String> getAccountedRefundIds(List<String> refundedOrderIds) throws IOException {
         final int CHUNK_SIZE = 500;
-        Set<String> accountedOrderIds = new HashSet<>();
+        Set<String> accountedRefundIds = new HashSet<>();
 
         for (int i = 0; i < refundedOrderIds.size(); i += CHUNK_SIZE) {
             int end = Math.min(refundedOrderIds.size(), i + CHUNK_SIZE);
@@ -45,13 +44,13 @@ public class SearchRefundAccountingService {
                     RefundAccounting.class
             );
 
-            accountedOrderIds.addAll(
+            accountedRefundIds.addAll(
                     results.stream()
-                            .map(RefundAccounting::getOrderId)
+                            .map(RefundAccounting::getRefundId)
                             .collect(Collectors.toSet())
             );
         }
 
-        return accountedOrderIds;
+        return accountedRefundIds;
     }
 }

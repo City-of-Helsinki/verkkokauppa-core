@@ -8,7 +8,6 @@ import fi.hel.verkkokauppa.common.payment.dto.UpdateFromPaytrailRefundDto;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
-import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.service.refund.RefundItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -67,12 +66,12 @@ public class SearchUnAccountedRefunds {
         }
 
         // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedOrderIds(
+        Set<String> accountedRefundIds = searchRefundAccountingService.getAccountedRefundIds(
                 matchedPayments.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
         );
-        log.info("Refund accounted order IDs retrieved: {}", accountedOrderIds.size());
+        log.info("Refund accounted refund IDs retrieved: {} , {}", accountedRefundIds.size(),accountedRefundIds);
 
-        return getRefundResultDtos(matchedPayments, accountedOrderIds);
+        return getRefundResultDtos(matchedPayments, accountedRefundIds);
     }
 
     private void callPaymentApiToUpdateCreatedRefundsToOnlinePaid(List<RefundResultDto> refundResultDtos) {
@@ -108,12 +107,12 @@ public class SearchUnAccountedRefunds {
         }
     }
 
-    private static List<RefundResultDto> getRefundResultDtos(List<RefundResultDto> matchedRefunds, Set<String> accountedOrderIds) {
+    private static List<RefundResultDto> getRefundResultDtos(List<RefundResultDto> matchedRefunds, Set<String> accountedRefundIds) {
         // Filter out unaccounted payments and log the result size
         List<RefundResultDto> unaccountedRefunds = matchedRefunds.stream().filter(Objects::nonNull)
                 .filter(refund ->
                         (refund.getRefundGateway() != null && refund.getRefundGateway().equals(PaymentGatewayEnum.INVOICE.toString()))
-                                || !accountedOrderIds.contains(refund.getOrderId())
+                                || !accountedRefundIds.contains(refund.getRefundId())
                 ).collect(Collectors.toList());
 
         log.info("Unaccounted refunds found: {}", unaccountedRefunds.size());
@@ -156,7 +155,7 @@ public class SearchUnAccountedRefunds {
         }
 
         // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedOrderIds(
+        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
                 matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
         );
         log.info("Refund accounted order IDs retrieved: {}", accountedOrderIds.size());
@@ -191,7 +190,7 @@ public class SearchUnAccountedRefunds {
         }
 
         // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedOrderIds(
+        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
                 matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
         );
         log.info("Accounted refund order IDs retrieved: {}", accountedOrderIds.size());
@@ -223,7 +222,7 @@ public class SearchUnAccountedRefunds {
         }
 
         // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedOrderIds(
+        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
                 matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
         );
         log.info("Accounted refund order IDs retrieved: {}", accountedOrderIds.size());
