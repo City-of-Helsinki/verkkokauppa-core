@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api.cron.search.refund;
 import fi.hel.verkkokauppa.common.elastic.search.QueryService;
 import fi.hel.verkkokauppa.common.elastic.search.SearchService;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class SearchRefundPaymentService {
 
     @Autowired
@@ -22,19 +24,19 @@ public class SearchRefundPaymentService {
     @Autowired
     private QueryService queryService;
 
-    public List<RefundResultDto> findRefundsByStatusAndOrderIds(List<String> orderIds, String refundStatus) throws IOException {
-        final int CHUNK_SIZE = 1;
+    public List<RefundResultDto> findRefundsByStatusAndRefundIds(List<String> refundIds, String refundStatus) throws IOException {
+        final int CHUNK_SIZE = 500;
         List<RefundResultDto> allResults = new ArrayList<>();
 
-        for (int i = 0; i < orderIds.size(); i += CHUNK_SIZE) {
-            int end = Math.min(orderIds.size(), i + CHUNK_SIZE);
-            List<String> chunk = orderIds.subList(i, end);
+        for (int i = 0; i < refundIds.size(); i += CHUNK_SIZE) {
+            int end = Math.min(refundIds.size(), i + CHUNK_SIZE);
+            List<String> chunk = refundIds.subList(i, end);
 
             SearchSourceBuilder queryBuilder = new SearchSourceBuilder();
             BoolQueryBuilder query = QueryBuilders.boolQuery();
 
             query.must(QueryBuilders.termQuery("status", refundStatus));
-            queryService.createOrderIdShouldQuery(chunk, query);
+            queryService.createRefundIdShouldQuery(chunk, query);
 
             queryBuilder.query(query);
             List<RefundResultDto> results = searchService.searchAcrossIndexes(
@@ -44,6 +46,8 @@ public class SearchRefundPaymentService {
             );
             allResults.addAll(results);
         }
+
+        log.info("Matched refund_payments with status '{}': {}", refundStatus, allResults.size());
 
         return allResults;
     }

@@ -1,7 +1,6 @@
 package fi.hel.verkkokauppa.order.api.cron.search.refund;
 
 import fi.hel.verkkokauppa.common.elastic.search.SearchService;
-import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -23,44 +22,34 @@ public class SearchRefundService {
     @Autowired
     private SearchService searchService;
 
-    public List<Refund> getUnaccountedRefunds() throws IOException {
-        SearchSourceBuilder ordersQueryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder ordersQuery = QueryBuilders.boolQuery();
+    public List<Refund> findUnaccountedRefunds() throws IOException {
+        SearchSourceBuilder refundsQueryBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder refundsQuery = QueryBuilders.boolQuery();
 
-        ordersQuery.must(QueryBuilders.termQuery("status", "confirmed"));
-        ordersQuery.must(QueryBuilders.rangeQuery("priceTotal").gt("0"));
-        ordersQuery.mustNot(QueryBuilders.existsQuery("accounted"));
+        refundsQuery.must(QueryBuilders.termQuery("status", "confirmed"));
+        refundsQuery.must(QueryBuilders.rangeQuery("priceTotal").gt("0"));
+        refundsQuery.mustNot(QueryBuilders.existsQuery("accounted"));
 
-        ordersQueryBuilder.query(ordersQuery);
-        return searchService.searchAcrossIndexes(
+        refundsQueryBuilder.query(refundsQuery);
+        List<Refund> unaccountedRefunds = searchService.searchAcrossIndexes(
                 List.of("refunds"),
-                ordersQueryBuilder,
+                refundsQueryBuilder,
                 Refund.class
         );
+        log.info("Unaccounted refunds retrieved: {}", unaccountedRefunds.size());
+        return unaccountedRefunds;
     }
 
-    public List<Refund> getUnaccountedRefunds(LocalDateTime createdAfter) throws IOException {
+    public List<Refund> findUnaccountedRefunds(LocalDateTime createdAfter) throws IOException {
         // Define the European date-time format
         DateTimeFormatter europeanFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 
         // Log the date in the European format
         log.info("CreatedAfterDateTime: {}", createdAfter.format(europeanFormatter));
 
-        SearchSourceBuilder ordersQueryBuilder = new SearchSourceBuilder();
-        BoolQueryBuilder ordersQuery = QueryBuilders.boolQuery();
-
-        ordersQuery.must(QueryBuilders.termQuery("status", "confirmed"));
-        ordersQuery.must(QueryBuilders.rangeQuery("priceTotal").gt("0"));
-        ordersQuery.mustNot(QueryBuilders.existsQuery("accounted"));
-
-        ordersQueryBuilder.query(ordersQuery);
-        List<Refund> orders = searchService.searchAcrossIndexes(
-                List.of("refunds"),
-                ordersQueryBuilder,
-                Refund.class
-        );
-
-        return orders.stream()
+        List<Refund> unaccountedRefunds = findUnaccountedRefunds();
+        log.info("Unaccounted refunds retrieved: {}", unaccountedRefunds.size());
+        return unaccountedRefunds.stream()
                 .filter(refund -> refund.getCreatedAt() != null && refund.getCreatedAt().isAfter(createdAfter))
                 .collect(Collectors.toList());
     }

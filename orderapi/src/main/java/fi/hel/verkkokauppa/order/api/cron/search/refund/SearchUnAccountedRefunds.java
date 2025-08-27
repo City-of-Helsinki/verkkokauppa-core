@@ -43,36 +43,6 @@ public class SearchUnAccountedRefunds {
     @Autowired
     private RefundItemService refundItemService;
 
-    public List<RefundResultDto> findUnaccountedRefunds() throws IOException {
-        // Fetch unaccounted orders and log the size
-        List<Refund> unaccountedOrders = searchRefundService.getUnaccountedRefunds();
-        log.info("Unaccounted orders retrieved: {}", unaccountedOrders.size());
-
-        List<String> orderIds = unaccountedOrders.stream().map(Refund::getOrderId).collect(Collectors.toList());
-        log.info("Order IDs extracted: {}", orderIds.size());
-
-        if (orderIds.isEmpty()) {
-            log.info("No unaccounted refunds found. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch payments that match the status and order IDs, and log the size
-        List<RefundResultDto> matchedPayments = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "payment_paid_online");
-        log.info("Matched payments with status 'payment_paid_online': {}", matchedPayments.size());
-
-        if (matchedPayments.isEmpty()) {
-            log.info("No matched payments found for the unaccounted orders. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch accounted order IDs and log the size
-        Set<String> accountedRefundIds = searchRefundAccountingService.getAccountedRefundIds(
-                matchedPayments.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
-        );
-        log.info("Refund accounted refund IDs retrieved: {} , {}", accountedRefundIds.size(),accountedRefundIds);
-
-        return getRefundResultDtos(matchedPayments, accountedRefundIds);
-    }
 
     private void callPaymentApiToUpdateCreatedRefundsToOnlinePaid(List<RefundResultDto> refundResultDtos) {
         ArrayList<RefundPaymentCommonDto> updatedRefundPayments = new ArrayList<>();
@@ -108,7 +78,6 @@ public class SearchUnAccountedRefunds {
     }
 
     private static List<RefundResultDto> getRefundResultDtos(List<RefundResultDto> matchedRefunds, Set<String> accountedRefundIds) {
-        // Filter out unaccounted payments and log the result size
         List<RefundResultDto> unaccountedRefunds = matchedRefunds.stream().filter(Objects::nonNull)
                 .filter(refund ->
                         (refund.getRefundGateway() != null && refund.getRefundGateway().equals(PaymentGatewayEnum.INVOICE.toString()))
@@ -132,105 +101,54 @@ public class SearchUnAccountedRefunds {
         return unaccountedRefunds;
     }
 
-    public List<RefundResultDto> findCreatedRefundsAndUpdateStatusFromPaytrail() throws IOException {
-        // Fetch unaccounted orders and log the size
-        List<Refund> unaccountedOrders = searchRefundService.getUnaccountedRefunds();
-        log.info("Unaccounted orders retrieved: {}", unaccountedOrders.size());
+    public List<RefundResultDto> findUnaccountedRefunds() throws IOException {
+        String refundStatus = "payment_paid_online";
+        return getRefundResultDtos(searchRefundService.findUnaccountedRefunds(), refundStatus);
+    }
 
-        List<String> orderIds = unaccountedOrders.stream().map(Refund::getOrderId).collect(Collectors.toList());
-        log.info("Order IDs extracted: {}", orderIds.size());
-
-        if (orderIds.isEmpty()) {
+    private List<RefundResultDto> getRefundResultDtos(List<Refund> unaccountedOrders, String refundStatus) throws IOException {
+        List<String> refundIds = getRefundIds(unaccountedOrders);
+        if (refundIds.isEmpty()) {
             log.info("No unaccounted refunds found. Returning an empty list.");
             return Collections.emptyList();
         }
-
-        // Fetch payments that match the status and order IDs, and log the size
-        List<RefundResultDto> matchedRefunds = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "refund_created");
-        log.info("Matched refunds with status 'refund_created': {}", matchedRefunds.size());
-
-        if (matchedRefunds.isEmpty()) {
-            log.info("No matched refunds found for the unaccounted orders. Returning an empty list.");
+        List<RefundResultDto> matchedRefundPayments = searchRefundPaymentService.findRefundsByStatusAndRefundIds(refundIds, refundStatus);
+        if (matchedRefundPayments.isEmpty()) {
+            log.info("No matched refunds found for status '{}' the unaccounted orders. Returning an empty list.", refundStatus);
             return Collections.emptyList();
         }
-
-        // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
-                matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
+        Set<String> accountedRefundIds = searchRefundAccountingService.getAccountedRefundIds(
+                matchedRefundPayments.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
         );
-        log.info("Refund accounted order IDs retrieved: {}", accountedOrderIds.size());
+        return getRefundResultDtos(matchedRefundPayments, accountedRefundIds);
+    }
 
-        // Filter out unaccounted payments and log the result size
-        List<RefundResultDto> refundResultDtos = getRefundResultDtos(matchedRefunds, accountedOrderIds);
+
+    public List<RefundResultDto> findCreatedRefundsAndUpdateStatusFromPaytrail() throws IOException {
+        String refundStatus = "refund_created";
+        List<RefundResultDto> refundResultDtos = getRefundResultDtos(searchRefundService.findUnaccountedRefunds(), refundStatus);
+
+        callPaymentApiToUpdateCreatedRefundsToOnlinePaid(refundResultDtos);
+        return refundResultDtos;
+    }
+
+    public List<RefundResultDto> findCreatedRefundsAndUpdateStatusFromPaytrail(LocalDateTime createdAfter) throws IOException {
+        String refundStatus = "refund_created";
+        List<RefundResultDto> refundResultDtos = getRefundResultDtos(searchRefundService.findUnaccountedRefunds(createdAfter), refundStatus);
 
         callPaymentApiToUpdateCreatedRefundsToOnlinePaid(refundResultDtos);
         return refundResultDtos;
     }
 
     public List<RefundResultDto> findUnaccountedRefunds(LocalDateTime createdAfter) throws IOException {
-        // Fetch unaccounted refunds and log the size
-        List<Refund> unaccountedRefunds = searchRefundService.getUnaccountedRefunds(createdAfter);
-        log.info("Unaccounted refunds retrieved: {}", unaccountedRefunds.size());
-
-        List<String> orderIds = unaccountedRefunds.stream().map(Refund::getOrderId).collect(Collectors.toList());
-        log.info("Order IDs extracted: {}", orderIds.size());
-
-        if (orderIds.isEmpty()) {
-            log.info("No unaccounted refunds found. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch payments that match the status and order IDs, and log the size
-        List<RefundResultDto> matchedRefunds = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "refund_paid_online");
-        log.info("Matched refunds with status 'refund_paid_online': {}", matchedRefunds.size());
-
-        if (matchedRefunds.isEmpty()) {
-            log.info("No matched refunds found for the unaccounted refunds. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
-                matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
-        );
-        log.info("Accounted refund order IDs retrieved: {}", accountedOrderIds.size());
-
-        // Filter out unaccounted payments and log the result size
-        return getRefundResultDtos(matchedRefunds, accountedOrderIds);
+        String refundStatus = "refund_paid_online";
+        return getRefundResultDtos(searchRefundService.findUnaccountedRefunds(createdAfter), refundStatus);
     }
 
-    public List<RefundResultDto> findCreatedRefundsAndUpdateStatusFromPaytrail(LocalDateTime createdAfter) throws IOException {
-        // Fetch unaccounted refunds and log the size
-        List<Refund> unaccountedRefunds = searchRefundService.getUnaccountedRefunds(createdAfter);
-        log.info("Unaccounted refunds retrieved: {}", unaccountedRefunds.size());
-
-        List<String> orderIds = unaccountedRefunds.stream().map(Refund::getOrderId).collect(Collectors.toList());
-        log.info("Order IDs extracted: {}", orderIds.size());
-
-        if (orderIds.isEmpty()) {
-            log.info("No unaccounted refunds found. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch payments that match the status and order IDs, and log the size
-        List<RefundResultDto> matchedRefunds = searchRefundPaymentService.findRefundsByStatusAndOrderIds(orderIds, "refund_created");
-        log.info("Matched refunds with status 'refund_created': {}", matchedRefunds.size());
-
-        if (matchedRefunds.isEmpty()) {
-            log.info("No matched refunds found for the unaccounted refunds. Returning an empty list.");
-            return Collections.emptyList();
-        }
-
-        // Fetch accounted order IDs and log the size
-        Set<String> accountedOrderIds = searchRefundAccountingService.getAccountedRefundIds(
-                matchedRefunds.stream().map(RefundResultDto::getOrderId).collect(Collectors.toList())
-        );
-        log.info("Accounted refund order IDs retrieved: {}", accountedOrderIds.size());
-
-        // Filter out unaccounted payments and log the result size
-        List<RefundResultDto> refundResultDtos = getRefundResultDtos(matchedRefunds, accountedOrderIds);
-
-        callPaymentApiToUpdateCreatedRefundsToOnlinePaid(refundResultDtos);
-        return refundResultDtos;
+    private static List<String> getRefundIds(List<Refund> unaccountedRefunds) {
+        List<String> refundIds = unaccountedRefunds.stream().map(Refund::getRefundId).collect(Collectors.toList());
+        log.info("Refund ID:s extracted: {}", refundIds.size());
+        return refundIds;
     }
+
 }

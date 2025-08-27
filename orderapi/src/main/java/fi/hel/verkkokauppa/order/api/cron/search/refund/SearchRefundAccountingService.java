@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.order.api.cron.search.refund;
 import fi.hel.verkkokauppa.common.elastic.search.QueryService;
 import fi.hel.verkkokauppa.common.elastic.search.SearchService;
 import fi.hel.verkkokauppa.order.model.accounting.RefundAccounting;
+import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -16,6 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SearchRefundAccountingService {
 
     @Autowired
@@ -50,6 +52,8 @@ public class SearchRefundAccountingService {
                             .collect(Collectors.toSet())
             );
         }
+
+        log.info("Refund accounted refund IDs retrieved: {}", accountedRefundIds.size());
 
         return accountedRefundIds;
     }
