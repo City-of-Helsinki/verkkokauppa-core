@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.payment.service;
 
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.constants.PaymentType;
+import fi.hel.verkkokauppa.common.elastic.search.SearchService;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.events.EventType;
@@ -12,6 +13,7 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.service.dto.CheckPaymentDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
@@ -33,6 +35,9 @@ import fi.hel.verkkokauppa.payment.model.PaymentStatus;
 import fi.hel.verkkokauppa.payment.repository.PayerRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.helsinki.vismapay.VismaPayClient;
 import org.helsinki.vismapay.request.payment.ChargeCardTokenRequest;
 import org.helsinki.vismapay.request.payment.ChargeRequest;
@@ -44,6 +49,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -98,6 +104,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private SaveHistoryService saveHistoryService;
+
+    @Autowired
+    private SearchService searchService;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -213,6 +222,26 @@ public class OnlinePaymentService {
             return payablePayment;
         else
             return null;
+    }
+
+    public List<CheckPaymentDto> getUnpaidPaymentsToCheck(LocalDateTime createdAfter, LocalDateTime createdBefore) throws IOException {
+        SearchSourceBuilder paymentsQueryBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder paymentsQuery = QueryBuilders.boolQuery();
+
+        paymentsQuery.must(QueryBuilders.existsQuery("paytrailTransactionId"));
+        paymentsQuery.must(QueryBuilders.termsQuery("status", PaymentStatus.CREATED, PaymentStatus.CREATED_FOR_MIT_CHARGE));
+        paymentsQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter).lt(createdBefore));
+
+        paymentsQueryBuilder.query(paymentsQuery);
+        return searchService.searchAcrossIndexes(
+                List.of("payments"),
+                paymentsQueryBuilder,
+                CheckPaymentDto.class
+        );
+    }
+
+    public List<PaymentItem> getPaymentItemsForPayment(String paymentId) {
+        return paymentItemRepository.findByPaymentId(paymentId);
     }
 
     public List<Payment> getPaymentsForOrder(String orderId, String namepace) {

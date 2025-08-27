@@ -16,4 +16,5 @@ public class ErrorMessage implements EventMessage {
     public String eventTimestamp;
     public String message;
     public String cause;
+    public String header; // for error email
 }

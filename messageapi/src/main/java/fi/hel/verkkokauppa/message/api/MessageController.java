@@ -4,24 +4,20 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.message.constants.ApiUrls;
-import fi.hel.verkkokauppa.message.dto.ErrorNotificationDto;
+import fi.hel.verkkokauppa.common.rest.dto.ErrorNotificationDto;
 import fi.hel.verkkokauppa.message.dto.MessageDto;
-import fi.hel.verkkokauppa.message.enums.MessageTypes;
+import fi.hel.verkkokauppa.message.model.Message;
+import fi.hel.verkkokauppa.message.service.MessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import fi.hel.verkkokauppa.message.model.Message;
-import fi.hel.verkkokauppa.message.service.MessageService;
 
 import javax.validation.Valid;
 
@@ -35,6 +31,7 @@ public class MessageController {
 
     @Autowired
     private SendNotificationService sendNotificationService;
+
 
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/email", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Message> sendMessage(@RequestBody @Valid MessageDto messageDto
@@ -55,7 +52,7 @@ public class MessageController {
     @PostMapping(value = ApiUrls.MESSAGE_ROOT + "/send/errorNotification", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> sendErrorNotification(@RequestBody ErrorNotificationDto dto) {
         try {
-            sendNotificationService.sendErrorNotification(dto.getMessage(), dto.getCause());
+            sendNotificationService.sendErrorNotification(dto.getMessage(), dto.getCause(), dto.getHeader());
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (CommonApiException cae) {
             throw cae;

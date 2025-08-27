@@ -31,12 +31,17 @@ public abstract class BaseEmailNotifier<T> {
         this.mapper = mapper;
     }
 
-    protected void sendNotificationToEmail(String id, String receiver, String header, String generalInfo, String callstack, T eventPayload) throws IOException {
-        JSONObject emailMsgData = createEmailMessageJson(id, receiver, header, generalInfo, callstack, eventPayload);
+    protected void sendNotificationToEmail(String id, String receiver, String header, String eventType, String generalInfo, String callstack, T eventPayload) throws IOException {
+
+        if(header == null || header.isEmpty()){
+            header = eventType;
+        }
+
+        JSONObject emailMsgData = createEmailMessageJson(id, receiver, header, eventType, generalInfo, callstack, eventPayload);
         restServiceClient.makePostCall(serviceUrls.getMessageServiceUrl() + "/message/send/email", emailMsgData.toString());
     }
 
-    private JSONObject createEmailMessageJson(String id, String receiver, String header, String generalInfo, String callstack, T eventPayload) throws IOException {
+    private JSONObject createEmailMessageJson(String id, String receiver, String header, String eventType, String generalInfo, String callstack, T eventPayload) throws IOException {
         JSONObject msgJson = new JSONObject();
         msgJson.put("id", id);
         msgJson.put("receiver", receiver);
@@ -44,7 +49,7 @@ public abstract class BaseEmailNotifier<T> {
         log.info("Initial mail message without body: {}", msgJson.toString());
 
         String html = FileUtils.readFileAsString(EMAIL_TEMPLATE_PATH, getClass().getClassLoader());
-        html = html.replace("#EVENT_TYPE#", header);
+        html = html.replace("#EVENT_TYPE#", eventType);
         html = html.replace("#GENERAL_INFORMATION#", "<p>" + generalInfo + "</p>");
         html = html.replace("#CALLSTACK#", "<p>" + callstack + "</p>");
         html = html.replace("#EVENT_PAYLOAD#",
