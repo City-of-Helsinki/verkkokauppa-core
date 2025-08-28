@@ -73,6 +73,12 @@ public class RefundPayment implements Persistable<String> {
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
 	private LocalDateTime updatedAt;
 
+	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	LocalDateTime paidAt; // Timestamp when the transaction was refunded
+
+	@Field(type = FieldType.Text)
+	String paymentProviderStatus;
+
 	public String getId() {
 		return this.refundPaymentId;
 	}

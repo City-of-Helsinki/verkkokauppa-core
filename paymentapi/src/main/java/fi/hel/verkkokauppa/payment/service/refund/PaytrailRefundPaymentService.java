@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContextBuilde
 import fi.hel.verkkokauppa.payment.repository.refund.RefundPaymentRepository;
 import fi.hel.verkkokauppa.payment.util.RefundUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.helsinki.paytrail.model.refunds.PaytrailRefundResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,10 +77,10 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public void setRefundPaymentStatus(String refundId, String status) {
+    public RefundPayment setRefundPaymentStatus(String refundId, String status) {
         RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
         refundPayment.setStatus(status);
-        refundPaymentRepository.save(refundPayment);
+        return refundPaymentRepository.save(refundPayment);
     }
 
     public RefundPayment getRefundPaymentForOrder(String orderId) {
@@ -99,6 +101,7 @@ public class PaytrailRefundPaymentService {
     public List<RefundPayment> getRefundPaymentForOrderByRefundId(String refundId) {
         return refundPaymentRepository.findByRefundId(refundId);
     }
+
     public RefundPayment getRefundPaymentByRefundPaymentId(String refundPaymentId) {
         return refundPaymentRepository.findById(refundPaymentId).orElse(null);
     }
@@ -341,4 +344,20 @@ public class PaytrailRefundPaymentService {
         }
     }
 
+    public RefundPayment updateRefundWithPaytrailRefund(String refundId, PaytrailPayment paytrailPayment) {
+
+        RefundPayment refundPayment = this.getRefundPaymentWithRefundId(refundId);
+        if (paytrailPayment.paidAt != null) {
+            LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
+            refundPayment.setPaidAt(paidAt);
+        } else {
+            log.debug("updateRefundWithPaytrailRefund paymentId: {}. paytrailPayment.paidAt was null.", refundId);
+        }
+        if (paytrailPayment.status != null) {
+            refundPayment.setPaymentProviderStatus(paytrailPayment.status);
+        } else {
+            log.debug("updateRefundWithPaytrailRefund paymentId: {}. paytrailPayment.status was null.", refundId);
+        }
+        return refundPaymentRepository.save(refundPayment);
+    }
 }

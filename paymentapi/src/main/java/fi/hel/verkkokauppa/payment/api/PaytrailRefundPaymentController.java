@@ -2,12 +2,16 @@ package fi.hel.verkkokauppa.payment.api;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.payment.dto.UpdateFromPaytrailRefundDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.refund.RefundReturnDto;
 import fi.hel.verkkokauppa.payment.model.refund.RefundPayment;
+import fi.hel.verkkokauppa.payment.model.refund.RefundPaymentStatus;
 import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailRefundReturnValidator;
+import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
 import fi.hel.verkkokauppa.payment.service.refund.PaytrailRefundPaymentService;
 import lombok.extern.slf4j.Slf4j;
+import org.helsinki.paytrail.model.payments.PaytrailPayment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,6 +27,9 @@ public class PaytrailRefundPaymentController {
     private final PaytrailRefundPaymentService refundPaymentService;
 
     private final PaytrailRefundReturnValidator refundReturnValidator;
+
+    @Autowired
+    private PaymentPaytrailService paymentPaytrailService;
 
     @Autowired
     public PaytrailRefundPaymentController(PaytrailRefundPaymentService onlinePaymentService, PaytrailRefundReturnValidator paytrailRefundReturnValidator) {
@@ -70,4 +77,33 @@ public class PaytrailRefundPaymentController {
         }
     }
 
+    @PostMapping("/refundpayment/paytrail/update-from-paytrail-refund")
+    public ResponseEntity<RefundPayment> updateRefundFromPaytrailRefund(
+            @RequestBody UpdateFromPaytrailRefundDto dto
+    ) {
+        try {
+            RefundPayment currentPayment = this.refundPaymentService.getRefundPaymentWithRefundId(dto.getRefundId());
+            PaytrailPayment paytrailRefund = paymentPaytrailService.getPaytrailPayment(currentPayment.getRefundTransactionId(), dto.getNamespace(), dto.getMerchantId());
+            RefundPayment updatedRefund = this.refundPaymentService.updateRefundWithPaytrailRefund(dto.getRefundId(), paytrailRefund);
+            if (
+                    currentPayment.getStatus().equalsIgnoreCase(RefundPaymentStatus.CREATED) &&
+                            updatedRefund.getPaymentProviderStatus().equalsIgnoreCase("OK")
+            ) {
+                // Update status to paid online because it was returned on paytrail side
+                updatedRefund = this.refundPaymentService.setRefundPaymentStatus(dto.getRefundId(), RefundPaymentStatus.PAID_ONLINE);
+                this.refundPaymentService.triggerRefundPaymentPaidEvent(
+                        updatedRefund
+                );
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(updatedRefund);
+        } catch (CommonApiException cae) {
+            throw cae;
+        } catch (Exception e) {
+            log.error("payment/paytrail/update-from-paytrail-payment response failed", e);
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new Error("failed-to-update-from-paytrail-payment", "failed to update fields (paidAt) from paytrail payment return response")
+            );
+        }
+    }
 }

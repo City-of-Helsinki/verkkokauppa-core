@@ -1,13 +1,12 @@
-package fi.hel.verkkokauppa.order.api.cron;
+package fi.hel.verkkokauppa.order.api.cron.search.controllers;
 
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
-import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.order.api.cron.experience.ExperienceApiAccountingService;
 import fi.hel.verkkokauppa.order.api.cron.search.SearchCsvService;
 import fi.hel.verkkokauppa.order.api.cron.search.SearchNotificationService;
-import fi.hel.verkkokauppa.order.api.cron.search.SearchUnAccountedPayments;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.payment.SearchUnAccountedPayments;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,9 +32,6 @@ public class MissingAccountingFinderController {
 
     @Autowired
     private SearchUnAccountedPayments searchUnAccountedPayments;
-
-    @Autowired
-    private RestServiceClient restServiceClient;
 
     @Autowired
     private ExperienceApiAccountingService experienceApiAccountingService;
@@ -74,7 +70,7 @@ public class MissingAccountingFinderController {
             }
 
             // Notification can have all the
-            String csvData = searchCsvService.generateCsvData(failedToAccount);
+            String csvData = searchCsvService.generateCsvDataPayments(failedToAccount);
             searchNotificationService.sendUnaccountedPaymentsAlert(failedToAccount.size(), csvData);
 
             if (createAccountingAfterDateTime != null) {

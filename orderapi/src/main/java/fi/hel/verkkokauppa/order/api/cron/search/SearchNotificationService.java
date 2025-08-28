@@ -25,4 +25,20 @@ public class SearchNotificationService {
                 message
         );
     }
+
+    public void sendUnaccountedRefundsAlert(int unaccountedCount, String csvData) {
+        String message = String.format(
+                "Alert: %d refunded refund(s) have no corresponding accounting entries. "
+                        + "This may indicate an issue in the refund processing system. "
+                        + "Attached are the unaccounted refund details in CSV format.\n\n"
+                        + "Unaccounted Refund Details:\n%s",
+                unaccountedCount,
+                csvData
+        );
+
+        sendNotificationService.sendErrorNotification(
+                String.format("Unaccounted Paid Refunds Alert: %d unaccounted orders", unaccountedCount),
+                message
+        );
+    }
 }

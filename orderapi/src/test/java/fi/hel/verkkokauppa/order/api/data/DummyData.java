@@ -1,5 +1,7 @@
 package fi.hel.verkkokauppa.order.api.data;
 
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
+import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
@@ -12,11 +14,24 @@ import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class DummyData {
+
+    @Autowired
+    protected CommonServiceConfigurationClient commonServiceConfigurationClient;
+
+    protected String getFirstMerchantIdFromNamespace(String namespace) {
+        List<MerchantDto> merchants = commonServiceConfigurationClient.getMerchantsForNamespace(namespace);
+        if (merchants.size() > 0) {
+            return merchants.get(0).getMerchantId();
+        }
+        return null;
+    }
+
     public Order generateDummyOrder() {
         Order order = new Order();
         order.setOrderId("1");
