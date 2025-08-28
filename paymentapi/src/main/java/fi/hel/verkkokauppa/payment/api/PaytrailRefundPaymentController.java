@@ -77,7 +77,7 @@ public class PaytrailRefundPaymentController {
         }
     }
 
-    @PostMapping("/refund/paytrail/update-from-paytrail-refund")
+    @PostMapping("/refundpayment/paytrail/update-from-paytrail-refund")
     public ResponseEntity<RefundPayment> updateRefundFromPaytrailRefund(
             @RequestBody UpdateFromPaytrailRefundDto dto
     ) {

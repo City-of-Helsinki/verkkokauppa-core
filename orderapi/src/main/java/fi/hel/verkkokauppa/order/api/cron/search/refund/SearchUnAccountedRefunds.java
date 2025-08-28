@@ -57,7 +57,7 @@ public class SearchUnAccountedRefunds {
                 }
                 String namespace = refund.getNamespace();
 
-                String url = serviceUrls.getPaymentServiceUrl() + "/refund/paytrail/update-from-paytrail-refund";
+                String url = serviceUrls.getPaymentServiceUrl() + "/refundpayment/paytrail/update-from-paytrail-refund";
 
                 UpdateFromPaytrailRefundDto dto = new UpdateFromPaytrailRefundDto();
                 dto.setRefundId(refund.getRefundId());
