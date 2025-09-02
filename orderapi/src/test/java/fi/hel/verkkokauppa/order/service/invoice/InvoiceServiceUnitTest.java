@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.service.invoice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.id.IncrementId;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.order.api.data.DummyData;
 import fi.hel.verkkokauppa.order.api.data.invoice.InvoiceDto;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformerUtils;
@@ -53,6 +54,9 @@ class InvoiceServiceUnitTest extends DummyData {
 
     @MockBean
     IncrementId incrementIdGenerator;
+
+    @MockBean
+    CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Test
     void saveInvoiceToOrder() throws NoSuchMethodException {
