@@ -37,6 +37,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SubscriptionRenewalService {
     private Logger log = LoggerFactory.getLogger(SubscriptionRenewalService.class);
 
+    @Value("${subscription.renewal.event.delay.millis:#{1000}}")
+    private int subscriptionRenewalEventDelay;
+
     @Value("${subscription.renewal.batch.size}")
     private int subscriptionRenewalBatchSize;
 
@@ -144,16 +147,25 @@ public class SubscriptionRenewalService {
     }
 
     public AtomicLong batchProcessNextRenewalRequests() {
-        log.debug("processing next renewal requests");
+        log.debug("processing next renewal requests, subscriptionRenewalEventDelay: {}", subscriptionRenewalEventDelay);
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(0, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         log.debug("renewal requests {}", requests);
         AtomicLong count = new AtomicLong();
         if (requests != null) {
-            requests.getContent().forEach(request -> {
+            for (var request : requests.getContent()) {
                 triggerSubscriptionRenewalEvent(request.getId());
                 requestRepository.deleteById(request.getId());
                 count.getAndDecrement();
-            });
+
+                // delay before sending next renewal request
+                try {
+                    Thread.sleep(subscriptionRenewalEventDelay);
+                } catch (InterruptedException e) {
+                    // swallow possible exception from sleep
+                    Thread.currentThread().interrupt(); // restore interrupt status
+                    log.error("Error occurred in sleep during batch processing renewal requests",e);
+                }
+            }
         }
         return count;
     }
