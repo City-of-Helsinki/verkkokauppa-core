@@ -156,14 +156,12 @@ public class SubscriptionRenewalService {
                 triggerSubscriptionRenewalEvent(request.getId());
                 requestRepository.deleteById(request.getId());
                 count.getAndDecrement();
-
                 // delay before sending next renewal request
                 try {
                     Thread.sleep(subscriptionRenewalEventDelay);
                 } catch (InterruptedException e) {
                     // swallow possible exception from sleep
-                    Thread.currentThread().interrupt(); // restore interrupt status
-                    log.error("Error occurred in sleep during batch processing renewal requests",e);
+                    log.error("Sleep during batch processing renewal requests was interrupted",e);
                 }
             }
         }

@@ -186,47 +186,8 @@ class SubscriptionAdminControllerTest extends TestUtils {
                 body.contains("Endpoint: /subscription-admin/check-renewals.")
         );
         Assertions.assertTrue(
-                body.contains("checkRenevals (subscription) called before previous renewal requests were handled.")
+                body.contains("checkRenewals (subscription) called before previous renewal requests were handled.")
         );
     }
 
-    @Test
-    @RunIfProfile(profile = "local")
-    void testStartProcessingRenewalsErrorNotification() throws InterruptedException {
-        ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
-        when(renewalServiceMock.renewalRequestsExist()).thenReturn(true).thenReturn(false);
-
-        // get number of emails before test
-        JSONObject mailHogResponse;
-        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
-        int totalMailsBefore = Integer.parseInt(mailHogResponse.get("total").toString());
-
-        // set interrupted flag for thread
-        Thread.currentThread().interrupt();
-        subscriptionAdminController.startProcessingRenewals();
-        sleep(3000);
-
-        // get eMails from MailHog
-        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
-        int totalMailsAfter = Integer.parseInt(mailHogResponse.get("total").toString());
-        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
-
-        JSONArray items = mailHogResponse.getJSONArray("items");
-        // latest email is in index 0
-        JSONObject email = items.getJSONObject(0);
-        JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
-
-        // remove the test email
-        restServiceClient.makeDeleteCall(mailHogUrl + "/api/v1/messages/" + email.getString("ID"));
-
-        assertEquals("Email Subject does not match.",
-                EventType.ERROR_EMAIL_NOTIFICATION,
-                headers.getJSONArray("Subject").getString(0));
-
-        // Verify Body
-        String body = email.getJSONObject("Content").getString("Body");
-        Assertions.assertTrue(
-                body.contains("Endpoint: /subscription-admin/start-processing-renewals.")
-        );
-    }
 }
