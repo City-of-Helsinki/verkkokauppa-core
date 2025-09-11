@@ -335,7 +335,7 @@ services:
       - common
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.6.0
     container_name: kafka
     restart: on-failure
     depends_on:
@@ -344,6 +344,7 @@ services:
       - "9092:9092"
       - "29092:29092"
     environment:
+      KAFKA_ENABLE_KRAFT: "false"
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://host.docker.internal:29092,PLAINTEXT_HOST://localhost:9092
