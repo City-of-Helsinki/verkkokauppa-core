@@ -162,6 +162,11 @@ public class SubscriptionRenewalService {
                 } catch (InterruptedException e) {
                     // swallow possible exception from sleep
                     log.error("Sleep during batch processing renewal requests was interrupted",e);
+                    try {
+                        Thread.sleep(subscriptionRenewalEventDelay);
+                    } catch (InterruptedException ex) {
+                        // swallow possible exception from sleep retry
+                    }
                 }
             }
         }
