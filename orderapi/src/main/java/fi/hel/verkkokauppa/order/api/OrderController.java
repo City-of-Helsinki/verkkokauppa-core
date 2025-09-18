@@ -628,7 +628,8 @@ public class OrderController {
                 changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
             } else {
                 // otherwise check if payment is not paid and order is not cancelled
-                changesToOrderAllowed = (order != null && !OrderStatus.CANCELLED.equals(order.getStatus()) && !payment.getStatus().equals("payment_paid_online"));
+                changesToOrderAllowed = (order != null && !OrderStatus.CANCELLED.equals(order.getStatus())
+                        && (payment.getStatus() == null || !payment.getStatus().equals("payment_paid_online")));
             }
             log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
             return changesToOrderAllowed;

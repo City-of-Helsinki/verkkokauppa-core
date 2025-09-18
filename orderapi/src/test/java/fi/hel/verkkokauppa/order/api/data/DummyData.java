@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.rest.refund.RefundDto;
 import fi.hel.verkkokauppa.common.rest.refund.RefundItemDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.UUIDGenerator;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.ProductAccountingDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.OrderItem;
@@ -16,8 +17,10 @@ import fi.hel.verkkokauppa.order.model.refund.RefundItem;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class DummyData {
 
@@ -32,9 +35,18 @@ public abstract class DummyData {
         return null;
     }
 
+    public Order generateDummyOrderWithPrices() {
+        Order order = generateDummyOrder();
+        order.setPriceNet("7.45");
+        order.setPriceVat("2.55");
+        order.setPriceTotal("10");
+
+        return order;
+    }
+
     public Order generateDummyOrder() {
         Order order = new Order();
-        order.setOrderId("1");
+        order.setOrderId(UUID.randomUUID().toString());
         order.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         order.setUser("dummy_user");
         order.setNamespace("dummy_namespace");
@@ -62,6 +74,24 @@ public abstract class DummyData {
 
         return subscription;
     }
+
+    public PaymentResultDto generateDummyPayment(Order order) {
+        PaymentResultDto paymentDto = new PaymentResultDto();
+        paymentDto.setOrderId(order.getOrderId());
+        paymentDto.setPaymentId(order.getOrderId() + UUID.randomUUID());
+        paymentDto.setNamespace("dummy_namespace");
+        paymentDto.setPaymentMethod("dummy_payment_method");
+        paymentDto.setPaymentType(order.getType());
+        paymentDto.setPaymentMethodLabel("dummy_payment_method_label");
+        paymentDto.setTaxAmount(new BigDecimal(order.getPriceVat()));
+        paymentDto.setTotal(new BigDecimal(order.getPriceTotal()));
+        paymentDto.setTotalExclTax(new BigDecimal(order.getPriceNet()));
+        paymentDto.setUserId(order.getUser());
+        paymentDto.setStatus("payment_created");
+
+        return paymentDto;
+    }
+
 
     public OrderDto generateDummyOrderDto() {
         OrderDto dto = OrderDto.builder()
