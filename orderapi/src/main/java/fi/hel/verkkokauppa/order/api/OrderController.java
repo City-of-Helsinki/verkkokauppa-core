@@ -8,8 +8,11 @@ import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.rest.RestWebHookService;
+import fi.hel.verkkokauppa.common.rest.dto.payment.PaymentDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.StringUtils;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.cron.search.payment.SearchPaymentService;
 import fi.hel.verkkokauppa.order.api.data.CustomerDto;
 import fi.hel.verkkokauppa.order.api.data.FlowStepDto;
 import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
@@ -29,8 +32,13 @@ import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
 import fi.hel.verkkokauppa.order.service.order.OrderPaymentMethodService;
 import fi.hel.verkkokauppa.order.service.order.OrderService;
+import fi.hel.verkkokauppa.order.service.payment.OrderPaymentService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.helsinki.paytrail.constants.PaymentStatus;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +49,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.ConstraintViolationException;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -92,6 +102,9 @@ public class OrderController {
 
     @Autowired
     private OrderItemInvoicingService orderItemInvoicingService;
+
+    @Autowired
+    private OrderPaymentService orderPaymentService;
 
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
@@ -604,9 +617,29 @@ public class OrderController {
     }
 
     private boolean changesToOrderAllowed(Order order) {
-        boolean changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
-        log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
-        return changesToOrderAllowed;
+        try{
+            boolean changesToOrderAllowed;
+            PaymentResultDto payment = orderPaymentService.findPaymentForOrder(order.getOrderId());
+
+
+            if( payment == null)
+            {
+                // if payment was not found do the default check
+                changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
+            } else {
+                // otherwise check if payment is not paid and order is not cancelled
+                changesToOrderAllowed = (order != null && !OrderStatus.CANCELLED.equals(order.getStatus())
+                        && (payment.getStatus() == null || !payment.getStatus().equals("payment_paid_online")));
+            }
+            log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
+            return changesToOrderAllowed;
+
+        } catch (Exception e) {
+            log.error("Error occurred while in changesToOrderAllowed checking if order is paid.",e);
+            boolean changesToOrderAllowed = (order != null && OrderStatus.DRAFT.equals(order.getStatus()));
+            log.debug("changesToOrderAllowed order: " + order.getOrderId() + " allowed: " + changesToOrderAllowed);
+            return changesToOrderAllowed;
+        }
     }
 
 }

@@ -1,13 +1,9 @@
 package fi.hel.verkkokauppa.order.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.PaymentGatewayEnum;
-import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
-import fi.hel.verkkokauppa.order.api.data.DummyData;
-import fi.hel.verkkokauppa.order.api.data.OrderAggregateDto;
-import fi.hel.verkkokauppa.order.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
+import fi.hel.verkkokauppa.order.api.cron.search.dto.PaymentResultDto;
+import fi.hel.verkkokauppa.order.api.data.*;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderItemTransformer;
 import fi.hel.verkkokauppa.order.api.data.transformer.OrderTransformer;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -16,6 +12,7 @@ import fi.hel.verkkokauppa.order.model.OrderPaymentMethod;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderPaymentMethodRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderRepository;
+import fi.hel.verkkokauppa.order.service.payment.OrderPaymentService;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -24,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,6 +66,9 @@ public class OrderControllerTest extends DummyData {
     private OrderItemTransformer orderItemTransformer;
     @Autowired
     private OrderTransformer orderTransformer;
+
+    @MockBean
+    private OrderPaymentService mockedOrderPaymentService;
 
     private ArrayList<String> toBeDeletedOrderById = new ArrayList<>();
     private ArrayList<String> toBeDeletedOrderItemById = new ArrayList<>();
@@ -275,6 +276,145 @@ public class OrderControllerTest extends DummyData {
                 .andExpect(status().is(404))
                 .andReturn();
         toBeDeletedOrderById.add(testOrderId);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createDraftOrderWithouthPaymentAndASetCustomer() throws Exception {
+        String firstName = "Testuser";
+        String lastName = "Testuser-Lastname";
+        String phone = "+3584012345678";
+        String email = "testi@testi.tst";
+        Order order = generateDummyOrder();
+        order.setStatus("draft");
+        order = orderRepository.save(order);
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/setCustomer")
+                                .param("orderId", order.getOrderId())
+                                .param("userId", order.getUser())
+                                .param("customerFirstName", firstName)
+                                .param("customerLastName", lastName)
+                                .param("customerPhone", phone)
+                                .param("customerEmail", email)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+        OrderAggregateDto orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        OrderDto returnedOrder = orderAggregateDto.getOrder();
+        assertEquals(email, returnedOrder.getCustomerEmail());
+        assertEquals(phone, returnedOrder.getCustomerPhone());
+        assertEquals(firstName, returnedOrder.getCustomerFirstName());
+        assertEquals(lastName, returnedOrder.getCustomerLastName());
+        toBeDeletedOrderById.add(order.getOrderId());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createConfirmedOrderWithPaymentAndASetCustomer() throws Exception {
+        String firstName = "Testuser";
+        String lastName = "Testuser-Lastname";
+        String phone = "+3584012345678";
+        String email = "testi@testi.tst";
+        Order order = generateDummyOrderWithPrices();
+        order.setStatus("confirmed");
+        order = orderRepository.save(order);
+        PaymentResultDto payment = generateDummyPayment(order);
+
+        when(mockedOrderPaymentService.findPaymentForOrder(order.getOrderId())).thenReturn(payment);
+
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/setCustomer")
+                                .param("orderId", order.getOrderId())
+                                .param("userId", order.getUser())
+                                .param("customerFirstName", firstName)
+                                .param("customerLastName", lastName)
+                                .param("customerPhone", phone)
+                                .param("customerEmail", email)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andReturn();
+        OrderAggregateDto orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        OrderDto returnedOrder = orderAggregateDto.getOrder();
+        assertEquals(email, returnedOrder.getCustomerEmail());
+        assertEquals(phone, returnedOrder.getCustomerPhone());
+        assertEquals(firstName, returnedOrder.getCustomerFirstName());
+        assertEquals(lastName, returnedOrder.getCustomerLastName());
+        toBeDeletedOrderById.add(order.getOrderId());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createCancelledOrderWithPaymentAndASetCustomer() throws Exception {
+        String firstName = "Testuser";
+        String lastName = "Testuser-Lastname";
+        String phone = "+3584012345678";
+        String email = "testi@testi.tst";
+        Order order = generateDummyOrderWithPrices();
+        order.setStatus("cancelled");
+        order = orderRepository.save(order);
+        PaymentResultDto payment = generateDummyPayment(order);
+
+        when(mockedOrderPaymentService.findPaymentForOrder(order.getOrderId())).thenReturn(payment);
+
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/setCustomer")
+                                .param("orderId", order.getOrderId())
+                                .param("userId", order.getUser())
+                                .param("customerFirstName", firstName)
+                                .param("customerLastName", lastName)
+                                .param("customerPhone", phone)
+                                .param("customerEmail", email)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is4xxClientError())
+                .andReturn();
+        OrderAggregateDto orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        OrderDto returnedOrder = orderAggregateDto.getOrder();
+        assertNull(returnedOrder);
+        toBeDeletedOrderById.add(order.getOrderId());
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createConfirmedOrderWithPaidPaymentAndASetCustomer() throws Exception {
+        String firstName = "Testuser";
+        String lastName = "Testuser-Lastname";
+        String phone = "+3584012345678";
+        String email = "testi@testi.tst";
+        Order order = generateDummyOrderWithPrices();
+        order.setStatus("confirmed");
+        order = orderRepository.save(order);
+        PaymentResultDto payment = generateDummyPayment(order);
+        payment.setStatus("payment_paid_online");
+
+        when(mockedOrderPaymentService.findPaymentForOrder(order.getOrderId())).thenReturn(payment);
+
+        MvcResult res = this.mockMvc.perform(
+                        post("/order/setCustomer")
+                                .param("orderId", order.getOrderId())
+                                .param("userId", order.getUser())
+                                .param("customerFirstName", firstName)
+                                .param("customerLastName", lastName)
+                                .param("customerPhone", phone)
+                                .param("customerEmail", email)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().is4xxClientError())
+                .andReturn();
+        OrderAggregateDto orderAggregateDto = mapper.readValue(res.getResponse().getContentAsString(), OrderAggregateDto.class);
+        OrderDto returnedOrder = orderAggregateDto.getOrder();
+        assertNull(returnedOrder);
+        toBeDeletedOrderById.add(order.getOrderId());
     }
 
     private OrderPaymentMethodDto createTestOrderPaymentMethodDto(String orderId, String userId, PaymentGatewayEnum gateway) {
