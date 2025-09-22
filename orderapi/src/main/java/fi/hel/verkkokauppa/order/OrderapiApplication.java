@@ -13,6 +13,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
         "fi.hel.verkkokauppa.common.error",
         "fi.hel.verkkokauppa.common.events",
         "fi.hel.verkkokauppa.common.rest",
+        "fi.hel.verkkokauppa.common.service",
         "fi.hel.verkkokauppa.common.configuration",
         "fi.hel.verkkokauppa.order",
         "fi.hel.verkkokauppa.common.history",

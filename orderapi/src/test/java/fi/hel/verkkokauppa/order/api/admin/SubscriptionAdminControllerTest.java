@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.service.SleepService;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -53,6 +56,12 @@ class SubscriptionAdminControllerTest extends TestUtils {
 
     @MockBean
     private SubscriptionRenewalService renewalServiceMock;
+
+    @MockBean
+    private SleepService sleepService;
+
+    @Value("${subscription.renewal.event.delay.millis:#{1000}}")
+    private int subscriptionRenewalEventDelay;
 
     private String mailHogUrl = "http://localhost:8025";
 
@@ -187,6 +196,49 @@ class SubscriptionAdminControllerTest extends TestUtils {
         );
         Assertions.assertTrue(
                 body.contains("checkRenewals (subscription) called before previous renewal requests were handled.")
+        );
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void testStartProcessingRenewalsErrorNotification() throws InterruptedException {
+        ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
+        when(renewalServiceMock.renewalRequestsExist()).thenReturn(true).thenReturn(false);
+        doNothing()
+                .when(sleepService)
+                .sleepWithRetry(subscriptionRenewalEventDelay, 1);
+
+        // get number of emails before test
+        JSONObject mailHogResponse;
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsBefore = Integer.parseInt(mailHogResponse.get("total").toString());
+
+        // set interrupted flag for thread
+        Thread.currentThread().interrupt();
+        subscriptionAdminController.startProcessingRenewals();
+        sleep(3000);
+
+        // get eMails from MailHog
+        mailHogResponse = restServiceClient.makeGetCall(mailHogUrl + "/api/v2/messages");
+        int totalMailsAfter = Integer.parseInt(mailHogResponse.get("total").toString());
+        assertEquals("There should be one more eMail after the test.", 1, (totalMailsAfter - totalMailsBefore));
+
+        JSONArray items = mailHogResponse.getJSONArray("items");
+        // latest email is in index 0
+        JSONObject email = items.getJSONObject(0);
+        JSONObject headers = email.getJSONObject("Content").getJSONObject("Headers");
+
+        // remove the test email
+        restServiceClient.makeDeleteCall(mailHogUrl + "/api/v1/messages/" + email.getString("ID"));
+
+        assertEquals("Email Subject does not match.",
+                EventType.ERROR_EMAIL_NOTIFICATION,
+                headers.getJSONArray("Subject").getString(0));
+
+        // Verify Body
+        String body = email.getJSONObject("Content").getString("Body");
+        Assertions.assertTrue(
+                body.contains("Endpoint: /subscription-admin/start-processing-renewals.")
         );
     }
 
