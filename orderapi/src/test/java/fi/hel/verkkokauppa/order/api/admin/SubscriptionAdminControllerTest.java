@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.api.admin;
 
 import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.service.SleepService;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.subscription.Subscription;
 import fi.hel.verkkokauppa.order.model.subscription.SubscriptionStatus;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -53,6 +56,12 @@ class SubscriptionAdminControllerTest extends TestUtils {
 
     @MockBean
     private SubscriptionRenewalService renewalServiceMock;
+
+    @MockBean
+    private SleepService sleepService;
+
+    @Value("${subscription.renewal.event.delay.millis:#{1000}}")
+    private int subscriptionRenewalEventDelay;
 
     private String mailHogUrl = "http://localhost:8025";
 
@@ -186,7 +195,7 @@ class SubscriptionAdminControllerTest extends TestUtils {
                 body.contains("Endpoint: /subscription-admin/check-renewals.")
         );
         Assertions.assertTrue(
-                body.contains("checkRenevals (subscription) called before previous renewal requests were handled.")
+                body.contains("checkRenewals (subscription) called before previous renewal requests were handled.")
         );
     }
 
@@ -195,6 +204,9 @@ class SubscriptionAdminControllerTest extends TestUtils {
     void testStartProcessingRenewalsErrorNotification() throws InterruptedException {
         ReflectionTestUtils.setField(subscriptionAdminController, "renewalService", renewalServiceMock);
         when(renewalServiceMock.renewalRequestsExist()).thenReturn(true).thenReturn(false);
+        doNothing()
+                .when(sleepService)
+                .sleepWithRetry(subscriptionRenewalEventDelay, 1);
 
         // get number of emails before test
         JSONObject mailHogResponse;
@@ -229,4 +241,5 @@ class SubscriptionAdminControllerTest extends TestUtils {
                 body.contains("Endpoint: /subscription-admin/start-processing-renewals.")
         );
     }
+
 }

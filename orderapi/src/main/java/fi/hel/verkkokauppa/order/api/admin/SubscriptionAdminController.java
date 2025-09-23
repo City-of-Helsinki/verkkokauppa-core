@@ -156,7 +156,9 @@ public class SubscriptionAdminController {
         while (renewalService.renewalRequestsExist()) {
             try {
                 AtomicLong count = renewalService.batchProcessNextRenewalRequests();
-                size -= count.get();
+                if(  count != null ) {
+                    size -= count.get();
+                }
                 log.debug("Subscription size {}", size);
                 Thread.sleep(subscriptionRenewalBatchSleepMillis);
             } catch (Exception e) {

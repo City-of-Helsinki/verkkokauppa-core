@@ -6,6 +6,7 @@ import fi.hel.verkkokauppa.common.events.EventType;
 import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
+import fi.hel.verkkokauppa.common.service.SleepService;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.order.api.data.subscription.SubscriptionDto;
 import fi.hel.verkkokauppa.order.model.Order;
@@ -26,7 +27,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -36,6 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class SubscriptionRenewalService {
     private Logger log = LoggerFactory.getLogger(SubscriptionRenewalService.class);
+
+    @Value("${subscription.renewal.event.delay.millis:#{1000}}")
+    private int subscriptionRenewalEventDelay;
 
     @Value("${subscription.renewal.batch.size}")
     private int subscriptionRenewalBatchSize;
@@ -60,6 +63,9 @@ public class SubscriptionRenewalService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SleepService sleepService;
 
     public String renewSubscription(String subscriptionId) {
         String orderId = null;
@@ -144,16 +150,18 @@ public class SubscriptionRenewalService {
     }
 
     public AtomicLong batchProcessNextRenewalRequests() {
-        log.debug("processing next renewal requests");
+        log.debug("processing next renewal requests, subscriptionRenewalEventDelay: {}", subscriptionRenewalEventDelay);
         Page<SubscriptionRenewalRequest> requests = requestRepository.findAll(PageRequest.of(0, subscriptionRenewalBatchSize, Sort.by("renewalRequested").ascending()));
         log.debug("renewal requests {}", requests);
-        AtomicLong count = new AtomicLong();
+        AtomicLong count = new AtomicLong(0);
         if (requests != null) {
-            requests.getContent().forEach(request -> {
+            for (var request : requests.getContent()) {
                 triggerSubscriptionRenewalEvent(request.getId());
                 requestRepository.deleteById(request.getId());
                 count.getAndDecrement();
-            });
+                // delay before sending next renewal request
+                sleepService.sleepWithRetry(subscriptionRenewalEventDelay,1);
+            }
         }
         return count;
     }
