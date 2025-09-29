@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fi.hel.verkkokauppa.common.constants.NamespaceType;
 import io.netty.channel.ChannelOption;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.json.JSONArray;
@@ -22,6 +24,7 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 
@@ -95,13 +98,26 @@ public class RestServiceClient {
     }
 
     public WebClient getWebhookAuthClient(String namespace) {
-        // expect a response within a few seconds
+        // base HttpClient with timeouts
         HttpClient httpClient = HttpClient.create()
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT)
                 .responseTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
                 .doOnConnected(conn ->
                         conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
                                 .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
+
+        // HOTFIX: Cert error in webhooks! if env var is set, configure insecure SSL, before good fix for this is done!
+        boolean allowInsecure = Optional.ofNullable(System.getenv("ALLOW_INSECURE_SSL"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+
+        if (allowInsecure) {
+            httpClient = httpClient.secure(ssl -> ssl.sslContext(
+                    SslContextBuilder.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            ));
+            log.warn("ALLOW_INSECURE_SSL is true → SSL certificate validation is DISABLED!");
+        }
 
         String apiKey = null;
         try {
@@ -110,14 +126,12 @@ public class RestServiceClient {
             log.info("Cant fetch webhook api key for namespace " + namespace);
         }
 
-        WebClient client = WebClient.builder()
+        return WebClient.builder()
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("webhook-api-key", apiKey)
                 .defaultHeader("namespace", namespace)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
-
-        return client;
     }
 
     public WebClient getAdminClient() {
