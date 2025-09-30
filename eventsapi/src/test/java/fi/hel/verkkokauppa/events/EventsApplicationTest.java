@@ -25,37 +25,32 @@ public class EventsApplicationTest {
 
 
 //    @Test
-//    void getApiKeyWorks() {
-//        String authKey = configurationClient.getAuthKey(NamespaceType.ADMIN);
-//        log.info(authKey);
-//        Assertions.assertNotNull(authKey);
-//    }
+    void getApiKeyWorks() {
+        String authKey = configurationClient.getAuthKey(NamespaceType.ADMIN);
+        log.info(authKey);
+        Assertions.assertNotNull(authKey);
+    }
 
 //  @Test
-//    void getQueryWithAuthenticationWorks() {
-//        JSONObject response = restServiceClient.makeAdminGetCall("http://localhost:8084/v1/order/admin/e14d791f-7dbe-3688-b78e-963685c6be14");
-//        Assertions.assertNotNull(response);
-//    }
-//
-//
-//    void getQueryWithAuthenticationWorks() {
-//        JSONObject response = restServiceClient.makeAdminGetCall("http://localhost:8084/v1/order/admin/e14d791f-7dbe-3688-b78e-963685c6be14");
-//        Assertions.assertNotNull(response);
-//    }
+    void getQueryWithAuthenticationWorks() {
+        JSONObject response = restServiceClient.makeAdminGetCall("http://localhost:8084/v1/order/admin/e14d791f-7dbe-3688-b78e-963685c6be14");
+        Assertions.assertNotNull(response);
+    }
+
 //    @Test
-//    public void testGetWebhookAuthClient() {
-//        WebClient client = restServiceClient.getWebhookAuthClient("venepaikat");
-//
-//        try {
-//            String response = client.get()
-//                    .uri("https://parking-permits.api.hel.fi/") // or a specific path like "/v1/permits"
-//                    .retrieve()
-//                    .bodyToMono(String.class)
-//                    .block(Duration.ofSeconds(10));
-//            System.out.println("Response: " + response);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
+    public void testGetWebhookAuthClient() {
+        WebClient client = restServiceClient.getWebhookAuthClient("venepaikat");
+
+        try {
+            String response = client.get()
+                    .uri("https://parking-permits.api.hel.fi/") // or a specific path like "/v1/permits"
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block(Duration.ofSeconds(10));
+            System.out.println("Response: " + response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
 
 
