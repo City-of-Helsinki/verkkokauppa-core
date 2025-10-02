@@ -89,6 +89,18 @@ public class RestServiceClient {
                         conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
                                 .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
 
+        // HOTFIX: Cert error in webhooks! if env var is set, configure insecure SSL, before good fix for this is done!
+        boolean allowInsecure = Optional.ofNullable(System.getenv("ALLOW_INSECURE_SSL"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+        if (allowInsecure) {
+            httpClient = httpClient.secure(ssl -> ssl.sslContext(
+                    SslContextBuilder.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            ));
+            log.warn("ALLOW_INSECURE_SSL is true → SSL certificate validation is DISABLED!");
+        }
+
         WebClient client = WebClient.builder()
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
@@ -143,6 +155,18 @@ public class RestServiceClient {
                         conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
                                 .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
 
+        // HOTFIX: Cert error in webhooks! if env var is set, configure insecure SSL, before good fix for this is done!
+        boolean allowInsecure = Optional.ofNullable(System.getenv("ALLOW_INSECURE_SSL"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+
+        if (allowInsecure) {
+            httpClient = httpClient.secure(ssl -> ssl.sslContext(
+                    SslContextBuilder.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            ));
+            log.warn("ALLOW_INSECURE_SSL is true → SSL certificate validation is DISABLED!");
+        }
         String apiKey = configurationClient.getAuthKey(NamespaceType.ADMIN);
 
         WebClient client = WebClient.builder()
