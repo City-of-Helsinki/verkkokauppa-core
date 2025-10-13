@@ -97,6 +97,7 @@ public class InvoicingExportService {
                 .collect(groupingBy(OrderItemInvoicing::getOrderIncrementId));
         for (Map.Entry<String, List<OrderItemInvoicing>> entry : groupedInvoicings.entrySet()) {
             List<OrderItemInvoicing> items = entry.getValue();
+            LocalDate billingDate = null;
             SalesOrder salesOrder = new SalesOrder();
             salesOrder.setOrderType(items.get(0).getOrderType());
             salesOrder.setSalesOrg(items.get(0).getSalesOrg());
@@ -111,6 +112,9 @@ public class InvoicingExportService {
 
             List<LineItem> lineItems = new ArrayList<>();
             for (OrderItemInvoicing item : items) {
+                if( billingDate == null || billingDate.isBefore(item.getInvoicingDate()) ){
+                    billingDate = item.getInvoicingDate();
+                }
                 LineItem lineItem = new LineItem();
                 lineItem.setOrderItemId(item.getOrderItemId());
                 lineItem.setMaterial(item.getMaterial());
@@ -131,7 +135,7 @@ public class InvoicingExportService {
             salesOrder.setLineItems(lineItems);
 
             salesOrder.setReference(Long.toString(incrementId.generateInvoicingIncrementId()));
-            salesOrder.setBillingDate(LocalDate.now());
+            salesOrder.setBillingDate(billingDate != null ? billingDate : LocalDate.now());
             salesOrders.add(salesOrder);
         }
         salesOrderContainer.setSalesOrders(salesOrders);
