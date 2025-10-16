@@ -13,9 +13,11 @@ import fi.hel.verkkokauppa.order.api.data.invoice.xml.Party;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrder;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +28,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -43,15 +42,18 @@ public class InvoicingExportService {
     final RestServiceClient restServiceClient;
     final ServiceUrls serviceUrls;
 
+    final OrderItemMetaService orderItemMetaService;
+
     @Value("${invoice.notification.email}")
     String invoicedEmailRecipients;
 
     @Autowired
-    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository, RestServiceClient restServiceClient, ServiceUrls serviceUrls) {
+    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository, RestServiceClient restServiceClient, ServiceUrls serviceUrls, OrderItemMetaService orderItemMetaService) {
         this.incrementId = incrementId;
         this.orderItemRepository = orderItemRepository;
         this.restServiceClient = restServiceClient;
         this.serviceUrls = serviceUrls;
+        this.orderItemMetaService = orderItemMetaService;
     }
 
     private Party orderItemInvoicingToParty(OrderItemInvoicing item, boolean isOrderParty) {
@@ -96,6 +98,7 @@ public class InvoicingExportService {
         Map<String, List<OrderItemInvoicing>> groupedInvoicings = orderItemInvoicings.stream()
                 .collect(groupingBy(OrderItemInvoicing::getOrderIncrementId));
         for (Map.Entry<String, List<OrderItemInvoicing>> entry : groupedInvoicings.entrySet()) {
+
             List<OrderItemInvoicing> items = entry.getValue();
             LocalDate billingDate = null;
             SalesOrder salesOrder = new SalesOrder();
@@ -125,6 +128,10 @@ public class InvoicingExportService {
                 lineItem.setProfitCenter(item.getProfitCenter());
                 lineItem.setWbsElement(item.getProject());
                 lineItem.setFunctionalArea(item.getOperationArea());
+
+                // update LineItem with metadata
+                lineItem = updateLineItemWithMetaData(lineItem);
+
                 lineItems.add(lineItem);
 
                 if (!productInvoicingAreEqual(salesOrder, item) || !partyAreEqual(customer, orderItemInvoicingToParty(item, false))) {
@@ -180,5 +187,45 @@ public class InvoicingExportService {
 
     public void sendInvoicedEmail(JSONObject json) {
         restServiceClient.makePostCall(serviceUrls.getMessageServiceUrl() + "/message/send/email", json.toString());
+    }
+
+    private LineItem updateLineItemWithMetaData(LineItem lineItem) {
+        List<OrderItemMeta> orderItemMetas = orderItemMetaService.findByOrderItemId(lineItem.getOrderItemId());
+        orderItemMetas.sort(Comparator.comparing(OrderItemMeta::getOrdinal));
+        // loop through orderItemMetas
+        int textIndex = 1;
+        for (OrderItemMeta meta : orderItemMetas){
+            // if this is visible in checkout then add to invoice
+            if( meta.getVisibleInCheckout().equalsIgnoreCase("true") ){
+                switch (textIndex){
+                    case 1:
+                        lineItem.setLineTextL1(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                    case 2:
+                        lineItem.setLineTextL1(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                    case 3:
+                        lineItem.setLineTextL3(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                    case 4:
+                        lineItem.setLineTextL4(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                    case 5:
+                        lineItem.setLineTextL5(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                    case 6:
+                        lineItem.setLineTextL6(meta.getLabel() + " " + meta.getValue());
+                        textIndex++;
+                        break;
+                }
+            }
+        }
+        return lineItem;
+
     }
 }
