@@ -1,0 +1,32 @@
+package fi.hel.verkkokauppa.order.model.invoice;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import java.time.LocalDate;
+
+@Document(indexName = "invoicingxmls")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class InvoicingXml {
+
+    @Id
+    private String xmlId;
+
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    private LocalDate timestamp;
+
+    @Field(type = FieldType.Keyword)
+    private String xmlFileName;
+
+    @Field(type = FieldType.Text)
+    private String xml;
+
+}

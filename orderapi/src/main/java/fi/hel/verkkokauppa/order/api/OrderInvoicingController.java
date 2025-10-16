@@ -9,6 +9,7 @@ import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.service.accounting.FileExportService;
+import fi.hel.verkkokauppa.order.service.invoice.InvoiceXmlService;
 import fi.hel.verkkokauppa.order.service.invoice.InvoicingExportService;
 import fi.hel.verkkokauppa.order.service.invoice.OrderItemInvoicingService;
 import fi.hel.verkkokauppa.order.service.order.OrderItemService;
@@ -51,6 +52,9 @@ public class OrderInvoicingController {
     @Autowired
     private SaveHistoryService saveHistoryService;
 
+    @Autowired
+    private InvoiceXmlService invoiceXmlService;
+
     @PostMapping(value = "/order/invoicing/create", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<OrderItemInvoicingDto>> createOrderInvoicing(@RequestBody List<OrderItemInvoicingDto> dtos) {
         List<OrderItemInvoicingDto> res = new ArrayList<>();
@@ -71,8 +75,13 @@ public class OrderInvoicingController {
             }
             SalesOrderContainer salesOrderContainer = invoicingExportService.generateSalesOrderContainer(orderItemInvoicings);
             String xml = invoicingExportService.salesOrderContainerToXml(salesOrderContainer);
+
+            String xmlFileName = invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer);
+            // save xml to elasticsearch
+            invoiceXmlService.save(xmlFileName,xml);
+
             log.info(xml);
-            fileExportService.export(SAP.Interface.INVOICING, xml, invoicingExportService.getSalesOrderContainerFilename(salesOrderContainer));
+            fileExportService.export(SAP.Interface.INVOICING, xml, xmlFileName);
             invoicingExportService.copyExportedDataToOrderItems(salesOrderContainer);
             orderItemInvoicingService.markInvoicingsInvoiced(orderItemInvoicings);
             JSONObject invoicedEmail = invoicingExportService.generateInvoicedEmail(salesOrderContainer);
