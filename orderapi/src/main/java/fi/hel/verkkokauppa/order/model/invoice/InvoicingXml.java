@@ -23,6 +23,9 @@ public class InvoicingXml {
     @Field(type = FieldType.Date, format = DateFormat.date)
     private LocalDate timestamp;
 
+    @Field(type = FieldType.Text)
+    Integer counter;
+
     @Field(type = FieldType.Keyword)
     private String xmlFileName;
 

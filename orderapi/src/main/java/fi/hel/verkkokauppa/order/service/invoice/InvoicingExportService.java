@@ -203,7 +203,7 @@ public class InvoicingExportService {
                         textIndex++;
                         break;
                     case 2:
-                        lineItem.setLineTextL1(meta.getLabel() + " " + meta.getValue());
+                        lineItem.setLineTextL2(meta.getLabel() + " " + meta.getValue());
                         textIndex++;
                         break;
                     case 3:
