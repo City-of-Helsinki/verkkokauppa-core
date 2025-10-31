@@ -1,8 +1,10 @@
 package fi.hel.verkkokauppa.order.service.accounting;
 
-import fi.hel.verkkokauppa.order.model.Order;
+import fi.hel.verkkokauppa.common.util.UUIDGenerator;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
+import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderAccountingRepository;
 import fi.hel.verkkokauppa.order.test.utils.SearchAfterServiceTestUtils;
 import fi.hel.verkkokauppa.order.testing.annotations.RunIfProfile;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -35,6 +36,9 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
 
     @Value("${elasticsearch.search-after-page-size}")
     private int elasticsearchSearchAfterPageSize;
+
+    @Autowired
+    OrderAccountingRepository orderAccountingRepository;
 
     @After
     public void tearDown() {
@@ -66,9 +70,13 @@ public class AccountingSearchServiceTest extends SearchAfterServiceTestUtils {
     @Test
     public void testFindNotAccountedOrders() throws Exception {
         log.info("running testFindNotAccountedOrders");
-        createOrder(10);
-        List<Order> resultList;
-        long expectedTotalHits = notAccountedOrderCount();
+        for (int i = 0; i < 10; ++i) {
+            OrderAccounting orderAccounting = new OrderAccounting();
+            orderAccounting.setOrderId(UUIDGenerator.generateType4UUID().toString());
+            orderAccountingRepository.save(orderAccounting);
+        }
+        List<OrderAccounting> resultList;
+        long expectedTotalHits = notAccountedOrderAccountingCount();
 
         log.info("elasticsearch.search-after-page-size: " + elasticsearchSearchAfterPageSize);
         resultList = searchServiceToTest.findNotAccountedOrders();

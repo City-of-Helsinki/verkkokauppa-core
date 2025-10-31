@@ -74,7 +74,7 @@ public class AccountingSlipService {
 
 
     public List<AccountingSlipDto> createAccountingData() throws Exception {
-        List<Order> ordersToAccount = accountingSearchService.findNotAccountedOrders();
+        List<OrderAccounting> ordersToAccount = accountingSearchService.findNotAccountedOrders();
         List<Refund> refundsToAccount = accountingSearchService.findNotAccountedRefunds();
         Map<LocalDate, List<String>> orderAccountingIdsByDate = groupOrderAccountingsByDate(ordersToAccount);
         Map<LocalDate, List<String>> refundAccountingIdsByDate = groupRefundAccountingsByDate(refundsToAccount);
@@ -156,14 +156,8 @@ public class AccountingSlipService {
         return accountingSlips;
     }
 
-    public Map<LocalDate, List<String>> groupOrderAccountingsByDate(List<Order> ordersToAccount) {
+    public Map<LocalDate, List<String>> groupOrderAccountingsByDate(List<OrderAccounting> orderAccountings) {
         Map<LocalDate, List<String>> map = new HashMap<>();
-
-        List<String> orderIds = ordersToAccount.stream()
-                .map(Order::getOrderId)
-                .collect(Collectors.toList());
-
-        List<OrderAccounting> orderAccountings = orderAccountingService.getOrderAccountings(orderIds);
 
         for (OrderAccounting orderAccounting : orderAccountings) {
             LocalDate createdAt = DateTimeUtil.toFinnishDate(orderAccounting.getCreatedAt());
