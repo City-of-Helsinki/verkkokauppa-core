@@ -474,11 +474,16 @@ public class TestUtils extends DummyData {
 
     public JSONObject createMockInvoiceAccountingForProductId(String productId) throws JsonProcessingException {
 
+        return createMockInvoiceAccountingForProductId(productId, "salesOrg");
+    }
+
+    public JSONObject createMockInvoiceAccountingForProductId(String productId, String salesOrg) throws JsonProcessingException {
+
         JSONObject productAccounting = new JSONObject();
 
         productAccounting.put("productId", productId);
         productAccounting.put("salesOrg", "salesOrg");
-        productAccounting.put("salesOffice", "salesOffice");
+        productAccounting.put("salesOffice", salesOrg);
         productAccounting.put("material", "material");
         productAccounting.put("orderType", "orderType");
 
