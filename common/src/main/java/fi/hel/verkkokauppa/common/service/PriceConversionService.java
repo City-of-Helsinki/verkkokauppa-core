@@ -18,10 +18,10 @@ public class PriceConversionService {
         Integer intAmount = Integer.parseInt(total[0] + "00");
 
         // add cents
-        Integer cents = Integer.parseInt(total[1]);
-        intAmount = intAmount + cents;
-
-        log.info("convertEuroStringToIntegerCents: Amount to convert: {} Converted amount: {}", amount, intAmount);
+        if( total.length > 1 ) {
+            Integer cents = Integer.parseInt(total[1]);
+            intAmount = intAmount + cents;
+        }
 
         return intAmount;
     }
@@ -33,7 +33,7 @@ public class PriceConversionService {
         // Add euros (divide), decimal point and cents (remainder) to make amount string in euros
         int euros = (amount / 100);
         int cents = (amount % 100);
-        log.info("convertIntegerCentsToEuroString: Amount ot convert: {} Euros: {} Cents: {}", amount, euros, cents);
+
         return String.format("€%d,%02d", euros, cents);
     }
 }
