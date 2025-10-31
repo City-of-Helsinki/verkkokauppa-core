@@ -247,36 +247,45 @@ public class InvoicingExportService {
     //
     private String getSalesOrgTotals(SalesOrderContainer salesOrderContainer){
         // calculate totals by salesorg
-        Map<String, BigInteger> salesOrgTotals = new HashMap<>();
+        Map<String, Integer> salesOrgTotals = new HashMap<>();
+        Map<String, Integer> salesOrgInvoiceCount = new HashMap<>();
         // loop all orders
         for ( int i=0; i<salesOrderContainer.getSalesOrders().size(); i++ ) {
             SalesOrder salesOrder = salesOrderContainer.getSalesOrders().get(i);
             String salesOrg = salesOrder.getSalesOrg();
             // get current total for this salesOrg
-            BigInteger currentTotals = salesOrgTotals.get(salesOrg);
+            Integer currentTotals = salesOrgTotals.get(salesOrg);
             if (currentTotals == null) {
                 // if total for this org did not exist yet then set it as 0
-                currentTotals = new BigInteger("0");
+                currentTotals = 0;
+            }
+            Integer currentCount = salesOrgInvoiceCount.get(salesOrg);
+            if (currentCount == null) {
+                // if total for this org did not exist yet then set it as 0
+                currentCount = 0;
             }
             List<LineItem> lineItems = salesOrder.getLineItems();
             // loop all order items
             for(int j=0; j<lineItems.size(); j++) {
                 // split euro string to euros and cents
-                currentTotals = priceConversionService.convertEuroStringToBigIntegerCents(lineItems.get(j).getNetPrice());
+                currentTotals += priceConversionService.convertEuroStringToIntegerCents(lineItems.get(j).getNetPrice());
+                currentCount++;
             }
             // set new totals for this org
             salesOrgTotals.put(salesOrg, currentTotals);
+            salesOrgInvoiceCount.put(salesOrg, currentCount);
         }
 
         StringBuilder salesOrgTotalsString = new StringBuilder();
         // create sales org totals string from all sales organisations included
-        for (Map.Entry<String, BigInteger> entry : salesOrgTotals.entrySet()) {
+        for (Map.Entry<String, Integer> entry : salesOrgTotals.entrySet()) {
             String salesOrg = entry.getKey();
             // make total amount string from big integer sum
-            String totalStr = priceConversionService.convertBigIntegerCentsToEuroString(entry.getValue());
+            String totalStr = priceConversionService.convertIntegerCentsToEuroString(entry.getValue());
+            Integer currentCount = salesOrgInvoiceCount.get(salesOrg);
 
-            salesOrgTotalsString.append(String.format("Sales Organization: %s Total Net: %s<br/>",
-                    salesOrg, totalStr));
+            salesOrgTotalsString.append(String.format("Sales Organization: %s; Invoices:%s; Total Net: %s<br/>",
+                    salesOrg, Integer.toString(currentCount), totalStr));
         }
         return salesOrgTotalsString.toString();
     }

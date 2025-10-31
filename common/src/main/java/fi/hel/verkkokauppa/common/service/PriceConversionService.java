@@ -10,22 +10,30 @@ import java.math.BigInteger;
 @Slf4j
 public class PriceConversionService {
 
-    public BigInteger convertEuroStringToBigIntegerCents(String amount) {
+    public Integer convertEuroStringToIntegerCents(String amount) {
         // split euro string to euros and cents
         String[] total = amount.split("\\.");
 
-        // bigInt with euros from string
-        BigInteger bigIntAmount = new BigInteger(total[0] + "00");
+        // Integer with euros from string
+        Integer intAmount = Integer.parseInt(total[0] + "00");
 
         // add cents
-        BigInteger cents = new BigInteger(total[0]);
-        bigIntAmount = bigIntAmount.add(cents);
+        Integer cents = Integer.parseInt(total[1]);
+        intAmount = intAmount + cents;
 
-        return bigIntAmount;
+        log.info("convertEuroStringToIntegerCents: Amount to convert: {} Converted amount: {}", amount, intAmount);
+
+        return intAmount;
     }
 
-    public String convertBigIntegerCentsToEuroString(BigInteger amount) {
+    public String convertIntegerCentsToEuroString(Integer amount) {
+        if (amount == null) {
+            return "0.00";
+        }
         // Add euros (divide), decimal point and cents (remainder) to make amount string in euros
-        return amount.divide(new BigInteger("100")).toString() + "." + amount.remainder(new BigInteger("100")).toString();
+        int euros = (amount / 100);
+        int cents = (amount % 100);
+        log.info("convertIntegerCentsToEuroString: Amount ot convert: {} Euros: {} Cents: {}", amount, euros, cents);
+        return String.format("€%d,%02d", euros, cents);
     }
 }

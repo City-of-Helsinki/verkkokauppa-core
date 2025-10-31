@@ -482,8 +482,8 @@ public class TestUtils extends DummyData {
         JSONObject productAccounting = new JSONObject();
 
         productAccounting.put("productId", productId);
-        productAccounting.put("salesOrg", "salesOrg");
-        productAccounting.put("salesOffice", salesOrg);
+        productAccounting.put("salesOrg", salesOrg);
+        productAccounting.put("salesOffice", "salesOffice");
         productAccounting.put("material", "material");
         productAccounting.put("orderType", "orderType");
 
