@@ -713,7 +713,7 @@ class OrderServiceTest extends TestUtils {
     @Test
     @RunIfProfile(profile = "local")
     void createInvoiceTypeOrderWithMerchantId() throws JsonProcessingException {
-        String invoiceSalesOrg = "salesOrgII";
+        String invoiceSalesOrg = "salesOrgOld";
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
         log.info("Creating invoice type order with merchantId: {}",firstMerchantIdFromNamespace);

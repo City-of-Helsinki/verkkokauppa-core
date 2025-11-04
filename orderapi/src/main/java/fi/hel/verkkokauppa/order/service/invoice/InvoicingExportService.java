@@ -7,6 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.id.IncrementId;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 import fi.hel.verkkokauppa.common.service.PriceConversionService;
@@ -24,9 +25,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -202,43 +206,46 @@ public class InvoicingExportService {
     }
 
     private LineItem updateLineItemWithMetaData(LineItem lineItem) {
-        List<OrderItemMeta> orderItemMetas = orderItemMetaService.findByOrderItemId(lineItem.getOrderItemId());
-        orderItemMetas.sort(Comparator.comparing(OrderItemMeta::getOrdinal));
+        // get visible metadata for orderitem
+        List<OrderItemMeta> visibleOrderItemMetas = orderItemMetaService.findVisibleMetaByOrderItemId(lineItem.getOrderItemId());
+        visibleOrderItemMetas.sort(Comparator.comparing(OrderItemMeta::getOrdinal));
         // loop through orderItemMetas
         int textIndex = 1;
-        for (OrderItemMeta meta : orderItemMetas){
-            // if this is visible in checkout then add to invoice
-            if( meta.getVisibleInCheckout().equalsIgnoreCase("true") ){
-                switch (textIndex){
-                    case 1:
-                        lineItem.setLineTextL1(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
-                    case 2:
-                        lineItem.setLineTextL2(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
-                    case 3:
-                        lineItem.setLineTextL3(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
-                    case 4:
-                        lineItem.setLineTextL4(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
-                    case 5:
-                        lineItem.setLineTextL5(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
-                    case 6:
-                        lineItem.setLineTextL6(meta.getLabel() + " " + meta.getValue());
-                        textIndex++;
-                        break;
+        for (OrderItemMeta meta : visibleOrderItemMetas){
+                String text = meta.getLabel() + " " + meta.getValue();
+                setLineText(lineItem, textIndex, meta);
+                textIndex++;
+                if( textIndex > 6 ){
+                    // we have only 6 lines to fill, skip the rest
+                    break;
                 }
-            }
         }
         return lineItem;
 
+    }
+
+    private void setLineText(LineItem lineItem, int textIndex, OrderItemMeta meta) {
+        // Build text
+        String text = meta.getLabel() + " " + meta.getValue();
+
+        // Truncate if longer than 70 chars
+        if (text.length() > 70) {
+            text = text.substring(0, 67) + "...";
+        }
+
+        try {
+            // Dynamically call the correct setter (setLineTextL1, L2, etc.)
+            Method method = lineItem.getClass()
+                    .getMethod("setLineTextL" + textIndex, String.class);
+            method.invoke(lineItem, text);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to add line item texts for invoice, orderItemId: {}", lineItem.getOrderItemId(), e);
+            // Optional: log warning or handle gracefully
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new fi.hel.verkkokauppa.common.error.Error("failed-to-add-line-item-texts-for-invoice", "failed to add line item texts for invoice")
+            );
+        }
     }
 
     //
