@@ -11,6 +11,9 @@ import java.math.BigInteger;
 public class PriceConversionService {
 
     public Integer convertEuroStringToIntegerCents(String amount) {
+        if (amount == null) {
+            return 0;
+        }
         // split euro string to euros and cents
         String[] total = amount.split("\\.");
 
