@@ -91,6 +91,16 @@ public class OrderItemMetaService {
         return new ArrayList<OrderItemMeta>();
     }
 
+    public List<OrderItemMeta> findVisibleMetaByOrderItemId(String orderItemId) {
+        List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderItemIdAndVisibleInCheckoutIsTrue(orderItemId);
+
+        if (orderItemMetas.size() > 0)
+            return orderItemMetas;
+
+        log.debug("orderItemMetas not found, orderItemId: " + orderItemId);
+        return new ArrayList<OrderItemMeta>();
+    }
+
     public List<OrderItemMeta> findByOrderId(String orderId) {
         List<OrderItemMeta> orderItemMetas = orderItemMetaRepository.findByOrderId(orderId);
 

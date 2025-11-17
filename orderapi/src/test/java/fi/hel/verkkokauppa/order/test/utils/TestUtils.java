@@ -235,12 +235,12 @@ public class TestUtils extends DummyData {
         order.setNamespace(namespace);
         order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount, merchantId, productId);
-        orderItems.forEach(orderItem -> orderItem.setPriceGross("100"));
-        orderItems.forEach(orderItem -> orderItem.setPriceVat("100"));
+        orderItems.forEach(orderItem -> orderItem.setPriceGross("110"));
+        orderItems.forEach(orderItem -> orderItem.setPriceVat("10"));
         orderItems.forEach(orderItem -> orderItem.setPriceNet("100"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceNet("100"));
-        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("100"));
-        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("100"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceVat("10"));
+        orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("110"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
@@ -412,7 +412,7 @@ public class TestUtils extends DummyData {
         productAccounting.put("companyCode", "companyCode");
         productAccounting.put("mainLedgerAccount", "mainLedgerAccount");
         productAccounting.put("vatCode", "vatCode");
-        productAccounting.put("internalOrder", "internalOrder");
+//        productAccounting.put("internalOrder", "internalOrder"); //Accounting information should only have internalOrder or profitCenter defined
         productAccounting.put("profitCenter", "profitCenter");
         productAccounting.put("balanceProfitCenter", "balanceProfitCenter");
         productAccounting.put("project", "project");
@@ -474,10 +474,15 @@ public class TestUtils extends DummyData {
 
     public JSONObject createMockInvoiceAccountingForProductId(String productId) throws JsonProcessingException {
 
+        return createMockInvoiceAccountingForProductId(productId, "salesOrg");
+    }
+
+    public JSONObject createMockInvoiceAccountingForProductId(String productId, String salesOrg) throws JsonProcessingException {
+
         JSONObject productAccounting = new JSONObject();
 
         productAccounting.put("productId", productId);
-        productAccounting.put("salesOrg", "salesOrg");
+        productAccounting.put("salesOrg", salesOrg);
         productAccounting.put("salesOffice", "salesOffice");
         productAccounting.put("material", "material");
         productAccounting.put("orderType", "orderType");

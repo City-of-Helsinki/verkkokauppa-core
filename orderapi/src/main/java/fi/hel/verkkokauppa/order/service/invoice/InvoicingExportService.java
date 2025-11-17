@@ -1,35 +1,41 @@
 package fi.hel.verkkokauppa.order.service.invoice;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fi.hel.verkkokauppa.common.configuration.ServiceUrls;
+import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.id.IncrementId;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
+import fi.hel.verkkokauppa.common.service.PriceConversionService;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.LineItem;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.Party;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrder;
 import fi.hel.verkkokauppa.order.api.data.invoice.xml.SalesOrderContainer;
 import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.OrderItemMeta;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicing;
 import fi.hel.verkkokauppa.order.model.invoice.OrderItemInvoicingStatus;
 import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
+import fi.hel.verkkokauppa.order.service.order.OrderItemMetaService;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -43,15 +49,21 @@ public class InvoicingExportService {
     final RestServiceClient restServiceClient;
     final ServiceUrls serviceUrls;
 
+    final OrderItemMetaService orderItemMetaService;
+
+    final PriceConversionService priceConversionService;
+
     @Value("${invoice.notification.email}")
     String invoicedEmailRecipients;
 
     @Autowired
-    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository, RestServiceClient restServiceClient, ServiceUrls serviceUrls) {
+    public InvoicingExportService(IncrementId incrementId, OrderItemRepository orderItemRepository, RestServiceClient restServiceClient, ServiceUrls serviceUrls, OrderItemMetaService orderItemMetaService, PriceConversionService priceConversionService) {
         this.incrementId = incrementId;
         this.orderItemRepository = orderItemRepository;
         this.restServiceClient = restServiceClient;
         this.serviceUrls = serviceUrls;
+        this.orderItemMetaService = orderItemMetaService;
+        this.priceConversionService = priceConversionService;
     }
 
     private Party orderItemInvoicingToParty(OrderItemInvoicing item, boolean isOrderParty) {
@@ -96,7 +108,9 @@ public class InvoicingExportService {
         Map<String, List<OrderItemInvoicing>> groupedInvoicings = orderItemInvoicings.stream()
                 .collect(groupingBy(OrderItemInvoicing::getOrderIncrementId));
         for (Map.Entry<String, List<OrderItemInvoicing>> entry : groupedInvoicings.entrySet()) {
+
             List<OrderItemInvoicing> items = entry.getValue();
+            LocalDate billingDate = null;
             SalesOrder salesOrder = new SalesOrder();
             salesOrder.setOrderType(items.get(0).getOrderType());
             salesOrder.setSalesOrg(items.get(0).getSalesOrg());
@@ -111,6 +125,9 @@ public class InvoicingExportService {
 
             List<LineItem> lineItems = new ArrayList<>();
             for (OrderItemInvoicing item : items) {
+                if( billingDate == null || billingDate.isBefore(item.getInvoicingDate()) ){
+                    billingDate = item.getInvoicingDate();
+                }
                 LineItem lineItem = new LineItem();
                 lineItem.setOrderItemId(item.getOrderItemId());
                 lineItem.setMaterial(item.getMaterial());
@@ -121,6 +138,10 @@ public class InvoicingExportService {
                 lineItem.setProfitCenter(item.getProfitCenter());
                 lineItem.setWbsElement(item.getProject());
                 lineItem.setFunctionalArea(item.getOperationArea());
+
+                // update LineItem with metadata
+                lineItem = updateLineItemWithMetaData(lineItem);
+
                 lineItems.add(lineItem);
 
                 if (!productInvoicingAreEqual(salesOrder, item) || !partyAreEqual(customer, orderItemInvoicingToParty(item, false))) {
@@ -131,7 +152,7 @@ public class InvoicingExportService {
             salesOrder.setLineItems(lineItems);
 
             salesOrder.setReference(Long.toString(incrementId.generateInvoicingIncrementId()));
-            salesOrder.setBillingDate(LocalDate.now());
+            salesOrder.setBillingDate(billingDate != null ? billingDate : LocalDate.now());
             salesOrders.add(salesOrder);
         }
         salesOrderContainer.setSalesOrders(salesOrders);
@@ -169,12 +190,110 @@ public class InvoicingExportService {
         json.put("id", UUID.randomUUID().toString());
         json.put("receiver", invoicedEmailRecipients);
         json.put("header", "Invoicing xml sent to SAP");
-        String body = String.format("<!DOCTYPE html><html><body><p>Sent invoicing xml to SAP on %s with %d invoicings</p></body></html>", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")), salesOrderContainer.getSalesOrders().size());
+
+        String salesOrgTotalsString = getSalesOrgTotals(salesOrderContainer);
+
+        String body = String.format("<!DOCTYPE html><html><body><p>Sent invoicing xml with id 395 to SAP on %s with %d invoicings<br/>%s</p></body></html>",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")),
+                salesOrderContainer.getSalesOrders().size(),
+                salesOrgTotalsString);
         json.put("body", body);
         return json;
     }
 
     public void sendInvoicedEmail(JSONObject json) {
         restServiceClient.makePostCall(serviceUrls.getMessageServiceUrl() + "/message/send/email", json.toString());
+    }
+
+    private LineItem updateLineItemWithMetaData(LineItem lineItem) {
+        // get visible metadata for orderitem
+        List<OrderItemMeta> visibleOrderItemMetas = orderItemMetaService.findVisibleMetaByOrderItemId(lineItem.getOrderItemId());
+        visibleOrderItemMetas.sort(Comparator.comparing(OrderItemMeta::getOrdinal));
+        // loop through orderItemMetas
+        int textIndex = 1;
+        for (OrderItemMeta meta : visibleOrderItemMetas){
+                String text = meta.getLabel() + " " + meta.getValue();
+                setLineText(lineItem, textIndex, meta);
+                textIndex++;
+                if( textIndex > 6 ){
+                    // we have only 6 lines to fill, skip the rest
+                    break;
+                }
+        }
+        return lineItem;
+
+    }
+
+    private void setLineText(LineItem lineItem, int textIndex, OrderItemMeta meta) {
+        // Build text
+        String text = meta.getLabel() + " " + meta.getValue();
+
+        // Truncate if longer than 70 chars
+        if (text.length() > 70) {
+            text = text.substring(0, 67) + "...";
+        }
+
+        try {
+            // Dynamically call the correct setter (setLineTextL1, L2, etc.)
+            Method method = lineItem.getClass()
+                    .getMethod("setLineTextL" + textIndex, String.class);
+            method.invoke(lineItem, text);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            log.error("Failed to add line item texts for invoice, orderItemId: {}", lineItem.getOrderItemId(), e);
+            // Optional: log warning or handle gracefully
+            throw new CommonApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    new fi.hel.verkkokauppa.common.error.Error("failed-to-add-line-item-texts-for-invoice", "failed to add line item texts for invoice")
+            );
+        }
+    }
+
+    //
+    // goes through all orders and collects invoice totals by sales organization
+    // returns results as string delimited by <br>
+    //
+    private String getSalesOrgTotals(SalesOrderContainer salesOrderContainer){
+        // calculate totals by salesorg
+        Map<String, Integer> salesOrgTotals = new HashMap<>();
+        Map<String, Integer> salesOrgInvoiceCount = new HashMap<>();
+        // loop all orders
+        for ( int i=0; i<salesOrderContainer.getSalesOrders().size(); i++ ) {
+            SalesOrder salesOrder = salesOrderContainer.getSalesOrders().get(i);
+            String salesOrg = salesOrder.getSalesOrg();
+            // get current total for this salesOrg
+            Integer currentTotals = salesOrgTotals.get(salesOrg);
+            if (currentTotals == null) {
+                // if total for this org did not exist yet then set it as 0
+                currentTotals = 0;
+            }
+            Integer currentCount = salesOrgInvoiceCount.get(salesOrg);
+            if (currentCount == null) {
+                // if total for this org did not exist yet then set it as 0
+                currentCount = 0;
+            }
+            List<LineItem> lineItems = salesOrder.getLineItems();
+            // loop all order items
+            for(int j=0; j<lineItems.size(); j++) {
+                // split euro string to euros and cents
+                currentTotals += priceConversionService.convertEuroStringToIntegerCents(lineItems.get(j).getNetPrice());
+                currentCount++;
+            }
+            // set new totals for this org
+            salesOrgTotals.put(salesOrg, currentTotals);
+            salesOrgInvoiceCount.put(salesOrg, currentCount);
+        }
+
+        StringBuilder salesOrgTotalsString = new StringBuilder();
+        // create sales org totals string from all sales organisations included
+        for (Map.Entry<String, Integer> entry : salesOrgTotals.entrySet()) {
+            String salesOrg = entry.getKey();
+            // make total amount string from big integer sum
+            String totalStr = priceConversionService.convertIntegerCentsToEuroString(entry.getValue());
+            Integer currentCount = salesOrgInvoiceCount.get(salesOrg);
+
+            salesOrgTotalsString.append(String.format("Sales Organization: %s; Invoices:%s; Total Net: %s<br/>",
+                    salesOrg, Integer.toString(currentCount), totalStr));
+        }
+        return salesOrgTotalsString.toString();
     }
 }

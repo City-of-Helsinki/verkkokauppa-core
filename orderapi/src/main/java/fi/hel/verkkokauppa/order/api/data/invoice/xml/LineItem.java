@@ -26,8 +26,18 @@ public class LineItem {
     private String taxCode;
     @JacksonXmlProperty(localName = "MaterialSalesText")
     private String materialSalesText;
-    @JacksonXmlProperty(localName = "LineText")
-    private String lineText;
+    @JacksonXmlProperty(localName = "LineTextL1")
+    private String LineTextL1;
+    @JacksonXmlProperty(localName = "LineTextL2")
+    private String LineTextL2;
+    @JacksonXmlProperty(localName = "LineTextL3")
+    private String LineTextL3;
+    @JacksonXmlProperty(localName = "LineTextL4")
+    private String LineTextL4;
+    @JacksonXmlProperty(localName = "LineTextL5")
+    private String LineTextL5;
+    @JacksonXmlProperty(localName = "LineTextL6")
+    private String LineTextL6;
     @JacksonXmlProperty(localName = "ProfitCenter")
     private String profitCenter;
     @JacksonXmlProperty(localName = "OrderItemNumber")

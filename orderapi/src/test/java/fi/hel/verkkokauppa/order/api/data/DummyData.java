@@ -208,15 +208,19 @@ public abstract class DummyData {
     }
 
     public OrderItemMeta generateDummyOrderItemMeta(OrderItem orderItem,String ordinal) {
+       return generateDummyOrderItemMeta(orderItem, ordinal, "default");
+    }
+
+    public OrderItemMeta generateDummyOrderItemMeta(OrderItem orderItem,String ordinal, String text) {
         String orderItemMetaId = UUIDGenerator.generateType4UUID().toString();
         //String orderId, String productId, String productName, Integer quantity, String unit, String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross
         return new OrderItemMeta(
                 orderItemMetaId,
                 orderItem.getOrderItemId(),
                 orderItem.getOrderId(),
-                "meta key",
-                "meta value",
-                "meta label",
+                "meta key " + text,
+                "meta value" + text,
+                "meta label" + text,
                 "true",
                 ordinal
         );
@@ -240,7 +244,8 @@ public abstract class DummyData {
     public List<OrderItemMeta> generateDummyOrderItemMetaList(List<OrderItem> orderItems) {
         List<OrderItemMeta> orderItemMetas = new ArrayList<>();
         for (int i = 0; i < orderItems.size(); i++) {
-            orderItemMetas.add(generateDummyOrderItemMeta(orderItems.get(i),Integer.toString(i)));
+            orderItemMetas.add(generateDummyOrderItemMeta(orderItems.get(i), "0"));
+            orderItemMetas.add(generateDummyOrderItemMeta(orderItems.get(i), "1", Integer.toString(i)));
         }
 
         return orderItemMetas;

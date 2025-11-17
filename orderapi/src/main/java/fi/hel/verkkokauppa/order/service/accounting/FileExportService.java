@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
@@ -77,7 +78,7 @@ public class FileExportService {
 
         ChannelSftp channelSftp = ConnectToChannelSftp(i);
 
-        byte[] strToBytes = fileContent.getBytes();
+        byte[] strToBytes = fileContent.getBytes(StandardCharsets.UTF_8);
 
         try (InputStream stream = new ByteArrayInputStream(strToBytes)) {
             if (isLocal()) {

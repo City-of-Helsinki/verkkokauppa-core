@@ -14,4 +14,5 @@ public interface OrderItemMetaRepository extends ElasticsearchRepository<OrderIt
     List<OrderItemMeta> findByOrderItemId(String orderItemId);
     List<OrderItemMeta> findByOrderItemIdAndKey(String orderItemId, String key);
 
+    List<OrderItemMeta> findByOrderItemIdAndVisibleInCheckoutIsTrue(String orderItemId);
 }
