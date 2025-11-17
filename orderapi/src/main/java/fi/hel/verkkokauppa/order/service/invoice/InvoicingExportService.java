@@ -211,14 +211,15 @@ public class InvoicingExportService {
         visibleOrderItemMetas.sort(Comparator.comparing(OrderItemMeta::getOrdinal));
         // loop through orderItemMetas
         int textIndex = 1;
+        // LineTextL1 to LineTextL6, meta index 0...5
+        for ( int i = 0; i < 6 && i < visibleOrderItemMetas.size(); i++ ) {
+            OrderItemMeta meta = visibleOrderItemMetas.get(i);
+            String text = meta.getLabel() + " " + meta.getValue();
+            // meta index 0 goes to LineTextL1 etc.
+            setLineText(lineItem, i+1, meta);
+        }
         for (OrderItemMeta meta : visibleOrderItemMetas){
-                String text = meta.getLabel() + " " + meta.getValue();
-                setLineText(lineItem, textIndex, meta);
-                textIndex++;
-                if( textIndex > 6 ){
-                    // we have only 6 lines to fill, skip the rest
-                    break;
-                }
+
         }
         return lineItem;
 
