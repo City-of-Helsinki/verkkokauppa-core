@@ -145,10 +145,10 @@ public class PaytrailRefundPaymentService {
 
     public RefundPayment getRefundPaymentWithRefundId(String refundId) {
         return refundPaymentRepository.findById(refundId).orElseThrow(() -> {
-                    log.debug("refund not found, refundId: " + refundId);
+                    log.debug("refund payment not found, refundId: " + refundId);
                     return new CommonApiException(
                             HttpStatus.NOT_FOUND,
-                            new Error("refund-not-found-from-backend", "refund with refund id [" + refundId + "] not found from backend")
+                            new Error("refund-payment-not-found-from-backend", "refund payment with refund id [" + refundId + "] not found from backend")
                     );
                 }
         );
