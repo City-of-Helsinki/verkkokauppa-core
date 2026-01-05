@@ -50,6 +50,7 @@ public class SearchOrderService {
 
         ordersQuery.must(QueryBuilders.termQuery("status", "confirmed"));
         ordersQuery.must(QueryBuilders.rangeQuery("priceTotal").gt("0"));
+        ordersQuery.must(QueryBuilders.rangeQuery("createdAt").gt(createdAfter));
         ordersQuery.mustNot(QueryBuilders.existsQuery("accounted"));
 
         ordersQueryBuilder.query(ordersQuery);
