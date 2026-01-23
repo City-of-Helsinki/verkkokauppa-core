@@ -24,11 +24,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -289,11 +285,13 @@ public class MerchantService {
 
         MerchantModel asukaspysakointiMerchant = new MerchantModel();
         asukaspysakointiMerchant.setNamespace("asukaspysakointi");
+        asukaspysakointiMerchant.setMerchantId(UUID.randomUUID().toString());
         asukaspysakointiMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         asukaspysakointiMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
         MerchantModel venepaikatMerchant = new MerchantModel();
         venepaikatMerchant.setNamespace("venepaikat");
+        venepaikatMerchant.setMerchantId(UUID.randomUUID().toString());
         venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
