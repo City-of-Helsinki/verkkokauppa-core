@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -290,13 +289,13 @@ public class MerchantService {
 
         MerchantModel asukaspysakointiMerchant = new MerchantModel();
         asukaspysakointiMerchant.setNamespace("asukaspysakointi");
-        asukaspysakointiMerchant.setMerchantId(UUID.randomUUID().toString());
+        asukaspysakointiMerchant.setMerchantId(UUIDGenerator.generateType4UUID().toString());
         asukaspysakointiMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         asukaspysakointiMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
         MerchantModel venepaikatMerchant = new MerchantModel();
         venepaikatMerchant.setNamespace("venepaikat");
-        venepaikatMerchant.setMerchantId(UUID.randomUUID().toString());
+        venepaikatMerchant.setMerchantId(UUIDGenerator.generateType4UUID().toString());
         venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
