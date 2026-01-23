@@ -296,7 +296,7 @@ public class MerchantService {
 
         MerchantModel venepaikatMerchant = new MerchantModel();
         venepaikatMerchant.setNamespace("venepaikat");
-//        venepaikatMerchant.setMerchantId(UUID.randomUUID().toString());
+        venepaikatMerchant.setMerchantId(UUID.randomUUID().toString());
         venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
