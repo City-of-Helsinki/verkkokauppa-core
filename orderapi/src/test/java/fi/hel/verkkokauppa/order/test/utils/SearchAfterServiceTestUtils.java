@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.order.api.data.OrderPaymentMethodDto;
 import fi.hel.verkkokauppa.order.api.data.accounting.AccountingExportDataDto;
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
+import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.repository.jpa.*;
 import fi.hel.verkkokauppa.order.service.accounting.AccountingExportDataService;
@@ -178,6 +179,18 @@ public class SearchAfterServiceTestUtils extends TestUtils {
                 .withPageable(PageRequest.of(0, 10000))
                 .build();
         SearchHits<Order> hits = operations.search(query, Order.class);
+
+        return hits.getTotalHits();
+    }
+
+    public long notAccountedOrderAccountingCount() {
+        BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
+
+        NativeSearchQuery query = new NativeSearchQueryBuilder()
+                .withQuery(qb)
+                .withPageable(PageRequest.of(0, 10000))
+                .build();
+        SearchHits<OrderAccounting> hits = operations.search(query, OrderAccounting.class);
 
         return hits.getTotalHits();
     }
