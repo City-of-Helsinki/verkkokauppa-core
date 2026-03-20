@@ -101,8 +101,8 @@ public class MerchantService {
     }
 
     public PaytrailMerchantMappingDto getPaytrailMerchantMappingByMerchantPaytrailMerchantIdAndNamespace(
-        String merchantPaytrailMerchantId,
-        String namespace
+            String merchantPaytrailMerchantId,
+            String namespace
     ) {
         String id = UUIDGenerator.generateType3UUIDString(namespace, merchantPaytrailMerchantId);
         if (id == null) {
@@ -289,11 +289,13 @@ public class MerchantService {
 
         MerchantModel asukaspysakointiMerchant = new MerchantModel();
         asukaspysakointiMerchant.setNamespace("asukaspysakointi");
+        asukaspysakointiMerchant.setMerchantId(UUIDGenerator.generateType4UUID().toString());
         asukaspysakointiMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         asukaspysakointiMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
         MerchantModel venepaikatMerchant = new MerchantModel();
         venepaikatMerchant.setNamespace("venepaikat");
+        venepaikatMerchant.setMerchantId(UUIDGenerator.generateType4UUID().toString());
         venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
@@ -305,10 +307,10 @@ public class MerchantService {
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_EMAIL, "asukas@pysäköinti.fi", false),
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
-                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/url", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/url", false),
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "695874", false), // Value is from paytrail documentation test Shop-in-Shop merchant ID
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false)
-                );
+        );
 
         List<ConfigurationModel> venepaikatConfig = Arrays.asList(
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "venepaikat", false),
@@ -317,7 +319,7 @@ public class MerchantService {
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_EMAIL, "vene@paikat.fi", false),
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
-                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/url", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl + "/mockserviceconfiguration/venepaikat/url", false),
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "695874", false), // Value is from paytrail documentation test Shop-in-Shop merchant ID
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false)
         );
