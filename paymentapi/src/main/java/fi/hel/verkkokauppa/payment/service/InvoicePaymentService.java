@@ -68,7 +68,7 @@ public class InvoicePaymentService {
         String paymentId = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
 
         String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(dto.getMerchantId(), namespace, "merchantPaytrailMerchantId");
-        log.debug("PaytrailMerchantId: {}", paytrailMerchantId);
+        log.debug("In createFromOrder, found paytrailMerchantId: {}", paytrailMerchantId);
 
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
