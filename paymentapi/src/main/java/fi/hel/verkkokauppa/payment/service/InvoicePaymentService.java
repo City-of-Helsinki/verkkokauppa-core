@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.payment.service;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
@@ -34,13 +35,15 @@ public class InvoicePaymentService {
     private final PayerRepository payerRepository;
     private final PaymentItemRepository paymentItemRepository;
     private Environment env;
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Autowired
-    InvoicePaymentService(PaymentRepository paymentRepository, PayerRepository payerRepository, PaymentItemRepository paymentItemRepository, Environment env) {
+    InvoicePaymentService(PaymentRepository paymentRepository, PayerRepository payerRepository, PaymentItemRepository paymentItemRepository, Environment env, CommonServiceConfigurationClient commonServiceConfigurationClient) {
         this.paymentRepository = paymentRepository;
         this.payerRepository = payerRepository;
         this.paymentItemRepository = paymentItemRepository;
         this.env = env;
+        this.commonServiceConfigurationClient = commonServiceConfigurationClient;
     }
 
     public Payment createFromOrder(GetPaymentRequestDataDto dto) {
@@ -64,6 +67,9 @@ public class InvoicePaymentService {
 
         String paymentId = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
 
+        String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(dto.getMerchantId(), namespace, "merchantPaytrailMerchantId");
+        log.debug("PaytrailMerchantId: {}", paytrailMerchantId);
+
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
 
@@ -82,6 +88,8 @@ public class InvoicePaymentService {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setPaymentGateway(PaymentGatewayEnum.INVOICE);
+        payment.setMerchantId(dto.getMerchantId());
+        payment.setPaytrailMerchantId(paytrailMerchantId);
 
         createPayer(order, paymentId);
 

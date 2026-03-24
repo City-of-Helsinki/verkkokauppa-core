@@ -236,6 +236,8 @@ public class PaymentPaytrailService {
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setShopInShopPayment(context.isUseShopInShop());
         payment.setPaymentGateway(PaymentGatewayEnum.PAYTRAIL);
+        payment.setMerchantId(dto.getMerchantId());
+        payment.setPaytrailMerchantId(context.getPaytrailMerchantId());
 
         createPayer(order, paymentId);
 

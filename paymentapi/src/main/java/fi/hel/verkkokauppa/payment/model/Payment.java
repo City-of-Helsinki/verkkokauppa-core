@@ -97,6 +97,12 @@ public class Payment implements Persistable<String> {
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
 	LocalDateTime paidAt; // Timestamp when the transaction was paid
 
+	@Field(type = FieldType.Text)
+	String merchantId;
+
+	@Field(type = FieldType.Text)
+	String paytrailMerchantId;
+
 	public String getId() {
 		return this.paymentId;
 	}

@@ -307,8 +307,11 @@ public class MerchantService {
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/asukaspysakointi/url", false),
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "695874", false), // Value is from paytrail documentation test Shop-in-Shop merchant ID
-                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false)
-                );
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, "http://venepaikat.hel.fi/traileriehdot", false)
+        );
 
         List<ConfigurationModel> venepaikatConfig = Arrays.asList(
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "venepaikat", false),
@@ -319,7 +322,10 @@ public class MerchantService {
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/venepaikat/url", false),
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "695874", false), // Value is from paytrail documentation test Shop-in-Shop merchant ID
-                constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false)
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, "http://venepaikat.hel.fi/traileriehdot", false)
         );
 
         asukaspysakointiMerchant.setConfigurations(new ArrayList(asukaspysakointiConfig));
