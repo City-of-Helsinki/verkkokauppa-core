@@ -13,6 +13,7 @@ import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
 import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.service.dto.CheckPaymentDto;
 import fi.hel.verkkokauppa.common.util.DateTimeUtil;
 import fi.hel.verkkokauppa.common.util.EncryptorUtil;
@@ -107,6 +108,9 @@ public class OnlinePaymentService {
 
     @Autowired
     private SearchService searchService;
+
+    @Autowired
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
 
     public Payment getPaymentRequestData(GetPaymentRequestDataDto dto) {
@@ -389,6 +393,9 @@ public class OnlinePaymentService {
 
         String namespace = message.getNamespace();
 
+        String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(message.getMerchantId(), namespace, "merchantPaytrailMerchantId");
+        log.debug("Renewal payment, PaytrailMerchantId: {}", paytrailMerchantId);
+
         Payment payment = new Payment();
         payment.setPaymentId(paymentId);
         payment.setNamespace(message.getNamespace());
@@ -397,6 +404,8 @@ public class OnlinePaymentService {
         payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
         payment.setTimestamp(sdf.format(timestamp));
         payment.setPaymentType(OrderType.ORDER);
+        payment.setMerchantId(message.getMerchantId());
+        payment.setPaytrailMerchantId(paytrailMerchantId);
         payment.setStatus(PaymentStatus.CREATED_FOR_MIT_CHARGE);
         payment.setTotalExclTax(new BigDecimal(message.getPriceNet()));
         payment.setTaxAmount(new BigDecimal(message.getPriceVat()));

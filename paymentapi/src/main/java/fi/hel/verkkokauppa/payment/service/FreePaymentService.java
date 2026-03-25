@@ -3,6 +3,7 @@ package fi.hel.verkkokauppa.payment.service;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.error.Error;
+import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.util.StringUtils;
 import fi.hel.verkkokauppa.payment.api.data.GetPaymentRequestDataDto;
 import fi.hel.verkkokauppa.payment.api.data.OrderDto;
@@ -35,13 +36,15 @@ public class FreePaymentService {
     private final PayerRepository payerRepository;
     private final PaymentItemRepository paymentItemRepository;
     private Environment env;
+    private CommonServiceConfigurationClient commonServiceConfigurationClient;
 
     @Autowired
-    FreePaymentService(PaymentRepository paymentRepository, PayerRepository payerRepository, PaymentItemRepository paymentItemRepository, Environment env) {
+    FreePaymentService(PaymentRepository paymentRepository, PayerRepository payerRepository, PaymentItemRepository paymentItemRepository, Environment env, CommonServiceConfigurationClient commonServiceConfigurationClient) {
         this.paymentRepository = paymentRepository;
         this.payerRepository = payerRepository;
         this.paymentItemRepository = paymentItemRepository;
         this.env = env;
+        this.commonServiceConfigurationClient = commonServiceConfigurationClient;
     }
 
     public Payment createFromOrder(GetPaymentRequestDataDto dto) {
@@ -65,6 +68,8 @@ public class FreePaymentService {
 
         String paymentId = PaymentUtil.generatePaymentOrderNumber(order.getOrderId());
 
+        String paytrailMerchantId = commonServiceConfigurationClient.getMerchantConfigurationValue(dto.getMerchantId(), namespace, "merchantPaytrailMerchantId");
+
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
 
@@ -83,6 +88,8 @@ public class FreePaymentService {
         payment.setTaxAmount(new BigDecimal(order.getPriceVat()));
         payment.setTotal(new BigDecimal(order.getPriceTotal()));
         payment.setPaymentGateway(PaymentGatewayEnum.FREE);
+        payment.setMerchantId(dto.getMerchantId());
+        payment.setPaytrailMerchantId(paytrailMerchantId);
 
         createPayer(order, paymentId);
 
