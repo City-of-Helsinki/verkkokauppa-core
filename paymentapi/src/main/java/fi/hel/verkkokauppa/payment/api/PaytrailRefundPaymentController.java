@@ -58,13 +58,13 @@ public class PaytrailRefundPaymentController {
             @RequestParam(value = "merchantId") String merchantId,
             @RequestParam(value = "signature") String signature,
             @RequestParam(value = "checkout-status") String status,
-            @RequestParam(value = "checkout-stamp") String refundId,
+            @RequestParam(value = "checkout-stamp") String refundPaymentId,
             @RequestParam Map<String, String> checkoutParams
     ) {
         try {
-            boolean isValid = refundReturnValidator.validatePaytrailChecksum(checkoutParams, merchantId, signature, refundId);
+            boolean isValid = refundReturnValidator.validatePaytrailChecksum(checkoutParams, merchantId, signature, refundPaymentId);
             RefundReturnDto refundDto = refundReturnValidator.validatePaytrailRefundReturnValues(isValid, status);
-            refundPaymentService.updateRefundPaymentStatus(refundId, refundDto);
+            refundPaymentService.updateRefundPaymentStatus(refundPaymentId, refundDto);
             return ResponseEntity.status(HttpStatus.OK).body(refundDto);
         } catch (CommonApiException cae) {
             throw cae;
@@ -82,20 +82,41 @@ public class PaytrailRefundPaymentController {
             @RequestBody UpdateFromPaytrailRefundDto dto
     ) {
         try {
-            RefundPayment currentPayment = this.refundPaymentService.getRefundPaymentWithRefundId(dto.getRefundId());
-            PaytrailPayment paytrailRefund = paymentPaytrailService.getPaytrailPayment(currentPayment.getRefundTransactionId(), dto.getNamespace(), dto.getMerchantId());
-            RefundPayment updatedRefund = this.refundPaymentService.updateRefundWithPaytrailRefund(dto.getRefundId(), paytrailRefund);
-            if (
-                    currentPayment.getStatus().equalsIgnoreCase(RefundPaymentStatus.CREATED) &&
-                            updatedRefund.getPaymentProviderStatus().equalsIgnoreCase("OK")
-            ) {
-                // Update status to paid online because it was returned on paytrail side
-                updatedRefund = this.refundPaymentService.setRefundPaymentStatus(dto.getRefundId(), RefundPaymentStatus.PAID_ONLINE);
-                this.refundPaymentService.triggerRefundPaymentPaidEvent(
-                        updatedRefund
-                );
+            log.debug("updateRefundFromPaytrailRefund dto: {}", dto);
+            if (dto.getRefundPaymentId() != null && !dto.getRefundPaymentId().isEmpty()) {
+                log.debug("Found refundPaymentId.");
+                RefundPayment currentPayment = this.refundPaymentService.getRefundPaymentWithRefundPaymentId(dto.getRefundPaymentId());
+                PaytrailPayment paytrailRefund = paymentPaytrailService.getPaytrailPayment(currentPayment.getRefundTransactionId(), dto.getNamespace(), dto.getMerchantId());
+                RefundPayment updatedRefund = this.refundPaymentService.updateRefundWithPaytrailRefundUsingRefundPaymentId(dto.getRefundPaymentId(), paytrailRefund);
+                if (
+                        currentPayment.getStatus().equalsIgnoreCase(RefundPaymentStatus.CREATED) &&
+                                updatedRefund.getPaymentProviderStatus().equalsIgnoreCase("OK")
+                ) {
+                    // Update status to paid online because it was returned on paytrail side
+                    updatedRefund = this.refundPaymentService.setRefundPaymentStatus(dto.getRefundPaymentId(), RefundPaymentStatus.PAID_ONLINE);
+                    this.refundPaymentService.triggerRefundPaymentPaidEvent(
+                            updatedRefund
+                    );
+                }
+                return ResponseEntity.status(HttpStatus.OK).body(updatedRefund);
+            } else {
+                // Experience api must be able to use this method without refundPaymentId
+                log.debug("No refundPaymentId.");
+                RefundPayment currentPayment = this.refundPaymentService.getRefundPaymentWithRefundId(dto.getRefundId());
+                PaytrailPayment paytrailRefund = paymentPaytrailService.getPaytrailPayment(currentPayment.getRefundTransactionId(), dto.getNamespace(), dto.getMerchantId());
+                RefundPayment updatedRefund = this.refundPaymentService.updateRefundWithPaytrailRefundUsingRefundId(dto.getRefundId(), paytrailRefund);
+                if (
+                        currentPayment.getStatus().equalsIgnoreCase(RefundPaymentStatus.CREATED) &&
+                                updatedRefund.getPaymentProviderStatus().equalsIgnoreCase("OK")
+                ) {
+                    // Update status to paid online because it was returned on paytrail side
+                    updatedRefund = this.refundPaymentService.setRefundPaymentStatus(dto.getRefundId(), RefundPaymentStatus.PAID_ONLINE);
+                    this.refundPaymentService.triggerRefundPaymentPaidEvent(
+                            updatedRefund
+                    );
+                }
+                return ResponseEntity.status(HttpStatus.OK).body(updatedRefund);
             }
-            return ResponseEntity.status(HttpStatus.OK).body(updatedRefund);
         } catch (CommonApiException cae) {
             throw cae;
         } catch (Exception e) {
