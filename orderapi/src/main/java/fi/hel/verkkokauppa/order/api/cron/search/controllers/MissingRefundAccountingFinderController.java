@@ -10,6 +10,7 @@ import fi.hel.verkkokauppa.order.api.cron.search.SearchNotificationService;
 import fi.hel.verkkokauppa.order.api.cron.search.dto.RefundResultDto;
 import fi.hel.verkkokauppa.order.api.cron.search.refund.SearchUnAccountedRefunds;
 import fi.hel.verkkokauppa.order.service.refund.RefundItemService;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -53,7 +54,13 @@ public class MissingRefundAccountingFinderController {
 
     @GetMapping(value = "/accounting/cron/find-missing-refund-accounting", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<RefundResultDto>> findMissingAccountingsBasedOnRefundPaid(
+            @Parameter (description = "Datetime (yyyy-MM-dd'T'HH:mm:ss). " +
+                    "If left blank, all missing refund accountings are retrieved.")
             @RequestParam(value = "createdAfter", required = false) String createdAfter,
+
+            @Parameter (description = "Datetime (yyyy-MM-dd'T'HH:mm:ss). " +
+                    "If left blank, missing refund accountings are retrieved based on the given createdAfter parameter " +
+                    "but no refund accountings are created to correct the situation.")
             @RequestParam(value = "createAccountingAfter", required = false) String createAccountingAfter
     ) {
         try {
@@ -103,6 +110,7 @@ public class MissingRefundAccountingFinderController {
                 }
 
                 // Sends create accounting to experience api
+                // Note that this is sent only if createAccountingAfter value was given
                 this.experienceApiRefundAccountingService.sendCreateRefundAccountingRequests(failedToAccountAfterDate);
             }
 

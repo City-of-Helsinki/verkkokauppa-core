@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class UpdateFromPaytrailRefundDto {
 	private String refundId;
+	private String refundPaymentId;
 	private String merchantId;
 //	private String paytrailTransactionId;
 	private String namespace;

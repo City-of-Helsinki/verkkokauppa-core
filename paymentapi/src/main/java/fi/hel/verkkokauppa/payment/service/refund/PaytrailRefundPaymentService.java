@@ -77,8 +77,8 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public RefundPayment setRefundPaymentStatus(String refundId, String status) {
-        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
+    public RefundPayment setRefundPaymentStatus(String refundPaymentId, String status) {
+        RefundPayment refundPayment = getRefundPaymentWithRefundPaymentId(refundPaymentId);
         refundPayment.setStatus(status);
         return refundPaymentRepository.save(refundPayment);
     }
@@ -144,11 +144,27 @@ public class PaytrailRefundPaymentService {
     }
 
     public RefundPayment getRefundPaymentWithRefundId(String refundId) {
-        return refundPaymentRepository.findById(refundId).orElseThrow(() -> {
-                    log.debug("refund payment not found, refundId: " + refundId);
+        try {
+            List <RefundPayment> payments = refundPaymentRepository.findByRefundId(refundId);
+            log.debug("getRefundPaymentWithRefundId found {} payments, picking up the first one by default", payments.size());
+            return payments.get(0);
+
+        } catch (Exception e) {
+            log.debug("refund payment not found, refundId: " + refundId);
+            throw new CommonApiException(
+                HttpStatus.NOT_FOUND,
+                new Error("refund-payment-not-found-from-backend", "refund payment with refund id [" + refundId + "] not found from backend")
+            );
+        }
+    }
+
+
+    public RefundPayment getRefundPaymentWithRefundPaymentId(String refundPaymentId) {
+        return refundPaymentRepository.findById(refundPaymentId).orElseThrow(() -> {
+                    log.debug("refund payment not found, refundPaymentId: " + refundPaymentId);
                     return new CommonApiException(
                             HttpStatus.NOT_FOUND,
-                            new Error("refund-payment-not-found-from-backend", "refund payment with refund id [" + refundId + "] not found from backend")
+                            new Error("refund-payment-not-found-from-backend", "refund payment with refund payment id [" + refundPaymentId + "] not found from backend")
                     );
                 }
         );
@@ -318,45 +334,65 @@ public class PaytrailRefundPaymentService {
         return refundPayment;
     }
 
-    public void updateRefundPaymentStatus(String refundId, RefundReturnDto refundReturnDto) {
-        RefundPayment refundPayment = getRefundPaymentWithRefundId(refundId);
+    public void updateRefundPaymentStatus(String refundPaymentId, RefundReturnDto refundReturnDto) {
+        log.debug("updateRefundPaymentStatus, refundPaymentId: " + refundPaymentId);
+        RefundPayment refundPayment = getRefundPaymentWithRefundPaymentId(refundPaymentId);
 
         if (refundReturnDto.isValid()) {
             if (refundReturnDto.isRefundPaid()) {
                 // if not already paid earlier
                 if (!RefundPaymentStatus.PAID_ONLINE.equals(refundPayment.getStatus())) {
-                    setRefundPaymentStatus(refundId, RefundPaymentStatus.PAID_ONLINE);
+                    setRefundPaymentStatus(refundPaymentId, RefundPaymentStatus.PAID_ONLINE);
                     triggerRefundPaymentPaidEvent(refundPayment);
                 } else {
-                    log.debug("not triggering events, refundPayment paid earlier, refundId: " + refundId);
+                    log.debug("not triggering events, refundPayment paid earlier, refundPaymentId: " + refundPaymentId);
                 }
             } else if (!refundReturnDto.isRefundPaid() && !refundReturnDto.isCanRetry()) {
                 // if not already cancelled earlier
                 if (!RefundPaymentStatus.CANCELLED.equals(refundPayment.getStatus())) {
-                    setRefundPaymentStatus(refundId, RefundPaymentStatus.CANCELLED);
+                    setRefundPaymentStatus(refundPaymentId, RefundPaymentStatus.CANCELLED);
                     triggerRefundPaymentFailedEvent(refundPayment);
                 } else {
-                    log.debug("not triggering events, refund refundPayment cancelled earlier, refundId: " + refundId);
+                    log.debug("not triggering events, refund refundPayment cancelled earlier, refundPaymentId: " + refundPaymentId);
                 }
             } else {
-                log.debug("not triggering events, refund refundPayment not paid but can be retried, refundId: " + refundId);
+                log.debug("not triggering events, refund refundPayment not paid but can be retried, refundPaymentId: " + refundPaymentId);
             }
         }
     }
 
-    public RefundPayment updateRefundWithPaytrailRefund(String refundId, PaytrailPayment paytrailPayment) {
+    public RefundPayment updateRefundWithPaytrailRefundUsingRefundId(String refundId, PaytrailPayment paytrailPayment) {
 
+        log.debug("updateRefundWithPaytrailRefundUsingRefundId, refundId: " + refundId);
         RefundPayment refundPayment = this.getRefundPaymentWithRefundId(refundId);
         if (paytrailPayment.paidAt != null) {
             LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
             refundPayment.setPaidAt(paidAt);
         } else {
-            log.debug("updateRefundWithPaytrailRefund paymentId: {}. paytrailPayment.paidAt was null.", refundId);
+            log.debug("updateRefundWithPaytrailRefundUsingRefundId refundId: {}. paytrailPayment.paidAt was null.", refundId);
         }
         if (paytrailPayment.status != null) {
             refundPayment.setPaymentProviderStatus(paytrailPayment.status);
         } else {
-            log.debug("updateRefundWithPaytrailRefund paymentId: {}. paytrailPayment.status was null.", refundId);
+            log.debug("updateRefundWithPaytrailRefundUsingRefundId refundId: {}. paytrailPayment.status was null.", refundId);
+        }
+        return refundPaymentRepository.save(refundPayment);
+    }
+
+    public RefundPayment updateRefundWithPaytrailRefundUsingRefundPaymentId(String refundPaymentId, PaytrailPayment paytrailPayment) {
+
+        log.debug("updateRefundWithPaytrailRefund, refundPaymentId: " + refundPaymentId);
+        RefundPayment refundPayment = this.getRefundPaymentWithRefundPaymentId(refundPaymentId);
+        if (paytrailPayment.paidAt != null) {
+            LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
+            refundPayment.setPaidAt(paidAt);
+        } else {
+            log.debug("updateRefundWithPaytrailRefundUsingRefundPaymentId refundPaymentId: {}. paytrailPayment.paidAt was null.", refundPaymentId);
+        }
+        if (paytrailPayment.status != null) {
+            refundPayment.setPaymentProviderStatus(paytrailPayment.status);
+        } else {
+            log.debug("updateRefundWithPaytrailRefundUsingRefundPaymentId refundPaymentId: {}. paytrailPayment.status was null.", refundPaymentId);
         }
         return refundPaymentRepository.save(refundPayment);
     }
