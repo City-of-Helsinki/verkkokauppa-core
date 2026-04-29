@@ -361,24 +361,6 @@ public class PaytrailRefundPaymentService {
         }
     }
 
-    public RefundPayment updateRefundWithPaytrailRefundUsingRefundId(String refundId, PaytrailPayment paytrailPayment) {
-
-        log.debug("updateRefundWithPaytrailRefundUsingRefundId, refundId: " + refundId);
-        RefundPayment refundPayment = this.getRefundPaymentWithRefundId(refundId);
-        if (paytrailPayment.paidAt != null) {
-            LocalDateTime paidAt = DateTimeUtil.offsetDateTimeToLocalDateTime(paytrailPayment.paidAt);
-            refundPayment.setPaidAt(paidAt);
-        } else {
-            log.debug("updateRefundWithPaytrailRefundUsingRefundId refundId: {}. paytrailPayment.paidAt was null.", refundId);
-        }
-        if (paytrailPayment.status != null) {
-            refundPayment.setPaymentProviderStatus(paytrailPayment.status);
-        } else {
-            log.debug("updateRefundWithPaytrailRefundUsingRefundId refundId: {}. paytrailPayment.status was null.", refundId);
-        }
-        return refundPaymentRepository.save(refundPayment);
-    }
-
     public RefundPayment updateRefundWithPaytrailRefundUsingRefundPaymentId(String refundPaymentId, PaytrailPayment paytrailPayment) {
 
         log.debug("updateRefundWithPaytrailRefund, refundPaymentId: " + refundPaymentId);
