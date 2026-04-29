@@ -61,6 +61,7 @@ public class SearchUnAccountedRefunds {
 
                 UpdateFromPaytrailRefundDto dto = new UpdateFromPaytrailRefundDto();
                 dto.setRefundId(refund.getRefundId());
+                dto.setRefundPaymentId(refund.getRefundPaymentId());
                 dto.setMerchantId(merchantId);
                 dto.setNamespace(namespace);
 
@@ -102,7 +103,7 @@ public class SearchUnAccountedRefunds {
     }
 
     public List<RefundResultDto> findUnaccountedRefunds() throws IOException {
-        String refundStatus = "payment_paid_online";
+        String refundStatus = "refund_paid_online";
         return getRefundResultDtos(searchRefundService.findUnaccountedRefunds(), refundStatus);
     }
 
