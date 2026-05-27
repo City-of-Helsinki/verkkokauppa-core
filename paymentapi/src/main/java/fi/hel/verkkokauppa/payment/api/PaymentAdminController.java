@@ -144,8 +144,11 @@ public class PaymentAdminController {
                         String transactionId = null;
                         try {
                             PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, payment.getPaymentId(), message);
-                            paymentReturnDto = new PaymentReturnDto(true, true, false, false);
                             transactionId = mitCharge.getTransactionId();
+                            if (transactionId != null) {
+                                // set paymentPaid to true only if transactionId was successfully received
+                                paymentReturnDto = new PaymentReturnDto(true, true, false, false);
+                            }
                         } catch (Exception e) {
                             log.info("subscription renewal mit charge failed for orderId: " + payment.getOrderId(), e);
                             onlinePaymentService.updatePaymentStatus(payment.getPaymentId(), paymentReturnDto, card);
