@@ -1,5 +1,6 @@
 package fi.hel.verkkokauppa.payment.service;
 
+import fi.hel.verkkokauppa.common.constants.CreditCardType;
 import fi.hel.verkkokauppa.common.constants.OrderType;
 import fi.hel.verkkokauppa.common.constants.PaymentType;
 import fi.hel.verkkokauppa.common.elastic.search.SearchService;
@@ -10,7 +11,6 @@ import fi.hel.verkkokauppa.common.events.SendEventService;
 import fi.hel.verkkokauppa.common.events.TopicName;
 import fi.hel.verkkokauppa.common.events.message.OrderMessage;
 import fi.hel.verkkokauppa.common.events.message.PaymentMessage;
-import fi.hel.verkkokauppa.common.events.message.SubscriptionMessage;
 import fi.hel.verkkokauppa.common.history.service.SaveHistoryService;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
@@ -402,6 +402,7 @@ public class OnlinePaymentService {
         payment.setOrderId(message.getOrderId());
         payment.setUserId(message.getUserId());
         payment.setPaymentMethod(PaymentType.CREDIT_CARDS);
+        payment.setPaymentMethodLabel(CreditCardType.VISA_MASTERCARD);
         payment.setTimestamp(sdf.format(timestamp));
         payment.setPaymentType(OrderType.ORDER);
         payment.setMerchantId(message.getMerchantId());
