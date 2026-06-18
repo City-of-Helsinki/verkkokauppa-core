@@ -251,13 +251,23 @@ public class OrderConfirmationPDF {
                 y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 "Maksutapa");
 
+        // use paymentMethodLabel as payment method ("Maksutapa") if available, and if not, use paymentMethod
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                font,
-                FONT_SIZE,
-                pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethodLabel()),
-                y,
-                dto.getPayment().getPaymentMethodLabel());
+        if (dto.getPayment().getPaymentMethodLabel() != null && !dto.getPayment().getPaymentMethodLabel().isEmpty()) {
+            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                    font,
+                    FONT_SIZE,
+                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethodLabel()),
+                    y,
+                    dto.getPayment().getPaymentMethodLabel());
+        } else {
+            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                    font,
+                    FONT_SIZE,
+                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethod()),
+                    y,
+                    dto.getPayment().getPaymentMethod());
+        }
 
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
         y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
