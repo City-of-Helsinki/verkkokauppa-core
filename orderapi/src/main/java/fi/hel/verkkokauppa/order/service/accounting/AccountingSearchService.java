@@ -2,6 +2,7 @@ package fi.hel.verkkokauppa.order.service.accounting;
 
 import fi.hel.verkkokauppa.order.model.Order;
 import fi.hel.verkkokauppa.order.model.accounting.AccountingExportData;
+import fi.hel.verkkokauppa.order.model.accounting.OrderAccounting;
 import fi.hel.verkkokauppa.order.model.refund.Refund;
 import fi.hel.verkkokauppa.order.service.elasticsearch.SearchAfterService;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +44,7 @@ public class AccountingSearchService {
         return exportData;
     }
 
-    public List<Order> findNotAccountedOrders() throws Exception {
+    public List<OrderAccounting> findNotAccountedOrders() throws Exception {
         BoolQueryBuilder qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("accounted"));
 
         NativeSearchQuery query = new NativeSearchQueryBuilder()
@@ -52,13 +53,13 @@ public class AccountingSearchService {
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
                 searchAfterService.buildSortWithId(),
-                Order.INDEX_NAME
+                OrderAccounting.INDEX_NAME
         );
 
         log.info(searchRequest.toString());
         SearchHit[] hits = searchAfterService.executeSearchRequest(searchRequest);
 
-        final List<Order> exportData = searchAfterService.buildListFromHits(hits, Order.class);
+        final List<OrderAccounting> exportData = searchAfterService.buildListFromHits(hits, OrderAccounting.class);
 
         return exportData;
     }
