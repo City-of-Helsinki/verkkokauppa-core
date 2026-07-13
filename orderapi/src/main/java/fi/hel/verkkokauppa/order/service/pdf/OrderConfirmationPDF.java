@@ -24,6 +24,8 @@ import org.springframework.stereotype.Component;
 import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 @Component
 public class OrderConfirmationPDF {
@@ -58,6 +60,7 @@ public class OrderConfirmationPDF {
         currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
 
         float y = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
+        float maxWidth = pdf.getUpperRightX(currentPage) - SIDE_MARGIN * 2;
 
         contentStream = pdf.createContentStream(currentPage);
 
@@ -182,22 +185,28 @@ public class OrderConfirmationPDF {
             for (OrderItemMetaDto meta : item.getMeta()) {
                 if( meta.getVisibleInCheckout() != null && meta.getVisibleInCheckout().equalsIgnoreCase("true") ){
                     if( meta.getLabel() != null ) {
-                        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-                        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                                font,
-                                FONT_SIZE,
-                                SIDE_MARGIN,
-                                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                                meta.getLabel());
+                        List<String> metaLabelLines = wrapLines("", meta.getLabel(), maxWidth, font, FONT_SIZE);
+                        for (String metaLabel : metaLabelLines) {
+                            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+                            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                                    font,
+                                    FONT_SIZE,
+                                    SIDE_MARGIN,
+                                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                    metaLabel);
+                        }
                     }
                     if( meta.getValue() != null ) {
-                        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-                        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                                font,
-                                FONT_SIZE,
-                                SIDE_MARGIN,
-                                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                                meta.getValue());
+                        List<String> metaValueLines = wrapLines("", meta.getValue(), maxWidth, font, FONT_SIZE);
+                        for (String metaValue : metaValueLines) {
+                            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+                            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                                    font,
+                                    FONT_SIZE,
+                                    SIDE_MARGIN,
+                                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                    metaValue);
+                        }
                     }
                 }
             }
@@ -341,13 +350,16 @@ public class OrderConfirmationPDF {
                 y -= (pdf.getStringHeight(boldFont, 16) + LINE_SPACING),
                 "Myyjän tiedot");
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                font,
-                FONT_SIZE,
-                SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                dto.getMerchantName());
+        List<String> merchantNameLines = wrapLines("", dto.getMerchantName(), maxWidth, font, FONT_SIZE);
+        for (String merchantName : merchantNameLines) {
+            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                    font,
+                    FONT_SIZE,
+                    SIDE_MARGIN,
+                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    merchantName);
+        }
 
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
         y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
@@ -400,14 +412,16 @@ public class OrderConfirmationPDF {
                 y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING + LINE_SPACING),
                 "Mikäli sinulla on tilaukseen liittyen kysymyksiä kohdistathan ne suoraan");
 
-        String footerMerchant = String.format("myyjälle %s", dto.getMerchantName());
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                font,
-                FONT_SIZE,
-                SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                footerMerchant);
+        List<String> merchantNameLinesFooter = wrapLines("myyjälle", dto.getMerchantName(), maxWidth, font, FONT_SIZE);
+        for (String merchantNameFooter : merchantNameLinesFooter) {
+            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                    font,
+                    FONT_SIZE,
+                    SIDE_MARGIN,
+                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    merchantNameFooter);
+        }
 
         currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
         y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
@@ -586,4 +600,47 @@ public class OrderConfirmationPDF {
             return "0,00";
         }
     }
+
+    public static List<String> wrapLines(String initialText, String text, float maxWidth, PDType0Font font, float fontSize)
+            throws IOException {
+
+        List<String> wrappedLines = new ArrayList<>();
+
+        if (text == null || text.isEmpty()) {
+            return wrappedLines;
+        }
+
+        String[] words = text.split("\\s+");
+        StringBuilder currentLine = new StringBuilder();
+        currentLine.append(initialText);
+
+        for (String word : words) {
+            String testLengthLine = currentLine.length() == 0 ? word : currentLine + " " + word;
+
+            float textWidth = font.getStringWidth(testLengthLine) / 1000 * fontSize;
+
+            if (textWidth > maxWidth) {
+                if (currentLine.length() > 0) {
+                    wrappedLines.add(currentLine.toString());
+                    currentLine = new StringBuilder(word);
+                } else {
+                    // if a single word is too long for the line, it is added anyway to its own line
+                    wrappedLines.add(word);
+                    currentLine.setLength(0);
+                }
+            } else {
+                if (currentLine.length() > 0) {
+                    currentLine.append(" ");
+                }
+                currentLine.append(word);
+            }
+        }
+
+        if (currentLine.length() > 0) {
+            wrappedLines.add(currentLine.toString());
+        }
+
+        return wrappedLines;
+    }
+
 }
