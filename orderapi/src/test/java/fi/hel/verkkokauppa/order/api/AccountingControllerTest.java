@@ -22,6 +22,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
@@ -335,7 +336,7 @@ public class AccountingControllerTest extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId"
@@ -395,7 +396,7 @@ public class AccountingControllerTest extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");

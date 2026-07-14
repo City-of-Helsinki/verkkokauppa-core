@@ -141,8 +141,12 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
         this.periodUnit = periodUnit;
         this.periodFrequency = periodFrequency;
         this.periodCount = periodCount;
-        this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
-        this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
+        if( billingStartDate != null) {
+            this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
+        }
+        if( startDate != null) {
+            this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
+        }
         this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.SINGLE;
         this.invoicingDate = invoicingDate;
     }
@@ -152,7 +156,12 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     }
 
     public void setBillingStartDate(LocalDateTime billingStartDate) {
-        this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
+        if( billingStartDate != null) {
+           this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
+        }
+        else {
+            this.billingStartDate = null;
+        }
     }
 
     public LocalDateTime getStartDate() {
@@ -160,7 +169,12 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     }
 
     public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
+        if( startDate != null) {
+            this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
+        }
+        else {
+            this.startDate = null;
+        }
     }
 
 }

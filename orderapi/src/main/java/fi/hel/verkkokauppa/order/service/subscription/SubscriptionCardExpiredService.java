@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class SubscriptionCardExpiredService {
                 )
                 .subscriptionId(subscriptionId)
                 .namespace(namespace)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant())
                 .build();
 
         return subscriptionCardExpiredTransformer.transformToDto(

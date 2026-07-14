@@ -107,7 +107,12 @@ public class Order implements Customer, IdentifiableUser {
     }
 
     public LocalDateTime getLastValidPurchaseDateTime(){
-        return LocalDateTime.ofInstant(this.lastValidPurchaseDateTime, ZoneOffset.UTC);
+        if(this.lastValidPurchaseDateTime != null) {
+            return LocalDateTime.ofInstant(this.lastValidPurchaseDateTime, ZoneOffset.UTC);
+        }
+        else{
+            return null;
+        }
     }
 
     public void setLastValidPurchaseDateTime(LocalDateTime lastValidPurchaseDateTime){

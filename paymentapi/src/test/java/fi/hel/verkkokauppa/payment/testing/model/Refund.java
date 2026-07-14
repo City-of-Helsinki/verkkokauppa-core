@@ -12,8 +12,10 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "refunds")
 @Data
@@ -34,7 +36,7 @@ public class Refund {
     String user;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Field(type = FieldType.Text)
     String status;
@@ -90,6 +92,14 @@ public class Refund {
         refund.setPriceTotal(dto.getPriceTotal());
         refund.setAccounted(dto.getAccounted());
         return refund;
+    }
+
+    public LocalDateTime getCreatedAt(){
+        return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt){
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
     }
 
 }

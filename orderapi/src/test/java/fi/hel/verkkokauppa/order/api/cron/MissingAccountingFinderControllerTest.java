@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -386,7 +387,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId"
@@ -446,7 +447,7 @@ public class MissingAccountingFinderControllerTest extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -203,7 +204,7 @@ public class AccountingTestUtils extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId"
@@ -336,7 +337,7 @@ public class AccountingTestUtils extends DummyData {
                 balanceProfitCenter,
                 project,
                 operationArea,
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace"

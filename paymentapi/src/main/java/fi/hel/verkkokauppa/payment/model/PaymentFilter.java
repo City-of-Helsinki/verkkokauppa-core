@@ -8,7 +8,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "payment_filters")
 @Data
@@ -17,7 +19,7 @@ public class PaymentFilter {
     String filterId;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Field(type = FieldType.Text)
     String namespace;
@@ -39,5 +41,13 @@ public class PaymentFilter {
         String valueReferenceIdValueUUID3 = UUIDGenerator.generateType3UUIDString(valueReferenceIdUUID3, getValue());
         String valueReferenceIdValueReferenceType = UUIDGenerator.generateType3UUIDString(valueReferenceIdValueUUID3, getReferenceType());
         this.setFilterId(valueReferenceIdValueReferenceType);
+    }
+
+    public LocalDateTime getCreatedAt(){
+        return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt){
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
     }
 }

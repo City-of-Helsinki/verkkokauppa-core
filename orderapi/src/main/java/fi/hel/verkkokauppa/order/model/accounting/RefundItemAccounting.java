@@ -9,7 +9,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "refund_item_accountings")
 @Data
@@ -60,7 +62,7 @@ public class RefundItemAccounting {
     private String operationArea;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
-    LocalDateTime refundCreatedAt; // Timestamp when the refund was created
+    Instant refundCreatedAt; // Timestamp when the refund was created
 
     @Field(type = FieldType.Text)
     private String merchantId;
@@ -70,5 +72,13 @@ public class RefundItemAccounting {
 
     @Field(type = FieldType.Text)
     private String namespace;
+
+    public LocalDateTime getRefundCreatedAt(){
+        return LocalDateTime.ofInstant(this.refundCreatedAt, ZoneOffset.UTC);
+    }
+
+    public void setRefundCreatedAt(LocalDateTime refundCreatedAt){
+        this.refundCreatedAt = refundCreatedAt.atZone(ZoneOffset.UTC).toInstant();
+    }
     
 }

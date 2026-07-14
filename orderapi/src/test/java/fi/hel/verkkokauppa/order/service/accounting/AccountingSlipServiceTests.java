@@ -19,6 +19,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,19 +74,19 @@ public class AccountingSlipServiceTests extends DummyData {
         String companyCode1 = "1234";
         OrderItemAccounting orderItemAccounting1 = new OrderItemAccounting("1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 1", "Area A",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting2 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting3 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId");
@@ -93,13 +94,13 @@ public class AccountingSlipServiceTests extends DummyData {
         String companyCode2 = "5678";
         OrderItemAccounting orderItemAccounting4 = new OrderItemAccounting("2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId");
         OrderItemAccounting orderItemAccounting5 = new OrderItemAccounting("3", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "namespace",
                 "paytrailTransactionId");
@@ -153,19 +154,19 @@ public class AccountingSlipServiceTests extends DummyData {
         String companyCode1 = "1234";
         RefundItemAccounting refundItemAccounting1 = new RefundItemAccounting("1", "1", "1", "20", "10", "10", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 1", "Area A",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");
         RefundItemAccounting refundItemAccounting2 = new RefundItemAccounting("2", "2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");
         RefundItemAccounting refundItemAccounting3 = new RefundItemAccounting("3", "2", "2", "10", "5", "5", companyCode1, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");
@@ -173,13 +174,13 @@ public class AccountingSlipServiceTests extends DummyData {
         String companyCode2 = "5678";
         RefundItemAccounting refundItemAccounting4 = new RefundItemAccounting("4", "2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");
         RefundItemAccounting refundItemAccounting5 = new RefundItemAccounting("5", "2", "2", "10", "5", "5", companyCode2, "account", "24", "yes",
                 "profitCenter", "balanceProfitCenter", "project 2", "Area B",
-                LocalDateTime.now(),
+                LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant(),
                 "merchantId",
                 "refundTransactionId",
                 "namespace");

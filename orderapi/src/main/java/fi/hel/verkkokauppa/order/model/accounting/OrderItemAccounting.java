@@ -9,7 +9,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "orderitemaccountings")
 @Data
@@ -57,7 +59,7 @@ public class OrderItemAccounting {
     private String operationArea;
 
     @Field(type = FieldType.Date, format = DateFormat.date_time)
-    LocalDateTime paidAt; // Timestamp when the transaction was paid
+    Instant paidAt; // Timestamp when the transaction was paid
 
     @Field(type = FieldType.Text)
     private String merchantId;
@@ -67,5 +69,13 @@ public class OrderItemAccounting {
 
     @Field(type = FieldType.Text)
     private String paytrailTransactionId;
+
+    public LocalDateTime getPaidAt(){
+        return LocalDateTime.ofInstant(this.paidAt, ZoneOffset.UTC);
+    }
+
+    public void setPaidAt(LocalDateTime paidAt){
+        this.paidAt = paidAt.atZone(ZoneOffset.UTC).toInstant();
+    }
 
 }
