@@ -12,8 +12,10 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 
 @Document(indexName = "orders")
@@ -35,8 +37,8 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Keyword)
     String user;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    LocalDateTime createdAt;
+    @Field(type = FieldType.Date, format = {DateFormat.date_optional_time})
+    Instant createdAt;
 
     @Field(type = FieldType.Text)
     String status;
@@ -69,10 +71,10 @@ public class Order implements Customer, IdentifiableUser {
     LocalDate accounted;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime startDate;
+    private Instant startDate;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime endDate;
+    private Instant endDate;
 
     @Field(type = FieldType.Auto)
     Invoice invoice;
@@ -81,7 +83,7 @@ public class Order implements Customer, IdentifiableUser {
     Long incrementId;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime lastValidPurchaseDateTime;
+    private Instant lastValidPurchaseDateTime;
 
     public Order() {}
 
@@ -92,8 +94,40 @@ public class Order implements Customer, IdentifiableUser {
         this.orderId = orderId;
         this.namespace = namespace;
         this.user = user;
-        this.createdAt = createdAt;
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
         this.incrementId = incrementId;
+    }
+
+    public LocalDateTime getCreatedAt(){
+        return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt){
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public LocalDateTime getLastValidPurchaseDateTime(){
+        return LocalDateTime.ofInstant(this.lastValidPurchaseDateTime, ZoneOffset.UTC);
+    }
+
+    public void setLastValidPurchaseDateTime(LocalDateTime lastValidPurchaseDateTime){
+        this.lastValidPurchaseDateTime = lastValidPurchaseDateTime.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public LocalDateTime getStartDate() {
+        return LocalDateTime.ofInstant(this.startDate, ZoneOffset.UTC);
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();;
+    }
+
+    public LocalDateTime getEndDate() {
+        return LocalDateTime.ofInstant(this.endDate, ZoneOffset.UTC);
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate.atZone(ZoneOffset.UTC).toInstant();;
     }
 
 }

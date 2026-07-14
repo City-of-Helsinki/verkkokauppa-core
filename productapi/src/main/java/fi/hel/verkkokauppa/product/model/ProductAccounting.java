@@ -7,7 +7,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "accounting")
 @Data
@@ -43,8 +45,16 @@ public class ProductAccounting extends BaseModel {
     private String namespace;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime activeFrom;
+    private Instant activeFrom;
 
     @Field(type = FieldType.Object)
     private NextEntity nextEntity;
+
+    public LocalDateTime getActiveFrom() {
+        return LocalDateTime.ofInstant(this.activeFrom, ZoneOffset.UTC);
+    }
+
+    public void setActiveFrom(LocalDateTime activeFrom) {
+        this.activeFrom = activeFrom.atZone(ZoneOffset.UTC).toInstant();
+    }
 }
