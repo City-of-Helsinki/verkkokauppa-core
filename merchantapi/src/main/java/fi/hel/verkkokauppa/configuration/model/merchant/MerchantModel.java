@@ -6,7 +6,9 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 
 @Data
@@ -20,15 +22,31 @@ public class MerchantModel {
     String namespace;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    LocalDateTime updatedAt;
+    Instant updatedAt;
 
     @Field(type = FieldType.Auto)
     ArrayList<ConfigurationModel> configurations;
 
     @Field(type = FieldType.Text)
     String merchantPaytrailMerchantId;
+
+    public LocalDateTime getCreatedAt(){
+        return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt){
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return LocalDateTime.ofInstant(this.updatedAt, ZoneOffset.UTC);
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt.atZone(ZoneOffset.UTC).toInstant();
+    }
 }
 

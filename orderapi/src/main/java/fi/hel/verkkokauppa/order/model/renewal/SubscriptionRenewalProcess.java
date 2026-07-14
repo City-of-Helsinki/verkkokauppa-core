@@ -11,7 +11,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Data
 @Builder
@@ -22,6 +24,14 @@ public class SubscriptionRenewalProcess implements Identifiable {
     @Id
     private String id;
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime processingStarted;
+    private Instant processingStarted;
+
+    public LocalDateTime getProcessingStarted(){
+        return LocalDateTime.ofInstant(this.processingStarted, ZoneOffset.UTC);
+    }
+
+    public void setProcessingStarted(LocalDateTime processingStarted){
+        this.processingStarted = processingStarted.atZone(ZoneOffset.UTC).toInstant();
+    }
 
 }

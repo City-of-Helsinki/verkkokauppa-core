@@ -12,8 +12,10 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "orderitems")
 @Getter
@@ -65,10 +67,10 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     String type;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime startDate; // TODO: Test for date_optional
+    private Instant startDate; // TODO: Test for date_optional
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime billingStartDate; // TODO: Test for date_optional
+    private Instant billingStartDate; // TODO: Test for date_optional
 
     // Subscription fields
     @Field(type = FieldType.Text)
@@ -139,10 +141,26 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
         this.periodUnit = periodUnit;
         this.periodFrequency = periodFrequency;
         this.periodCount = periodCount;
-        this.billingStartDate = billingStartDate;
-        this.startDate = startDate;
+        this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
+        this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
         this.type = OrderTypeLogic.isSubscription(this) ? OrderItemType.SUBSCRIPTION : OrderItemType.SINGLE;
         this.invoicingDate = invoicingDate;
+    }
+
+    public LocalDateTime getBillingStartDate() {
+        return LocalDateTime.ofInstant(this.billingStartDate, ZoneOffset.UTC);
+    }
+
+    public void setBillingStartDate(LocalDateTime billingStartDate) {
+        this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public LocalDateTime getStartDate() {
+        return LocalDateTime.ofInstant(this.startDate, ZoneOffset.UTC);
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
     }
 
 }

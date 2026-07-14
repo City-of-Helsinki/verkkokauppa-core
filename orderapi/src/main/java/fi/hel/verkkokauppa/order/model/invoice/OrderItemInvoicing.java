@@ -9,8 +9,10 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Document(indexName = "orderiteminvoicings")
 @Data
@@ -18,10 +20,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class OrderItemInvoicing {
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    LocalDateTime updatedAt;
+    Instant updatedAt;
 
     @Field(type = FieldType.Text)
     OrderItemInvoicingStatus status;
@@ -84,4 +86,20 @@ public class OrderItemInvoicing {
 
     @Field(type = FieldType.Text)
     String operationArea;
+
+    public LocalDateTime getCreatedAt(){
+        return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt){
+        this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return LocalDateTime.ofInstant(this.updatedAt, ZoneOffset.UTC);
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt.atZone(ZoneOffset.UTC).toInstant();
+    }
 }

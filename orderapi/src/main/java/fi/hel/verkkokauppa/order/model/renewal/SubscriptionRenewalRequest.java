@@ -1,6 +1,8 @@
 package fi.hel.verkkokauppa.order.model.renewal;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import fi.hel.verkkokauppa.shared.model.Identifiable;
 import lombok.AllArgsConstructor;
@@ -22,6 +24,14 @@ public class SubscriptionRenewalRequest implements Identifiable {
     @Id
     private String id;
     @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-    private LocalDateTime renewalRequested;
+    private Instant renewalRequested;
+
+    public LocalDateTime getRenewalRequested(){
+        return LocalDateTime.ofInstant(this.renewalRequested, ZoneOffset.UTC);
+    }
+
+    public void setRenewalRequested(LocalDateTime renewalRequested){
+        this.renewalRequested = renewalRequested.atZone(ZoneOffset.UTC).toInstant();
+    }
 
 }

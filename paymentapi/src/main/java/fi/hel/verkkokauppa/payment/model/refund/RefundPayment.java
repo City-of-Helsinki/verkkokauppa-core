@@ -11,7 +11,9 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Getter
 @Setter
@@ -67,14 +69,14 @@ public class RefundPayment implements Persistable<String> {
 	private String timestamp;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime createdAt;
+	private Instant createdAt;
 
 	@LastModifiedDate
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime updatedAt;
+	private Instant updatedAt;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
-	LocalDateTime paidAt; // Timestamp when the transaction was refunded
+	Instant paidAt; // Timestamp when the transaction was refunded
 
 	@Field(type = FieldType.Text)
 	String paymentProviderStatus;
@@ -90,7 +92,31 @@ public class RefundPayment implements Persistable<String> {
 
 	public RefundPayment() {
 		this.status = RefundPaymentStatus.CREATED;
-		this.createdAt = LocalDateTime.now();
+		this.createdAt = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getCreatedAt(){
+		return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt){
+		this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return LocalDateTime.ofInstant(this.updatedAt, ZoneOffset.UTC);
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt.atZone(ZoneOffset.UTC).toInstant();;
+	}
+
+	public LocalDateTime getPaidAt() {
+		return LocalDateTime.ofInstant(this.paidAt, ZoneOffset.UTC);
+	}
+
+	public void setPaidAt(LocalDateTime paidAt) {
+		this.paidAt = paidAt.atZone(ZoneOffset.UTC).toInstant();;
 	}
 
 }

@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Set;
 
 @Getter
@@ -35,13 +36,13 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	private String merchantId;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
-	private LocalDateTime createdAt;
+	private Instant createdAt;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
-	private LocalDateTime updatedAt;
+	private Instant updatedAt;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_time)
-	private LocalDateTime cancelledAt;
+	private Instant cancelledAt;
 
 	@Field(type = FieldType.Text) // TODO: keyword?
 	private String status;
@@ -89,13 +90,13 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	String user;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime startDate;
+	private Instant startDate;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime endDate;
+	private Instant endDate;
 
 	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
-	private LocalDateTime billingStartDate;
+	private Instant billingStartDate;
 
 	@Field(type = FieldType.Text)
 	private String periodUnit;
@@ -180,5 +181,53 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Override
 	public String getId() {
 		return this.subscriptionId;
+	}
+
+	public LocalDateTime getCreatedAt(){
+		return LocalDateTime.ofInstant(this.createdAt, ZoneOffset.UTC);
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt){
+		this.createdAt = createdAt.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return LocalDateTime.ofInstant(this.updatedAt, ZoneOffset.UTC);
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getCancelledAt() {
+		return LocalDateTime.ofInstant(this.cancelledAt, ZoneOffset.UTC);
+	}
+
+	public void setCancelledAt(LocalDateTime cancelledAt) {
+		this.cancelledAt = cancelledAt.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getStartDate() {
+		return LocalDateTime.ofInstant(this.startDate, ZoneOffset.UTC);
+	}
+
+	public void setStartDate(LocalDateTime startDate) {
+		this.startDate = startDate.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getEndDate() {
+		return LocalDateTime.ofInstant(this.endDate, ZoneOffset.UTC);
+	}
+
+	public void setEndDate(LocalDateTime endDate) {
+		this.endDate = endDate.atZone(ZoneOffset.UTC).toInstant();
+	}
+
+	public LocalDateTime getBillingStartDate() {
+		return LocalDateTime.ofInstant(this.billingStartDate, ZoneOffset.UTC);
+	}
+
+	public void setBillingStartDate(LocalDateTime billingStartDate) {
+		this.billingStartDate = billingStartDate.atZone(ZoneOffset.UTC).toInstant();
 	}
 }

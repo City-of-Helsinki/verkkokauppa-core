@@ -27,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public class SubscriptionRenewalService {
                 String subscriptionId = subscriptionDto.getSubscriptionId();
                 SubscriptionRenewalRequest request = SubscriptionRenewalRequest.builder()
                         .id(subscriptionId)
-                        .renewalRequested(LocalDateTime.now())
+                        .renewalRequested(LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant())
                         .build();
                 requestRepository.save(request);
             });
@@ -126,7 +127,7 @@ public class SubscriptionRenewalService {
             // stop, this subscription is already being renewed by another instance of this service
             return false;
         } else {
-            SubscriptionRenewalProcess process = SubscriptionRenewalProcess.builder().id(subscriptionId).processingStarted(LocalDateTime.now()).build();
+            SubscriptionRenewalProcess process = SubscriptionRenewalProcess.builder().id(subscriptionId).processingStarted(LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant()).build();
             processRepository.save(process);
             try {
                 requestRepository.deleteById(subscriptionId);
