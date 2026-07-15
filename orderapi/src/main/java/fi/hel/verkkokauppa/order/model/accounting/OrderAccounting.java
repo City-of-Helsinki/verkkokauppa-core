@@ -18,7 +18,11 @@ public class OrderAccounting {
     @Id
     private String orderId;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime createdAt;
 
     @Field(type = FieldType.Date, format = DateFormat.date)

@@ -42,7 +42,11 @@ public class ProductAccounting extends BaseModel {
     @Field(type = FieldType.Text)
     private String namespace;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime activeFrom;
 
     @Field(type = FieldType.Object)

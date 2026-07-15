@@ -15,9 +15,17 @@ import java.time.Instant;
 @NoArgsConstructor
 public abstract class BaseVersionedEntity extends BaseEntity implements Versioned {
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private Instant createdAt;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private Instant updatedAt;
 }
