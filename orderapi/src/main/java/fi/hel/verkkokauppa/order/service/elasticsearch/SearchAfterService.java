@@ -113,7 +113,7 @@ public class SearchAfterService {
 
     public SortBuilder[] buildSortWithId() {
         SortBuilder[] sortBuilder = new SortBuilder[]{
-                new FieldSortBuilder("_id")
+                new FieldSortBuilder("createdAt")
                         .order(SortOrder.DESC)
         };
         return sortBuilder;
