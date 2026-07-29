@@ -66,14 +66,26 @@ public class RefundPayment implements Persistable<String> {
 	@Field(type = FieldType.Text)
 	private String timestamp;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime createdAt;
 
 	@LastModifiedDate
-	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime updatedAt;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	LocalDateTime paidAt; // Timestamp when the transaction was refunded
 
 	@Field(type = FieldType.Text)

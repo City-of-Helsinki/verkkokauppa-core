@@ -21,7 +21,11 @@ import java.time.LocalDateTime;
 public class SubscriptionRenewalProcess implements Identifiable {
     @Id
     private String id;
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime processingStarted;
 
 }

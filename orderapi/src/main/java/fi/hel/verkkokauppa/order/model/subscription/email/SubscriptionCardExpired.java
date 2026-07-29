@@ -24,6 +24,10 @@ public class SubscriptionCardExpired {
     @Field(type = FieldType.Text)
     private String namespace;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime createdAt;
 }

@@ -17,10 +17,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderItemInvoicing {
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime createdAt;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime updatedAt;
 
     @Field(type = FieldType.Text)

@@ -3,39 +3,10 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter</artifactId>
-                <version>2.4.4</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-                <version>2.4.4</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.data</groupId>
-                <artifactId>spring-data-elasticsearch</artifactId>
-                <version>4.1.6</version>
-                <scope>compile</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>transport</artifactId>
-                        <groupId>org.elasticsearch.client</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.12</version>
+        <version>2.7.0</version>
     </parent>
 
     <groupId>fi.hel</groupId>
@@ -51,6 +22,17 @@
         <log4j2.version>2.17.0</log4j2.version>
         <kafka.version>3.0.0</kafka.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>2.7.0</version>
+                <scope>compile</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <modules>
         <module>common</module>
