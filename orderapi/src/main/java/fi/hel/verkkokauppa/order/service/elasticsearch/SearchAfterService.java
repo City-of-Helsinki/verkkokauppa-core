@@ -111,9 +111,17 @@ public class SearchAfterService {
         return highLevelClient.search(searchRequest, options);
     }
 
-    public SortBuilder[] buildSortWithId() {
+    public SortBuilder[] buildSortWithCreatedAt() {
         SortBuilder[] sortBuilder = new SortBuilder[]{
                 new FieldSortBuilder("createdAt")
+                        .order(SortOrder.DESC)
+        };
+        return sortBuilder;
+    }
+
+    public SortBuilder[] buildSortWithCustomField(String fieldName) {
+        SortBuilder[] sortBuilder = new SortBuilder[]{
+                new FieldSortBuilder(fieldName)
                         .order(SortOrder.DESC)
         };
         return sortBuilder;
