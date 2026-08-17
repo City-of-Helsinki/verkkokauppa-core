@@ -35,7 +35,11 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Keyword)
     String user;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime createdAt;
 
     @Field(type = FieldType.Text)
@@ -68,10 +72,18 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Date, format = DateFormat.date)
     LocalDate accounted;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime startDate;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime endDate;
 
     @Field(type = FieldType.Auto)
@@ -80,7 +92,11 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Long)
     Long incrementId;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime lastValidPurchaseDateTime;
 
     public Order() {}

@@ -56,7 +56,11 @@ public class OrderItemAccounting {
     @Field(type = FieldType.Text)
     private String operationArea;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime paidAt; // Timestamp when the transaction was paid
 
     @Field(type = FieldType.Text)

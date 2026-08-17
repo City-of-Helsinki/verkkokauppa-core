@@ -59,7 +59,11 @@ public class RefundItemAccounting {
     @Field(type = FieldType.Text)
     private String operationArea;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime refundCreatedAt; // Timestamp when the refund was created
 
     @Field(type = FieldType.Text)
