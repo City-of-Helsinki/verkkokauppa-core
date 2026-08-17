@@ -41,4 +41,14 @@ public class SearchNotificationService {
                 message
         );
     }
+
+    public void sendNoSuccessfulRenewalPaymentsAlert(int hours, int minutes) {
+        String minuteString = String.format("%02d", minutes);
+        String message = "Alert: There are no successfully paid renewals today after " + hours + ":" + minuteString +".";
+
+        sendNotificationService.sendErrorNotification(
+                "No Successful Renewal Payments Alert: 0 successful payments",
+                message
+        );
+    }
 }
