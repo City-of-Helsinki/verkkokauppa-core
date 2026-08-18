@@ -303,7 +303,7 @@ services:
       - "ES_JAVA_OPTS=-Xmx2g -Xms2g"
       - discovery.type=single-node
     volumes:
-      - esdata1:/usr/share/elasticsearch/data
+      - esdataOld:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -426,6 +426,8 @@ services:
 
 volumes:
   esdata1:
+    driver: local
+  esdataOld:
     driver: local
   activemq-data: {}
 networks:
