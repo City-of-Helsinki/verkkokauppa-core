@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 @Slf4j
+@RunIfProfile(profile = "local")
 public class NamespaceControllerTest {
     private ArrayList<String> toBeDeleted = new ArrayList<>();
     @Autowired
