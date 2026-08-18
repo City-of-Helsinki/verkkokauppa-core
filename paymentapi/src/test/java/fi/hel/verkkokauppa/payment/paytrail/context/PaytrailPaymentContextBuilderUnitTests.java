@@ -5,6 +5,7 @@ import fi.hel.verkkokauppa.common.error.CommonApiException;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.ConfigurationDto;
 import fi.hel.verkkokauppa.common.rest.dto.configuration.MerchantDto;
+import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.testing.annotations.UnitTest;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest(classes = PaytrailPaymentContextBuilder.class)
 @ContextConfiguration(classes = {AutoMockBeanFactory.class})
 @Slf4j
+@RunIfProfile(profile = "local")
 @TestPropertySource(properties = {
         "paytrail_payment_return_success_url=return_success_url",
         "paytrail_payment_return_cancel_url=return_cancel_url",
