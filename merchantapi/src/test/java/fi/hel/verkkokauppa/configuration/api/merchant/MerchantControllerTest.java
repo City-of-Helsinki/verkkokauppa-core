@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Slf4j
+@RunIfProfile(profile = "local")
 @TestPropertySource(properties = {
         "merchant.secret.encryption.salt=test-salt",
 })

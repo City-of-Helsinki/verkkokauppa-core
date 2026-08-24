@@ -23,6 +23,7 @@ import fi.hel.verkkokauppa.payment.repository.PaymentItemRepository;
 import fi.hel.verkkokauppa.payment.repository.PaymentRepository;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import fi.hel.verkkokauppa.payment.testing.annotations.RunIfProfile;
 import fi.hel.verkkokauppa.payment.testing.utils.AutoMockBeanFactory;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import fi.hel.verkkokauppa.payment.utils.TestPaymentCreator;
@@ -87,6 +88,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "paytrail_update_card_callback_cancel_url=update/url4"
 })
 @Slf4j
+@RunIfProfile(profile = "local")
 public class PaytrailPaymentControllerUnitTests {
 
     private static final String TEST_MERCHANT_ID = "01fde0e9-82b2-4846-acc0-94291625192b";

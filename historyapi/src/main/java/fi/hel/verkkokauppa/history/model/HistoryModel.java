@@ -32,7 +32,11 @@ public class HistoryModel implements History {
     @Field(type = FieldType.Keyword)
     String entityType;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     LocalDateTime createdAt;
 
     @Field(type = FieldType.Keyword)

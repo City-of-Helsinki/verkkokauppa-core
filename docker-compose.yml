@@ -294,7 +294,7 @@ services:
       - elasticsearch
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.6
     container_name: elasticsearch
     environment:
       - cluster.name=docker-cluster
@@ -426,6 +426,8 @@ services:
 
 volumes:
   esdata1:
+    driver: local
+  esdataOld:
     driver: local
   activemq-data: {}
 networks:

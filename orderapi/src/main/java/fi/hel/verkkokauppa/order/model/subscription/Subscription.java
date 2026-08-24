@@ -15,11 +15,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.io.Serializable;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -34,13 +31,25 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Text)
 	private String merchantId;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime createdAt;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime updatedAt;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime cancelledAt;
 
 	@Field(type = FieldType.Text) // TODO: keyword?
@@ -88,13 +97,25 @@ public class Subscription implements Identifiable, Customer, IdentifiableUser, O
 	@Field(type = FieldType.Keyword)
 	String user;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime startDate;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime endDate;
 
-	@Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+	@Field(
+			type = FieldType.Date,
+			format = {},
+			pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+	)
 	private LocalDateTime billingStartDate;
 
 	@Field(type = FieldType.Text)

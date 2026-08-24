@@ -64,10 +64,18 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String type;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime startDate; // TODO: Test for date_optional
 
-    @Field(type = FieldType.Date, format = DateFormat.date_optional_time)
+    @Field(
+            type = FieldType.Date,
+            format = {},
+            pattern = "uuuu-MM-dd'T'HH:mm:ss.SSS'Z'"
+    )
     private LocalDateTime billingStartDate; // TODO: Test for date_optional
 
     // Subscription fields

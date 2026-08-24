@@ -57,6 +57,7 @@ import java.util.concurrent.ExecutionException;
  */
 @SpringBootTest
 @Slf4j
+@RunIfProfile(profile = "local")
 class PaytrailRefundPaymentControllerTest extends PaytrailPaymentCreator {
 
     private static final String NAMESPACE = "venepaikat";

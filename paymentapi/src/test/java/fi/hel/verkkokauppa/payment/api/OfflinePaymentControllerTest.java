@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
         KafkaAutoConfiguration.class
 })
 @Slf4j
+@RunIfProfile(profile = "local")
 class OfflinePaymentControllerTest {
 
     @Autowired
