@@ -48,7 +48,8 @@ public class SearchNotificationService {
 
         sendNotificationService.sendErrorNotification(
                 "No Successful Renewal Payments Alert: 0 successful payments",
-                message
+                message,
+                "Error - There are no successfully paid renewals today"
         );
     }
 }
