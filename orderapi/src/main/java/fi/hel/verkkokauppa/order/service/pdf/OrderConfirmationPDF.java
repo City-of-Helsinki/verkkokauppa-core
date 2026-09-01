@@ -41,6 +41,7 @@ public class OrderConfirmationPDF {
 
     private PDPage currentPage = null;
     private PDPageContentStream contentStream = null;
+    private PDFA2A pdf = null;
 
     @Value("${test.pdf.save:false}")
     private boolean saveTestPDF;
@@ -51,7 +52,7 @@ public class OrderConfirmationPDF {
 
     public byte[] generateBackup(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
 
-        PDFA2A pdf = new PDFA2A(TITLE);
+        pdf = new PDFA2A(TITLE);
 
         PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
         PDType0Font boldFont = pdf.loadFont(PDType1Font.HELVETICA_BOLD);
