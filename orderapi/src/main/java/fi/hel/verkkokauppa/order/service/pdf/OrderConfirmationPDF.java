@@ -45,8 +45,12 @@ public class OrderConfirmationPDF {
     @Value("${test.pdf.save:false}")
     private boolean saveTestPDF;
 
-    public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
+    public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto){
         return null;
+    }
+
+    public byte[] generateBackup(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
+
         PDFA2A pdf = new PDFA2A(TITLE);
 
         PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
