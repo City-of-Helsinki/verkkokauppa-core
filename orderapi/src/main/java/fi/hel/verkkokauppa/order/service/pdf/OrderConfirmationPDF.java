@@ -39,7 +39,6 @@ public class OrderConfirmationPDF {
 
     private final int LINE_SPACING = 10;
 
-    private PDFA2A pdf = null;
     private PDPage currentPage = null;
     private PDPageContentStream contentStream = null;
 
@@ -47,7 +46,8 @@ public class OrderConfirmationPDF {
     private boolean saveTestPDF;
 
     public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
-        pdf = new PDFA2A(TITLE);
+        return null;
+        PDFA2A pdf = new PDFA2A(TITLE);
 
         PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
         PDType0Font boldFont = pdf.loadFont(PDType1Font.HELVETICA_BOLD);
@@ -450,31 +450,31 @@ public class OrderConfirmationPDF {
         return pdfArray;
     }
 
-    private float addContentElement(PDStructureElement currentElement,
+    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text) throws IOException {
-        return addContentElement (currentElement,
+        return addContentElement (pdf, currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, null, true);
     }
 
-    private float addContentElement(PDStructureElement currentElement,
+    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, Color colour) throws IOException {
-        return addContentElement (currentElement,
+        return addContentElement (pdf, currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, colour, true);
     }
 
-    private float addContentElement(PDStructureElement currentElement,
+    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription) throws IOException {
-        return addContentElement (currentElement,
+        return addContentElement (pdf, currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, alternateDescription, null, true);
     }
 
-    private float addContentElement(PDStructureElement currentElement,
+    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
                                     COSName markedContentCosName, String standardStructureType,
                                     PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription, Color colour, Boolean pageCheck) throws IOException {
         if( pageCheck && ty <= BOTTOM_MARGIN ){
