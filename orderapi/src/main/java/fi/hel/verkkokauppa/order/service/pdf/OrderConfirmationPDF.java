@@ -455,31 +455,31 @@ public class OrderConfirmationPDF {
         return pdfArray;
     }
 
-    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
+    private float addContentElement(PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text) throws IOException {
-        return addContentElement (pdf, currentElement,
+        return addContentElement ( currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, null, true);
     }
 
-    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
+    private float addContentElement(PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, Color colour) throws IOException {
-        return addContentElement (pdf, currentElement,
+        return addContentElement (currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, colour, true);
     }
 
-    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
+    private float addContentElement(PDStructureElement currentElement,
                                    COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription) throws IOException {
-        return addContentElement (pdf, currentElement,
+        return addContentElement (currentElement,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, alternateDescription, null, true);
     }
 
-    private float addContentElement(PDFA2A pdf, PDStructureElement currentElement,
+    private float addContentElement(PDStructureElement currentElement,
                                     COSName markedContentCosName, String standardStructureType,
                                     PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription, Color colour, Boolean pageCheck) throws IOException {
         if( pageCheck && ty <= BOTTOM_MARGIN ){
