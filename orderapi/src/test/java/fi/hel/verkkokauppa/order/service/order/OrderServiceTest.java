@@ -772,6 +772,31 @@ class OrderServiceTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
+    void createOrderWithMerchantIdAndQRCodeType() throws JsonProcessingException {
+        String namespace = "liikuntavuorot";
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032").getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
     public void createOrderWithLastValidPurchaseDateTime() {
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
         OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace).getBody();

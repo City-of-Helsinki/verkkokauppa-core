@@ -44,6 +44,9 @@ public class ServiceConfigurationKeys {
     public static String MERCHANT_SHOP_ID = "merchantShopId";
     public static String MERCHANT_PAYTRAIL_MERCHANT_ID = "merchantPaytrailMerchantId";
     public static String MERCHANT_PAYTRAIL_SECRET = "merchantPaytrailSecret";
+    // QR-code specific merchant keys (KYV-1040)
+    public static String MERCHANT_BAR_QR_CODE_TYPE = "merchantBarQRCodeType";
+    public static String TOKEN_CHARGING_URL = "tokenChargingUrl";
 
 
     // NamespaceModel keys START [KYV-605] (values can be fetched from serviceconfiguration,namespace model)
@@ -144,7 +147,9 @@ public class ServiceConfigurationKeys {
                 MERCHANT_PHONE,
                 MERCHANT_URL,
                 MERCHANT_SHOP_ID,
-                MERCHANT_PAYTRAIL_MERCHANT_ID
+                MERCHANT_PAYTRAIL_MERCHANT_ID,
+                MERCHANT_BAR_QR_CODE_TYPE,
+                TOKEN_CHARGING_URL
         ).sorted().collect(Collectors.toList());
 
         merchantKeys.addAll(overridableMerchantKeys);

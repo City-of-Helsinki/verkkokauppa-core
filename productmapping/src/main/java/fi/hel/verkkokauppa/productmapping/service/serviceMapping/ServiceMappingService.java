@@ -63,7 +63,12 @@ public class ServiceMappingService {
                 createByParams("venepaikat", "product", mockbackendurl+"/backend/venepaikat/product?productId="),
                 createByParams("venepaikat", "price", mockbackendurl+"/backend/venepaikat/price?productId="),
                 createByParams("venepaikat", "rightofpurchase", mockbackendurl+"/backend/venepaikat/right-of-purchase?productId="),
-                createByParams("venepaikat", "availability", mockbackendurl+"/backend/venepaikat/availability?productId=")
+                createByParams("venepaikat", "availability", mockbackendurl+"/backend/venepaikat/availability?productId="),
+
+                createByParams("liikuntavuorot", "product", mockbackendurl+"/backend/liikuntavuorot/product?productId="),
+                createByParams("liikuntavuorot", "price", mockbackendurl+"/backend/liikuntavuorot/price?productId="),
+                createByParams("liikuntavuorot", "rightofpurchase", mockbackendurl+"/backend/liikuntavuorot/right-of-purchase?productId="),
+                createByParams("liikuntavuorot", "availability", mockbackendurl+"/backend/liikuntavuorot/availability?productId=")
         );
 
         serviceMappingRepository.saveAll(entities);

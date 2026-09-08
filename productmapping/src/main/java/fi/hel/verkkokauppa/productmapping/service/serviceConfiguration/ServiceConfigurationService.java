@@ -107,7 +107,28 @@ public class ServiceConfigurationService {
                 // Webhooks
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_payment_webhook", false),
                 createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_order_webhook", false),
-                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_subscription_webhook", false)
+                createByParams("venepaikat", ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/asukaspysakointi/merchant_subscription_webhook", false),
+
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_API_KEY, "liikuntavuorot_mock_api_key", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "liikuntavuorot_mock_encryption_key", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/return_url", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/notification_url", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_NAME, "liikuntavuorot", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_STREET, "Halli 1", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_ZIP, "000000", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_EMAIL, "liikunta@vuorot.fi", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl+"/mockserviceconfiguration/liikuntavuorot/url", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl+"/mockserviceconfiguration/liikuntavuorot/terms_of_use", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl+"/mock/liikuntavuorot/order/right-of-purchase", false),
+                // Webhooks
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_payment_webhook", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_order_webhook", false),
+                createByParams("liikuntavuorot", ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_subscription_webhook", false)
 
         );
 

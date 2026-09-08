@@ -62,7 +62,10 @@ public class ProductMappingService {
                 createByParams("tilavaraus", "123456", "98765"),
                 createByParams("venepaikat", "1234", "987654"),
                 createByParams("venepaikat", "12345", "987654"),
-                createByParams("venepaikat", "5678", "987654")
+                createByParams("venepaikat", "5678", "987654"),
+                createByParams("liikuntavuorot", "1234", "9876543"),
+                createByParams("liikuntavuorot", "12345", "9876543"),
+                createByParams("liikuntavuorot", "5678", "9876543")
         );
 
         productMappingRepository.saveAll(entities);
