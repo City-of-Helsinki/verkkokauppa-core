@@ -195,6 +195,11 @@ public class NamespaceService {
         venepaikatNamespace.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatNamespace.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
+        NamespaceModel liikuntavuorotNamespace = new NamespaceModel();
+        liikuntavuorotNamespace.setNamespace("liikuntavuorot");
+        liikuntavuorotNamespace.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        liikuntavuorotNamespace.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
         // Add configurations
         List<ConfigurationModel> asukaspysakointiConfig = Arrays.asList(
             constructConfigByParams(asukaspysakointiNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_API_KEY, "asukaspysakointi_mock_api_key", true),
@@ -234,10 +239,30 @@ public class NamespaceService {
             constructConfigByParams(venepaikatNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/venepaikat/merchant_subscription_webhook", false)
         );
 
+        List<ConfigurationModel> liikuntavuorotConfig = Arrays.asList(
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_API_KEY, "liikuntavuorot_mock_api_key", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_ENCRYPTION_KEY, "liikuntavuorot_mock_encryption_key", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_RETURN_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/return_url", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_NOTIFICATION_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/notification_url", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_SUBMERCHANT_ID, "36240", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.PAYMENT_CP, "PRO-31312-1", true),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/terms_of_use", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.SEND_MERCHANT_TERMS_OF_SERVICE, "true", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_IS_ACTIVE, "true", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.ORDER_RIGHT_OF_PURCHASE_URL, mockbackendurl + "/mock/liikuntavuorot/order/right-of-purchase", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_PRICE_URL, mockbackendurl + "/mockprice/liikuntavuorot/subscription/post", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.SUBSCRIPTION_RESOLVE_PRODUCT_URL, mockbackendurl + "/mock/liikuntavuorot/subscription/product", false),
+            // Webhooks
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_payment_webhook", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_order_webhook", false),
+            constructConfigByParams(liikuntavuorotNamespace.getNamespace(), ServiceConfigurationKeys.MERCHANT_SUBSCRIPTION_WEBHOOK_URL, webHookUrl != null ? webHookUrl : mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/merchant_subscription_webhook", false)
+        );
+
         asukaspysakointiNamespace.setConfigurations(new ArrayList(asukaspysakointiConfig));
         venepaikatNamespace.setConfigurations(new ArrayList(venepaikatConfig));
+        liikuntavuorotNamespace.setConfigurations(new ArrayList(liikuntavuorotConfig));
 
-        List<NamespaceModel> namespaceEntities = Arrays.asList(asukaspysakointiNamespace, venepaikatNamespace);
+        List<NamespaceModel> namespaceEntities = Arrays.asList(asukaspysakointiNamespace, venepaikatNamespace, liikuntavuorotNamespace);
 
         Iterable<NamespaceModel> savedNamespacesIter = namespaceRepository.saveAll(namespaceEntities);
         List<NamespaceDto> savedNamespaceDtos = StreamSupport.stream(savedNamespacesIter.spliterator(), false)

@@ -299,6 +299,12 @@ public class MerchantService {
         venepaikatMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
         venepaikatMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
 
+        MerchantModel liikuntavuorotMerchant = new MerchantModel();
+        liikuntavuorotMerchant.setNamespace("liikuntavuorot");
+        liikuntavuorotMerchant.setMerchantId(UUIDGenerator.generateType4UUID().toString());
+        liikuntavuorotMerchant.setCreatedAt(DateTimeUtil.getFormattedDateTime());
+        liikuntavuorotMerchant.setUpdatedAt(DateTimeUtil.getFormattedDateTime());
+
         // Add configurations
         List<ConfigurationModel> asukaspysakointiConfig = Arrays.asList(
                 constructConfigByParams(asukaspysakointiMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "asukaspysäköinti", false),
@@ -330,10 +336,27 @@ public class MerchantService {
                 constructConfigByParams(venepaikatMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, "http://venepaikat.hel.fi/traileriehdot", false)
         );
 
+        List<ConfigurationModel> liikuntavuorotConfig = Arrays.asList(
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_NAME, "liikuntavuorot", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_STREET, "Halli 1", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ZIP, "000000", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_CITY, "Helsinki", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_EMAIL, "liikunta@vuorot.fi", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PHONE, "123-456789", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_URL, mockbackendurl + "/mockserviceconfiguration/liikuntavuorot/url", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_SHOP_ID, "695874", false), // Value is from paytrail documentation test Shop-in-Shop merchant ID
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYTRAIL_MERCHANT_ID, "375917", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_PAYMENT_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_ORDER_WEBHOOK_URL, "http://host.docker.internal:8084/v1/order/internal/webhooks", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_TERMS_OF_SERVICE_URL, "http://venepaikat.hel.fi/traileriehdot", false),
+                constructConfigByParams(liikuntavuorotMerchant.getNamespace(), ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE, "QR_CODE", false)
+        );
+
         asukaspysakointiMerchant.setConfigurations(new ArrayList(asukaspysakointiConfig));
         venepaikatMerchant.setConfigurations(new ArrayList(venepaikatConfig));
+        liikuntavuorotMerchant.setConfigurations(new ArrayList(liikuntavuorotConfig));
 
-        List<MerchantModel> MerchantEntities = Arrays.asList(asukaspysakointiMerchant, venepaikatMerchant);
+        List<MerchantModel> MerchantEntities = Arrays.asList(asukaspysakointiMerchant, venepaikatMerchant, liikuntavuorotMerchant);
 
         Iterable<MerchantModel> savedMerchantsIter = merchantRepository.saveAll(MerchantEntities);
         List<MerchantDto> savedMerchantDtos = StreamSupport.stream(savedMerchantsIter.spliterator(), false)
