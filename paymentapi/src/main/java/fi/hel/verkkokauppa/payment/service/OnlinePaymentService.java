@@ -585,6 +585,10 @@ public class OnlinePaymentService {
                     } else {
                         triggerPaymentPaidEvent(payment);
                     }
+
+                    // check if this was voucher and handle voucher logic if needed
+
+
                 } else {
                     log.debug("not triggering events, payment paid earlier, paymentId: " + paymentId);
                 }

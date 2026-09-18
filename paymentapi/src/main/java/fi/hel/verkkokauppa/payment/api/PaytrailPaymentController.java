@@ -11,6 +11,7 @@ import fi.hel.verkkokauppa.payment.paytrail.context.PaytrailPaymentContext;
 import fi.hel.verkkokauppa.payment.paytrail.validation.PaytrailPaymentReturnValidator;
 import fi.hel.verkkokauppa.payment.service.OnlinePaymentService;
 import fi.hel.verkkokauppa.payment.service.PaymentPaytrailService;
+import fi.hel.verkkokauppa.payment.service.VoucherService;
 import fi.hel.verkkokauppa.payment.util.PaymentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.helsinki.paytrail.model.payments.PaytrailPayment;
@@ -38,6 +39,9 @@ public class PaytrailPaymentController {
 
     @Autowired
     private PaytrailPaymentReturnValidator paytrailPaymentReturnValidator;
+
+    @Autowired
+    private VoucherService voucherService;
 
     @Autowired
     private Environment env;
@@ -78,6 +82,9 @@ public class PaytrailPaymentController {
             PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, paymentId, dto.getOrder(), card.getToken());
             Payment payment = paymentPaytrailService.createPayment(context, dto, paymentId, mitCharge);
             paymentPaytrailService.triggerPaymentPaidEvent(payment, card);
+
+            voucherService.voucherPaidCheck(merchantId, dto.getOrder(), payment);
+
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {
             throw cae;

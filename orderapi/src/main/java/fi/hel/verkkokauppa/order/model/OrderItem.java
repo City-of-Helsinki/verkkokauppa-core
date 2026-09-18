@@ -95,6 +95,14 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String invoicingIncrementId;
 
+    // Token/Voucher fields
+    @Field(type = FieldType.Keyword)
+    String tokenId;
+    @Field(type = FieldType.Keyword)
+    String tokenName; // actual barcode/QR code
+    @Field(type = FieldType.Text)
+    String tokenQRCodeUrl; // url to get the QR code file to be added to order confirmation
+
     public OrderItem() {}
 
     public OrderItem(
