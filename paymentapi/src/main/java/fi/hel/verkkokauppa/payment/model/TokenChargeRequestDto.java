@@ -1,10 +1,12 @@
 package fi.hel.verkkokauppa.payment.model;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
+@Data
 public class TokenChargeRequestDto {
 
 	// TALPA order id
@@ -21,5 +23,4 @@ public class TokenChargeRequestDto {
 	private String amount;
 	// Generated Bar-/QR code
 	private String token;
-
 }
