@@ -81,9 +81,10 @@ public class RestServiceClient {
     }
 
     // KYV-1402 for Token Charge Calls
-    public void makeAuthBearerPostCall(String url, String body, String namespace) {
+    public JSONObject makeAuthBearerPostCall(String url, String body, String namespace) {
         WebClient client = getAuthorizationBearerClient(namespace);
-        postVoidQueryJsonService(client, url, body);
+        JSONObject response = postQueryJsonService(client, url, body);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
     public WebClient getClient() {

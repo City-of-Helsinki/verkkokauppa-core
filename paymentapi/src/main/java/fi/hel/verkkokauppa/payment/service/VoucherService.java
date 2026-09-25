@@ -117,6 +117,7 @@ public class VoucherService {
     // voucher charge request to external system
     //
     private OrderItemVoucher createTokenChargeCall(OrderItemVoucher orderItemVoucher, OrderItemDto orderItem, String tokenChargingUrl) throws JsonProcessingException {
+        String namespace = orderItemVoucher.getNamespace();
 
         // Create token charging request
         TokenChargeRequestDto requestDto = new TokenChargeRequestDto();
@@ -136,9 +137,12 @@ public class VoucherService {
             requestDto.setNamespaceEntityId(dto.getNamespaceEntityId());
 
 
-            makeTokenChargeCall( tokenChargingUrl, requestDto );
+            TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
 
             // get QR code, id and QR code retrieval url
+            orderItemVoucher.setTokenId(responseDto.getTokenId());
+            orderItemVoucher.setTokenName(responseDto.getTokenName());
+            orderItemVoucher.setTokenQRCodeUrl(responseDto.getTokenQRCodeUrl());
 
 
         } catch (Exception firstException) {
@@ -146,9 +150,12 @@ public class VoucherService {
             log.error("Getting voucher/QR Code info failed for first time for order: {} orderItem:{}", orderItem.getOrderId(), orderItem.getOrderItemId(), firstException);
 
             try {
-                makeTokenChargeCall( tokenChargingUrl, requestDto );
+                TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
 
                 // get QR code, id and QR code retrieval url
+                orderItemVoucher.setTokenId(responseDto.getTokenId());
+                orderItemVoucher.setTokenName(responseDto.getTokenName());
+                orderItemVoucher.setTokenQRCodeUrl(responseDto.getTokenQRCodeUrl());
 
             } catch (Exception e) {
                 // create error message with order id and orderItemId
@@ -168,19 +175,22 @@ public class VoucherService {
         }
 
 
-        return null;
+        return orderItemVoucher;
     }
 
 
-    //
-    private void makeTokenChargeCall(String tokenChargingUrl, TokenChargeRequestDto requestDto  ) throws JsonProcessingException {
+    // Make call to external system and map response
+    private TokenChargeResponseDto makeTokenChargeCall(String tokenChargingUrl, TokenChargeRequestDto requestDto, String namespace) throws JsonProcessingException {
         String body = objectMapper.writeValueAsString(requestDto);
         log.info("Token charging request body : {}", requestDto);
         // Token charge call
         ResponseEntity<JSONObject> response;
+
         //headers.append("Authorization", `Bearer ${accessToken}`);
-        tokenChargeResponse = restServiceClient.postCall(tokenChargingUrl, body);
-        TokenChargeResponseDto resultDto = objectMapper.readValue(Objects.requireNonNull(tokenChargeResponse.getBody()).toString(), TokenChargeResponseDto.class);
+        JSONObject tokenChargeResponse = restServiceClient.makeAuthBearerPostCall(tokenChargingUrl, body, namespace);
+        TokenChargeResponseDto resultDto = objectMapper.readValue(tokenChargeResponse.toString(), TokenChargeResponseDto.class);
+
+        return resultDto;
     }
 
 
