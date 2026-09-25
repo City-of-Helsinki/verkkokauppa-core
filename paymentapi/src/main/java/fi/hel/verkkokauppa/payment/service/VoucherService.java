@@ -64,13 +64,14 @@ public class VoucherService {
     private static final String DUMMY_TOKEN = "dummy_token";
 
     // check if any voucher logic applies to this payment
-    public void voucherPaidCheck(String merchantId, OrderWrapper orderWrapper, Payment payment) throws JsonProcessingException {
+    public void voucherPaidCheck(String merchantId, OrderWrapper orderWrapper) throws JsonProcessingException {
 
         // check if barcode or QR code configuration exists for this merchant
-        String barOrQRCodeType = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, payment.getNamespace(), ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE);
+        OrderDto orderDto = orderWrapper.getOrder();
+        String barOrQRCodeType = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, orderDto.getNamespace(), ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE);
         if( barOrQRCodeType != null ) {
-            String tokenChargingUrl = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, payment.getNamespace(), ServiceConfigurationKeys.TOKEN_CHARGING_URL);
-            OrderDto orderDto = orderWrapper.getOrder();
+            String tokenChargingUrl = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, orderDto.getNamespace(), ServiceConfigurationKeys.TOKEN_CHARGING_URL);
+
 
             // do for each order item
             List<OrderItemDto> orderItems = orderWrapper.getItems();
@@ -89,16 +90,13 @@ public class VoucherService {
                 orderItemVoucher.setCreatedAt(now);
                 orderItemVoucher.setUpdatedAt(now);
                 // generate token for bar/QR code in case external system does not do it or is not used
-                //
+                // for now just using DUMMY_TOKEN
                 orderItemVoucher.setTokenName(DUMMY_TOKEN);
 
                 // check if external system needs to be updated on this
                 if( tokenChargingUrl != null ) {
                     // call external system to get QR code and other details
                     orderItemVoucher = createTokenChargeCall(orderItemVoucher, orderItem, tokenChargingUrl);
-                }
-                else {
-                    // create orderItemVoucher for orderItem
                 }
 
                 // save orderItemVoucher

@@ -83,7 +83,7 @@ public class PaytrailPaymentController {
             Payment payment = paymentPaytrailService.createPayment(context, dto, paymentId, mitCharge);
             paymentPaytrailService.triggerPaymentPaidEvent(payment, card);
 
-            voucherService.voucherPaidCheck(merchantId, dto.getOrder(), payment);
+            voucherService.voucherPaidCheck(merchantId, dto.getOrder());
 
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {

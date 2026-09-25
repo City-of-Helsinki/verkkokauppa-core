@@ -228,4 +228,16 @@ public class PaymentMethodService {
                 ));
         paymentMethodRepository.delete(exsistingMethod);
     }
+
+    public List<PaymentMethodDto> initializeTestData(){
+        // Create list of default payment methods for Local Env
+        List<PaymentMethodDto> paymentMethodDtos = new ArrayList<>();
+        paymentMethodDtos.add(new PaymentMethodDto("Helsinki lasku","helsinki-invoice","invoice","https://checkout-test.test.hel.ninja/helsinki-logo.png",PaymentGatewayEnum.INVOICE));
+        paymentMethodDtos.add(new PaymentMethodDto("Maksuton","free","free","https://checkout-test.test.hel.ninja/helsinki-logo.png",PaymentGatewayEnum.FREE));
+
+        // create payment methods
+        paymentMethodDtos.forEach(this::createNewPaymentMethod);
+
+        return paymentMethodDtos;
+    }
 }
