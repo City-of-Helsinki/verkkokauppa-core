@@ -82,7 +82,7 @@ public class RestServiceClient {
 
     // KYV-1402 for Token Charge Calls
     public void makeAuthBearerPostCall(String url, String body, String namespace) {
-        WebClient client = getWebhookAuthClient(namespace);
+        WebClient client = getAuthorizationBearerClient(namespace);
         postVoidQueryJsonService(client, url, body);
     }
 
@@ -153,6 +153,7 @@ public class RestServiceClient {
     }
 
 
+    // KYV-1402 create client with Authorization bearer token
     public WebClient getAuthorizationBearerClient(String namespace) {
         // base HttpClient with timeouts
         HttpClient httpClient = HttpClient.create()
