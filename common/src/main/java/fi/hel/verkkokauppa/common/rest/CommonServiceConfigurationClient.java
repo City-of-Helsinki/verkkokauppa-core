@@ -172,6 +172,12 @@ public class CommonServiceConfigurationClient {
         return restServiceClient.queryStringService(serviceMappingUrl);
     }
 
+    public String getAuthorizationBearerToken(String namespace) {
+        String serviceMappingUrl = serviceUrls.getServiceconfigurationServiceUrl() + "authorization-bearer-token/get?namespace=" + namespace;
+
+        return restServiceClient.queryStringService(serviceMappingUrl);
+    }
+
 
 }
     

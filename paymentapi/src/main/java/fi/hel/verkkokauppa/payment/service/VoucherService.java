@@ -14,17 +14,20 @@ import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
 import fi.hel.verkkokauppa.payment.model.Payment;
 import fi.hel.verkkokauppa.payment.model.ReservedVoucherCode;
 import fi.hel.verkkokauppa.payment.model.TokenChargeRequestDto;
+import fi.hel.verkkokauppa.payment.model.TokenChargeResponseDto;
 import fi.hel.verkkokauppa.payment.model.voucher.OrderItemVoucher;
 import fi.hel.verkkokauppa.payment.repository.voucher.OrderItemVoucherRepository;
 import fi.hel.verkkokauppa.payment.repository.voucher.ReservedVoucherCodeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -92,7 +95,7 @@ public class VoucherService {
                 // check if external system needs to be updated on this
                 if( tokenChargingUrl != null ) {
                     // call external system to get QR code and other details
-                    orderItemVoucher = tokenChargeCall(orderItemVoucher, orderItem, tokenChargingUrl);
+                    orderItemVoucher = createTokenChargeCall(orderItemVoucher, orderItem, tokenChargingUrl);
                 }
                 else {
                     // create orderItemVoucher for orderItem
@@ -113,7 +116,7 @@ public class VoucherService {
     //
     // voucher charge request to external system
     //
-    private OrderItemVoucher tokenChargeCall(OrderItemVoucher orderItemVoucher, OrderItemDto orderItem, String tokenChargingUrl) throws JsonProcessingException {
+    private OrderItemVoucher createTokenChargeCall(OrderItemVoucher orderItemVoucher, OrderItemDto orderItem, String tokenChargingUrl) throws JsonProcessingException {
 
         // Create token charging request
         TokenChargeRequestDto requestDto = new TokenChargeRequestDto();
@@ -133,9 +136,9 @@ public class VoucherService {
             requestDto.setNamespaceEntityId(dto.getNamespaceEntityId());
 
 
-            // Token charge call
-            // TODO: call
+            makeTokenChargeCall( tokenChargingUrl, requestDto );
 
+            // get QR code, id and QR code retrieval url
 
 
         } catch (Exception firstException) {
@@ -143,8 +146,9 @@ public class VoucherService {
             log.error("Getting voucher/QR Code info failed for first time for order: {} orderItem:{}", orderItem.getOrderId(), orderItem.getOrderItemId(), firstException);
 
             try {
-                // Token charge call
-                // TODO: call
+                makeTokenChargeCall( tokenChargingUrl, requestDto );
+
+                // get QR code, id and QR code retrieval url
 
             } catch (Exception e) {
                 // create error message with order id and orderItemId
@@ -165,6 +169,18 @@ public class VoucherService {
 
 
         return null;
+    }
+
+
+    //
+    private void makeTokenChargeCall(String tokenChargingUrl, TokenChargeRequestDto requestDto  ) throws JsonProcessingException {
+        String body = objectMapper.writeValueAsString(requestDto);
+        log.info("Token charging request body : {}", requestDto);
+        // Token charge call
+        ResponseEntity<JSONObject> response;
+        //headers.append("Authorization", `Bearer ${accessToken}`);
+        tokenChargeResponse = restServiceClient.postCall(tokenChargingUrl, body);
+        TokenChargeResponseDto resultDto = objectMapper.readValue(Objects.requireNonNull(tokenChargeResponse.getBody()).toString(), TokenChargeResponseDto.class);
     }
 
 

@@ -80,6 +80,12 @@ public class RestServiceClient {
         postVoidQueryJsonService(client, url, body);
     }
 
+    // KYV-1402 for Token Charge Calls
+    public void makeAuthBearerPostCall(String url, String body, String namespace) {
+        WebClient client = getWebhookAuthClient(namespace);
+        postVoidQueryJsonService(client, url, body);
+    }
+
     public WebClient getClient() {
         // expect a response within a few seconds
         HttpClient httpClient = HttpClient.create()
@@ -142,6 +148,43 @@ public class RestServiceClient {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("webhook-api-key", apiKey)
                 .defaultHeader("namespace", namespace)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+
+    public WebClient getAuthorizationBearerClient(String namespace) {
+        // base HttpClient with timeouts
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT)
+                .responseTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
+
+        // HOTFIX: Cert error in webhooks! if env var is set, configure insecure SSL, before good fix for this is done!
+        boolean allowInsecure = Optional.ofNullable(System.getenv("ALLOW_INSECURE_SSL"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+
+        if (allowInsecure) {
+            httpClient = httpClient.secure(ssl -> ssl.sslContext(
+                    SslContextBuilder.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            ));
+            log.warn("ALLOW_INSECURE_SSL is true → SSL certificate validation is DISABLED!");
+        }
+
+        String bearerToken = null;
+        try {
+            bearerToken = configurationClient.getAuthorizationBearerToken(namespace);
+        } catch (Exception e) {
+            log.info("Can't fetch Authorization Bearer Token for namespace " + namespace);
+        }
+
+        return WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader("Authorization", "Bearer " + bearerToken)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
