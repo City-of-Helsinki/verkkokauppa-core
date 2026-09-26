@@ -31,7 +31,7 @@ public class AccountingSearchService {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCustomField("timestamp"),
                 AccountingExportData.INDEX_NAME
         );
 
@@ -51,7 +51,7 @@ public class AccountingSearchService {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCreatedAt(),
                 Order.INDEX_NAME
         );
 
@@ -71,7 +71,7 @@ public class AccountingSearchService {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCreatedAt(),
                 Refund.INDEX_NAME
         );
 
