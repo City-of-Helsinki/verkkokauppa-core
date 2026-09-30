@@ -39,6 +39,10 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     Integer quantity;
     @Field(type = FieldType.Text)
     String unit;
+    @Field(type = FieldType.Text)
+    String tokenName;
+    @Field(type = FieldType.Text)
+    String tokenQRCodeUrl;
 
     @Field(type = FieldType.Text)
     String rowPriceNet;
@@ -107,6 +111,8 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
             String productDescription,
             Integer quantity,
             String unit,
+            String tokenName,
+            String tokenQRCodeUrl,
             String rowPriceNet,
             String rowPriceVat,
             String rowPriceTotal,
@@ -133,6 +139,8 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
         this.productDescription = productDescription;
         this.quantity = quantity;
         this.unit = unit;
+        this.tokenName = tokenName;
+        this.tokenQRCodeUrl = tokenQRCodeUrl;
         this.rowPriceNet = rowPriceNet;
         this.rowPriceVat = rowPriceVat;
         this.rowPriceTotal = rowPriceTotal;

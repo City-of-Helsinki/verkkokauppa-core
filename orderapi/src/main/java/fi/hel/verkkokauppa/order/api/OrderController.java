@@ -367,6 +367,8 @@ public class OrderController {
                         item.getProductDescription(),
                         item.getQuantity(),
                         item.getUnit(),
+                        item.getTokenName(),
+                        item.getTokenQRCodeUrl(),
                         item.getRowPriceNet(),
                         item.getRowPriceVat(),
                         item.getRowPriceTotal(),

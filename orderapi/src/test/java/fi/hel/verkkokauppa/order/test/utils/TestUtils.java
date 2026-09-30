@@ -226,10 +226,10 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId){
-        return createNewOrderToDatabase(itemCount, merchantId, "venepaikat", "8a8674ed-1ae2-3ca9-a93c-036478b2a032");
+        return createNewOrderToDatabase(itemCount, merchantId, "venepaikat", "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null);
     }
 
-    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId, String namespace, String productId) {
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId, String namespace, String productId, String qrCodeTokenName, String qrCodeUrl) {
         Order order = generateDummyOrder();
 
         order.setNamespace(namespace);
@@ -242,6 +242,12 @@ public class TestUtils extends DummyData {
         orderItems.forEach(orderItem -> orderItem.setRowPriceVat("10"));
         orderItems.forEach(orderItem -> orderItem.setRowPriceTotal("110"));
         orderItems.forEach(orderItem -> orderItem.setMerchantId(merchantId));
+        if (qrCodeTokenName != null) {
+            orderItems.forEach(orderItem -> orderItem.setTokenName(qrCodeTokenName));
+        }
+        if (qrCodeUrl != null) {
+            orderItems.forEach(orderItem -> orderItem.setTokenQRCodeUrl(qrCodeUrl));
+        }
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
         OrderAggregateDto orderAggregateDto = orderTransformerUtils
