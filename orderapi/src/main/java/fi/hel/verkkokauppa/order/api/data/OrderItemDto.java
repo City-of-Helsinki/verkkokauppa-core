@@ -23,6 +23,8 @@ public class OrderItemDto implements OrderItemSubscriptionFields {
     private String productLabel;
     private String productDescription;
     private String unit;
+    private String tokenName;
+    private String tokenQRCodeUrl;
     private Integer quantity;
     private String rowPriceNet;
     private String rowPriceVat;

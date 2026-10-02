@@ -11,6 +11,7 @@ public class MockServiceConfigurationController {
     // AP = asukaspysakointi
     // TV = tilavaraus
     // VP = venepaikat
+    // LV = liikuntavuorot
 
     @GetMapping("/mockserviceconfiguration/asukaspysakointi/return_url")
     public String getMockPaymentReturnUrlAP() { return "asukaspysakointi mock payment return url"; }
@@ -23,6 +24,7 @@ public class MockServiceConfigurationController {
 
     @PostMapping("/mockserviceconfiguration/asukaspysakointi/merchant_payment_webhook")
     public String getMerchantPaymentWebhookUrlAP() { return "asukaspysakointi mock merchantPaymentWebhookUrl"; }
+
 
     @GetMapping("/mockserviceconfiguration/tilavaraus/return_url")
     public String getMockPaymentReturnUrlTV() { return "tilavaraus mock payment return url"; }
@@ -42,6 +44,17 @@ public class MockServiceConfigurationController {
 
     @GetMapping("/mockserviceconfiguration/venepaikat/terms_of_use")
     public String getMockTermsOfUseUrlVP() { return "venepaikat mock terms of use url"; }
+
+
+    @GetMapping("/mockserviceconfiguration/liikuntavuorot/return_url")
+    public String getMockPaymentReturnUrlLV() { return "liikuntavuorot mock payment return url"; }
+
+    @GetMapping("/mockserviceconfiguration/liikuntavuorot/notification_url")
+    public String getMockPaymentNotificationUrlLV() { return "liikuntavuorot mock payment notification url"; }
+
+    @GetMapping("/mockserviceconfiguration/liikuntavuorot/terms_of_use")
+    public String getMockTermsOfUseUrlLV() { return "liikuntavuorot mock terms of use url"; }
+
 
     @PostMapping("/mockserviceconfiguration/{namespace}/merchant_order_webhook")
     public String getMerchantOrderWebhookUrl(@PathVariable String namespace, @RequestBody String body) {

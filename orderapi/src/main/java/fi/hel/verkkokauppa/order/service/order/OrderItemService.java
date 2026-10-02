@@ -31,7 +31,7 @@ public class OrderItemService {
 
 
     // updates existing order item from order or creates new one if one doe not already exist
-    public String addOrUpdateItem(String orderId, String merchantId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
+    public String addOrUpdateItem(String orderId, String merchantId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit, String tokenName, String tokenQRCodeUrl,
                                   String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
                                   String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate, LocalDate invoicingDate) throws Exception {
         String orderItemId = null;
@@ -49,6 +49,8 @@ public class OrderItemService {
             orderItem.setProductLabel(productLabel);
             orderItem.setQuantity(quantity);
             orderItem.setUnit(unit);
+            orderItem.setTokenName(tokenName);
+            orderItem.setTokenQRCodeUrl(tokenQRCodeUrl);
             orderItem.setRowPriceNet(rowPriceNet);
             orderItem.setRowPriceVat(rowPriceVat);
             orderItem.setRowPriceTotal(rowPriceTotal);
@@ -74,7 +76,7 @@ public class OrderItemService {
         {
             // orderitem did not exist so create one
             orderItemId = addItem(orderId, merchantId, productId, productName, productLabel, productDescription,
-                    quantity, unit, rowPriceNet, rowPriceVat, rowPriceTotal, vatPercentage, priceNet, priceVat,
+                    quantity, unit, tokenName, tokenQRCodeUrl, rowPriceNet, rowPriceVat, rowPriceTotal, vatPercentage, priceNet, priceVat,
                     priceGross, originalPriceNet, originalPriceVat, originalPriceGross, periodUnit, periodFrequency,
                     periodCount, billingStartDate, startDate, invoicingDate);
         }
@@ -88,7 +90,7 @@ public class OrderItemService {
         return orderItemId;
     }
 
-    public String addItem(String orderId, String merchantId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit,
+    public String addItem(String orderId, String merchantId, String productId, String productName, String productLabel, String productDescription, Integer quantity, String unit, String tokenName, String tokenQRCodeUrl,
                           String rowPriceNet, String rowPriceVat, String rowPriceTotal, String vatPercentage, String priceNet, String priceVat, String priceGross,
                           String originalPriceNet, String originalPriceVat, String originalPriceGross, String periodUnit, Long periodFrequency, Integer periodCount, LocalDateTime billingStartDate, LocalDateTime startDate, LocalDate invoicingDate) {
         String orderItemId = UUIDGenerator.generateType4UUID().toString();
@@ -102,6 +104,8 @@ public class OrderItemService {
                 productDescription,
                 quantity,
                 unit,
+                tokenName,
+                tokenQRCodeUrl,
                 rowPriceNet,
                 rowPriceVat,
                 rowPriceTotal,
