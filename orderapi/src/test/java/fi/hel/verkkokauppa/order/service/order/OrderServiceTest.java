@@ -644,7 +644,7 @@ class OrderServiceTest extends TestUtils {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032").getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -661,6 +661,32 @@ class OrderServiceTest extends TestUtils {
 
         orderRepository.save(order);
     }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithMerchantIdAndGeneratedQRCode() throws JsonProcessingException {
+        String namespace = "liikuntavuorot";
+        String tokenName = "1234567890";
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
 
     @Test
     @RunIfProfile(profile = "local")
@@ -772,17 +798,18 @@ class OrderServiceTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
-    void createOrderWithMerchantIdAndQRCodeType() throws JsonProcessingException {
+    void createOrderWithMerchantIdAndQRCodeWhenFetchingQRCodeFails() throws JsonProcessingException {
         String namespace = "liikuntavuorot";
+        String tokenName = "1234567890";
+        String qrCodeUrl = "https://heipparallaa";
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032").getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
         OrderItemDto orderItem = createOrderResponse.getItems().get(0);
-        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
         log.info("Created order with orderId: {}", order.getOrderId());
         log.info("Created order with userId: {}", order.getUser());
         log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
@@ -791,6 +818,76 @@ class OrderServiceTest extends TestUtils {
         order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
         order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
         Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithMerchantIdAndMultipleOrderItemsAndGeneratedQRCodes() throws JsonProcessingException {
+        String namespace = "liikuntavuorot";
+        String tokenName = "1234567890";
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(2, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null).getBody();
+        log.info("Created order dto: " + objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem1 = createOrderResponse.getItems().get(0);
+        OrderItemDto orderItem2 = createOrderResponse.getItems().get(1);
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Created order with orderItems: {}, {}", orderItem1.getOrderItemId(), orderItem2.getOrderItemId());
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(new BigDecimal(orderItem1.getPriceNet())
+                .add(new BigDecimal(orderItem2.getPriceNet()))
+                .toString());
+        order.setPriceVat(new BigDecimal(orderItem1.getPriceVat())
+                .add(new BigDecimal(orderItem2.getPriceVat()))
+                .toString());
+        order.setPriceTotal(new BigDecimal(orderItem1.getRowPriceTotal())
+                .add(new BigDecimal(orderItem2.getRowPriceTotal()))
+                .toString());
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem1.getMerchantId());
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem2.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithMerchantIdAndMultipleOrderItemsAndFetchedQRCodes() throws JsonProcessingException {
+        String namespace = "liikuntavuorot";
+        String tokenName = "1234567890";  // can be changed to match the one in the QR Code URL
+        String qrCodeUrl = "place-URL-here";
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(2, firstMerchantIdFromNamespace,
+                namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl).getBody();
+        log.info("Created order dto: " + objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem1 = createOrderResponse.getItems().get(0);
+        OrderItemDto orderItem2 = createOrderResponse.getItems().get(1);
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Created order with orderItems: {}, {}", orderItem1.getOrderItemId(), orderItem2.getOrderItemId());
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(new BigDecimal(orderItem1.getPriceNet())
+                .add(new BigDecimal(orderItem2.getPriceNet()))
+                .toString());
+        order.setPriceVat(new BigDecimal(orderItem1.getPriceVat())
+                .add(new BigDecimal(orderItem2.getPriceVat()))
+                .toString());
+        order.setPriceTotal(new BigDecimal(orderItem1.getRowPriceTotal())
+                .add(new BigDecimal(orderItem2.getRowPriceTotal()))
+                .toString());
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem1.getMerchantId());
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem2.getMerchantId());
 
         orderRepository.save(order);
     }
