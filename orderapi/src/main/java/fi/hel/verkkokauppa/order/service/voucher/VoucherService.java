@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.service;
+package fi.hel.verkkokauppa.order.service.voucher;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,16 +8,14 @@ import fi.hel.verkkokauppa.common.productmapping.dto.ProductMappingDto;
 import fi.hel.verkkokauppa.common.queue.service.SendNotificationService;
 import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
-import fi.hel.verkkokauppa.payment.api.data.OrderDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderItemDto;
-import fi.hel.verkkokauppa.payment.api.data.OrderWrapper;
-import fi.hel.verkkokauppa.payment.model.Payment;
-import fi.hel.verkkokauppa.payment.model.ReservedVoucherCode;
-import fi.hel.verkkokauppa.payment.model.TokenChargeRequestDto;
-import fi.hel.verkkokauppa.payment.model.TokenChargeResponseDto;
-import fi.hel.verkkokauppa.payment.model.voucher.OrderItemVoucher;
-import fi.hel.verkkokauppa.payment.repository.voucher.OrderItemVoucherRepository;
-import fi.hel.verkkokauppa.payment.repository.voucher.ReservedVoucherCodeRepository;
+
+import fi.hel.verkkokauppa.order.model.OrderItem;
+import fi.hel.verkkokauppa.order.model.voucher.OrderItemVoucher;
+import fi.hel.verkkokauppa.order.model.voucher.ReservedVoucherCode;
+import fi.hel.verkkokauppa.order.model.voucher.TokenChargeRequestDto;
+import fi.hel.verkkokauppa.order.model.voucher.TokenChargeResponseDto;
+import fi.hel.verkkokauppa.order.repository.jpa.voucher.OrderItemVoucherRepository;
+import fi.hel.verkkokauppa.order.repository.jpa.voucher.ReservedVoucherCodeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +25,6 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 
@@ -64,26 +61,24 @@ public class VoucherService {
     private static final String DUMMY_TOKEN = "dummy_token";
 
     // check if any voucher logic applies to this payment
-    public void voucherPaidCheck(String merchantId, OrderWrapper orderWrapper) throws JsonProcessingException {
+    public void voucherPaidCheck(String merchantId, String namespace, List<OrderItem> orderItems) throws JsonProcessingException {
 
         // check if barcode or QR code configuration exists for this merchant
-        OrderDto orderDto = orderWrapper.getOrder();
-        String barOrQRCodeType = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, orderDto.getNamespace(), ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE);
+        String barOrQRCodeType = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE);
         if( barOrQRCodeType != null ) {
-            String tokenChargingUrl = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, orderDto.getNamespace(), ServiceConfigurationKeys.TOKEN_CHARGING_URL);
+            String tokenChargingUrl = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.TOKEN_CHARGING_URL);
 
 
             // do for each order item
-            List<OrderItemDto> orderItems = orderWrapper.getItems();
-            for (OrderItemDto orderItem : orderItems) {
+            for (OrderItem orderItem : orderItems) {
                 //
                 // populate orderItemVoucher
                 //
                 OrderItemVoucher orderItemVoucher = new OrderItemVoucher();
                 orderItemVoucher.setOrderItemVoucherId(UUID.randomUUID().toString());
-                orderItemVoucher.setNamespace(orderDto.getNamespace());
+                orderItemVoucher.setNamespace(namespace);
                 orderItemVoucher.setMerchantId(merchantId);
-                orderItemVoucher.setOrderId(orderDto.getOrderId());
+                orderItemVoucher.setOrderId(orderItem.getOrderId());
                 orderItemVoucher.setAmountLeft(orderItem.getRowPriceTotal().toString());
                 orderItemVoucher.setQuantityLeft(orderItem.getQuantity());
                 LocalDateTime now = LocalDateTime.now();
@@ -114,7 +109,7 @@ public class VoucherService {
     //
     // voucher charge request to external system
     //
-    private OrderItemVoucher createTokenChargeCall(OrderItemVoucher orderItemVoucher, OrderItemDto orderItem, String tokenChargingUrl) throws JsonProcessingException {
+    private OrderItemVoucher createTokenChargeCall(OrderItemVoucher orderItemVoucher, OrderItem orderItem, String tokenChargingUrl) throws JsonProcessingException {
         String namespace = orderItemVoucher.getNamespace();
 
         // Create token charging request

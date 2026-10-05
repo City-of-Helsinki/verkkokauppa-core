@@ -1,4 +1,4 @@
-package fi.hel.verkkokauppa.payment.model;
+package fi.hel.verkkokauppa.order.model.voucher;
 
 import lombok.Data;
 import lombok.Setter;
