@@ -60,8 +60,9 @@ public class VoucherService {
 
     private static final String DUMMY_TOKEN = "dummy_token";
 
-    // check if any voucher logic applies to this payment
-    public void voucherPaidCheck(String merchantId, String namespace, List<OrderItem> orderItems) throws JsonProcessingException {
+    // check if any voucher logic applies to this order
+    // get QR code if it does
+    public List<OrderItem> voucherQRCodeCheck(String merchantId, String namespace, List<OrderItem> orderItems) throws JsonProcessingException {
 
         // check if barcode or QR code configuration exists for this merchant
         String barOrQRCodeType = commonServiceConfigurationClient.getMerchantConfigurationValue(merchantId, namespace, ServiceConfigurationKeys.MERCHANT_BAR_QR_CODE_TYPE);
@@ -99,10 +100,13 @@ public class VoucherService {
                     orderItemVoucherRepository.save(orderItemVoucher);
                 }
 
+                // update orderItem
+                orderItem.setTokenQRCodeUrl(orderItemVoucher.getTokenQRCodeUrl());
+                orderItem.setTokenName(orderItemVoucher.getTokenName());
             }
         }
 
-
+        return orderItems;
     }
 
 

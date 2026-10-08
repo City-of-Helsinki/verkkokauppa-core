@@ -40,9 +40,12 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String unit;
     @Field(type = FieldType.Text)
-    String tokenName;
+    // Token/Voucher fields
+    String tokenName;  // actual barcode/QR code
     @Field(type = FieldType.Text)
-    String tokenQRCodeUrl;
+    String tokenQRCodeUrl;  // url to get the QR code file to be added to order confirmation
+    @Field(type = FieldType.Keyword)
+    String tokenId;
 
     @Field(type = FieldType.Text)
     String rowPriceNet;
@@ -99,13 +102,7 @@ public class OrderItem implements OrderItemSubscriptionFields, Product {
     @Field(type = FieldType.Text)
     String invoicingIncrementId;
 
-    // Token/Voucher fields
-    @Field(type = FieldType.Keyword)
-    String tokenId;
-    @Field(type = FieldType.Keyword)
-    String tokenName; // actual barcode/QR code
-    @Field(type = FieldType.Text)
-    String tokenQRCodeUrl; // url to get the QR code file to be added to order confirmation
+
 
     public OrderItem() {}
 
