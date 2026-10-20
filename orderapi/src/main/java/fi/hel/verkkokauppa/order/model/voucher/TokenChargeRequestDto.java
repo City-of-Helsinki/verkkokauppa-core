@@ -10,17 +10,17 @@ import lombok.Setter;
 public class TokenChargeRequestDto {
 
 	// TALPA order id
-	private String orderId;
+//	private String orderId; // not used for now
 	// TALPA order item id (row id)
-	private String orderItemId;
+	private String order_item_id;
 	// TALPA product id
-	private String productId;
+//	private String productId; // not used for now
 	// product id for external system
-	private String namespaceEntityId;
+	private String access_right_template;
 	// quantity bought
-	private Integer quantity;
+//	private Integer quantity;
 	// Amount bought
-	private String amount;
+//	private String amount;
 	// Generated Bar-/QR code
-	private String token;
+//	private String token;
 }

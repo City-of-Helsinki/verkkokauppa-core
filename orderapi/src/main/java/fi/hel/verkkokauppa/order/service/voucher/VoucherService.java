@@ -118,12 +118,12 @@ public class VoucherService {
 
         // Create token charging request
         TokenChargeRequestDto requestDto = new TokenChargeRequestDto();
-        requestDto.setToken(orderItemVoucher.getTokenName());
-        requestDto.setProductId(orderItem.getProductId());
-        requestDto.setOrderId(orderItem.getOrderId());
-        requestDto.setOrderItemId(orderItem.getOrderItemId());
-        requestDto.setAmount(orderItem.getRowPriceTotal().toString());
-        requestDto.setQuantity(orderItem.getQuantity());
+//        requestDto.setToken(orderItemVoucher.getTokenName());
+//        requestDto.setProductId(orderItem.getProductId());
+//        requestDto.setOrderId(orderItem.getOrderId());
+        requestDto.setOrder_item_id(orderItem.getOrderItemId());
+//        requestDto.setAmount(orderItem.getRowPriceTotal().toString());
+//        requestDto.setQuantity(orderItem.getQuantity());
 
         // try to inform external system that voucher was paid and get token
         try {
@@ -131,7 +131,7 @@ public class VoucherService {
             log.info("Fetching product-mapping to get namespaceEntityId for productId: " + orderItem.getProductId());
             JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + orderItem.getProductId());
             ProductMappingDto dto = objectMapper.readValue(response.toString(), ProductMappingDto.class);
-            requestDto.setNamespaceEntityId(dto.getNamespaceEntityId());
+            requestDto.setAccess_right_template(dto.getNamespaceEntityId());
 
 
             TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
