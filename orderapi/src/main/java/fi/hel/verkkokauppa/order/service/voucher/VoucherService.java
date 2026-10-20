@@ -131,7 +131,7 @@ public class VoucherService {
             log.info("Fetching product-mapping to get namespaceEntityId for productId: " + orderItem.getProductId());
             JSONObject response = restServiceClient.makeGetCall(serviceUrls.getProductMappingServiceUrl() + "/get?productId=" + orderItem.getProductId());
             ProductMappingDto dto = objectMapper.readValue(response.toString(), ProductMappingDto.class);
-            requestDto.setAccess_right_template(dto.getNamespaceEntityId());
+            requestDto.setAccess_right_template_id(dto.getNamespaceEntityId());
 
 
             TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
@@ -183,7 +183,6 @@ public class VoucherService {
         // Token charge call
         ResponseEntity<JSONObject> response;
 
-        //headers.append("Authorization", `Bearer ${accessToken}`);
         JSONObject tokenChargeResponse = restServiceClient.makeAuthBearerPostCall(tokenChargingUrl, body, namespace);
         TokenChargeResponseDto resultDto = objectMapper.readValue(tokenChargeResponse.toString(), TokenChargeResponseDto.class);
 

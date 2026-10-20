@@ -185,8 +185,8 @@ public class RestServiceClient {
         }
 
         return WebClient.builder()
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultHeader("Authorization", "Bearer " + bearerToken)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }

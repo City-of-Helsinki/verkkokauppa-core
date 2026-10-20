@@ -16,7 +16,7 @@ public class TokenChargeRequestDto {
 	// TALPA product id
 //	private String productId; // not used for now
 	// product id for external system
-	private String access_right_template;
+	private String access_right_template_id;
 	// quantity bought
 //	private Integer quantity;
 	// Amount bought
