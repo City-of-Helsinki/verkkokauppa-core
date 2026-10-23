@@ -289,7 +289,7 @@ public class ServiceConfigurationController {
         String salt = env.getRequiredProperty("webhook.access.encryption.salt");
         // TODO fail if empty salt
 
-        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN);
+        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN);
         String encryptedNamespaceWebhookAccessToken = sc.getConfigurationValue();
 
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
@@ -309,7 +309,7 @@ public class ServiceConfigurationController {
         encryptor.setPassword(salt);
         String encryptedAuthBearerToken = encryptor.encrypt(configurationValue);
 
-        service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN, encryptedAuthBearerToken, true);
+        service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN, encryptedAuthBearerToken, true);
 
         return ResponseEntity.ok(encryptedAuthBearerToken);
     }

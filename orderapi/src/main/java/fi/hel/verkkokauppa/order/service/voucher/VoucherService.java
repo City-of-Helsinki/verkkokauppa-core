@@ -10,10 +10,8 @@ import fi.hel.verkkokauppa.common.rest.CommonServiceConfigurationClient;
 import fi.hel.verkkokauppa.common.rest.RestServiceClient;
 
 import fi.hel.verkkokauppa.order.model.OrderItem;
-import fi.hel.verkkokauppa.order.model.voucher.OrderItemVoucher;
-import fi.hel.verkkokauppa.order.model.voucher.ReservedVoucherCode;
-import fi.hel.verkkokauppa.order.model.voucher.TokenChargeRequestDto;
-import fi.hel.verkkokauppa.order.model.voucher.TokenChargeResponseDto;
+import fi.hel.verkkokauppa.order.model.voucher.*;
+import fi.hel.verkkokauppa.order.repository.jpa.OrderItemRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.voucher.OrderItemVoucherRepository;
 import fi.hel.verkkokauppa.order.repository.jpa.voucher.ReservedVoucherCodeRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +19,11 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,6 +48,9 @@ public class VoucherService {
 
     @Autowired
     private OrderItemVoucherRepository orderItemVoucherRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private RestServiceClient restServiceClient;
@@ -80,29 +85,34 @@ public class VoucherService {
                 orderItemVoucher.setNamespace(namespace);
                 orderItemVoucher.setMerchantId(merchantId);
                 orderItemVoucher.setOrderId(orderItem.getOrderId());
+                orderItemVoucher.setOrderItemId(orderItem.getOrderItemId());
                 orderItemVoucher.setAmountLeft(orderItem.getRowPriceTotal().toString());
                 orderItemVoucher.setQuantityLeft(orderItem.getQuantity());
                 LocalDateTime now = LocalDateTime.now();
                 orderItemVoucher.setCreatedAt(now);
                 orderItemVoucher.setUpdatedAt(now);
-                // generate token for bar/QR code in case external system does not do it or is not used
-                // for now just using DUMMY_TOKEN
-                orderItemVoucher.setTokenName(DUMMY_TOKEN);
 
                 // check if external system needs to be updated on this
                 if( tokenChargingUrl != null ) {
                     // call external system to get QR code and other details
                     orderItemVoucher = createTokenChargeCall(orderItemVoucher, orderItem, tokenChargingUrl);
                 }
+                else {
+                    // generate token for bar/QR code if external system is not used
+                    // for now just using DUMMY_TOKEN
+                    orderItemVoucher.setTokenName(DUMMY_TOKEN);
+                }
 
                 // save orderItemVoucher
                 if( orderItemVoucher != null ) {
                     orderItemVoucherRepository.save(orderItemVoucher);
+                    // update orderItem
+                    orderItem.setTokenQRCodeUrl(orderItemVoucher.getTokenQRCodeUrl());
+                    orderItem.setTokenName(orderItemVoucher.getTokenName());
+                    orderItemRepository.save(orderItem);
                 }
 
-                // update orderItem
-                orderItem.setTokenQRCodeUrl(orderItemVoucher.getTokenQRCodeUrl());
-                orderItem.setTokenName(orderItemVoucher.getTokenName());
+
             }
         }
 
@@ -117,7 +127,7 @@ public class VoucherService {
         String namespace = orderItemVoucher.getNamespace();
 
         // Create token charging request
-        TokenChargeRequestDto requestDto = new TokenChargeRequestDto();
+        TokenChargeRequestContentDto requestDto = new TokenChargeRequestContentDto();
 //        requestDto.setToken(orderItemVoucher.getTokenName());
 //        requestDto.setProductId(orderItem.getProductId());
 //        requestDto.setOrderId(orderItem.getOrderId());
@@ -134,12 +144,12 @@ public class VoucherService {
             requestDto.setAccess_right_template_id(dto.getNamespaceEntityId());
 
 
-            TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
+            TokenChargeResponseResultDto resultDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
 
             // get QR code, id and QR code retrieval url
-            orderItemVoucher.setTokenId(responseDto.getTokenId());
-            orderItemVoucher.setTokenName(responseDto.getTokenName());
-            orderItemVoucher.setTokenQRCodeUrl(responseDto.getTokenQRCodeUrl());
+            orderItemVoucher.setTokenId(resultDto.getToken_id());
+            orderItemVoucher.setTokenName(resultDto.getToken_name());
+            orderItemVoucher.setTokenQRCodeUrl(resultDto.getToken_qr_url());
 
 
         } catch (Exception firstException) {
@@ -147,12 +157,12 @@ public class VoucherService {
             log.error("Getting voucher/QR Code info failed for first time for order: {} orderItem:{}", orderItem.getOrderId(), orderItem.getOrderItemId(), firstException);
 
             try {
-                TokenChargeResponseDto responseDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
+                TokenChargeResponseResultDto resultDto = makeTokenChargeCall( tokenChargingUrl, requestDto, namespace );
 
                 // get QR code, id and QR code retrieval url
-                orderItemVoucher.setTokenId(responseDto.getTokenId());
-                orderItemVoucher.setTokenName(responseDto.getTokenName());
-                orderItemVoucher.setTokenQRCodeUrl(responseDto.getTokenQRCodeUrl());
+                orderItemVoucher.setTokenId(resultDto.getToken_id());
+                orderItemVoucher.setTokenName(resultDto.getToken_name());
+                orderItemVoucher.setTokenQRCodeUrl(resultDto.getToken_qr_url());
 
             } catch (Exception e) {
                 // create error message with order id and orderItemId
@@ -164,6 +174,7 @@ public class VoucherService {
                         e.getMessage(),
                         "Error - " + errorMessage
                 );
+
 
                 // TODO: throw specific error or handle some other way?
                 // should not send order confirmation but otherwise process correctly
@@ -177,16 +188,33 @@ public class VoucherService {
 
 
     // Make call to external system and map response
-    private TokenChargeResponseDto makeTokenChargeCall(String tokenChargingUrl, TokenChargeRequestDto requestDto, String namespace) throws JsonProcessingException {
-        String body = objectMapper.writeValueAsString(requestDto);
-        log.info("Token charging request body : {}", requestDto);
+    private TokenChargeResponseResultDto makeTokenChargeCall(String tokenChargingUrl, TokenChargeRequestContentDto requestDto, String namespace) throws JsonProcessingException {
+        String content = objectMapper.writeValueAsString(requestDto);
+        log.info("Token charging request content : {}", content);
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>(); formData.add("input_format", "json");
+        formData.add("content", content);
+        String body = BodyInserters.fromFormData(formData).toString();
+        log.info("Token charging request body : {}", body);
         // Token charge call
         ResponseEntity<JSONObject> response;
 
-        JSONObject tokenChargeResponse = restServiceClient.makeAuthBearerPostCall(tokenChargingUrl, body, namespace);
+        JSONObject tokenChargeResponse = restServiceClient.makeAuthBearerPostCall(tokenChargingUrl, formData, namespace);
+
+        Object result = tokenChargeResponse.opt("result");
+
+        if (Boolean.FALSE.equals(result)) {
+            // Service returned "result": false
+
+            TokenChargeErrorResponseDto errorDto = objectMapper.readValue(tokenChargeResponse.toString(), TokenChargeErrorResponseDto.class);
+
+            log.error("Token charging request failed. Errors : {}", errorDto);
+            // throw error
+            throw new RuntimeException("Token charging request failed. Errors : " + errorDto);
+        }
+
         TokenChargeResponseDto resultDto = objectMapper.readValue(tokenChargeResponse.toString(), TokenChargeResponseDto.class);
 
-        return resultDto;
+        return resultDto.getResult();
     }
 
 

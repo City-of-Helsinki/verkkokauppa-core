@@ -19,6 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -84,6 +87,13 @@ public class RestServiceClient {
     public JSONObject makeAuthBearerPostCall(String url, String body, String namespace) {
         WebClient client = getAuthorizationBearerClient(namespace);
         JSONObject response = postQueryJsonService(client, url, body);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
+    }
+
+    // KYV-1402 for Token Charge Calls
+    public JSONObject makeAuthBearerPostCall(String url, MultiValueMap<String, String> formBody, String namespace) {
+        WebClient client = getAuthorizationBearerClient(namespace);
+        JSONObject response = postQueryJsonService(client, url, formBody);
         return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
@@ -280,6 +290,21 @@ public class RestServiceClient {
         String jsonResponse = client.post()
                 .uri(url)
                 .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
+    }
+
+    public JSONObject postQueryJsonService(WebClient client, String url, MultiValueMap<String, String> formBody) {
+        String jsonResponse = client.post()
+                .uri(url)
+                .body(BodyInserters.fromFormData(formBody))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
