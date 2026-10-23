@@ -78,6 +78,7 @@ public class PaytrailPaymentController {
             PaytrailPaymentMitChargeSuccessResponse mitCharge = paymentPaytrailService.createMitCharge(context, paymentId, dto.getOrder(), card.getToken());
             Payment payment = paymentPaytrailService.createPayment(context, dto, paymentId, mitCharge);
             paymentPaytrailService.triggerPaymentPaidEvent(payment, card);
+
             return ResponseEntity.status(HttpStatus.OK).body(payment);
         } catch (CommonApiException cae) {
             throw cae;
@@ -105,6 +106,7 @@ public class PaytrailPaymentController {
             onlinePaymentService.updatePaymentStatus(paymentId, paymentReturnDto);
             Payment payment = onlinePaymentService.getPayment(paymentId);
             paymentReturnDto.setPaymentType(payment.getPaymentType());
+
             return ResponseEntity.status(HttpStatus.OK).body(paymentReturnDto);
         } catch (CommonApiException cae) {
             throw cae;

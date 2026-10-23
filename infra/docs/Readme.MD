@@ -38,6 +38,10 @@ GET http://localhost:8187/servicemapping/initializetestdata
 ###
 GET http://localhost:8188/namespace/init/merchant/initialize-test-data
 
+###
+GET http://localhost:8184/payment/online/initializetestdata
+
+
 ### Then you can create first order using order-experience-api
 [Run shell script](../create_test_order.sh)
 

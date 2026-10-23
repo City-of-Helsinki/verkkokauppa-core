@@ -274,7 +274,7 @@ public class ServiceConfigurationController {
         String salt = env.getRequiredProperty("webhook.access.encryption.salt");
         // TODO fail if empty salt
 
-        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN);
+        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN);
         String encryptedNamespaceWebhookAccessToken = sc.getConfigurationValue();
 
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
@@ -282,6 +282,36 @@ public class ServiceConfigurationController {
         String namespaceAccessToken = encryptor.decrypt(encryptedNamespaceWebhookAccessToken);
 
         return ResponseEntity.ok(namespaceAccessToken);
+    }
+
+    @GetMapping("/serviceconfiguration/authorization-bearer-token/get")
+    public ResponseEntity<String> getNamespaceAuthorizationBearerToken(@RequestParam(value = "namespace") String namespace) {
+        String salt = env.getRequiredProperty("webhook.access.encryption.salt");
+        // TODO fail if empty salt
+
+        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN);
+        String encryptedNamespaceWebhookAccessToken = sc.getConfigurationValue();
+
+        StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+        encryptor.setPassword(salt);
+        String namespaceAccessToken = encryptor.decrypt(encryptedNamespaceWebhookAccessToken);
+
+        return ResponseEntity.ok(namespaceAccessToken);
+    }
+
+    @GetMapping("/serviceconfiguration/authorization-bearer-token/create")
+    public ResponseEntity<String> createNamespaceAuthorizationBearerToken(@RequestParam(value = "namespace") String namespace,
+                                                                          @RequestParam(value = "configurationValue") String configurationValue) {
+        String salt = env.getRequiredProperty("webhook.access.encryption.salt");
+        // TODO fail if empty salt
+
+        StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+        encryptor.setPassword(salt);
+        String encryptedAuthBearerToken = encryptor.encrypt(configurationValue);
+
+        service.createByParams(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN, encryptedAuthBearerToken, true);
+
+        return ResponseEntity.ok(encryptedAuthBearerToken);
     }
 
     @GetMapping("/serviceconfiguration/webhook-api-access/validate")
