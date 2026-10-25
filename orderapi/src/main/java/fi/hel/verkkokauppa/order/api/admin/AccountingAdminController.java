@@ -58,7 +58,7 @@ public class AccountingAdminController {
             NativeSearchQuery query = new NativeSearchQueryBuilder().withQuery(QueryBuilders.matchAllQuery()).build();
             SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                     query,
-                    searchAfterService.buildSortWithId(),
+                    searchAfterService.buildSortWithCreatedAt(),
                     OrderAccounting.INDEX_NAME
             );
             log.info(searchRequest.toString());

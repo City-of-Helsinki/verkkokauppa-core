@@ -154,7 +154,7 @@ public class SearchAfterServiceTest extends SearchAfterServiceTestUtils {
         Exception exception = assertThrows(Exception.class, () -> {
             SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                     null,
-                    searchAfterService.buildSortWithId(),
+                    searchAfterService.buildSortWithCreatedAt(),
                     null);
         });
 

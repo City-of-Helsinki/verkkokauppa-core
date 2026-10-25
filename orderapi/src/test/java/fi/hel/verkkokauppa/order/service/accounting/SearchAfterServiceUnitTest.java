@@ -74,7 +74,7 @@ public class SearchAfterServiceUnitTest {
 
         when(searchAfterService.buildSearchAfterSearchRequest(any(), any(), any())).thenCallRealMethod();
         when(searchAfterService.executeSearchRequest(any())).thenCallRealMethod();
-        when(searchAfterService.buildSortWithId()).thenCallRealMethod();
+        when(searchAfterService.buildSortWithCreatedAt()).thenCallRealMethod();
     }
 
     @Test
@@ -121,7 +121,7 @@ public class SearchAfterServiceUnitTest {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCreatedAt(),
                 AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
@@ -145,7 +145,7 @@ public class SearchAfterServiceUnitTest {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 null,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCreatedAt(),
                 AccountingExportData.INDEX_NAME);
         log.info(searchRequest.toString());
 
@@ -169,7 +169,7 @@ public class SearchAfterServiceUnitTest {
         Exception exception = assertThrows(Exception.class, () -> {
             SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                     null,
-                    searchAfterService.buildSortWithId(),
+                    searchAfterService.buildSortWithCreatedAt(),
                     null);
         });
 
@@ -211,7 +211,7 @@ public class SearchAfterServiceUnitTest {
 
         SearchRequest searchRequest = searchAfterService.buildSearchAfterSearchRequest(
                 query,
-                searchAfterService.buildSortWithId(),
+                searchAfterService.buildSortWithCreatedAt(),
                 AccountingExportData.INDEX_NAME, Order.INDEX_NAME
         );
         log.info(searchRequest.toString());

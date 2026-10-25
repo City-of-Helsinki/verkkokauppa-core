@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.RestClients;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
 import javax.net.ssl.HostnameVerifier;
@@ -48,8 +49,14 @@ public class ElasticSearchRestClientResolver {
     }
 
     private RestHighLevelClient getLocalElasticSearchRestClient() {
+        // KYV-1360 using elasticsearch client 7 compatibility mode for now
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Accept", "application/vnd.elasticsearch+json;compatible-with=7");
+        headers.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=7");
+
         final ClientConfiguration clientConfiguration = ClientConfiguration.builder()
                 .connectedTo(this.serviceUrl)
+                .withDefaultHeaders(headers) // KYV-1360 using elasticsearch client 7 compatibility mode
                 .build();
 
         return RestClients.create(clientConfiguration).rest();
@@ -70,9 +77,15 @@ public class ElasticSearchRestClientResolver {
                 };
             };
 
+            // KYV-1360 using elasticsearch client 7 compatibility mode for now
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Accept", "application/vnd.elasticsearch+json;compatible-with=7");
+            headers.add("Content-Type", "application/vnd.elasticsearch+json;compatible-with=7");
+
             clientConfiguration = ClientConfiguration.builder()
                     .connectedTo(this.serviceUrl)
                     .usingSsl(sslContext, hostnameVerifier)
+                    .withDefaultHeaders(headers) // KYV-1360 using elasticsearch client 7 compatibility mode
                     .withBasicAuth(this.username, this.password)
                     .withConnectTimeout(this.connectTimeout)
                     .withSocketTimeout(this.socketTimeout)
