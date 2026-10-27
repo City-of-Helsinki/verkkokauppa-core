@@ -274,7 +274,7 @@ public class ServiceConfigurationController {
         String salt = env.getRequiredProperty("webhook.access.encryption.salt");
         // TODO fail if empty salt
 
-        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_AUTHORIZATION_BEARER_TOKEN);
+        ServiceConfiguration sc = service.findRestricted(namespace, ServiceConfigurationKeys.NAMESPACE_WEBHOOK_ACCESS_TOKEN);
         String encryptedNamespaceWebhookAccessToken = sc.getConfigurationValue();
 
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
