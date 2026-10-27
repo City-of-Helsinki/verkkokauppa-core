@@ -16,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 public class OnlinePaymentController {
 
@@ -193,6 +195,11 @@ public class OnlinePaymentController {
 					new Error("failed-to-check-payment-return-response", "failed to check payment return response")
 			);
 		}
+	}
+
+	@GetMapping("/payment/online/initializetestdata")
+	public List<PaymentMethodDto> initializeTestData() {
+		return paymentMethodService.initializeTestData();
 	}
 
 

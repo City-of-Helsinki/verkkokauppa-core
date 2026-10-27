@@ -5,3 +5,4 @@
 infra/settings.xml
 infra/kafka/clusters.json
 mockedSap/*
+/local-docker-compose.yml

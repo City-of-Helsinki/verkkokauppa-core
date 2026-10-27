@@ -19,6 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -78,6 +81,20 @@ public class RestServiceClient {
     public void makeVoidPostCall(String url, String body, String namespace) {
         WebClient client = getWebhookAuthClient(namespace);
         postVoidQueryJsonService(client, url, body);
+    }
+
+    // KYV-1402 for Token Charge Calls
+    public JSONObject makeAuthBearerPostCall(String url, String body, String namespace) {
+        WebClient client = getAuthorizationBearerClient(namespace);
+        JSONObject response = postQueryJsonService(client, url, body);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
+    }
+
+    // KYV-1402 for Token Charge Calls
+    public JSONObject makeAuthBearerPostCall(String url, MultiValueMap<String, String> formBody, String namespace) {
+        WebClient client = getAuthorizationBearerClient(namespace);
+        JSONObject response = postQueryJsonService(client, url, formBody);
+        return Objects.requireNonNullElseGet(response, JSONObject::new);
     }
 
     public WebClient getClient() {
@@ -142,6 +159,44 @@ public class RestServiceClient {
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader("webhook-api-key", apiKey)
                 .defaultHeader("namespace", namespace)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
+    }
+
+
+    // KYV-1402 create client with Authorization bearer token
+    public WebClient getAuthorizationBearerClient(String namespace) {
+        // base HttpClient with timeouts
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, CONNECT_TIMEOUT)
+                .responseTimeout(Duration.ofMillis(CONNECT_TIMEOUT))
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(CONNECT_TIMEOUT, TimeUnit.MILLISECONDS)));
+
+        // HOTFIX: Cert error in webhooks! if env var is set, configure insecure SSL, before good fix for this is done!
+        boolean allowInsecure = Optional.ofNullable(System.getenv("ALLOW_INSECURE_SSL"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+
+        if (allowInsecure) {
+            httpClient = httpClient.secure(ssl -> ssl.sslContext(
+                    SslContextBuilder.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+            ));
+            log.warn("ALLOW_INSECURE_SSL is true → SSL certificate validation is DISABLED!");
+        }
+
+        String bearerToken = null;
+        try {
+            bearerToken = configurationClient.getAuthorizationBearerToken(namespace);
+        } catch (Exception e) {
+            log.info("Can't fetch Authorization Bearer Token for namespace " + namespace);
+        }
+
+        return WebClient.builder()
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
@@ -235,6 +290,21 @@ public class RestServiceClient {
         String jsonResponse = client.post()
                 .uri(url)
                 .bodyValue(body)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        if (jsonResponse == null) {
+            return new JSONObject();
+        } else {
+            return new JSONObject(jsonResponse);
+        }
+    }
+
+    public JSONObject postQueryJsonService(WebClient client, String url, MultiValueMap<String, String> formBody) {
+        String jsonResponse = client.post()
+                .uri(url)
+                .body(BodyInserters.fromFormData(formBody))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
