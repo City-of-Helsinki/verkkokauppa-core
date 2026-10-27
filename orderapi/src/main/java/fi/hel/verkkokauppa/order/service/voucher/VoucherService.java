@@ -175,9 +175,7 @@ public class VoucherService {
                         "Error - " + errorMessage
                 );
 
-
-                // TODO: throw specific error or handle some other way?
-                // should not send order confirmation but otherwise process correctly
+                // throw exception that is handled in experience api
                 throw new RuntimeException(e);
             }
         }
