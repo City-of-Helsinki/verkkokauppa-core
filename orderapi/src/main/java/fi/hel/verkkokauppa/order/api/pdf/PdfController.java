@@ -37,11 +37,10 @@ public class PdfController {
         byte[] pdfArray = null;
         try {
             GenerateOrderConfirmationPDFRequestDto dto = service.getPDFRequestDto(orderId);
-
-            pdfArray = orderConfirmationPdf.generate("order-confirmation.pdf", dto);
+            pdfArray = orderConfirmationPdf.generate("kuitti-kvitto-receipt.pdf", dto);
         } catch (Exception e){
             log.error("Error occurred while generating PDF receipt", e);
-            sendNotificationService.sendErrorNotification("Error occurred while generating PDF receipt", e.toString());
+            sendNotificationService.sendErrorNotification("Error occurred while generating PDF receipt", e.toString(), "Warning - Generating PDF receipt failed");
             Error error = new Error("failed-to-create-pdf-receipt", "failed to create pdf receipt");
             throw new CommonApiException(HttpStatus.INTERNAL_SERVER_ERROR, error);
         }
