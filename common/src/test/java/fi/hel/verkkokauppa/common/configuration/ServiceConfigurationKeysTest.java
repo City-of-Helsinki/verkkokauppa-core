@@ -18,6 +18,7 @@ public class ServiceConfigurationKeysTest {
         List<String> keys = ServiceConfigurationKeys.getNamespaceAndMerchantConfigurationKeys();
 
         List<String> knownKeys = Arrays.asList(
+                "merchantBarQRCodeType",
                 "merchantName",
                 "merchantStreet",
                 "merchantZip",
@@ -40,7 +41,8 @@ public class ServiceConfigurationKeysTest {
                 "merchantRefundWebhookUrl",
                 "refundSuccessRedirectUrl",
                 "sendMerchantTermsOfService",
-                "subscriptionResolveProductUrl"
+                "subscriptionResolveProductUrl",
+                "tokenChargingUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -58,6 +60,7 @@ public class ServiceConfigurationKeysTest {
         List<String> keys = ServiceConfigurationKeys.getAllConfigurationKeys();
 
         List<String> knownKeys = Arrays.asList(
+                "merchantBarQRCodeType",
                 "merchantCity",
                 "merchantEmail",
                 "merchantName",
@@ -92,7 +95,8 @@ public class ServiceConfigurationKeysTest {
                 "payment_type",
                 "subscriptionPriceUrl",
                 "sendMerchantTermsOfService",
-                "subscriptionResolveProductUrl"
+                "subscriptionResolveProductUrl",
+                "tokenChargingUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
@@ -179,6 +183,7 @@ public class ServiceConfigurationKeysTest {
         List<String> keys = ServiceConfigurationKeys.getMerchantKeys();
 
         List<String> knownKeys = Arrays.asList(
+                "merchantBarQRCodeType",
                 "merchantCity",
                 "merchantEmail",
                 "merchantName",
@@ -193,7 +198,8 @@ public class ServiceConfigurationKeysTest {
                 "orderRightOfPurchaseUrl",
                 "sendMerchantTermsOfService",
                 "subscriptionPriceUrl",
-                "subscriptionResolveProductUrl"
+                "subscriptionResolveProductUrl",
+                "tokenChargingUrl"
         );
         List<String> keysShouldExist = keys.stream().sorted().collect(Collectors.toList());
         List<String> keysToCheck = knownKeys.stream().sorted().collect(Collectors.toList());
