@@ -270,6 +270,7 @@ public class MerchantControllerTest {
     public void merchantGetKeys() {
         ResponseEntity<List<String>> responseMerchantKeys = merchantController.getKeys();
         List<String> allKeys = new ArrayList<>(new ArrayList<>() {{
+            add("merchantBarQRCodeType");
             add("merchantCity");
             add("merchantEmail");
             add("merchantName");
@@ -285,6 +286,7 @@ public class MerchantControllerTest {
             add("sendMerchantTermsOfService");
             add("subscriptionPriceUrl");
             add("subscriptionResolveProductUrl");
+            add("tokenChargingUrl");
         }});
         Assertions.assertEquals(allKeys, responseMerchantKeys.getBody());
     }
