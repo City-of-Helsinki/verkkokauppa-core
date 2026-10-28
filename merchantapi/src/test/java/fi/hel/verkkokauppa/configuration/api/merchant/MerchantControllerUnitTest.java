@@ -367,6 +367,7 @@ public class MerchantControllerUnitTest {
     public void merchantGetKeys() throws Exception {
 
         List<String> allKeys = new ArrayList<>(new ArrayList<>() {{
+            add("merchantBarQRCodeType");
             add("merchantCity");
             add("merchantEmail");
             add("merchantName");
@@ -382,6 +383,7 @@ public class MerchantControllerUnitTest {
             add("sendMerchantTermsOfService");
             add("subscriptionPriceUrl");
             add("subscriptionResolveProductUrl");
+            add("tokenChargingUrl");
         }});
 
         MvcResult response = this.mockMvc.perform(
