@@ -12,6 +12,7 @@ public class GenerateOrderConfirmationPDFRequestDto {
     private String customerFirstName;
     private String customerLastName;
     private String customerEmail;
+    private String customerPhoneNumber;
     private PaymentDto payment;
 
     private String merchantName;

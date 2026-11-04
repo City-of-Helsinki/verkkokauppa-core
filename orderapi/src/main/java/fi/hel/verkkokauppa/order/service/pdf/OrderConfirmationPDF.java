@@ -7,8 +7,6 @@ import fi.hel.verkkokauppa.order.model.pdf.GenerateOrderConfirmationPDFRequestDt
 import fi.hel.verkkokauppa.order.model.pdf.PDFA2A;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
 import org.apache.pdfbox.pdmodel.documentinterchange.taggedpdf.StandardStructureTypes;
@@ -18,63 +16,81 @@ import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDBorderStyleDictionary;
 import org.apache.xmpbox.type.BadFieldValueException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
 
 @Component
 public class OrderConfirmationPDF {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderConfirmationPDF.class);
     private final int SIDE_MARGIN = 120;
     private final int BOTTOM_MARGIN = 50;
     private final int UPPER_MARGIN = 50;
+    private final int COLUMN_GAP = 10;
     private final String TITLE = "Tilausvahvistus ja kuitti";
 
     private final int FONT_SIZE = 12;
 
     private final int LINE_SPACING = 10;
 
-    private PDPage currentPage = null;
-    private PDPageContentStream contentStream = null;
-    private PDFA2A pdf = null;
 
     @Value("${test.pdf.save:false}")
     private boolean saveTestPDF;
 
-    public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto){
+    public byte[] generateNone(String outputFile, GenerateOrderConfirmationPDFRequestDto dto){
         return null;
     }
 
-    public byte[] generateBackup(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
+    public byte[] generate(String outputFile, GenerateOrderConfirmationPDFRequestDto dto) throws IOException, TransformerException, BadFieldValueException {
 
-        pdf = new PDFA2A(TITLE);
+        PDFA2A pdf = new PDFA2A(TITLE);
 
-        PDType0Font font = pdf.loadFont(PDType1Font.HELVETICA);
-        PDType0Font boldFont = pdf.loadFont(PDType1Font.HELVETICA_BOLD);
-        pdf.setColorProfile(OrderConfirmationPDF.class.getResourceAsStream("/sRGB2014.icc"), "sRGB IEC61966-2.1", "http://www.color.org");
+        OrderConfirmationPDFContext pdfContext = new OrderConfirmationPDFContext(pdf);
 
-        PDStructureElement currentElement = pdf.addDocumentStructureElement();
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.PART);
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.SECT);
+        PDType0Font font = pdfContext.getPdf().loadFont(PDType1Font.HELVETICA);
+        PDType0Font boldFont = pdfContext.getPdf().loadFont(PDType1Font.HELVETICA_BOLD);
+        pdfContext.getPdf().setColorProfile(OrderConfirmationPDF.class.getResourceAsStream("/sRGB2014.icc"), "sRGB IEC61966-2.1", "http://www.color.org");
 
-        currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
+        PDStructureElement currentElement = pdfContext.getPdf().addDocumentStructureElement();
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.PART);
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.SECT);
 
-        float y = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
-        float maxWidth = pdf.getUpperRightX(currentPage) - SIDE_MARGIN * 2;
+        pdfContext.setCurrentPage(pdfContext.getPdf().addPage(pdfContext.getPdf().createFontResources(font, "Helv")));
 
-        contentStream = pdf.createContentStream(currentPage);
+        float y = pdfContext.getPdf().getUpperRightY(pdfContext.getCurrentPage()) - pdfContext.getPdf().getStringHeight(font, 20) - 25;
+        float maxWidth = pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN * 2;
+
+        pdfContext.setContentStream(pdfContext.getPdf().createContentStream(pdfContext.getCurrentPage()));
 
         COSDictionary mc;
+
+        // Payment date and time
+        // Date in format 01.01.2021, time in format 18:00
+        LocalDateTime paymentDateTime = LocalDateTime.parse(dto.getPayment().getCreatedAt());
+        ZonedDateTime paymentDateTimeUTC = paymentDateTime.atZone(ZoneOffset.UTC);
+        ZonedDateTime paymentDateTimeEET = paymentDateTimeUTC.withZoneSameInstant(ZoneId.of("Europe/Helsinki"));
+        String paymentDate = paymentDateTimeEET.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        String paymentTime = paymentDateTimeEET.format(DateTimeFormatter.ofPattern("HH:mm"));
 
         //
         // RECEIPT HEADERS
         //
-        y = addContentElement(currentElement, COSName.H, StandardStructureTypes.H,
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.H, StandardStructureTypes.H,
                 boldFont,
                 20,
                 SIDE_MARGIN,
@@ -82,29 +98,34 @@ public class OrderConfirmationPDF {
                 TITLE);
 
 
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 String.format("Kiitos tilauksestasi %s ", dto.getOrderId()));
 
-        String[] dateAndTime = dto.getPayment().getCreatedAt().toString().split("T");
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                String.format("%s Tilausaika %s", dateAndTime[0], dateAndTime[1]));
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                String.format("%s Tilausaika %s", paymentDate, paymentTime));
 
 
 //        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TABLE);
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.H2);
-        y = addContentElement(currentElement, COSName.H, StandardStructureTypes.H2,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.H2);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.H, StandardStructureTypes.H2,
                 boldFont,
                 16,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(boldFont, 16) + LINE_SPACING + 25),
+                y -= (pdfContext.getPdf().getStringHeight(boldFont, 16) + LINE_SPACING + 25),
                 "Maksutiedot");
 
         for (OrderItemDto item : dto.getItems()) {
@@ -112,77 +133,106 @@ public class OrderConfirmationPDF {
             // RECEIPT ITEMS
 
             if (item.getProductLabel() != null) {
-                currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-                y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                        font,
-                        16,
-                        SIDE_MARGIN,
-                        y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                        item.getProductLabel());
+                List<String> productLabelLines = wrapLines("", item.getProductLabel(), maxWidth, font, 16);
+                for (String productLabel : productLabelLines) {
+                    currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+                    y = addContentElement(currentElement,
+                            pdfContext,
+                            COSName.P, StandardStructureTypes.P,
+                            font,
+                            16,
+                            SIDE_MARGIN,
+                            y -= (pdfContext.getPdf().getStringHeight(font, 16) + LINE_SPACING),
+                            productLabel);
+                }
             }
 
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
-                    boldFont,
-                    FONT_SIZE,
-                    SIDE_MARGIN,
-                    y -= (pdf.getStringHeight(boldFont, FONT_SIZE) + LINE_SPACING),
-                    item.getProductName());
+            // define column width for product name, needed if product name requires text wrapping
+            float originalPriceGrossLength = 0;
+            if (item.getOriginalPriceGross() != null) {
+                originalPriceGrossLength = pdfContext.getPdf().getStringWidth(font, FONT_SIZE, String.format("%s €", formatNumber(item.getOriginalPriceGross(), 2)));
+            }
+            float priceGrossLength = pdfContext.getPdf().getStringWidth(font, FONT_SIZE, String.format("%s € / %s", formatNumber(item.getPriceGross(),2), "kpl"));
+            float rightColumnTextWidth = Math.max(originalPriceGrossLength, priceGrossLength);
+            float maxWidthLeftColumn = maxWidth - rightColumnTextWidth - COLUMN_GAP;
 
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+            List<String> productNameLines = wrapLines("", item.getProductName(), maxWidthLeftColumn, boldFont, FONT_SIZE);
+            for (String productName : productNameLines) {
+                currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+                y = addContentElement(currentElement,
+                        pdfContext,
+                        COSName.P, StandardStructureTypes.P,
+                        boldFont,
+                        FONT_SIZE,
+                        SIDE_MARGIN,
+                        y -= (pdfContext.getPdf().getStringHeight(boldFont, FONT_SIZE) + LINE_SPACING),
+                        productName);
+            }
+
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
 
             if (item.getOriginalPriceGross() != null) {
                 String originalPriceGross = String.format("%s €", formatNumber(item.getOriginalPriceGross(), 2));
-                y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                y = addContentElement(currentElement,
+                        pdfContext,
+                        COSName.P, StandardStructureTypes.P,
                         font,
                         FONT_SIZE,
-                        pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, originalPriceGross) - 1,
+                        pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, originalPriceGross) - 1,
                         y,
                         originalPriceGross,
                         "Alkuperäinen bruttohinta");
 
-                mc = pdf.beginMarkedContent(contentStream, COSName.ARTIFACT);
-                contentStream.moveTo(pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, originalPriceGross) - 2, y + pdf.getStringHeight(font, FONT_SIZE) / 2);
-                contentStream.lineTo(pdf.getUpperRightX(currentPage) - SIDE_MARGIN, y + pdf.getStringHeight(font, FONT_SIZE) / 2);
-                contentStream.closeAndStroke();
-                pdf.endMarkedContent(contentStream);
-                pdf.addContentStructureElement(currentElement, COSName.ARTIFACT, StandardStructureTypes.P, mc, currentPage);
+                mc = pdfContext.getPdf().beginMarkedContent(pdfContext.getContentStream(), COSName.ARTIFACT);
+                pdfContext.getContentStream().moveTo(pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, originalPriceGross) - 2, y + pdfContext.getPdf().getStringHeight(font, FONT_SIZE) / 2);
+                pdfContext.getContentStream().lineTo(pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN, y + pdfContext.getPdf().getStringHeight(font, FONT_SIZE) / 2);
+                pdfContext.getContentStream().closeAndStroke();
+                pdfContext.getPdf().endMarkedContent(pdfContext.getContentStream());
+                pdfContext.getPdf().addContentStructureElement(currentElement, COSName.ARTIFACT, StandardStructureTypes.P, mc, pdfContext.getCurrentPage());
 
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING);
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING);
             }
 
             String priceGross = String.format("%s € / %s", formatNumber(item.getPriceGross(),2), "kpl");
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
-                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, priceGross) - 1,
+                    pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, priceGross) - 1,
                     y,
                     priceGross);
 
             if (item.getProductDescription() != null) {
-                currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TD);
-                y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.TD);
+                y = addContentElement(currentElement,
+                        pdfContext,
+                        COSName.P, StandardStructureTypes.P,
                         font,
                         FONT_SIZE,
                         SIDE_MARGIN,
-                        y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                        y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                         item.getProductDescription());
             }
 
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TD);
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.TD);
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
                     SIDE_MARGIN,
-                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                     String.format("%d %s yhteensä Sis. alv (%s%%)", item.getQuantity(), "kpl", formatNumber(item.getVatPercentage(),2)));
 
             String rowPriceTotal = String.format("%s €", formatNumber(item.getRowPriceTotal(),2));
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.TD);
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.TD);
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
-                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, rowPriceTotal),
+                    pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, rowPriceTotal),
                     y,
                     rowPriceTotal);
 
@@ -192,361 +242,436 @@ public class OrderConfirmationPDF {
                     if( meta.getLabel() != null ) {
                         List<String> metaLabelLines = wrapLines("", meta.getLabel(), maxWidth, font, FONT_SIZE);
                         for (String metaLabel : metaLabelLines) {
-                            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-                            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+                            y = addContentElement(currentElement,
+                                    pdfContext,
+                                    COSName.P, StandardStructureTypes.P,
                                     font,
                                     FONT_SIZE,
                                     SIDE_MARGIN,
-                                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                                     metaLabel);
                         }
                     }
                     if( meta.getValue() != null ) {
                         List<String> metaValueLines = wrapLines("", meta.getValue(), maxWidth, font, FONT_SIZE);
                         for (String metaValue : metaValueLines) {
-                            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-                            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+                            y = addContentElement(currentElement,
+                                    pdfContext,
+                                    COSName.P, StandardStructureTypes.P,
                                     font,
                                     FONT_SIZE,
                                     SIDE_MARGIN,
-                                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                                     metaValue);
                         }
                     }
                 }
             }
 
-            y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING);
+            y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING);
 
         }
 
         //
         // TOTAL PRICE AND PAYMENT INFO
         //
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 "Maksettu yhteensä");
 
         String priceTotal = String.format("%s €", formatNumber(dto.getPayment().getTotal().toString(),2));
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, priceTotal),
+                pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, priceTotal),
                 y,
                 priceTotal);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 String.format("Sis. alv (%s%%)", formatNumber(dto.getItems().get(0).getVatPercentage(),2)));
 
         String alvTotal = String.format("%s €", formatNumber(dto.getPayment().getTaxAmount().toString(), 2));
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, alvTotal),
+                pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, alvTotal),
                 y,
                 alvTotal);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 "Maksutapa");
 
         // use paymentMethodLabel as payment method ("Maksutapa") if available, and if not, use paymentMethod
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
         if (dto.getPayment().getPaymentMethodLabel() != null && !dto.getPayment().getPaymentMethodLabel().isEmpty()) {
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
-                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethodLabel()),
+                    pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethodLabel()),
                     y,
                     dto.getPayment().getPaymentMethodLabel());
         } else {
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
-                    pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethod()),
+                    pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, dto.getPayment().getPaymentMethod()),
                     y,
                     dto.getPayment().getPaymentMethod());
         }
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= ((pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING)*3/2 ),
+                y -= ((pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING)*3/2 ),
                 "Päivämäärä");
 
-        String[] paymentDateAndTime = dto.getPayment().getCreatedAt().toString().split("T");
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, paymentDateAndTime[0]),
-                y += ((pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING)/2),
-                paymentDateAndTime[0]);
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+                pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, paymentDate),
+                y += ((pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING)/2),
+                paymentDate);
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                pdf.getUpperRightX(currentPage) - SIDE_MARGIN - pdf.getStringWidth(font, FONT_SIZE, paymentDateAndTime[1]),
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
-                paymentDateAndTime[1]);
+                pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - SIDE_MARGIN - pdfContext.getPdf().getStringWidth(font, FONT_SIZE, paymentTime),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                paymentTime);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addDivider(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addDivider(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING));
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING));
 
         // CUSTOMER INFO
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.H2);
-        y = addContentElement(currentElement, COSName.H, StandardStructureTypes.H2,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.H2);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.H, StandardStructureTypes.H2,
                 boldFont,
                 16,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(boldFont, 16) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(boldFont, 16) + LINE_SPACING),
                 "Tilaajan tiedot");
 
         String customerName = String.format("%s %s", dto.getCustomerFirstName(), dto.getCustomerLastName());
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 customerName);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 dto.getCustomerEmail(),
                 Color.blue);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addDivider(currentElement, COSName.P, StandardStructureTypes.P,
+        if (dto.getCustomerPhoneNumber() != null && !dto.getCustomerPhoneNumber().isEmpty()) {
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
+                    font,
+                    FONT_SIZE,
+                    SIDE_MARGIN,
+                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    dto.getCustomerPhoneNumber());
+        }
+
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addDivider(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING));
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING));
 
         // MERCHANT INFO
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.H2);
-        y = addContentElement(currentElement, COSName.H, StandardStructureTypes.H2,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.H2);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.H, StandardStructureTypes.H2,
                 boldFont,
                 16,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(boldFont, 16) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(boldFont, 16) + LINE_SPACING),
                 "Myyjän tiedot");
 
         List<String> merchantNameLines = wrapLines("", dto.getMerchantName(), maxWidth, font, FONT_SIZE);
         for (String merchantName : merchantNameLines) {
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
                     SIDE_MARGIN,
-                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                     merchantName);
         }
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 dto.getMerchantStreetAddress());
 
         String merchantAddress = String.format("%s %s", dto.getMerchantZipCode(), dto.getMerchantCity());
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 merchantAddress);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 dto.getMerchantEmail(),
                 Color.blue);
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 dto.getMerchantPhoneNumber());
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 dto.getMerchantBusinessId());
 
         // FOOTER
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING + LINE_SPACING),
-                "Mikäli sinulla on tilaukseen liittyen kysymyksiä kohdistathan ne suoraan");
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING + LINE_SPACING),
+                "Mikäli sinulla on tilaukseen liittyen kysymyksiä, kohdistathan ne suoraan");
 
-        List<String> merchantNameLinesFooter = wrapLines("myyjälle", dto.getMerchantName(), maxWidth, font, FONT_SIZE);
+        List<String> merchantNameLinesFooter = wrapLines("myyjälle", dto.getMerchantName() + ".", maxWidth, font, FONT_SIZE);
         for (String merchantNameFooter : merchantNameLinesFooter) {
-            currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-            y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+            currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+            y = addContentElement(currentElement,
+                    pdfContext,
+                    COSName.P, StandardStructureTypes.P,
                     font,
                     FONT_SIZE,
                     SIDE_MARGIN,
-                    y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                    y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                     merchantNameFooter);
         }
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING + LINE_SPACING),
                 "Myyjä toimittaa tarvittaessa erikseen lisäohjeet palvelun/tuotteen käyttöön");
 
-        currentElement = pdf.addStructureElement(currentElement, StandardStructureTypes.P);
-        y = addContentElement(currentElement, COSName.P, StandardStructureTypes.P,
+        currentElement = pdfContext.getPdf().addStructureElement(currentElement, StandardStructureTypes.P);
+        y = addContentElement(currentElement,
+                pdfContext,
+                COSName.P, StandardStructureTypes.P,
                 font,
                 FONT_SIZE,
                 SIDE_MARGIN,
-                y -= (pdf.getStringHeight(font, FONT_SIZE) + LINE_SPACING),
+                y -= (pdfContext.getPdf().getStringHeight(font, FONT_SIZE) + LINE_SPACING),
                 "tai toimitukseen liittyen.");
 
 
 
         // CLOSE PDF
-        pdf.closeContentStream(contentStream);
+        pdfContext.getPdf().closeContentStream(pdfContext.getContentStream());
 
-        byte[] pdfArray = pdf.getPDFByteArray();
-        pdf.save(outputFile, saveTestPDF);
+        byte[] pdfArray = pdfContext.getPdf().getPDFByteArray();
+        pdfContext.getPdf().save(outputFile, saveTestPDF);
 
         return pdfArray;
     }
 
     private float addContentElement(PDStructureElement currentElement,
-                                   COSName markedContentCosName, String standardStructureType,
-                                   PDType0Font font, float fontSize, float tx, float ty, String text) throws IOException {
+                                    OrderConfirmationPDFContext pdfContext,
+                                    COSName markedContentCosName, String standardStructureType,
+                                    PDType0Font font, float fontSize, float tx, float ty, String text) throws IOException {
         return addContentElement ( currentElement,
+                pdfContext,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, null, true);
     }
 
     private float addContentElement(PDStructureElement currentElement,
-                                   COSName markedContentCosName, String standardStructureType,
-                                   PDType0Font font, float fontSize, float tx, float ty, String text, Color colour) throws IOException {
+                                    OrderConfirmationPDFContext pdfContext,
+                                    COSName markedContentCosName, String standardStructureType,
+                                    PDType0Font font, float fontSize, float tx, float ty, String text, Color colour) throws IOException {
         return addContentElement (currentElement,
+                pdfContext,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, null, colour, true);
     }
 
     private float addContentElement(PDStructureElement currentElement,
-                                   COSName markedContentCosName, String standardStructureType,
-                                   PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription) throws IOException {
+                                    OrderConfirmationPDFContext pdfContext,
+                                    COSName markedContentCosName, String standardStructureType,
+                                    PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription) throws IOException {
         return addContentElement (currentElement,
+                pdfContext,
                 markedContentCosName, standardStructureType,
                 font, fontSize, tx, ty, text, alternateDescription, null, true);
     }
 
     private float addContentElement(PDStructureElement currentElement,
+                                    OrderConfirmationPDFContext pdfContext,
                                     COSName markedContentCosName, String standardStructureType,
                                     PDType0Font font, float fontSize, float tx, float ty, String text, String alternateDescription, Color colour, Boolean pageCheck) throws IOException {
         if( pageCheck && ty <= BOTTOM_MARGIN ){
-            currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
+            pdfContext.setCurrentPage(pdfContext.getPdf().addPage(pdfContext.getPdf().createFontResources(font, "Helv")));
 
-            contentStream.close();
-            contentStream = pdf.createContentStream(currentPage);
+            pdfContext.getContentStream().close();
+            pdfContext.setContentStream(pdfContext.getPdf().createContentStream(pdfContext.getCurrentPage()));
 
-            ty = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
+            ty = pdfContext.getPdf().getUpperRightY(pdfContext.getCurrentPage()) - pdfContext.getPdf().getStringHeight(font, 20) - 25;
         }
         if( text == null ){
             return ty;
         }
-        COSDictionary mc = pdf.beginMarkedContent(contentStream, markedContentCosName);
-        contentStream.beginText();
-        contentStream.setFont(font, fontSize);
-        contentStream.newLineAtOffset(tx, ty);
+        COSDictionary mc = pdfContext.getPdf().beginMarkedContent(pdfContext.getContentStream(), markedContentCosName);
+        pdfContext.getContentStream().beginText();
+        pdfContext.getContentStream().setFont(font, fontSize);
+        pdfContext.getContentStream().newLineAtOffset(tx, ty);
 
         if( colour != null ) {
-            contentStream.setNonStrokingColor(colour);
+            pdfContext.getContentStream().setNonStrokingColor(colour);
         }
         else {
-            contentStream.setNonStrokingColor(Color.black);
+            pdfContext.getContentStream().setNonStrokingColor(Color.black);
         }
 
-        contentStream.showText(text);
-        contentStream.endText();
-        pdf.endMarkedContent(contentStream);
+        pdfContext.getContentStream().showText(text);
+        pdfContext.getContentStream().endText();
+        pdfContext.getPdf().endMarkedContent(pdfContext.getContentStream());
         if( alternateDescription != null ) {
-            pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage).setAlternateDescription(alternateDescription);
+            pdfContext.getPdf().addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, pdfContext.getCurrentPage()).setAlternateDescription(alternateDescription);
         } else{
-            pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage);
+            pdfContext.getPdf().addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, pdfContext.getCurrentPage());
         }
 
         return ty;
     }
 
     private float addLink(PDStructureElement currentElement,
+                          OrderConfirmationPDFContext pdfContext,
                           COSName markedContentCosName, String standardStructureType,
                                    PDType0Font font, float fontSize, float tx, float ty, String text, String linkUrl) throws IOException {
         if( ty <= BOTTOM_MARGIN ){
-            currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
+            pdfContext.setCurrentPage(pdfContext.getPdf().addPage(pdfContext.getPdf().createFontResources(font, "Helv")));
 
-            contentStream.close();
-            contentStream = pdf.createContentStream(currentPage);
+            pdfContext.getContentStream().close();
+            pdfContext.setContentStream(pdfContext.getPdf().createContentStream(pdfContext.getCurrentPage()));
 
-            ty = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
+            ty = pdfContext.getPdf().getUpperRightY(pdfContext.getCurrentPage()) - pdfContext.getPdf().getStringHeight(font, 20) - 25;
         }
         if( text == null ){
             return ty;
         }
-        COSDictionary mc = pdf.beginMarkedContent(contentStream, markedContentCosName);
-        contentStream.beginText();
-        contentStream.setFont(font, fontSize);
-        contentStream.setNonStrokingColor(Color.blue);
-        contentStream.newLineAtOffset(tx, ty);
-        contentStream.showText(text);
-        contentStream.endText();
+        COSDictionary mc = pdfContext.getPdf().beginMarkedContent(pdfContext.getContentStream(), markedContentCosName);
+        pdfContext.getContentStream().beginText();
+        pdfContext.getContentStream().setFont(font, fontSize);
+        pdfContext.getContentStream().setNonStrokingColor(Color.blue);
+        pdfContext.getContentStream().newLineAtOffset(tx, ty);
+        pdfContext.getContentStream().showText(text);
+        pdfContext.getContentStream().endText();
 
-        float textWidth = pdf.getStringWidth(font, FONT_SIZE, text);
+        float textWidth = pdfContext.getPdf().getStringWidth(font, FONT_SIZE, text);
 
         // Draw the underline
         float underlineY = ty - 2; // Slightly below text
-        contentStream.setLineWidth(1);
-        contentStream.moveTo(tx, underlineY);
-        contentStream.lineTo(tx +  textWidth, underlineY);
-        contentStream.stroke();
+        pdfContext.getContentStream().setLineWidth(1);
+        pdfContext.getContentStream().moveTo(tx, underlineY);
+        pdfContext.getContentStream().lineTo(tx +  textWidth, underlineY);
+        pdfContext.getContentStream().stroke();
 
         // Create the link annotation
         PDAnnotationLink link = new PDAnnotationLink();
@@ -564,34 +689,35 @@ public class OrderConfirmationPDF {
         action.setURI(linkUrl);
         link.setAction(action);
 
-        currentPage.getAnnotations().add(link);
+        pdfContext.getCurrentPage().getAnnotations().add(link);
 
-        pdf.endMarkedContent(contentStream);
-        pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage);
+        pdfContext.getPdf().endMarkedContent(pdfContext.getContentStream());
+        pdfContext.getPdf().addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, pdfContext.getCurrentPage());
 
         return ty;
     }
 
     private float addDivider(PDStructureElement currentElement,
-                                   COSName markedContentCosName, String standardStructureType,
-                                   PDType0Font font, float fontSize, float ty) throws IOException {
+                             OrderConfirmationPDFContext pdfContext,
+                             COSName markedContentCosName, String standardStructureType,
+                             PDType0Font font, float fontSize, float ty) throws IOException {
         if( ty <= BOTTOM_MARGIN ){
-            currentPage = pdf.addPage(pdf.createFontResources(font, "Helv"));
+            pdfContext.setCurrentPage(pdfContext.getPdf().addPage(pdfContext.getPdf().createFontResources(font, "Helv")));
 
-            contentStream.close();
-            contentStream = pdf.createContentStream(currentPage);
-            contentStream.setFont(font, fontSize);
+            pdfContext.getContentStream().close();
+            pdfContext.setContentStream(pdfContext.getPdf().createContentStream(pdfContext.getCurrentPage()));
+            pdfContext.getContentStream().setFont(font, fontSize);
 
-            ty = pdf.getUpperRightY(currentPage) - pdf.getStringHeight(font, 20) - 25;
+            ty = pdfContext.getPdf().getUpperRightY(pdfContext.getCurrentPage()) - pdfContext.getPdf().getStringHeight(font, 20) - 25;
         }
-        COSDictionary mc = pdf.beginMarkedContent(contentStream, markedContentCosName);
-        contentStream.setFont(font, fontSize);
-        contentStream.setLineWidth(1);
-        contentStream.moveTo(SIDE_MARGIN-15, ty);
-        contentStream.lineTo(pdf.getUpperRightX(currentPage) - (SIDE_MARGIN-15), ty);
-        contentStream.stroke();
-        pdf.endMarkedContent(contentStream);
-        pdf.addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, currentPage);
+        COSDictionary mc = pdfContext.getPdf().beginMarkedContent(pdfContext.getContentStream(), markedContentCosName);
+        pdfContext.getContentStream().setFont(font, fontSize);
+        pdfContext.getContentStream().setLineWidth(1);
+        pdfContext.getContentStream().moveTo(SIDE_MARGIN-15, ty);
+        pdfContext.getContentStream().lineTo(pdfContext.getPdf().getUpperRightX(pdfContext.getCurrentPage()) - (SIDE_MARGIN-15), ty);
+        pdfContext.getContentStream().stroke();
+        pdfContext.getPdf().endMarkedContent(pdfContext.getContentStream());
+        pdfContext.getPdf().addContentStructureElement(currentElement, markedContentCosName, standardStructureType, mc, pdfContext.getCurrentPage());
 
         return ty;
     }

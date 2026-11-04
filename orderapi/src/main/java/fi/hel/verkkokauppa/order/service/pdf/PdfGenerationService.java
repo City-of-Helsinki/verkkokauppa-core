@@ -61,6 +61,9 @@ public class PdfGenerationService {
             generatePdfDto.setCustomerFirstName(orderDto.getOrder().getCustomerFirstName());
             generatePdfDto.setCustomerLastName(orderDto.getOrder().getCustomerLastName());
             generatePdfDto.setCustomerEmail(orderDto.getOrder().getCustomerEmail());
+            if (orderDto.getOrder().getCustomerPhone() != null) {
+                generatePdfDto.setCustomerPhoneNumber(orderDto.getOrder().getCustomerPhone());
+            }
 
             // Get Payment
             JSONObject paymentResponse = restServiceClient.makeAdminGetCall(serviceUrls.getPaymentServiceUrl() + "/payment-admin/online/get?orderId=" + orderId);
