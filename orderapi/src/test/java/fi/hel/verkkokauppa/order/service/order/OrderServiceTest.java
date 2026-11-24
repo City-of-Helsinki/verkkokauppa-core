@@ -644,7 +644,33 @@ class OrderServiceTest extends TestUtils {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null).getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null, null, null).getBody();
+        log.info(objectMapper.writeValueAsString(createOrderResponse));
+        assert createOrderResponse != null;
+        Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
+        OrderItemDto orderItem = createOrderResponse.getItems().get(0);
+        JSONObject response = createMockAccountingForProductId(orderItem.getProductId());
+        log.info("Created order with orderId: {}", order.getOrderId());
+        log.info("Created order with userId: {}", order.getUser());
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+        order.setPriceNet(String.valueOf(new BigDecimal(orderItem.getPriceNet())));
+        order.setPriceVat(String.valueOf(new BigDecimal(orderItem.getPriceVat())));
+        order.setPriceTotal(String.valueOf(new BigDecimal(orderItem.getRowPriceTotal())));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+        orderRepository.save(order);
+    }
+
+    // This test creates only the order part of the subscription invoicing
+    @Test
+    @RunIfProfile(profile = "local")
+    void createOrderWithMerchantIdAndSubscriptionInvoicing() throws JsonProcessingException {
+        String namespace = "venepaikat";
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
+        log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null, "subscription", LocalDate.parse("2026-12-31")).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -670,7 +696,7 @@ class OrderServiceTest extends TestUtils {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null).getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null, null, null).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -805,7 +831,7 @@ class OrderServiceTest extends TestUtils {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl).getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(1, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl, null, null).getBody();
         log.info(objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -830,7 +856,7 @@ class OrderServiceTest extends TestUtils {
         // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
-        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(2, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null).getBody();
+        OrderAggregateDto createOrderResponse = createNewOrderToDatabase(2, firstMerchantIdFromNamespace, namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, null, null, null).getBody();
         log.info("Created order dto: " + objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -866,7 +892,7 @@ class OrderServiceTest extends TestUtils {
         String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace(namespace);
         log.info("Creating order with merchantId: {}",firstMerchantIdFromNamespace);
         OrderAggregateDto createOrderResponse = createNewOrderToDatabase(2, firstMerchantIdFromNamespace,
-                namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl).getBody();
+                namespace, "8a8674ed-1ae2-3ca9-a93c-036478b2a032", tokenName, qrCodeUrl, null, null).getBody();
         log.info("Created order dto: " + objectMapper.writeValueAsString(createOrderResponse));
         assert createOrderResponse != null;
         Order order = orderRepository.findById(createOrderResponse.getOrder().getOrderId()).get();
@@ -920,8 +946,10 @@ class OrderServiceTest extends TestUtils {
         String namespace = "venepaikat";
         String user = "dummy_user";
         LocalDateTime localDateTime = LocalDateTime.now();
+        String type = null;
+        LocalDate invoicingDate = null;
 
-        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Order order = orderService.createByParams(namespace, user, localDateTime, type, invoicingDate);
         Assertions.assertEquals(namespace, order.getNamespace());
         Assertions.assertEquals(user, order.getUser());
         Assertions.assertEquals(
@@ -945,8 +973,10 @@ class OrderServiceTest extends TestUtils {
         String namespace = "venepaikat";
         String user = "dummy_user";
         LocalDateTime localDateTime = null;
+        String type = null;
+        LocalDate invoicingDate = null;
 
-        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Order order = orderService.createByParams(namespace, user, localDateTime, type, invoicingDate);
         Assertions.assertEquals(namespace, order.getNamespace());
         Assertions.assertEquals(user, order.getUser());
         Assertions.assertNull(order.getLastValidPurchaseDateTime());
@@ -955,6 +985,32 @@ class OrderServiceTest extends TestUtils {
         Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
         Assertions.assertEquals(user, fetchedOrder.getUser());
         Assertions.assertNull(order.getLastValidPurchaseDateTime());
+        Assertions.assertEquals("order", fetchedOrder.getType());
+        ordersToBeDeleted.add(fetchedOrder);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
+    public void createOrderByParamsWithNullDateTimeAndSetTypeAndInvoicingDate() {
+        String namespace = "venepaikat";
+        String user = "dummy_user";
+        LocalDateTime localDateTime = null;
+        String type = "subscription";
+        LocalDate invoicingDate = LocalDate.parse("2026-12-31");
+
+        Order order = orderService.createByParams(namespace, user, localDateTime, type, invoicingDate);
+        Assertions.assertEquals(namespace, order.getNamespace());
+        Assertions.assertEquals(user, order.getUser());
+        Assertions.assertNull(order.getLastValidPurchaseDateTime());
+        Assertions.assertEquals(type, order.getType());
+        Assertions.assertEquals(invoicingDate, order.getInvoicingDate());
+
+        Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
+        Assertions.assertEquals(namespace, fetchedOrder.getNamespace());
+        Assertions.assertEquals(user, fetchedOrder.getUser());
+        Assertions.assertNull(order.getLastValidPurchaseDateTime());
+        Assertions.assertEquals(type, fetchedOrder.getType());
+        Assertions.assertEquals(invoicingDate, fetchedOrder.getInvoicingDate());
         ordersToBeDeleted.add(fetchedOrder);
     }
 
@@ -964,8 +1020,10 @@ class OrderServiceTest extends TestUtils {
         String namespace = "venepaikat";
         String user = "dummy_user";
         LocalDateTime localDateTime = null;
+        String type = null;
+        LocalDate invoicingDate = null;
 
-        Order order = orderService.createByParams(namespace, user, localDateTime);
+        Order order = orderService.createByParams(namespace, user, localDateTime, type, invoicingDate);
         Order fetchedOrder = orderRepository.findById(order.getOrderId()).get();
 
         FlowStepDto flowStepsDto = new FlowStepDto();

@@ -89,6 +89,9 @@ public class Order implements Customer, IdentifiableUser {
     @Field(type = FieldType.Auto)
     Invoice invoice;
 
+    @Field(type = FieldType.Date, format = DateFormat.date)
+    LocalDate invoicingDate;
+
     @Field(type = FieldType.Long)
     Long incrementId;
 
