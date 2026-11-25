@@ -35,6 +35,8 @@ import fi.hel.verkkokauppa.order.service.order.OrderService;
 import fi.hel.verkkokauppa.order.service.payment.OrderPaymentService;
 import fi.hel.verkkokauppa.order.service.rightOfPurchase.OrderRightOfPurchaseService;
 import fi.hel.verkkokauppa.order.service.subscription.SubscriptionService;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -51,6 +53,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,14 +112,26 @@ public class OrderController {
     @GetMapping(value = "/order/create", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<OrderAggregateDto> createOrder(@RequestParam(value = "namespace") String namespace,
                                                          @RequestParam(value = "user") String user,
-                                                         @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime
+                                                         @RequestParam(required = false, value = "lastValidPurchaseDateTime") String lastValidPurchaseDateTime,
+                                                         @Parameter(description = "Order type", schema = @Schema(allowableValues = {"order", "subscription"}))
+                                                            @RequestParam(required = false) String typeString,
+                                                         @Parameter(description = "Date format yyyy-MM-dd")
+                                                            @RequestParam(required = false, value = "invoicingDate") String invoicingDateString
     ) {
         try {
             LocalDateTime formattedLastValidPurchaseDateTime = null;
             if (lastValidPurchaseDateTime != null) {
                 formattedLastValidPurchaseDateTime = DateTimeUtil.fromFormattedDateTimeOptionalString(lastValidPurchaseDateTime);
             }
-            Order order = orderService.createByParams(namespace, user, formattedLastValidPurchaseDateTime);
+            LocalDate invoicingDate = null;
+            if (invoicingDateString != null) {
+                invoicingDate = LocalDate.parse(invoicingDateString);
+            }
+            String type = null;
+            if (typeString != null) {
+                type = typeString.toLowerCase();
+            }
+            Order order = orderService.createByParams(namespace, user, formattedLastValidPurchaseDateTime, type, invoicingDate);
             String orderId = order.getOrderId();
             return orderAggregateDto(orderId);
 
@@ -396,8 +411,15 @@ public class OrderController {
                 }
             });
 
-            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
-            orderService.setType(order, orderType);
+            boolean notSubscription = true;
+            if (order.getType() != null) {
+                notSubscription = !order.getType().equals(OrderType.SUBSCRIPTION);
+            }
+            boolean noInvoicingDate = order.getInvoicingDate() == null;
+            if (notSubscription && noInvoicingDate) {
+                String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(dto.getItems());
+                orderService.setType(order, orderType);
+            }
         }
     }
 
@@ -435,11 +457,18 @@ public class OrderController {
         try {
             OrderDto orderDto = orderAggregateDto.getOrder();
 
-            Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser(), orderDto.getLastValidPurchaseDateTime());
+            Order order = orderService.createByParams(orderDto.getNamespace(), orderDto.getUser(), orderDto.getLastValidPurchaseDateTime(), orderDto.getType(), orderDto.getInvoicingDate());
             String orderId = order.getOrderId();
 
-            String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(orderAggregateDto.getItems());
-            orderService.setType(order, orderType);
+            boolean notSubscription = true;
+            if (order.getType() != null) {
+                notSubscription = !order.getType().equals(OrderType.SUBSCRIPTION);
+            }
+            boolean noInvoicingDate = orderDto.getInvoicingDate() == null;
+            if (notSubscription && noInvoicingDate) {
+                String orderType = orderTypeLogic.decideOrderTypeBasedOnItems(orderAggregateDto.getItems());
+                orderService.setType(order, orderType);
+            }
 
             CustomerDto customerDto = validateCustomerData(orderDto.getCustomerFirstName(), orderDto.getCustomerLastName(), orderDto.getCustomerEmail(), orderDto.getCustomerPhone());
             orderService.setCustomer(order, customerDto);
