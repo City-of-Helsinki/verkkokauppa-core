@@ -195,6 +195,44 @@ public class TestUtils extends DummyData {
         return orderController.createWithItems(orderAggregateDto);
     }
 
+    public ResponseEntity<OrderAggregateDto> generateInvoiceSubscriptionOrderData(int itemCount, long periodFrequency, String periodUnit, int periodCount, boolean includeMetas, String productId) {
+        Order order = generateDummyOrder();
+
+        order.setEndDate(LocalDateTime.now().plusMonths(1));
+
+
+        order.setNamespace("venepaikat");
+        order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount);
+        for( int i=o; i<itemCount; i++ ){
+            orderItems.get(i).setPeriodFrequency(periodFrequency);
+            orderItems.get(i).setPeriodUnit(periodUnit);
+            orderItems.get(i).setPeriodCount(periodCount);
+            orderItems.get(i).setInvoicingDate(LocalDateTime.now().toLocalDate());
+            orderItems.get(i).setStartDate(LocalDateTime.now());
+            orderItems.get(i).setPriceGross("100");
+            orderItems.get(i).setPriceNet("98.5");
+            orderItems.get(i).setPriceVat("1.5");
+            orderItems.get(i).setVatPercentage("1.5");
+            orderItems.get(i).setProductId(productId);
+            orderItems.get(i).setMerchantId(getFirstMerchantIdFromNamespace("venepaikat"));
+        }
+
+        List<OrderItemMeta> orderItemMetas;
+        if( includeMetas == true ) {
+            orderItemMetas = generateDummyOrderItemMetaList(orderItems);
+        }
+        else
+        {
+            orderItemMetas = new ArrayList<>();
+        }
+
+        OrderAggregateDto orderAggregateDto = orderTransformerUtils
+                .transformToOrderAggregateDto(order, orderItems, orderItemMetas);
+
+        return orderController.createWithItems(orderAggregateDto);
+    }
+
     public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount) {
         Order order = generateDummyOrder();
 

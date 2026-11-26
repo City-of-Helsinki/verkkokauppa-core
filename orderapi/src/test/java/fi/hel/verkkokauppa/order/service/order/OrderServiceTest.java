@@ -798,6 +798,34 @@ class OrderServiceTest extends TestUtils {
 
     @Test
     @RunIfProfile(profile = "local")
+    void createInvoiceSubsriptionOrderWithMerchantId() throws JsonProcessingException {
+        // Helper test function to create new order with merchantId in orderItems, if initialization is done to merchants/namespace.
+        String firstMerchantIdFromNamespace = getFirstMerchantIdFromNamespace("venepaikat");
+
+        // setup product for test
+        String productId = createMockProductMapping("venepaikat",firstMerchantIdFromNamespace);
+        JSONObject response = createMockAccountingForProductId(productId);
+
+        ResponseEntity<OrderAggregateDto> orderResponse = generateSubscriptionOrderData(1, 1L, Period.DAILY, 2, true, productId);
+        OrderDto order = Objects.requireNonNull(orderResponse.getBody()).getOrder();
+        log.info("Created order with merchantId: {}", firstMerchantIdFromNamespace);
+        log.info("Kassa URL: {}", "https://localhost:3000/" + order.getOrderId() + "?user=" + order.getUser());
+
+        Order order1 = orderRepository.findById(order.getOrderId()).orElse(null);
+        assert order1 != null;
+        OrderItemDto orderItem = orderResponse.getBody().getItems().get(0);
+        String price = "100";
+        order1.setPriceNet(String.valueOf(new BigDecimal(price)));
+        order1.setPriceVat(String.valueOf(new BigDecimal(price)));
+        order1.setPriceTotal(String.valueOf(new BigDecimal(price)));
+        Assertions.assertEquals(firstMerchantIdFromNamespace,orderItem.getMerchantId());
+
+
+        orderRepository.save(order1);
+    }
+
+    @Test
+    @RunIfProfile(profile = "local")
     void createOrderWithMerchantIdAndQRCodeWhenFetchingQRCodeFails() throws JsonProcessingException {
         String namespace = "liikuntavuorot";
         String tokenName = "1234567890";
