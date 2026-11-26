@@ -165,13 +165,19 @@ public class OrderService {
         return order;
     }
 
-    public Order createByParams(String namespace, String user, LocalDateTime lastValidPurchaseDateTime) {
+    public Order createByParams(String namespace, String user, LocalDateTime lastValidPurchaseDateTime, String type, LocalDate invoicingDate) {
         LocalDateTime createdAt = DateTimeUtil.getFormattedDateTime();
         String orderId = generateOrderId(namespace, user, createdAt);
         Long incrementId = this.incrementId.generateOrderIncrementId();
         Order order = new Order(orderId, namespace, user, createdAt, incrementId);
         if (lastValidPurchaseDateTime != null) {
             order.setLastValidPurchaseDateTime(lastValidPurchaseDateTime);
+        }
+        if (type != null) {
+            order.setType(type);
+        }
+        if (invoicingDate != null) {
+            order.setInvoicingDate(invoicingDate);
         }
 
         orderRepository.save(order);

@@ -40,6 +40,8 @@ public class OrderDto {
 
     private Invoice invoice;
 
+    private LocalDate invoicingDate;
+
     private Long incrementId;
 
     private LocalDateTime lastValidPurchaseDateTime;

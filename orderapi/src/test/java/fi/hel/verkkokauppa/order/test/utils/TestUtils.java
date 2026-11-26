@@ -62,6 +62,7 @@ import reactor.netty.http.client.HttpClient;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -264,14 +265,20 @@ public class TestUtils extends DummyData {
     }
 
     public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId){
-        return createNewOrderToDatabase(itemCount, merchantId, "venepaikat", "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null);
+        return createNewOrderToDatabase(itemCount, merchantId, "venepaikat", "8a8674ed-1ae2-3ca9-a93c-036478b2a032", null, null, null, null);
     }
 
-    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId, String namespace, String productId, String qrCodeTokenName, String qrCodeUrl) {
+    public ResponseEntity<OrderAggregateDto> createNewOrderToDatabase(int itemCount, String merchantId, String namespace, String productId, String qrCodeTokenName, String qrCodeUrl, String type, LocalDate invoicingDate) {
         Order order = generateDummyOrder();
 
         order.setNamespace(namespace);
         order.setCustomerEmail(UUID.randomUUID().toString() + "@hiq.fi");
+        if (type != null) {
+            order.setType(type);
+        }
+        if (invoicingDate != null) {
+            order.setInvoicingDate(invoicingDate);
+        }
         List<OrderItem> orderItems = generateDummyOrderItemList(order, itemCount, merchantId, productId);
         orderItems.forEach(orderItem -> orderItem.setPriceGross("110"));
         orderItems.forEach(orderItem -> orderItem.setPriceVat("10"));
@@ -285,6 +292,9 @@ public class TestUtils extends DummyData {
         }
         if (qrCodeUrl != null) {
             orderItems.forEach(orderItem -> orderItem.setTokenQRCodeUrl(qrCodeUrl));
+        }
+        if (invoicingDate != null) {
+            orderItems.forEach(orderItem -> orderItem.setInvoicingDate(invoicingDate));
         }
         List<OrderItemMeta> orderItemMetas = generateDummyOrderItemMetaList(orderItems);
 
